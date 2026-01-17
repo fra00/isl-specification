@@ -2191,21 +2191,6 @@ Flow:
 - **Minor** (0.X.0): New components or capabilities (backwards compatible)
 - **Patch** (0.0.X): Clarifications, constraint additions, test improvements
 
-**Document Changes:**
-
-```markdown
-## Changelog
-
-### v2.1.0 (2026-01-20)
-- Added Component: NotificationService
-- Enhanced TaskCard: added priority indicator
-- Clarified constraint on UserService.deleteAccount
-
-### v2.0.0 (2026-01-10) - BREAKING
-- Changed User.role from string to enum
-- Renamed Component: TaskManager → TaskService
-```
-
 ---
 
 ### 10. Common Pitfalls to Avoid

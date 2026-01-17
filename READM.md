@@ -13,18 +13,18 @@ ISL enables humans and Large Language Models (LLMs) to reason deterministically 
 
 Modern software specifications often suffer from one or more of these problems:
 
-* They mix intent with implementation
-* They are ambiguous or non-testable
-* They are hard to translate into working code
-* They are unsuitable for AI-assisted development
+- They mix intent with implementation
+- They are ambiguous or non-testable
+- They are hard to translate into working code
+- They are unsuitable for AI-assisted development
 
 ISL was created to solve these issues by providing:
 
-* **Explicit contracts** (inputs, outputs, behavior)
-* **Normative constraints** (MUST / SHOULD / MAY)
-* **Built-in testability** (acceptance criteria and test scenarios)
-* **Deterministic interpretation** for LLM-based code generation
-* **Clear separation of concerns** (presentation vs business logic)
+- **Explicit contracts** (inputs, outputs, behavior)
+- **Normative constraints** (MUST / SHOULD / MAY)
+- **Built-in testability** (acceptance criteria and test scenarios)
+- **Deterministic interpretation** for LLM-based code generation
+- **Clear separation of concerns** (presentation vs business logic)
 
 ISL is **language-agnostic**, **framework-agnostic**, and **LLM-friendly by design**.
 
@@ -36,21 +36,21 @@ This repository contains **the official ISL language specification**.
 
 The README provides:
 
-* an overview
-* a minimal quick start
-* a reference example
+- an overview
+- a minimal quick start
+- a reference example
 
 👉 **It does NOT replace the full specification.**
 
 To write **ISL-compliant** documents, you **must read the complete specification**, including:
 
-* Canonical Rules
-* Grammar and semantics
-* Section precedence
-* Best practices and pitfalls
+- Canonical Rules
+- Grammar and semantics
+- Section precedence
+- Best practices and pitfalls
 
 📘 **Full Specification**:
-👉 [`Intent Specification Language (ISL)`](./specs/Intent%20Specification%20Language%20(ISL)%20v1.6.1.md)
+👉 [`Intent Specification Language (ISL)`](<./specs/Intent%20Specification%20Language%20(ISL)%20v1.6.1.md>)
 
 ---
 
@@ -58,19 +58,19 @@ To write **ISL-compliant** documents, you **must read the complete specification
 
 ### ISL IS:
 
-* A formal specification language
-* A way to describe behavior, contracts, and observable effects
-* Suitable for humans and LLMs
-* Designed for deterministic interpretation
-* A foundation for code generation, validation, and testing
+- A formal specification language
+- A way to describe behavior, contracts, and observable effects
+- Suitable for humans and LLMs
+- Designed for deterministic interpretation
+- A foundation for code generation, validation, and testing
 
 ### ISL IS NOT:
 
-* A programming language
-* An implementation guide
-* A UI mockup format
-* A database schema language (unless explicitly modeled)
-* A place for algorithms or step-by-step code logic
+- A programming language
+- An implementation guide
+- A UI mockup format
+- A database schema language (unless explicitly modeled)
+- A place for algorithms or step-by-step code logic
 
 ---
 
@@ -89,15 +89,17 @@ This section allows you to **start writing ISL immediately**, using the **base m
 # Project: ExampleProject
 
 **Version**: 1.0.0  
-**ISL Version**: 1.6  
+**ISL Version**: 1.6
 
 ---
 
 ## Domain Concepts
 
 ### User
+
 **Identity**: UUID  
 **Properties**:
+
 - email: unique authentication identifier
 - accountStatus: enum (active, suspended)
 
@@ -114,10 +116,12 @@ This section allows you to **start writing ISL immediately**, using the **base m
 **Contract**: Authenticate **User** credentials and return an access token
 
 🚨 **Constraints**:
+
 - Passwords MUST NOT be stored or compared in plaintext
 - Tokens MUST expire after 24 hours
 
 ✅ **Acceptance Criteria**:
+
 - Valid credentials return a token
 - Invalid credentials return an authentication error
 ```
@@ -133,20 +137,19 @@ These rules improve clarity, scanability, and deterministic interpretation.
 
 ### Semantic Formatting
 
-* **Bold (`**term**`)**
+- **Bold (`**term**`)**
   Indicates a **semantic anchor**:
-
-  * Domain Concepts
-  * Component names
-  * Capabilities
-  * Defined entities
+  - Domain Concepts
+  - Component names
+  - Capabilities
+  - Defined entities
     **Must NOT** be used for generic emphasis.
 
-* ***Bold + Italic (`***important***`)***
+- ***Bold + Italic (`***important***`)***
   Indicates **critical emphasis** for clarifications or edge cases.
   **Must NOT** replace normative sections (🚨 Constraints, ✅ Acceptance).
 
-* UPPERCASE
+- UPPERCASE
   Used **only temporarily** during review or discussion.
   **Must NOT** appear in finalized ISL documents.
 
@@ -158,9 +161,9 @@ ISL uses emojis as **visual anchors** to reduce cognitive load and improve navig
 
 | Emoji | Meaning                                    |
 | ----- | ------------------------------------------ |
-| ⚡     | Capabilities / behavior                    |
+| ⚡    | Capabilities / behavior                    |
 | 🚨    | Constraints (normative)                    |
-| ✅     | Acceptance Criteria                        |
+| ✅    | Acceptance Criteria                        |
 | 🧪    | Test Scenarios                             |
 | ⚠️    | Warnings / notes (non-normative)           |
 | 🔒    | Security considerations (custom, optional) |
@@ -173,12 +176,12 @@ ISL is governed by **Canonical Rules** that define how specifications are interp
 
 ### Key Principles
 
-* Sections marked ⚡ 🚨 ✅ 🧪 are **NORMATIVE**
-* Constraints override Implementation Hints
-* Capability Constraints override Global Constraints
-* OPTIONAL means *may be omitted*, not *ignored if present*
-* Presentation components MUST NOT implement business logic
-* Backend components MUST NOT define visual properties
+- Sections marked ⚡ 🚨 ✅ 🧪 are **NORMATIVE**
+- Constraints override Implementation Hints
+- Capability Constraints override Global Constraints
+- OPTIONAL means _may be omitted_, not _ignored if present_
+- Presentation components MUST NOT implement business logic
+- Backend components MUST NOT define visual properties
 
 > These rules are always **in scope** for ISL interpreters (humans or LLMs),
 > even when not repeated in every document.
@@ -199,26 +202,46 @@ ISL is governed by **Canonical Rules** that define how specifications are interp
 **Contract**: Display user profile information
 
 **Input**:
+
 - user: User
 
 **Flow**:
+
 1. Render user's display name
 2. Render email address
 3. Show status badge based on accountStatus
 
 🚨 **Constraints**:
+
 - MUST NOT fetch data directly
 - MUST receive all data via input
 
 ✅ **Acceptance Criteria**:
+
 - Displays name and email correctly
 - Shows correct status badge
 - Renders within 200ms
 
 🧪 **Test Scenarios**:
+
 1. **Active User**:
    - Input: accountStatus = active
    - Expected: green status badge
+```
+
+---
+
+## Modular Specifications (New in v1.6.1)
+
+ISL supports splitting specifications across multiple files to promote reuse (e.g., shared domain models).
+
+**Syntax:**
+`> **Reference**: [Description] in [Link]`
+
+**Example:**
+```markdown
+## Domain Concepts
+> **Reference**: Core entities are defined in [`./shared-domain.isl.md`](./shared-domain.isl.md).
 ```
 
 ---
@@ -227,17 +250,17 @@ ISL is governed by **Canonical Rules** that define how specifications are interp
 
 Common usage patterns:
 
-* **Spec-first development**
-* **LLM-assisted code generation**
-* **Test generation from Acceptance Criteria**
-* **Documentation for complex systems**
-* **Reverse-engineering legacy systems**
+- **Spec-first development**
+- **LLM-assisted code generation**
+- **Test generation from Acceptance Criteria**
+- **Documentation for complex systems**
+- **Reverse-engineering legacy systems**
 
 ISL works with:
 
-* Frontend frameworks (React, Vue, Svelte, Angular)
-* Backend stacks (Node.js, Python, Java, Go, Rust)
-* Mobile and distributed systems
+- Frontend frameworks (React, Vue, Svelte, Angular)
+- Backend stacks (Node.js, Python, Java, Go, Rust)
+- Mobile and distributed systems
 
 ---
 
@@ -246,7 +269,6 @@ ISL works with:
 ```text
 isl-specification
 ├── README.md               ← This file
-├── Intent Specification Language (ISL) v1.6.pdf
 ├── specs/                  ← (optional) markdown versions
 └── examples/               ← (optional) reference ISL documents
 ```
@@ -255,9 +277,9 @@ isl-specification
 
 ## Versioning
 
-* **Major**: Breaking changes to Canonical Rules or semantics
-* **Minor**: Additions (new sections, clarifications)
-* **Patch**: Editorial fixes and clarifications
+- **Major**: Breaking changes to Canonical Rules or semantics
+- **Minor**: Additions (new sections, clarifications)
+- **Patch**: Editorial fixes and clarifications
 
 ---
 
@@ -265,9 +287,9 @@ isl-specification
 
 ISL is designed to be:
 
-* precise, but readable
-* strict, but practical
-* formal, but usable
+- precise, but readable
+- strict, but practical
+- formal, but usable
 
 If you are using ISL with LLMs, remember:
 

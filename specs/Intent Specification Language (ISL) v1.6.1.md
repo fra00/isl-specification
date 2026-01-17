@@ -1,4 +1,4 @@
-# Intent Specification Language (ISL) v1.6
+# Intent Specification Language (ISL) v1.6.1
 
 **Official Specification Document**
 
@@ -16,8 +16,7 @@
 8. [Complete Examples](#complete-examples)
 9. [Best Practices](#best-practices)
 10. [FAQ](#faq)
-11. [Changelog](#changelog)
-12. [Contributing](#contributing)
+11. [Contributing](#contributing)
 
 ---
 
@@ -36,7 +35,7 @@
 
 ### Version Information
 
-- **Current Version**: 1.6
+- **Current Version**: 1.6.1
 - **Release Date**: January 2026
 - **Status**: Stable
 - **License**: [To be determined]
@@ -221,6 +220,32 @@ ISL addresses these challenges by providing:
 
 ---
 
+## Modular Specifications
+
+ISL supports splitting specifications across multiple files to promote reuse and maintainability. While the **Document Structure** defines the *logical* hierarchy, **Modular Specifications** define the *physical* organization.
+
+### External References
+
+Components can reference entities defined in external files (e.g., a shared domain model) using the standard Markdown blockquote syntax with a specific label.
+
+**Syntax:**
+`> **Reference**: [Description] in Link`
+
+**Example:**
+```markdown
+## Domain Concepts
+> **Reference**: Core entities are defined in [`./shared-domain.isl.md`](./shared-domain.isl.md).
+```
+
+### Context Composition
+
+When an ISL specification references external files, the interpreter (LLM or human) MUST treat the referenced content as if it were inline.
+
+- **Shared Domain**: Entities defined in a referenced domain file are available globally in the referencing component.
+- **Resolution**: If a term is defined both locally and externally, the **local definition** takes precedence (override).
+
+---
+
 ## Canonical Rules
 
 The Canonical Rules define how ISL documents MUST be interpreted by compliant LLM code generators. These rules are **normative** and override any ambiguity in the template structure.
@@ -289,7 +314,7 @@ Component: WebSocketService
 - Whitespace and formatting
 - Implementation internals (if contract satisfied)
 
-**Naming Rule**: 
+**Naming Rule**:
 
 - Entity names MUST follow Domain Concepts vocabulary
 - Capability names MUST be preserved in generated code
@@ -396,21 +421,16 @@ markdown
 Component: LoginButton
 Role: Presentation
 ⚡ validatePassword
-  Flow:
-    1. Check password length >= 8
-    2. Verify special characters
-    → Business logic in Presentation (violates Rule 4)
+Flow: 1. Check password length >= 8 2. Verify special characters
+→ Business logic in Presentation (violates Rule 4)
 
 ✅ VALID:
 Component: LoginButton
 Role: Presentation
 ⚡ onClick
-  Contract: Trigger authentication via AuthService
-  Flow:
-    1. Collect form data
-    2. Call AuthService.login(email, password)
-    3. Handle response (redirect or show error)
-    → Delegates business logic to Backend
+Contract: Trigger authentication via AuthService
+Flow: 1. Collect form data 2. Call AuthService.login(email, password) 3. Handle response (redirect or show error)
+→ Delegates business logic to Backend
 ```
 
 ### Rule 5: Optionality Semantics
@@ -429,17 +449,20 @@ Role: Presentation
 
 ```markdown
 ### Role: Presentation (REQUIRED)
+
 → Must appear in every component specification
 
 ### 📐 Appearance (OPTIONAL)
+
 - Button with blue background
-→ If present, generated code MUST include blue background
-→ If absent, default styling may be applied
+  → If present, generated code MUST include blue background
+  → If absent, default styling may be applied
 
 💡 Implementation Hint (OPTIONAL)
+
 - Use Tailwind utility classes
-→ If present, Tailwind is RECOMMENDED but not mandatory
-→ Other CSS solutions acceptable if contracts met
+  → If present, Tailwind is RECOMMENDED but not mandatory
+  → Other CSS solutions acceptable if contracts met
 ```
 
 **Interpretation:**
@@ -480,8 +503,8 @@ ELSE IF section marked (REQUIRED) THEN
 🚨 Constraint: Response time MUST be < 1ms
 
 → If physically impossible (network latency):
-   LLM reports: "1ms response time unachievable over network.
-                 Suggest: local caching or relaxed constraint."
+LLM reports: "1ms response time unachievable over network.
+Suggest: local caching or relaxed constraint."
 ```
 
 ### Canonical Rules Availability
@@ -502,10 +525,10 @@ ISL uses emoji as semantic markers to categorize information:
 | ----- | -------------------- | ------------- | ------------------------------------ |
 | 📐    | Appearance/Interface | INFORMATIVE   | Visual properties or API structure   |
 | 📦    | Content/Structure    | INFORMATIVE   | Component composition                |
-| ⚡     | Capabilities/Methods | **NORMATIVE** | Behaviors that MUST be implemented   |
+| ⚡    | Capabilities/Methods | **NORMATIVE** | Behaviors that MUST be implemented   |
 | 💡    | Implementation Hint  | INFORMATIVE   | Suggested strategies (not mandatory) |
 | 🚨    | Constraint           | **NORMATIVE** | Hard limits that MUST be enforced    |
-| ✅     | Acceptance Criteria  | **NORMATIVE** | Conditions for completion            |
+| ✅    | Acceptance Criteria  | **NORMATIVE** | Conditions for completion            |
 | 🧪    | Test Scenarios       | **NORMATIVE** | Testable assertions                  |
 
 ### Required vs Optional Markers
@@ -513,8 +536,8 @@ ISL uses emoji as semantic markers to categorize information:
 markdown
 
 ```markdown
-(REQUIRED)  → Section MUST be present
-(OPTIONAL)  → Section MAY be omitted, but if present MUST be implemented
+(REQUIRED) → Section MUST be present
+(OPTIONAL) → Section MAY be omitted, but if present MUST be implemented
 ```
 
 ### RFC 2119 Keywords
@@ -531,6 +554,7 @@ ISL adopts RFC 2119 terminology for constraint specifications:
 
 ```markdown
 🚨 Constraint:
+
 - Password MUST be hashed (absolute)
 - Email SHOULD be verified (strong recommendation)
 - Nickname MAY contain emojis (truly optional)
@@ -542,6 +566,7 @@ ISL uses TypeScript-like notation for types (adaptable to target language):
 
 ```markdown
 **Signature:**
+
 - **input**: {email: string, password: string}
 - **output**: {token: string, expiresAt: datetime} | {error: string}
 ```
@@ -563,12 +588,13 @@ markdown
 
 ```markdown
 **Flow:**
+
 1. Step description
 2. Conditional step:
    IF condition THEN
-     a. Action A
+   a. Action A
    ELSE
-     b. Action B
+   b. Action B
 3. FOR EACH item IN collection:
    a. Process item
 4. Final step
@@ -582,8 +608,6 @@ markdown
 - `TRY...CATCH`
 - `BRANCH: [conditions]`
 
-
-
 ### ISL Writing & Grammar Guidelines (for Humans)
 
 This section defines editorial conventions for writing
@@ -594,7 +618,6 @@ scanability, and deterministic interpretation.
 
 - **Bold (`**term**`)**  
   Indicates a semantic anchor:
-  
   - Domain Concepts
   - Component names
   - Capabilities or entities defined elsewhere  
@@ -634,6 +657,7 @@ and reduce cognitive load.
 
 ```markdown
 # Project: [Name]
+
 [Brief summary of the project (1-3 sentences)]
 ```
 
@@ -664,6 +688,7 @@ and reduce cognitive load.
 ## Domain Concepts
 
 ### [Entity Name]
+
 **Identity**: How it's uniquely identified (e.g., UUID, composite key)
 **Properties**: Semantic attributes (NOT implementation fields)
 **Relationships**: Connections to other entities
@@ -683,22 +708,26 @@ and reduce cognitive load.
 ## Domain Concepts
 
 ### User
+
 **Identity**: UUID (universally unique identifier)
-**Properties**: 
+**Properties**:
+
 - email: unique identifier for authentication
 - displayName: user's chosen public name
 - accountStatus: enum (active, suspended, deleted)
-**Relationships**: 
+  **Relationships**:
 - Has many Orders (1:N)
 - Belongs to one Organization (N:1)
 
 ### Order
+
 **Identity**: UUID
 **Properties**:
+
 - orderNumber: human-readable reference
 - totalAmount: monetary value
 - orderStatus: enum (pending, confirmed, shipped, delivered, cancelled)
-**Relationships**:
+  **Relationships**:
 - Belongs to one User (N:1)
 - Contains many OrderItems (1:N)
 ```
@@ -709,6 +738,7 @@ and reduce cognitive load.
 
 ```markdown
 ## Component: [Component Name]
+
 [Concise description of component's role (1-2 sentences)]
 
 ### Role: Presentation / Backend (REQUIRED)
@@ -739,6 +769,7 @@ and reduce cognitive load.
 
 ```markdown
 ### 📐 Appearance
+
 - Primary button styling
 - Background: #3b82f6 (blue)
 - Text color: white
@@ -754,6 +785,7 @@ and reduce cognitive load.
 
 ```markdown
 ### 📐 Interface
+
 - HTTP Method: POST
 - Route: /api/auth/login
 - Content-Type: application/json
@@ -781,6 +813,7 @@ and reduce cognitive load.
 
 ```markdown
 ### 📦 Content
+
 - Form container
   - EmailInput (child component)
   - PasswordInput (child component)
@@ -792,12 +825,15 @@ and reduce cognitive load.
 
 ```markdown
 ### 📦 Structure
+
 **Dependencies**:
+
 - UserRepository (data access)
 - JWTService (token generation)
 - EmailService (notifications)
 
 **Class Members**:
+
 - private userRepo: UserRepository
 - private jwtService: JWTService
 - private emailService: EmailService
@@ -827,6 +863,7 @@ and reduce cognitive load.
 
 ```markdown
 **Signature:**
+
 - **input**: {param1: type, param2: type}
 - **output**: {result: type} | {error: type}
 ```
@@ -872,12 +909,13 @@ and reduce cognitive load.
 
 ```markdown
 **Flow:**
+
 1. Step 1
 2. Step 2
    IF condition THEN
-     a. Branch A
+   a. Branch A
    ELSE
-     b. Branch B
+   b. Branch B
 3. Step 3
 ```
 
@@ -927,7 +965,7 @@ and reduce cognitive load.
 #### Implementation Hint (OPTIONAL)
 
 ```markdown
-**💡 Implementation Hint**: 
+**💡 Implementation Hint**:
 A non-normative suggestion that MAY guide implementation,
 without mandating specific technologies, libraries, or code.
 
@@ -996,6 +1034,7 @@ async function register(data) {
 
 ```markdown
 💡 Implementation Hint:
+
 - Use bcrypt with cost factor 12 for password hashing
 - Consider debouncing search input (300ms delay)
 - Prefer CSS Grid over Flexbox for this layout
@@ -1003,8 +1042,9 @@ async function register(data) {
 
 **With Code Snippet**:
 
-```markdown
+````markdown
 💡 Implementation Hint:
+
 ```javascript
 // Suggested error handling pattern
 try {
@@ -1019,6 +1059,7 @@ try {
   throw error; // Re-throw unexpected errors
 }
 ```
+````
 
 ```
 **Guidelines**:
@@ -1038,6 +1079,7 @@ try {
 
 ```markdown
 🚨 Constraint:
+
 - MUST [requirement]
 - MUST NOT [prohibition]
 - SHOULD [strong recommendation]
@@ -1047,6 +1089,7 @@ try {
 
 ```markdown
 🚨 Constraint:
+
 - Password MUST be hashed before storage (never plaintext)
 - Response time MUST be < 200ms (99th percentile)
 - MUST NOT modify node position during resize operation
@@ -1072,6 +1115,7 @@ try {
 
 ```markdown
 ✅ Acceptance Criteria:
+
 - [ ] Criterion 1 (testable condition)
 - [ ] Criterion 2
 ```
@@ -1080,6 +1124,7 @@ try {
 
 ```markdown
 ✅ Acceptance Criteria:
+
 - [ ] User can login with valid credentials
 - [ ] Invalid credentials show error message
 - [ ] Form is disabled during authentication
@@ -1105,6 +1150,7 @@ try {
 
 ```markdown
 🧪 Test Scenarios:
+
 1. **Scenario Name**: Input → Expected Output
 2. **Edge Case Name**: Condition → Expected Behavior
 ```
@@ -1113,20 +1159,21 @@ try {
 
 ```markdown
 🧪 Test Scenarios:
-1. **Valid Login**: 
+
+1. **Valid Login**:
    - Input: {email: "user@test.com", password: "Valid123!"}
    - Expected: {token: <JWT>, expiresAt: <timestamp>}
 
-2. **Invalid Password**: 
+2. **Invalid Password**:
    - Input: {email: "user@test.com", password: "wrong"}
    - Expected: {error: "Invalid credentials"}
 
-3. **Account Locked**: 
+3. **Account Locked**:
    - Precondition: 5 failed login attempts
    - Input: valid credentials
    - Expected: {error: "Account locked", code: 423}
 
-4. **Concurrent Logins**: 
+4. **Concurrent Logins**:
    - Input: Same user logs in from 2 devices
    - Expected: Both sessions valid, old session NOT invalidated
 ```
@@ -1146,6 +1193,7 @@ try {
 
 ```markdown
 ### 💡 Global Implementation Hints (OPTIONAL)
+
 - [Architectural notes]
 - [Recommended libraries]
 - [Performance considerations]
@@ -1157,6 +1205,7 @@ try {
 
 ```markdown
 ### 💡 Global Implementation Hints
+
 - Use React 18+ with TypeScript
 - State management: Zustand (lightweight, < 1KB)
 - Form validation: Zod schemas (type-safe)
@@ -1168,6 +1217,7 @@ try {
 
 ```markdown
 ### 🚨 Global Constraints (OPTIONAL)
+
 - [Component-wide limitations]
 ```
 
@@ -1177,6 +1227,7 @@ try {
 
 ```markdown
 ### 🚨 Global Constraints
+
 - Component MUST be accessible (WCAG 2.1 Level AA)
 - All API calls MUST include authentication token
 - Component MUST NOT directly access localStorage (use provided storage service)
@@ -1188,6 +1239,7 @@ try {
 
 ```markdown
 ### ✅ Acceptance Criteria (OPTIONAL)
+
 - [ ] Component-wide completion criteria
 ```
 
@@ -1197,6 +1249,7 @@ try {
 
 ```markdown
 ### ✅ Acceptance Criteria
+
 - [ ] Component passes all accessibility audits
 - [ ] Component has 80%+ test coverage
 - [ ] Component works in Chrome, Firefox, Safari (latest versions)
@@ -1208,6 +1261,7 @@ try {
 
 ```markdown
 ### 🧪 Test Scenarios (OPTIONAL)
+
 1. **Integration Scenario**: Complex multi-capability test
 ```
 
@@ -1217,6 +1271,7 @@ try {
 
 ```markdown
 ### 🧪 Test Scenarios
+
 1. **Complete Login Flow**:
    - User enters email
    - User enters password
@@ -1238,7 +1293,7 @@ try {
 
 ### Example 1: Frontend Component (Presentation)
 
-```markdown
+````markdown
 # Project: Task Management App
 
 Simple task tracking application with drag-and-drop kanban board.
@@ -1248,32 +1303,38 @@ Simple task tracking application with drag-and-drop kanban board.
 ## Domain Concepts
 
 ### Task
+
 **Identity**: UUID
 **Properties**:
+
 - title: short description of task
 - status: enum (todo, in-progress, done)
 - priority: enum (low, medium, high)
 - assignee: reference to User
-**Relationships**:
+  **Relationships**:
 - Belongs to one Project (N:1)
 - Assigned to zero or one User (N:0..1)
 
 ### User
+
 **Identity**: UUID
 **Properties**:
+
 - email: unique, authentication identifier
 - displayName: user's chosen name
-**Relationships**:
+  **Relationships**:
 - Assigned to many Tasks (1:N)
 
 ---
 
 ## Component: TaskCard
+
 Displays a single task in the kanban board with drag capability.
 
 ### Role: Presentation
 
 ### 📐 Appearance
+
 - Card layout: white background, rounded corners (8px)
 - Border: 1px solid #e5e7eb (gray-200)
 - Padding: 16px
@@ -1285,6 +1346,7 @@ Displays a single task in the kanban board with drag capability.
   - High: red dot
 
 ### 📦 Content
+
 - Priority indicator (colored dot, top-left)
 - Task title (bold, 16px)
 - Assignee avatar (if assigned, bottom-right)
@@ -1297,6 +1359,7 @@ Displays a single task in the kanban board with drag capability.
 #### dragStart
 
 **Signature:**
+
 - **input**: NONE (user-initiated)
 - **output**: NONE (side effect only)
 
@@ -1305,35 +1368,40 @@ Displays a single task in the kanban board with drag capability.
 **Trigger**: MouseDown on card + MouseMove (drag gesture)
 
 **Flow**:
+
 1. Capture card initial position
 2. Create ghost element (semi-transparent copy)
 3. Hide original card (opacity 0.5)
 4. Ghost element follows cursor
-5. On MouseUp: 
+5. On MouseUp:
    IF dropped on valid column THEN
-     a. Update task.status
-     b. Move card to new column
+   a. Update task.status
+   b. Move card to new column
    ELSE
-     a. Animate card back to original position
+   a. Animate card back to original position
 
 **Side Effect**:
+
 - Task.status updated in application state
 - Parent KanbanBoard re-renders affected columns
 - Cursor changes to 'grabbing'
 
 **Cleanup**:
+
 - Remove ghost element
 - Restore card opacity to 1.0
 - Cursor restored to default
 
 **💡 Implementation Hint**:
+
 ```javascript
 // Use HTML5 Drag and Drop API
-card.addEventListener('dragstart', (e) => {
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', task.id);
+card.addEventListener("dragstart", (e) => {
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", task.id);
 });
 ```
+````
 
 **🚨 Constraint**:
 
@@ -1352,17 +1420,14 @@ card.addEventListener('dragstart', (e) => {
 **🧪 Test Scenarios**:
 
 1. **Successful Drag**:
-   
    - User drags task from "Todo" to "In Progress"
    - Expected: task.status = "in-progress", card appears in new column
 
 2. **Cancelled Drag**:
-   
    - User drags task and releases outside valid drop zone
    - Expected: card animates back to original position, status unchanged
 
 3. **Permission Denied**:
-   
    - User without edit permission attempts drag
    - Expected: card does not move, cursor shows 'not-allowed'
 
@@ -1453,75 +1518,87 @@ card.addEventListener('dragstart', (e) => {
 - [ ] No prop drilling (use context if needed)
 
 - [ ] Component has 90%+ test coverage
-  
+
   ```
-  
+
   ```
 
 ### Example 2: Backend Component
 
-```markdown
+````markdown
 # Project: E-Commerce Platform
 
-Online store with product catalog, shopping cart, and checkout.
----
+## Online store with product catalog, shopping cart, and checkout.
+
 ## Domain Concepts
 
 ### User
+
 **Identity**: UUID
 **Properties**:
+
 - email: unique, for authentication
 - passwordHash: bcrypt hashed password
 - role: enum (customer, admin)
-**Relationships**:
+  **Relationships**:
 - Has one Cart (1:1)
 - Has many Orders (1:N)
 
 ### Cart
+
 **Identity**: UUID
 **Properties**:
+
 - totalAmount: calculated sum of items
-**Relationships**:
+  **Relationships**:
 - Belongs to one User (1:1)
 - Contains many CartItems (1:N)
 
 ### CartItem
+
 **Identity**: UUID
 **Properties**:
+
 - quantity: positive integer
 - priceAtAdd: price snapshot when added
-**Relationships**:
+  **Relationships**:
 - Belongs to one Cart (N:1)
 - References one Product (N:1)
 
 ---
 
 ## Component: CartService
+
 Manages shopping cart operations: add/remove items, calculate totals.
 
 ### Role: Backend
 
 ### 📐 Interface
+
 - Service class (not HTTP endpoint)
 - Used by CartController for HTTP API
 - Methods return Promise<Result<T, Error>>
 
 ### 📦 Structure
+
 **Dependencies**:
+
 - CartRepository (database access)
 - ProductRepository (product info)
 - PricingService (price calculations, discounts)
 
 **Class Members**:
+
 ```typescript
 class CartService {
   constructor(
     private cartRepo: CartRepository,
     private productRepo: ProductRepository,
-    private pricingService: PricingService
+    private pricingService: PricingService,
   ) {}
 }
 ```
+````
 
 ---
 
@@ -1550,38 +1627,38 @@ class CartService {
 
 **Flow**:
 
-1. **Validate Input**:
-   Verify quantity is positive
-   IF invalid → Error: 'INVALID_QUANTITY'
+1.  **Validate Input**:
+    Verify quantity is positive
+    IF invalid → Error: 'INVALID_QUANTITY'
 
-2. **Verify Product Availability**:
-   Check product exists
-   IF not found → Error: 'PRODUCT_NOT_FOUND'
-   
-   Check sufficient stock available
-   IF insufficient → Error: 'INSUFFICIENT_STOCK'
+2.  **Verify Product Availability**:
+    Check product exists
+    IF not found → Error: 'PRODUCT_NOT_FOUND'
 
-3. **Retrieve or Create Cart**:
-   Load user's cart from database
-   IF cart doesn't exist THEN
-     Create new cart for user
+    Check sufficient stock available
+    IF insufficient → Error: 'INSUFFICIENT_STOCK'
 
-4. **Update Cart Contents**:
-   Search for product in cart items
-   IF product already in cart THEN
-     Increase existing item quantity by requested amount
-   ELSE
-     Create new cart item with:
-   
-       - Product reference
-       - Requested quantity
-       - Current product price (snapshot)
-   
-     Add item to cart
+3.  **Retrieve or Create Cart**:
+    Load user's cart from database
+    IF cart doesn't exist THEN
+    Create new cart for user
 
-5. **Finalize Transaction**:
-   Recalculate cart total amount
-   Persist updated cart to database
+4.  **Update Cart Contents**:
+    Search for product in cart items
+    IF product already in cart THEN
+    Increase existing item quantity by requested amount
+    ELSE
+    Create new cart item with:
+
+        - Product reference
+        - Requested quantity
+        - Current product price (snapshot)
+
+    Add item to cart
+
+5.  **Finalize Transaction**:
+    Recalculate cart total amount
+    Persist updated cart to database
 
 🚨 **Constraint**:
 
@@ -1632,25 +1709,21 @@ async addItem(userId, productId, quantity) {
 **🧪 Test Scenarios**:
 
 1. **Add New Item**:
-   
    - Input: {userId: "user-1", productId: "prod-1", quantity: 2}
    - Precondition: User has empty cart
    - Expected: {cart: {items: [item], totalAmount: 39.98}, item: {quantity: 2}}
 
 2. **Update Existing Item**:
-   
    - Input: {userId: "user-1", productId: "prod-1", quantity: 3}
    - Precondition: Cart already contains prod-1 with quantity 2
    - Expected: {cart: {items: [item], totalAmount: 99.95}, item: {quantity: 5}}
 
 3. **Insufficient Stock**:
-   
    - Input: {userId: "user-1", productId: "prod-1", quantity: 100}
    - Precondition: Product has stock of 10
    - Expected: {error: "Insufficient stock", code: "INSUFFICIENT_STOCK"}
 
 4. **Invalid Quantity**:
-   
    - Input: {userId: "user-1", productId: "prod-1", quantity: 0}
    - Expected: {error: "Quantity must be at least 1", code: "INVALID_QUANTITY"}
 
@@ -1688,7 +1761,7 @@ async addItem(userId, productId, quantity) {
 **Side Effect**:
 
 - CartItem record deleted from database
-- Recalculate totalAmount and updated 
+- Recalculate totalAmount and updated
 - Product.reservedStock decremented
 
 **💡 Implementation Hint**:
@@ -1719,13 +1792,11 @@ async removeItem(userId, itemId) {
 **🧪 Test Scenarios**:
 
 1. **Remove Item**:
-   
    - Precondition: Cart has 2 items
    - Input: {userId: "user-1", itemId: "item-1"}
    - Expected: {cart: {items: [remaining item], totalAmount: <updated>}}
 
 2. **Item Not Found**:
-   
    - Input: {userId: "user-1", itemId: "non-existent"}
    - Expected: {error: "Item not found", code: "ITEM_NOT_FOUND"}
 
@@ -1754,7 +1825,7 @@ async removeItem(userId, itemId) {
 
 ---
 
-```
+````
 ### Example 3: API Endpoint (Backend with Interface)
 
 ```markdown
@@ -1796,7 +1867,7 @@ HTTP API endpoint for creating new posts.
   "content": "string (1-500 characters)",
   "attachments": ["url"] (optional, max 4 images)
 }
-```
+````
 
 **Response Schema (Success - 201)**:
 
@@ -1858,7 +1929,7 @@ HTTP API endpoint for creating new posts.
 2. **Validate Content**:
    Verify content is not empty and within character limit
    IF content invalid → Error: 400 'VALIDATION_ERROR' (field: 'content')
-   
+
    Verify attachments count does not exceed maximum
    IF too many attachments → Error: 400 'VALIDATION_ERROR' (field: 'attachments')
 
@@ -1884,14 +1955,15 @@ HTTP API endpoint for creating new posts.
 
 ```typescript
 // Use Express.js middleware for auth and validation
-router.post('/api/posts', 
+router.post(
+  "/api/posts",
   authenticateToken,
   validateRequestBody(createPostSchema),
   checkRateLimit,
   async (req, res) => {
     const post = await postService.create(req.body, req.user.id);
-    res.status(201).json({post});
-  }
+    res.status(201).json({ post });
+  },
 );
 ```
 
@@ -1916,22 +1988,18 @@ router.post('/api/posts',
 **🧪 Test Scenarios**:
 
 1. **Successful Post Creation**:
-   
    - Input: POST /api/posts, Auth: valid token, Body: {content: "Hello world"}
    - Expected: 201, {post: {id: uuid, content: "Hello world", ...}}
 
 2. **Unauthorized Request**:
-   
    - Input: POST /api/posts, Auth: missing or invalid, Body: {content: "Hello"}
    - Expected: 401, {error: {message: "Unauthorized", code: "UNAUTHORIZED"}}
 
 3. **Content Too Long**:
-   
    - Input: POST /api/posts, Auth: valid, Body: {content: <501 characters>}
    - Expected: 400, {error: {message: "Content must be 1-500 characters", code: "VALIDATION_ERROR", field: "content"}}
 
 4. **Rate Limit Exceeded**:
-   
    - Precondition: User has made 10 posts in last minute
    - Input: POST /api/posts, Auth: valid, Body: {content: "Another post"}
    - Expected: 429, {error: {message: "Rate limit exceeded...", code: "RATE_LIMIT_EXCEEDED"}}
@@ -1962,7 +2030,7 @@ router.post('/api/posts',
 
 ---
 
-```
+````
 ---
 
 ## Best Practices
@@ -1989,7 +2057,7 @@ router.post('/api/posts',
 
 ✅ GOOD:
 **Contract**: Validate form inputs and save user profile data to database
-```
+````
 
 ---
 
@@ -2014,6 +2082,7 @@ router.post('/api/posts',
 
 ✅ GOOD:
 🚨 Constraint:
+
 - Response time MUST be < 200ms (p95)
 - MUST use TLS 1.3 or higher
 - MUST validate all inputs before processing
@@ -2042,12 +2111,14 @@ router.post('/api/posts',
 ```markdown
 ❌ TOO DETAILED (implementation):
 Flow:
+
 1. Create bcrypt instance with cost 12
 2. Call bcrypt.hash(password, salt)
 3. Store result in user.passwordHash field
 
 ✅ GOOD (behavioral):
 Flow:
+
 1. Hash password using bcrypt (cost factor 12)
 2. Store hash in database
 3. Return success confirmation
@@ -2073,10 +2144,12 @@ Flow:
 
 ```markdown
 💡 Implementation Hint:
+
 - Consider using Redis for session storage (fast, scales well)
 - Alternative: Memcached or in-memory store acceptable if performance requirements met
 
 🚨 Constraint:
+
 - Session data MUST persist across server restarts
 - Session tokens MUST expire after 24 hours
 ```
@@ -2108,12 +2181,14 @@ Flow:
 ```markdown
 ❌ BAD:
 ✅ Acceptance Criteria:
+
 - [ ] Code is written correctly
 - [ ] No bugs
 - [ ] Works well
 
 ✅ GOOD:
 ✅ Acceptance Criteria:
+
 - [ ] User can submit form with valid inputs
 - [ ] Invalid email shows error: "Please enter valid email"
 - [ ] Form submission completes in < 500ms
@@ -2140,6 +2215,7 @@ Flow:
 
 ✅ GOOD:
 🧪 Test Scenarios:
+
 1. **Successful Login**:
    - Precondition: User exists with email "test@example.com"
    - Input: {email: "test@example.com", password: "Valid123!"}
@@ -2177,22 +2253,28 @@ Flow:
 
 ```markdown
 ❌ BAD:
+
 ### UserEntity
+
 **Properties**:
+
 - user_id: integer (primary key)
 - email_address: varchar(255)
 - password_bcrypt: varchar(60)
 - created_timestamp: datetime
 
 ✅ GOOD:
+
 ### User
+
 **Identity**: UUID (universally unique identifier)
 **Properties**:
+
 - email: unique authentication identifier
 - displayName: user's chosen public name
 - accountStatus: enum (active, suspended, deleted)
 - registrationDate: timestamp of account creation
-**Relationships**:
+  **Relationships**:
 - Has many Orders (1:N)
 ```
 
@@ -2247,11 +2329,13 @@ Flow:
 ## Changelog
 
 ### v2.1.0 (2026-01-20)
+
 - Added Component: NotificationService
 - Enhanced TaskCard: added priority indicator
 - Clarified constraint on UserService.deleteAccount
 
 ### v2.0.0 (2026-01-10) - BREAKING
+
 - Changed User.role from string to enum
 - Renamed Component: TaskManager → TaskService
 ```
@@ -2277,16 +2361,18 @@ Flow:
 ```markdown
 ❌ BAD (too specific for intent spec):
 📐 Appearance:
+
 - Font: Inter, 14px, weight 500, line-height 1.5, letter-spacing -0.01em
 - Margin: 16px top, 12px right, 8px bottom, 12px left
 - Box shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)
 
 ✅ GOOD (intent-level):
 📐 Appearance:
+
 - Typography: Clear, readable body text
 - Spacing: Comfortable padding and margins
 - Elevation: Subtle shadow for card effect
-💡 Implementation Hint: Consider using Tailwind classes: text-sm font-medium shadow-sm p-4
+  💡 Implementation Hint: Consider using Tailwind classes: text-sm font-medium shadow-sm p-4
 ```
 
 #### Pitfall 3: Unclear Constraint Scope
@@ -2297,6 +2383,7 @@ Flow:
 
 ✅ GOOD (measurable, scoped):
 🚨 Constraint:
+
 - Initial page load MUST complete in < 2 seconds (p95)
 - API response time MUST be < 200ms (p95)
 - UI MUST remain responsive during data loading (show loading state)
@@ -2310,6 +2397,7 @@ Flow:
 
 ✅ GOOD:
 🧪 Test Scenarios:
+
 1. **Login with Valid Credentials**:
    - Input: {email: "valid@test.com", password: "correct"}
    - Expected: Redirect to /dashboard, token stored in auth context
@@ -2325,23 +2413,17 @@ Flow:
 Component: PriceDisplay
 Role: Presentation
 ⚡ calculateDiscount
-  Flow:
-    1. IF user.isPremium THEN discount = 0.20
-    2. ELSE discount = 0.10
-    3. finalPrice = originalPrice * (1 - discount)
-    → Violates Rule 4 (business logic in Presentation)
+Flow: 1. IF user.isPremium THEN discount = 0.20 2. ELSE discount = 0.10 3. finalPrice = originalPrice \* (1 - discount)
+→ Violates Rule 4 (business logic in Presentation)
 
 ✅ GOOD:
 Component: PriceDisplay
 Role: Presentation
 ⚡ displayPrice
-  **Contract**: Render formatted price with discount applied
-  **Input**: {originalPrice: number, finalPrice: number}
-  **Flow**:
-    1. Display originalPrice (strikethrough if discount applied)
-    2. Display finalPrice (prominent)
-    3. Show discount percentage if applicable
-  → Calculation delegated to Backend (PricingService)
+**Contract**: Render formatted price with discount applied
+**Input**: {originalPrice: number, finalPrice: number}
+**Flow**: 1. Display originalPrice (strikethrough if discount applied) 2. Display finalPrice (prominent) 3. Show discount percentage if applicable
+→ Calculation delegated to Backend (PricingService)
 ```
 
 ---
@@ -2393,7 +2475,7 @@ A: ISL is **language-agnostic**. The same specification can generate:
 - Backend: Node.js, Python, Java, Go, Rust
 - Mobile: React Native, Flutter, Swift
 
-The spec describes *behavior*, not *implementation*. Implementation Hints can suggest preferred tech stack.
+The spec describes _behavior_, not _implementation_. Implementation Hints can suggest preferred tech stack.
 
 ---
 
@@ -2407,7 +2489,7 @@ A: Follow the "Goldilocks Principle":
 - **Too much**: Implementation details → inflexible, harder to maintain
 - **Just right**: Clear contracts, measurable constraints, suggested strategies
 
-**Rule of thumb**: Include enough for someone (or an LLM) to implement it correctly on first try, without dictating *how* to implement.
+**Rule of thumb**: Include enough for someone (or an LLM) to implement it correctly on first try, without dictating _how_ to implement.
 
 ---
 
@@ -2433,18 +2515,20 @@ Omit **Flow** when:
 A: Three approaches:
 
 1. **Optional Section**: Mark entire capability as future enhancement
-   
+
    ```markdown
    ⚡ Capabilities
+
    #### exportPDF (OPTIONAL)
+
    **Contract**: Generate PDF report
    → May be omitted in MVP, but if implemented must follow this spec
    ```
 
 2. **Conditional Constraint**: Use SHOULD instead of MUST
-   
+
    ```
-   🚨 Constraint:  
+   🚨 Constraint:
    - MUST validate email format
    - SHOULD send confirmation email (if EmailService available)
    ```
@@ -2468,8 +2552,8 @@ A: Depends on the LLM implementation:
 Component: UserButton
 Role: Presentation
 ⚡ validateUserPermissions
-  Flow: Check database for user.role
-  → Presentation accessing database directly
+Flow: Check database for user.role
+→ Presentation accessing database directly
 
 → Compliant LLM should reject or request clarification
 ```
@@ -2482,11 +2566,13 @@ A: Yes! ISL is designed for extensibility. You can add:
 
 ```markdown
 ### 🔒 Security Considerations (CUSTOM)
+
 - Authentication required: Yes
 - Authorization: Admin role only
 - Data encryption: At rest and in transit
 
 ### 📊 Analytics Tracking (CUSTOM)
+
 - Track event: "user_login"
 - Properties: {method: "email" | "oauth", provider: string}
 ```
@@ -2505,10 +2591,13 @@ A: Canonical Rules are versioned independently from ISL template:
 
 ```markdown
 # ISL Canonical Rules v1.6
+
 (rules defined here)
 
 # ISL Canonical Rules v2.0 (hypothetical future)
+
 ## Breaking Changes from v1.6:
+
 - Rule 4 now requires explicit data flow diagrams for Backend components
 ```
 
@@ -2562,23 +2651,26 @@ A: This indicates either:
 
 **Example:**
 
-```markdown
+````markdown
 ❌ VAGUE CONSTRAINT:
 🚨 Constraint: Must be secure
 
 ✅ SPECIFIC CONSTRAINT:
 🚨 Constraint:
+
 - Passwords MUST be hashed with bcrypt (cost factor ≥ 12)
 - Session tokens MUST be cryptographically random (≥ 256 bits entropy)
 - API keys MUST NOT be logged or exposed in error messages
 
 💡 Implementation Hint:
+
 ```javascript
 // Use crypto.randomBytes for tokens
-const token = crypto.randomBytes(32).toString('hex'); // 256 bits
+const token = crypto.randomBytes(32).toString("hex"); // 256 bits
 ```
+````
 
-```
+````
 ---
 
 **Q: Can ISL specifications be version-controlled?**
@@ -2597,7 +2689,7 @@ A: Absolutely! ISL documents are plain Markdown, perfect for Git:
     auth-service.isl.md
     payment-service.isl.md
   README.md (ISL version, conventions)
-```
+````
 
 **Benefits:**
 
@@ -2680,16 +2772,19 @@ A: Use measurable constraints with percentiles:
 ```markdown
 🚨 Constraint:
 **Performance:**
+
 - Response time MUST be < 200ms (p95)
 - Response time MUST be < 100ms (p50)
 - Throughput MUST support 1000 requests/second
 - Memory usage MUST NOT exceed 512MB (p99)
 
 **Scalability:**
+
 - System MUST handle 10,000 concurrent users
 - Database queries MUST complete in < 50ms (p95)
 
 💡 Implementation Hint:
+
 - Use connection pooling (max 100 connections)
 - Implement query result caching (TTL: 5 minutes)
 - Consider horizontal scaling for > 5000 users
@@ -2706,6 +2801,7 @@ Component: UserGreeting
 Role: Presentation
 
 🚨 Global Constraints:
+
 - Component MUST support i18n (internationalization)
 - All user-facing text MUST be translatable
 - Supported languages: en, es, fr, de, ja
@@ -2715,17 +2811,20 @@ Role: Presentation
 **Contract**: Show personalized greeting in user's language
 
 **Flow**:
+
 1. Get user's preferred language (user.locale)
 2. Load translation string for "greeting"
 3. Interpolate user's name into translated template
 4. Render greeting
 
 💡 Implementation Hint:
+
 - Use react-i18next or similar library
 - Translation keys: "greeting.hello" → "Hello, {{name}}!"
 - Fallback to English if translation missing
 
 🧪 Test Scenarios:
+
 1. **English User**: locale="en" → "Hello, John!"
 2. **Spanish User**: locale="es" → "¡Hola, John!"
 3. **Unsupported Locale**: locale="pt" → fallback to "Hello, John!"
@@ -2742,6 +2841,7 @@ Component: UserTable
 Role: Backend (Data)
 
 ### 📐 Interface
+
 **Table Name**: users
 **Primary Key**: id (UUID)
 
@@ -2755,93 +2855,20 @@ Role: Backend (Data)
 | last_login | TIMESTAMP | NULL |
 
 **Indexes**:
+
 - `idx_users_email` ON email (UNIQUE)
 - `idx_users_created_at` ON created_at
 
 🚨 Constraints:
+
 - Email MUST be unique (enforced at database level)
 - password_hash MUST be bcrypt hash (enforced at application level)
 
 💡 Implementation Hint:
+
 - Use PostgreSQL 14+ (for gen_random_uuid())
 - Consider partitioning by created_at if > 10M rows
 ```
-
----
-
-## Changelog
-
-### v1.4 (2026-01-15) - Current
-
-**Added:**
-
-- Canonical Rules section (Rule 1-5)
-- Signature subsection in Capabilities (input/output types)
-- Rule 6: Error Handling (supplementary)
-- Complete Examples section (3 detailed examples)
-- Best Practices section (10 topics)
-- FAQ section (20+ questions)
-
-**Changed:**
-
-- Reorganized document structure for better navigation
-- Enhanced Notation & Conventions with type notation
-- Expanded Section Reference with detailed guidelines
-- Clarified OPTIONAL semantics in Rule 5
-
-**Improved:**
-
-- Determinism requirements (Rule 3) now more explicit
-- Role separation rules (Rule 4) with concrete examples
-- Test Scenarios examples now include preconditions
-
----
-
-### v1.3 (2026-01-10)
-
-**Added:**
-
-- Input/Output signatures in Capabilities
-- Global sections (Implementation Hints, Constraints, Acceptance, Tests)
-
-**Changed:**
-
-- Renamed "Actions" to "Capabilities / Methods" for clarity
-- Split "Style" into "Appearance / Interface" (role-dependent)
-
----
-
-### v1.2 (2025-12-20)
-
-**Added:**
-
-- Acceptance Criteria subsection
-- Test Scenarios subsection
-- Side Effect and Cleanup fields in capabilities
-
----
-
-### v1.1 (2025-12-01)
-
-**Added:**
-
-- Domain Concepts section
-- Role field (Presentation / Backend)
-- Implementation Hint subsection
-
-**Changed:**
-
-- Formalized emoji semantics (📐 📦 ⚡ 🚨 ✅ 💡 🧪)
-
----
-
-### v1.0 (2025-11-15) - Initial Release
-
-**Initial Features:**
-
-- Basic component structure
-- Capabilities with Contract and Trigger
-- Markdown format with emoji categories
 
 ---
 
@@ -2895,36 +2922,53 @@ ISL is an open specification. Contributions are welcome!
 # ISL Quick Reference
 
 ## Document Structure
+
 # Project: Name
+
 ## Domain Concepts
+
 ### Entity
+
 ## Component: Name
+
 ### Role: Presentation | Backend
+
 ### 📐 Appearance / Interface
+
 ### 📦 Content / Structure
+
 ### ⚡ Capabilities / Methods
+
 #### CapabilityName
+
 ### 💡 Global Implementation Hints
+
 ### 🚨 Global Constraints
+
 ### ✅ Acceptance Criteria
+
 ### 🧪 Test Scenarios
 
 ## Capability Structure
+
 #### CapabilityName
+
 **Signature:**
-  - input: {params}
-  - output: {result} | {error}
-**Contract**: Promise
-**Trigger**: Event
-**Flow**: Steps
-**Side Effect**: Mutations
-**Cleanup**: Finalization
-💡 **Implementation Hint**: Guidance
-🚨 **Constraint**: Rules
-✅ **Acceptance Criteria**: Tests
-🧪 **Test Scenarios**: Cases
+
+- input: {params}
+- output: {result} | {error}
+  **Contract**: Promise
+  **Trigger**: Event
+  **Flow**: Steps
+  **Side Effect**: Mutations
+  **Cleanup**: Finalization
+  💡 **Implementation Hint**: Guidance
+  🚨 **Constraint**: Rules
+  ✅ **Acceptance Criteria**: Tests
+  🧪 **Test Scenarios**: Cases
 
 ## Canonical Rules
+
 1. ⚡🚨✅🧪 = NORMATIVE
 2. Capability > Global > Contract > Hint
 3. Same ISL → Same Code
@@ -2950,11 +2994,13 @@ ISL is an open specification. Contributions are welcome!
 ## Domain Concepts
 
 ### [EntityName]
+
 **Identity**: How uniquely identified
 **Properties**:
+
 - property1: description
 - property2: description
-**Relationships**:
+  **Relationships**:
 - Relationship to Entity (cardinality)
 
 ---
@@ -2982,6 +3028,7 @@ ISL is an open specification. Contributions are welcome!
 #### [CapabilityName]
 
 **Signature:** (OPTIONAL)
+
 - **input**: {param: type}
 - **output**: {result: type} | {error: type}
 
@@ -2990,6 +3037,7 @@ ISL is an open specification. Contributions are welcome!
 **Trigger**: Activation event
 
 **Flow**: (REQUIRED if multi-step)
+
 1. Step 1
 2. Step 2
 
@@ -3002,10 +3050,12 @@ ISL is an open specification. Contributions are welcome!
 **🚨 Constraint**: Rules
 
 **✅ Acceptance Criteria**:
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 
 **🧪 Test Scenarios**:
+
 1. **Scenario**: Input → Expected
 
 ---
@@ -3035,4 +3085,4 @@ ISL is an open specification. Contributions are welcome!
 
 ---
 
-*This document is the official specification for Intent Specification Language (ISL) version 1.6. For questions, contributions, or support, please visit [repository/forum URL].*
+_This document is the official specification for Intent Specification Language (ISL) version 1.6. For questions, contributions, or support, please visit [repository/forum URL]._

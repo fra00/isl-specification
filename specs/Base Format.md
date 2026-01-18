@@ -16,9 +16,8 @@
 
 **Identity**: How uniquely identified
 **Properties**:
-
 - property1: description
-  **Relationships**:
+**Relationships**:
 - Relationship to Entity (cardinality)
 
 ---
@@ -54,9 +53,8 @@
 **Trigger**: Evento di attivazione
 
 **Flow**: (REQUIRED if multi-step)
-
-1. Step 1
-2. Step 2
+  1. Step 1
+  2. Step 2
 
 **Side Effect**: Modifiche allo stato
 
@@ -67,12 +65,10 @@
 **🚨 Constraint**: Regole normative (MUST/MUST NOT)
 
 **✅ Acceptance Criteria**:
-
 - [ ] Criterio 1
 - [ ] Criterio 2
 
 **🧪 Test Scenarios**:
-
 1. **Scenario**: Input -> Expected
 
 ---

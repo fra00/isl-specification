@@ -1,6 +1,10 @@
 # Project: Social Media Platform
 
+Api definition for social media platform
+
 ---
+
+## api end point per social media platoform
 
 ## Domain Concepts
 

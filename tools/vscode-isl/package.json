@@ -1,0 +1,113 @@
+{
+  "name": "isl-support",
+  "displayName": "ISL - Intent Specification Language",
+  "description": "Support for Intent Specification Language v1.6.1 with syntax highlighting, snippets, and validation",
+  "version": "1.0.0",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fra00/isl-specification/"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "keywords": [
+    "isl",
+    "intent",
+    "specification",
+    "markdown",
+    "validator"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "isl",
+        "aliases": [
+          "ISL",
+          "Intent Specification Language"
+        ],
+        "extensions": [
+          ".isl.md"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "isl",
+        "scopeName": "text.isl.markdown",
+        "path": "./syntaxes/isl.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "isl",
+        "path": "./snippets/isl-snippets.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "isl.validate",
+        "title": "ISL: Validate Specification"
+      },
+      {
+        "command": "isl.createComponent",
+        "title": "ISL: Create New Component"
+      },
+      {
+        "command": "isl.createCapability",
+        "title": "ISL: Create New Capability"
+      },
+      {
+        "command": "isl.compile",
+        "title": "ISL: Compile to Prompt"
+      }
+    ],
+    "configuration": {
+      "title": "ISL",
+      "properties": {
+        "isl.validation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time ISL validation"
+        },
+        "isl.validation.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate on file save"
+        },
+        "isl.validation.strictMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Treat warnings as errors"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.19.0"
+  }
+}

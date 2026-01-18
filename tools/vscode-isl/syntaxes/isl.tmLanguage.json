@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ISL",
+  "scopeName": "text.isl.markdown",
+  "patterns": [
+    {
+      "include": "#isl-headings"
+    },
+    {
+      "include": "#isl-emojis"
+    },
+    {
+      "include": "#isl-fields"
+    },
+    {
+      "include": "#isl-keywords"
+    },
+    {
+      "include": "text.html.markdown"
+    }
+  ],
+  "repository": {
+    "isl-headings": {
+      "patterns": [
+        {
+          "match": "^(#)\\s+(Project:)\\s+(.+)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.heading.markdown" },
+            "2": { "name": "keyword.control.isl" },
+            "3": { "name": "entity.name.type.isl" }
+          }
+        },
+        {
+          "match": "^(##)\\s+(Component:)\\s+(.+)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.heading.markdown" },
+            "2": { "name": "keyword.control.isl" },
+            "3": { "name": "entity.name.class.isl" }
+          }
+        },
+        {
+          "match": "^(##)\\s+(Domain Concepts)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.heading.markdown" },
+            "2": { "name": "keyword.control.isl" }
+          }
+        }
+      ]
+    },
+    "isl-emojis": {
+      "patterns": [
+        {
+          "match": "^(###)\\s+([🔍📦⚡💡🚨✅🧪])\\s+(.+)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.heading.markdown" },
+            "2": { "name": "constant.character.emoji.isl" },
+            "3": { "name": "entity.name.section.isl" }
+          }
+        }
+      ]
+    },
+    "isl-fields": {
+      "patterns": [
+        {
+          "match": "^\\*\\*(Signature|Contract|Trigger|Flow|Side Effect|Cleanup|Identity|Properties|Relationships)\\*\\*:",
+          "name": "keyword.other.isl"
+        },
+        {
+          "match": "^- \\*\\*(input|output)\\*\\*:",
+          "name": "variable.parameter.isl"
+        }
+      ]
+    },
+    "isl-keywords": {
+      "patterns": [
+        {
+          "match": "\\b(MUST|MUST NOT|REQUIRED|SHALL|SHALL NOT|SHOULD|SHOULD NOT|RECOMMENDED|MAY|OPTIONAL)\\b",
+          "name": "keyword.control.rfc2119.isl"
+        },
+        {
+          "match": "\\b(Presentation|Backend)\\b",
+          "name": "constant.language.role.isl"
+        },
+        {
+          "match": "\\[(ISL-\\d{3})\\]",
+          "name": "constant.numeric.rule.isl"
+        }
+      ]
+    }
+  }
+}

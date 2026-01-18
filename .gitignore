@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+tools/node_modules/
+isl-lint-shell/node_modules/
+
+# Build Output
+out/
+dist/
+build/
+
+# VS Code Extension Packaging
+*.vsix
+.vscode-test/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System Files
+.DS_Store
+Thumbs.db
+.env

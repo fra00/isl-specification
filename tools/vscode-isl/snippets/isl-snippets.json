@@ -1,0 +1,312 @@
+{
+  "Project Header": {
+    "prefix": "isl-project",
+    "body": [
+      "# Project: ${1:ProjectName}",
+      "",
+      "${2:Short description}",
+      "",
+      "**Version**: ${3:1.0.0}",
+      "**ISL Version**: 1.6.1",
+      "**Created**: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      "",
+      "---",
+      "",
+      "$0"
+    ],
+    "description": "Standard ISL Project Header"
+  },
+  "Base Format": {
+    "prefix": "isl-base",
+    "body": [
+      "# Project: ${1:Nome Progetto}",
+      "",
+      "${2:Breve descrizione del progetto}",
+      "",
+      "**Version**: ${3:1.0.0}",
+      "**ISL Version**: 1.6.1",
+      "**Created**: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      "",
+      "---",
+      "",
+      "## Domain Concepts",
+      "",
+      "> **Reference**: (Optional) Core entities are defined in [`${4:./shared-domain.isl.md}`](${4:./shared-domain.isl.md}).",
+      "",
+      "### ${5:EntityName}",
+      "",
+      "**Identity**: ${6:How uniquely identified}",
+      "**Properties**:",
+      "- ${7:property1}: ${8:description}",
+      "**Relationships**:",
+      "- ${9:Relationship to Entity (cardinality)}",
+      "",
+      "---",
+      "",
+      "## Component: ${10:Nome Componente}",
+      "",
+      "${11:Descrizione sintetica del ruolo del componente}",
+      "",
+      "### Role: ${12|Backend,Presentation|} (REQUIRED)",
+      "",
+      "### 📐 Appearance / Interface (OPTIONAL)",
+      "",
+      "- [Presentation: CSS, colors, layout]",
+      "- [Backend: Routes, schemas, headers]",
+      "",
+      "### 📦 Content / Structure (OPTIONAL)",
+      "",
+      "- [Presentation: DOM structure]",
+      "- [Backend: Dependencies, class members]",
+      "",
+      "---",
+      "",
+      "### ⚡ Capabilities / Methods (OPTIONAL)",
+      "",
+      "#### ${13:Nome Capability} (OPTIONAL)",
+      "",
+      "- **Signature:** (OPTIONAL)",
+      "  - **input**: {${14:param}: ${15:type}}",
+      "  - **output**: {result: ${16:type}} | {error: ${17:type}}",
+      "",
+      "**Contract**: ${18:Cosa promette di fare questa azione}",
+      "",
+      "**Trigger**: ${19:Evento di attivazione}",
+      "",
+      "**Flow**: (REQUIRED if multi-step)",
+      "  1. ${20:Step 1}",
+      "  2. ${21:Step 2}",
+      "",
+      "**Side Effect**: ${22:Modifiche allo stato}",
+      "",
+      "**Cleanup**: ${23:Azioni di finalizzazione}",
+      "",
+      "**💡 Implementation Hint**: ${24:Suggerimenti non normativi}",
+      "",
+      "**🚨 Constraint**: ${25:Regole normative (MUST/MUST NOT)}",
+      "",
+      "**✅ Acceptance Criteria**:",
+      "- [ ] ${26:Criterio 1}",
+      "- [ ] ${27:Criterio 2}",
+      "",
+      "**🧪 Test Scenarios**:",
+      "1. **${28:Scenario}**: ${29:Input} -> ${30:Expected}",
+      "",
+      "---",
+      "",
+      "## 💡 Global Implementation Hints (OPTIONAL)",
+      "",
+      "- ${31:Note architetturali}",
+      "",
+      "## 🚨 Global Constraints (OPTIONAL)",
+      "",
+      "- ${32:Vincoli globali}",
+      "",
+      "## ✅ Acceptance Criteria (OPTIONAL)",
+      "",
+      "- [ ] ${33:Criterio componente 1}",
+      "",
+      "## 🧪 Test Scenarios (OPTIONAL)",
+      "",
+      "1. **Integration Scenario**: ${34:Descrizione}",
+      "",
+      "# ISL Canonical Rules v1.6.1 (Summary)",
+      "",
+      "1. **Interpretation**: ⚡ 🚨 ✅ 🧪 are NORMATIVE.",
+      "2. **Precedence**: Capability > Global > Contract > Hint.",
+      "3. **Determinism**: Same ISL -> Same Code.",
+      "4. **Boundary**: Describe intent, NOT implementation steps.",
+      "5. **Roles**: Presentation ≠ Business Logic.",
+      "6. **Optionality**: OPTIONAL = may omit, not ignore.",
+      "7. **Reference Integrity**: Referenced files MUST be present."
+    ],
+    "description": "Full ISL file template (BaseFormat.md)"
+  },
+  "Domain Concepts": {
+    "prefix": "isl-domain",
+    "body": ["## Domain Concepts"],
+    "description": "Header domain concepts section"
+  },
+  "Domain Reference": {
+    "prefix": "isl-ref",
+    "body": [
+      "> **Reference**: ${1:Core entities} are defined in [`${2:./shared-domain.isl.md}`](${2:./shared-domain.isl.md})."
+    ],
+    "description": "Reference to external ISL domain file"
+  },
+  "Domain entity": {
+    "prefix": "isl-entity",
+    "body": [
+      "### ${1:Name}",
+      "",
+      "**Identity**: ${2:Description}",
+      "**Properties**:",
+      "-${3: Property1}: ${4:description}",
+      "**Relationships**:",
+      "- ${5:Relationship to Entity (cardinality)}",
+      "",
+      "---"
+    ],
+    "description": "entity definition block"
+  },
+  "Component Scaffold": {
+    "prefix": "isl-component",
+    "body": [
+      "## Component: ${1:Name}",
+      "",
+      "${2:Description}",
+      "",
+      "### Role: ${3|Backend,Presentation|}",
+      "",
+      "$0"
+    ],
+    "description": "New Component definition"
+  },
+  "Appearance": {
+    "prefix": "isl-appearance",
+    "body": ["### 🔍 Appearance", ""],
+    "description": "Appearance section for Presentation components"
+  },
+  "Interface": {
+    "prefix": "isl-interface",
+    "body": ["### 🔍 Interface", ""],
+    "description": "Interface section for Backend components"
+  },
+  "Content": {
+    "prefix": "isl-content",
+    "body": ["### 📦 Content"],
+    "description": "Content definition section"
+  },
+  "Structure": {
+    "prefix": "isl-structure",
+    "body": ["### 📦 Structure", "", "", "---"],
+    "description": "Structure definition section"
+  },
+  "Capability": {
+    "prefix": "isl-cap",
+    "body": [
+      "#### ${1:capabilityName}",
+      "",
+      "**Contract**: ${2:What this capability promises to do}",
+      ""
+    ],
+    "description": "Capability block and Contract"
+  },
+  "Methods": {
+    "prefix": "isl-method",
+    "body": [
+      "#### ${1:methodName}",
+      "",
+      "**Contract**: ${2:What this capability promises to do}",
+      ""
+    ],
+    "description": "Method block and Contract"
+  },
+  "Trigger": {
+    "prefix": "isl-trigger",
+    "body": ["**Trigger**:", " ${1:Event that initiates the capability}"],
+    "description": "Trigger for capability or method"
+  },
+  "Flow": {
+    "prefix": "isl-flow",
+    "body": ["**Flow**: (REQUIRED if multi-step)", "1. ${1:First step}"],
+    "description": "Flow for capability or method"
+  },
+  "Side Effects": {
+    "prefix": "isl-sideeffects",
+    "body": ["**Side Effects**: ", "${1:Describe any side effects}"],
+    "description": "Side Effects for capability or method"
+  },
+  "Implementation Hint": {
+    "prefix": "isl-hint",
+    "body": ["**💡 Implementation Hint**:", "Suggerimenti non normativi"],
+    "description": "Non-normative implementation hint"
+  },
+  "Constraint": {
+    "prefix": "isl-constraint",
+    "body": ["**🚨 Constraint**:", "- MUST ${1:requirement}"],
+    "description": "Normative Constraint block"
+  },
+  "Acceptance Criteria": {
+    "prefix": "isl-acceptance",
+    "body": [
+      "**✅ Acceptance Criteria**:",
+      "1. ${1:Criterion 1}",
+      "2. ${2:Criterion 2}"
+    ],
+    "description": "Acceptance criteria block"
+  },
+  "Test Scenarios": {
+    "prefix": "isl-test",
+    "body": [
+      "**🧪 Test Scenarios**:",
+      "1. **${1:Scenario Name}**:",
+      "   - Input: ${2:data}",
+      "   - Expected: ${3:result}"
+    ],
+    "description": "Test scenarios block"
+  },
+  "Global Implementation Hint": {
+    "prefix": "isl-globalhint",
+    "body": [
+      "### 💡 Global Implementation Hint",
+      "",
+      "${1:Non-normative global implementation suggestions}",
+      ""
+    ],
+    "description": "Global non-normative implementation hint"
+  },
+  "Global Constraint": {
+    "prefix": "isl-globalconstraint",
+    "body": [
+      "### 🚨 Global Constraint",
+      "",
+      "- MUST ${1:global requirement}",
+      ""
+    ],
+    "description": "Global normative constraint"
+  },
+  "Acceptance Criteria Summary": {
+    "prefix": "isl-acceptancesummary",
+    "body": ["### ✅ Acceptance Criteria ", "", "- [ ] ${1:Criterion 1}", ""],
+    "description": "Summary of acceptance criteria"
+  },
+  "Test Scenarios Summary": {
+    "prefix": "isl-testsummary",
+    "body": ["### 🧪 Test Scenarios", "", "- [ ] **${1:Scenario Name}**", ""],
+    "description": "Summary of test scenarios"
+  },
+  "Security": {
+    "prefix": "isl-security",
+    "body": [
+      "### 🔒 Security",
+      "",
+      "- ${1:Requirement}: ${2:Description}"
+    ],
+    "description": "Security considerations section"
+  },
+  "Warning": {
+    "prefix": "isl-warning",
+    "body": [
+      "### ⚠️ Warning",
+      "",
+      "${1:Non-normative warning or note}"
+    ],
+    "description": "Warning or note section"
+  },
+  "Canonical Rules": {
+    "prefix": "isl-rules",
+    "body": [
+      "# ISL Canonical Rules v1.6.1 (Summary)",
+      "",
+      "1. **Interpretation**: ⚡ 🚨 ✅ 🧪 are NORMATIVE.",
+      "2. **Precedence**: Capability > Global > Contract > Hint.",
+      "3. **Determinism**: Same ISL -> Same Code.",
+      "4. **Boundary**: Describe intent, NOT implementation steps.",
+      "5. **Roles**: Presentation ≠ Business Logic.",
+      "6. **Optionality**: OPTIONAL = may omit, not ignore.",
+      "7. **Reference Integrity**: Referenced files MUST be present."
+    ],
+    "description": "Insert ISL rules summary"
+  }
+}

@@ -60,8 +60,6 @@ Displays a single task in the kanban board with drag capability.
 
 ### ⚡ Capabilities
 
-#### dragStart
-
 **Signature:**
 
 - **input**: NONE (user-initiated)

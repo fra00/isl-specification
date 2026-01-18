@@ -160,14 +160,12 @@ These rules improve clarity, scanability, and deterministic interpretation.
 
 ISL uses emojis as **visual anchors** to reduce cognitive load and improve navigation.
 
-| Emoji | Meaning                                    |
-| ----- | ------------------------------------------ |
-| ⚡    | Capabilities / behavior                    |
-| 🚨    | Constraints (normative)                    |
-| ✅    | Acceptance Criteria                        |
-| 🧪    | Test Scenarios                             |
-| ⚠️    | Warnings / notes (non-normative)           |
-| 🔒    | Security considerations (custom, optional) |
+| Emoji | Meaning                 |
+| ----- | ----------------------- |
+| ⚡    | Capabilities / behavior |
+| 🚨    | Constraints (normative) |
+| ✅    | Acceptance Criteria     |
+| 🧪    | Test                    |
 
 ---
 
@@ -240,8 +238,10 @@ ISL supports splitting specifications across multiple files to promote reuse (e.
 `> **Reference**: [Description] in [Link]`
 
 **Example:**
+
 ```markdown
 ## Domain Concepts
+
 > **Reference**: Core entities are defined in [`./shared-domain.isl.md`](./shared-domain.isl.md).
 ```
 

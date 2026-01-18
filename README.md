@@ -25,6 +25,7 @@ ISL was created to solve these issues by providing:
 - **Built-in testability** (acceptance criteria and test scenarios)
 - **Deterministic interpretation** for LLM-based code generation
 - **Clear separation of concerns** (presentation vs business logic)
+- **High token efficiency** (concise, structured format reduces context usage)
 
 ISL is **language-agnostic**, **framework-agnostic**, and **LLM-friendly by design**.
 

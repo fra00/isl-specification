@@ -307,6 +307,10 @@ Component: WebSocketService
 - Same error handling (exception types match)
 - Same API contracts (external interfaces identical)
 
+**Semantic Equivalence ≠ Identical Code:**
+
+- Same ISL does NOT imply byte-for-byte identical code text.
+
 **Allowed Variations:**
 
 - Variable names (if not specified in Domain Concepts)

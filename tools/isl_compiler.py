@@ -7,8 +7,8 @@ def resolve_references(file_path, base_dir=None, depth=0):
     Reads an ISL file and recursively resolves external references defined via:
     > **Reference**: ... in [path](path)
     """
-    if depth > 5: # Prevent infinite recursion
-        return f"\n[ERROR: Maximum recursion depth exceeded for {file_path}]\n"
+    if depth > 3: # Prevent infinite recursion (aligned with extension default)
+        return f"\n<!-- Max recursion depth (3) reached for {file_path} -->\n"
 
     if base_dir is None:
         base_dir = os.path.dirname(file_path)
@@ -17,19 +17,20 @@ def resolve_references(file_path, base_dir=None, depth=0):
         return f"\n[ERROR: File not found: {file_path}]\n"
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        # Use utf-8-sig to automatically handle/strip BOM if present
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
             lines = f.readlines()
     except Exception as e:
         return f"\n[ERROR: Could not read file {file_path}: {str(e)}]\n"
 
     resolved_content = []
-    # Regex to capture the path in markdown link: [text](path) inside a Reference block
-    ref_pattern = re.compile(r'^>\s*\*\*Reference\*\*.*\[.*?\]\((.*?)\)')
+    # Regex to capture path in markdown link [...]() OR inline code `...` inside a Reference block
+    ref_pattern = re.compile(r'^>\s*\*\*Reference\*\*.*(?:\[.*?\]\(([^"\s)]+)(?:\s+".*?")?\)|`([^`]+)`)')
 
     for line in lines:
         match = ref_pattern.search(line)
         if match:
-            rel_path = match.group(1)
+            rel_path = match.group(1) or match.group(2)
             # Resolve path relative to the current file
             abs_path = os.path.normpath(os.path.join(base_dir, rel_path))
             

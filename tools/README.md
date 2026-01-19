@@ -1,3 +1,15 @@
+# ISL Tools
+
+This directory contains the official tooling ecosystem for **Intent Specification Language (ISL)**.
+
+## 🛠️ Available Tools
+
+- **[VS Code Extension](./vscode-isl)**: The complete IDE experience with validation, snippets, and compilation.
+- **[ISL Compiler](./isl_compiler.py)**: Standalone Python script to resolve ISL references and generate prompts.
+- **[ISL Lint](#isl-lint)**: CLI validator for CI/CD pipelines (documented below).
+
+---
+
 # ISL Lint
 
 **ISL Lint** is the official Command Line Interface (CLI) validator for **Intent Specification Language (ISL) v1.6.1**.

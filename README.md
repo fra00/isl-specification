@@ -55,6 +55,18 @@ To write **ISL-compliant** documents, you **must read the complete specification
 
 ---
 
+# ISL Tools
+
+This directory contains the official tooling ecosystem for **Intent Specification Language (ISL)**.
+
+## 🛠️ Available Tools
+
+- **[VS Code Extension](./tools/vscode-isl)**: The complete IDE experience with validation, snippets, and compilation.
+- **[ISL Compiler](./tools/isl_compiler.py)**: Standalone Python script to resolve ISL references and generate prompts.
+- **[ISL Lint](./tools/isl-lint-shell)**: CLI validator.
+
+---
+
 ## What ISL Is (and Is Not)
 
 ### ISL IS:

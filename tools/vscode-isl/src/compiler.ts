@@ -8,11 +8,12 @@ export class ISLCompiler {
    */
   public static resolveReferences(
     filePath: string,
+    maxDepth: number = 3,
     baseDir?: string,
     depth: number = 0,
   ): string {
-    if (depth > 5) {
-      return `\n[ERROR: Maximum recursion depth exceeded for ${filePath}]\n`;
+    if (depth > maxDepth) {
+      return `\n<!-- Max recursion depth (${maxDepth}) reached for ${filePath} -->\n`;
     }
 
     if (!baseDir) {
@@ -38,12 +39,13 @@ export class ISLCompiler {
     const lines = content.split(/\r?\n/);
     const resolvedContent: string[] = [];
     // Regex per catturare il path nel link markdown: text dentro un blocco Reference
-    const refPattern = /^>\s*\*\*Reference\*\*.*\[.*?\]\((.*?)\)/;
+    const refPattern =
+      /^>\s*\*\*Reference\*\*.*(?:\[.*?\]\(([^"\s)]+)(?:\s+".*?")?\)|`([^`]+)`)/;
 
     for (const line of lines) {
       const match = line.match(refPattern);
       if (match) {
-        const relPath = match[1];
+        const relPath = match[1] || match[2];
         // Risolve il path relativo al file corrente
         const absPath = path.resolve(baseDir, relPath);
 
@@ -53,6 +55,7 @@ export class ISLCompiler {
         // Risoluzione ricorsiva
         const externalContent = this.resolveReferences(
           absPath,
+          maxDepth,
           path.dirname(absPath),
           depth + 1,
         );

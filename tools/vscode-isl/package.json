@@ -24,7 +24,8 @@
     "validator"
   ],
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:isl"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -89,6 +90,11 @@
           "type": "boolean",
           "default": false,
           "description": "Treat warnings as errors"
+        },
+        "isl.compiler.maxRecursionDepth": {
+          "type": "number",
+          "default": 3,
+          "description": "Maximum recursion depth for resolving ISL references during compilation."
         }
       }
     }

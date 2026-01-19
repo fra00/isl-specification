@@ -48,7 +48,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       try {
-        const compiledContent = ISLCompiler.resolveReferences(editor.document.uri.fsPath);
+        const config = vscode.workspace.getConfiguration("isl");
+        const maxDepth = config.get<number>("compiler.maxRecursionDepth", 3);
+        const compiledContent = ISLCompiler.resolveReferences(
+          editor.document.uri.fsPath,
+          maxDepth,
+        );
         const newDoc = await vscode.workspace.openTextDocument({
           content: compiledContent,
           language: "markdown",

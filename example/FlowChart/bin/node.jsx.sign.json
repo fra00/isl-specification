@@ -13,12 +13,12 @@
         "label",
         "isSelected",
         "onSelect",
+        "onDeselect",
         "onDrag",
         "onResize",
         "onLabelChange",
         "onDelete",
-        "onAnchorDragStart",
-        "onDeselect"
+        "onAnchorDragStart"
       ]
     }
   ]

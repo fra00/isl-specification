@@ -1,37 +1,37 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 
 /**
  * @typedef {object} Node
- * @property {string} id - Unique identifier for the node.
- * @property {string} label - Display label for the node.
+ * @property {string} id - The unique identifier of the node.
+ * @property {string} label - The display label of the node.
+ * // Add other node properties if known, e.g., x, y, type
  */
 
 /**
  * @typedef {object} Connection
- * @property {string} sourceNodeId - The ID of the source node for the connection.
- * @property {string} targetNodeId - The ID of the target node for the connection.
- * @property {string} [label] - Optional label for the connection.
+ * @property {string} sourceNodeId - The ID of the source node.
+ * @property {string} targetNodeId - The ID of the target node.
+ * @property {string} [label] - The label for the connection (optional).
+ * // Add other connection properties if known
  */
 
 /**
  * @typedef {object} FlowData
- * @property {Node[]} nodes - An array of node objects in the flowchart.
- * @property {Connection[]} connections - An array of connection objects in the flowchart.
+ * @property {Node[]} nodes - An array of node objects.
+ * @property {Connection[]} connections - An array of connection objects.
  */
 
 /**
  * @typedef {object} TOOLBarMainProps
- * @property {() => SVGElement | null} getSvgElement - A function that, when called, returns the main SVG DOM element of the flowchart.
- * @property {FlowData} flowData - The current data structure representing the flowchart, including nodes and connections.
- * @property {(data: FlowData) => void} onLoadJson - A callback function invoked when a JSON file is successfully loaded, passing the parsed FlowData.
+ * @property {() => SVGElement | null} getSvgElement - A function that returns the SVG DOM element to be exported as an image.
+ * @property {FlowData} flowData - The data representing the flow chart, including nodes and connections.
+ * @property {(data: FlowData) => void} onLoadJson - Callback function triggered when a JSON file is loaded, providing the parsed data.
  */
 
 /**
- * TOOLBarMain is a presentation component that provides a toolbar with actions
- * to interact with a flowchart, such as exporting to different formats (JPG, JSON, Mermaid)
- * and loading flowchart data from a JSON file.
- *
- * @param {TOOLBarMainProps} props - The properties for the TOOLBarMain component.
+ * TOOLBarMain component provides a toolbar with actions to perform with a generated graph.
+ * @param {TOOLBarMainProps} props
+ * @returns {JSX.Element}
  */
 export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
   const fileInputRef = useRef(null);
@@ -39,89 +39,94 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
   const [mermaidCode, setMermaidCode] = useState('');
 
   /**
-   * Capability: esporta jpg
-   * Exports the SVG content of the flowchart into a JPG image.
-   * The SVG is first drawn onto a canvas to rasterize it before converting to JPG.
+   * Helper function to trigger a file download.
+   * @param {string} filename - The name of the file to download.
+   * @param {string} contentOrUrl - The content of the file (for Blob) or a data URL.
+   * @param {string} mimeType - The MIME type of the file.
+   * @param {boolean} isDataUrl - True if contentOrUrl is a data URL, false if it's raw content.
    */
-  const handleExportJpg = useCallback(() => {
-    const svgElement = getSvgElement();
-    if (!svgElement) {
-      console.warn('No SVG element found to export.');
-      alert('No flowchart to export. Please create one first.');
-      return;
+  const downloadFile = useCallback((filename, contentOrUrl, mimeType, isDataUrl = false) => {
+    const a = document.createElement('a');
+    a.download = filename;
+
+    if (isDataUrl) {
+      a.href = contentOrUrl;
+    } else {
+      const blob = new Blob([contentOrUrl], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      // Clean up the object URL after download is initiated
+      a.onclick = () => {
+        requestAnimationFrame(() => URL.revokeObjectURL(url));
+      };
     }
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    // Get SVG dimensions
-    const svgBBox = svgElement.getBoundingClientRect();
-    canvas.width = svgBBox.width;
-    canvas.height = svgBBox.height;
-
-    // Serialize SVG to string and create an image from it
-    const svgString = new XMLSerializer().serializeToString(svgElement);
-    const img = new Image();
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url); // Clean up the object URL
-
-      // Convert canvas to JPG data URL
-      const jpgUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
-
-      // Trigger download
-      const link = document.createElement('a');
-      link.href = jpgUrl;
-      link.download = 'flowchart.jpg';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
-
-    img.onerror = (error) => {
-      console.error('Error loading SVG into image for JPG export:', error);
-      alert('Failed to export JPG. Check console for details.');
-      URL.revokeObjectURL(url);
-    };
-
-    img.src = url;
-  }, [getSvgElement]);
-
-  /**
-   * Capability: esporta json
-   * Exports the current flowchart data in JSON format.
-   */
-  const handleExportJson = useCallback(() => {
-    if (!flowData || !flowData.nodes || flowData.nodes.length === 0) {
-      alert('No flowchart data to export.');
-      return;
-    }
-    const jsonString = JSON.stringify(flowData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'flowchart.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [flowData]);
-
-  /**
-   * Capability: load json
-   * Triggers the hidden file input to allow the user to select a JSON file.
-   */
-  const handleLoadJsonClick = useCallback(() => {
-    fileInputRef.current?.click();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }, []);
 
   /**
-   * Handles the file selection from the hidden input, reads the JSON content,
-   * and calls the `onLoadJson` prop with the parsed data.
+   * Exports the SVG content into a JPG image.
+   * Pre-condition: SVG rasterized.
+   */
+  const esportaJpg = useCallback(() => {
+    const svgElement = getSvgElement();
+    if (!svgElement) {
+      console.error('SVG element not found for export.');
+      return;
+    }
+
+    // Clone the SVG to avoid modifying the original and ensure correct styling
+    const clonedSvgElement = svgElement.cloneNode(true);
+
+    // Serialize SVG to string
+    const svgString = new XMLSerializer().serializeToString(clonedSvgElement);
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Set canvas dimensions to match SVG's rendered size
+      const svgRect = svgElement.getBoundingClientRect();
+      canvas.width = svgRect.width;
+      canvas.height = svgRect.height;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Fill background with white for JPG, as SVG can have transparent background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const jpgUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
+        downloadFile('flowchart.jpg', jpgUrl, 'image/jpeg', true); // Pass true for isDataUrl
+      } else {
+        console.error('Could not get 2D context for canvas.');
+      }
+      URL.revokeObjectURL(svgUrl); // Clean up the SVG object URL
+    };
+    img.onerror = (error) => {
+      console.error('Error loading SVG for JPG export:', error);
+      URL.revokeObjectURL(svgUrl); // Clean up on error too
+    };
+    img.src = svgUrl;
+  }, [getSvgElement, downloadFile]);
+
+  /**
+   * Exports the flow in JSON format.
+   */
+  const esportaJson = useCallback(() => {
+    if (!flowData) {
+      console.error('No flow data available for JSON export.');
+      return;
+    }
+    const jsonString = JSON.stringify(flowData, null, 2);
+    downloadFile('flowchart.json', jsonString, 'application/json', false); // Pass false for isDataUrl
+  }, [flowData, downloadFile]);
+
+  /**
+   * Handles the file selection for loading JSON.
    * @param {React.ChangeEvent<HTMLInputElement>} event - The change event from the file input.
    */
   const handleFileChange = useCallback((event) => {
@@ -149,102 +154,113 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
   }, [onLoadJson]);
 
   /**
-   * Capability: esporta mermaid
-   * Generates Mermaid syntax from the flowchart data and displays it in a modal.
-   * Includes connection labels if present.
+   * Triggers the hidden file input to open the file dialog.
    */
-  const handleExportMermaid = useCallback(() => {
-    if (!flowData || !flowData.nodes || flowData.nodes.length === 0) {
-      alert('No flowchart data to export.');
+  const loadJson = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  /**
+   * Exports the flow in Mermaid format and displays it in a modal.
+   */
+  const esportaMermaid = useCallback(() => {
+    if (!flowData || !flowData.nodes || !flowData.connections) {
+      console.error('No flow data available for Mermaid export.');
       return;
     }
 
-    let mermaid = 'graph TD\n'; // Assuming a Top-Down Directed Graph
+    const { nodes, connections } = flowData;
+    const mermaidLines = ['graph TD'];
 
-    // Add node definitions
-    flowData.nodes.forEach(node => {
-      mermaid += `  ${node.id}[${node.label}]\n`;
+    // Map node IDs to their labels for easy lookup
+    const nodeMap = new Map(nodes.map(node => [node.id, node.label]));
+
+    // Add nodes
+    nodes.forEach(node => {
+      mermaidLines.push(`  ${node.id}[${node.label}]`);
     });
 
     // Add connections
-    flowData.connections.forEach(conn => {
-      const labelPart = conn.label ? `|${conn.label}|` : '';
-      mermaid += `  ${conn.sourceNodeId} --${labelPart}--> ${conn.targetNodeId}\n`;
+    connections.forEach(conn => {
+      let connectionString = `  ${conn.sourceNodeId}`;
+      if (conn.label) {
+        connectionString += ` -->|${conn.label}| `;
+      } else {
+        connectionString += ` --> `;
+      }
+      connectionString += `${conn.targetNodeId}`;
+      mermaidLines.push(connectionString);
     });
 
-    setMermaidCode(mermaid);
+    setMermaidCode(mermaidLines.join('\n'));
     setShowMermaidModal(true);
   }, [flowData]);
 
   /**
-   * Copies the generated Mermaid code to the clipboard.
+   * Copies the mermaid code to the clipboard.
    */
-  const handleCopyToClipboard = useCallback(() => {
+  const copyMermaidToClipboard = useCallback(() => {
     navigator.clipboard.writeText(mermaidCode).then(() => {
       alert('Mermaid code copied to clipboard!');
     }).catch(err => {
-      console.error('Failed to copy Mermaid code: ', err);
-      alert('Failed to copy Mermaid code.');
+      console.error('Failed to copy mermaid code: ', err);
+      alert('Failed to copy mermaid code.');
     });
   }, [mermaidCode]);
 
   return (
     <div className="flex space-x-2 p-2 bg-gray-100 border-b border-gray-300">
       <button
-        onClick={handleExportJpg}
+        onClick={esportaJpg}
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
       >
         Export JPG
       </button>
       <button
-        onClick={handleExportJson}
+        onClick={esportaJson}
         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
       >
         Export JSON
       </button>
       <button
-        onClick={handleLoadJsonClick}
+        onClick={loadJson}
         className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
       >
         Load JSON
       </button>
-      {/* Hidden file input for loading JSON */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept=".json"
         className="hidden"
-        aria-label="Load JSON file"
       />
       <button
-        onClick={handleExportMermaid}
+        onClick={esportaMermaid}
         className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
       >
         Export Mermaid
       </button>
 
-      {/* Mermaid Code Modal */}
       {showMermaidModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">Mermaid Code</h3>
+            <h3 className="text-lg font-bold mb-4">Mermaid Code</h3>
             <textarea
-              className="w-full h-64 p-2 border border-gray-300 rounded-md font-mono text-sm resize-none bg-gray-50 text-gray-700"
+              className="w-full h-64 p-2 border border-gray-300 rounded font-mono text-sm resize-none"
               readOnly
               value={mermaidCode}
-              aria-label="Mermaid code output"
             ></textarea>
             <div className="mt-4 flex justify-end space-x-2">
               <button
-                onClick={handleCopyToClipboard}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                onClick={copyMermaidToClipboard}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
                 Copy to Clipboard
               </button>
               <button
                 onClick={() => setShowMermaidModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
               >
                 Close
               </button>

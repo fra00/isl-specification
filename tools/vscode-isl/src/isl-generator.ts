@@ -191,6 +191,15 @@ IMPORTANTE: I percorsi che iniziano con \`./\` indicano la root di output. Se si
 6. Prediligi la destrutturazione per gli oggetti provenienti da hooks (es. const { func } = useHook()) invece di assegnare l'intero oggetto, per evitare problemi di dipendenze nei useEffect.
 
 
+**CHECKLIST DI VALIDAZIONE (Auto-Correzione):**
+Prima di fornire l'output finale, DEVI eseguire un controllo di auto-correzione. Poniti queste domande:
+1. Il codice generato è completo e sintatticamente corretto? (es. nessuna parentesi mancante, definizioni di funzione corrette).
+2. Ci sono errori di riferimento? (es. usare una funzione prima che sia definita).
+3. Il codice è malformato o duplicato?
+4. Il codice segue rigorosamente tutte le regole sopra elencate?
+Se la risposta a una di queste domande è NO, DEVI correggere il codice prima di produrre l'output.
+
+
 **Output Richiesto:**
 **Output Format (MULTIPART RESPONSE):**
 You MUST output the response in two distinct blocks using specific tags.

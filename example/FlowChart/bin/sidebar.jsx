@@ -1,89 +1,78 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 
 /**
- * @typedef {object} ToolDefinition
- * @property {string} type - The unique identifier for the tool (e.g., 'Action', 'Condition').
- * @property {string} label - The display name for the tool.
+ * @typedef {Object} Tool
+ * @property {string} type - The unique type identifier for the tool (e.g., "Action", "Condition").
+ * @property {string} label - The display label for the tool.
+ * @property {string} shapeClass - TailwindCSS classes for the visual shape of the tool.
+ * @property {string} textClass - TailwindCSS classes for the text inside the tool's shape.
  */
 
 /**
- * Component: Sidebar
- * Contains the list of TOOLs that can be inserted into the SVG.
- * From here, components are dragged to the Main Content.
+ * Sidebar component displays a vertical list of draggable tools that can be inserted into a flow chart.
+ * Each tool can be dragged to initiate a drag-and-drop operation.
  *
- * Role: Presentation
- *
- * Appearance:
- * - Background Color: #f3f4f6 (light gray)
- * - Layout: Width 30%, Height 100%.
- * - Position: Relative (part of the flex layout), NOT fixed.
- * - TOOLs height 80px, width: 100%.
+ * @returns {JSX.Element} The Sidebar component.
  */
 export default function Sidebar() {
   /**
-   * Defines the available tools that can be dragged from the sidebar.
-   * @type {ToolDefinition[]}
-   */
-  const tools = [
-    { type: 'Action', label: 'Action' },       // rectangular shape
-    { type: 'Condition', label: 'Condition' }, // equilateral rhombus shape
-  ];
-
-  /**
-   * Capability: Start Drag
-   * Contract: Starts dragging a TOOL towards the Main Content.
+   * Handles the `dragstart` event for a tool.
+   * It sets the data to be transferred during the drag operation and specifies the allowed effect.
    *
    * @param {React.DragEvent<HTMLDivElement>} event - The native drag event.
-   * @param {string} toolType - The type identifier of the tool being dragged.
+   * @param {string} toolType - The type of the tool being dragged (e.g., "Action", "Condition").
    * @returns {void}
-   *
-   * Trigger: DragStart on a list element.
-   *
-   * Flow:
-   * 1. Sets data in `dataTransfer` with key `application/json` and value as a JSON string
-   *    representing an object `{ type: toolType }`.
-   * 2. Sets `effectAllowed` to 'copy' to indicate that the drag operation will result in a copy.
-   *
-   * Constraints:
-   * - The list element MUST have `draggable="true"`.
-   * - The dataTransfer key MUST be `application/json`.
-   * - The dataTransfer value MUST be a JSON stringify of an object `{ type: toolType }`.
    */
-  const handleDragStart = useCallback((event, toolType) => {
-    // Set data for the drag operation
+  const handleDragStart = (event, toolType) => {
+    // Set the data to be transferred. The key is 'application/json' and the value is a JSON string
+    // representing an object with the tool's type.
     event.dataTransfer.setData('application/json', JSON.stringify({ type: toolType }));
-    // Specify the allowed drag effect
+    // Specify that the allowed drag effect is 'copy'.
     event.dataTransfer.effectAllowed = 'copy';
-  }, []); // No dependencies, so this function is stable across renders
+  };
+
+  /**
+   * Defines the list of available tools with their properties.
+   * @type {Tool[]}
+   */
+  const tools = [
+    {
+      type: 'Action',
+      label: 'Action',
+      // Rectangular shape for Action tool
+      shapeClass: 'bg-blue-500 rounded-lg',
+      textClass: 'text-white',
+    },
+    {
+      type: 'Condition',
+      label: 'Condition',
+      // For rhombus shape: an outer square rotated 45 degrees, with inner text rotated -45 degrees
+      // to appear upright. The draggable container itself remains unrotated.
+      shapeClass: 'bg-green-500 transform rotate-45 flex items-center justify-center',
+      textClass: 'text-white transform -rotate-45',
+    },
+  ];
 
   return (
-    <div className="w-1/3 h-full bg-gray-100 p-4 flex flex-col gap-4 overflow-y-auto relative">
-      <h2 className="text-lg font-semibold text-gray-800 mb-2">Tools</h2>
-      {tools.map((tool) => (
-        <div
-          key={tool.type}
-          draggable="true"
-          onDragStart={(event) => handleDragStart(event, tool.type)}
-          className="w-full h-20 p-2 bg-white border border-gray-300 shadow-sm cursor-grab flex items-center justify-center text-center text-gray-800 hover:bg-gray-50 transition-colors duration-200"
-          aria-label={`Drag to add a ${tool.label} component`}
-        >
-          {tool.type === 'Action' && (
-            // Rectangular shape for Action
-            <div className="w-full h-full bg-blue-500 flex items-center justify-center text-white rounded-md">
-              {tool.label}
+    <div className="w-[30%] h-full bg-gray-100 p-4 flex flex-col items-center space-y-4 shadow-lg relative">
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">Tools</h2>
+      <div className="w-full flex flex-col items-center space-y-4">
+        {tools.map((tool) => (
+          <div
+            key={tool.type}
+            className="w-full h-20 bg-white shadow-md rounded-lg flex items-center justify-center cursor-grab p-2"
+            draggable="true" // Enable dragging for this element
+            onDragStart={(event) => handleDragStart(event, tool.type)}
+          >
+            {/* Visual representation of the tool's shape and label */}
+            <div className={`w-16 h-16 flex items-center justify-center ${tool.shapeClass}`}>
+              <span className={`text-sm font-medium ${tool.textClass}`}>
+                {tool.label}
+              </span>
             </div>
-          )}
-          {tool.type === 'Condition' && (
-            // Equilateral rhombus shape for Condition (a rotated square)
-            // The inner square is sized to fit its diagonal within the parent's height (80px - 2*padding = 64px)
-            // A 45x45px square has a diagonal of approx 63.6px, fitting well within 64px.
-            <div className="relative w-[45px] h-[45px] bg-green-500 rotate-45 flex items-center justify-center">
-              {/* Counter-rotate the text to make it readable */}
-              <span className="absolute -rotate-45 text-white text-sm font-medium">{tool.label}</span>
-            </div>
-          )}
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

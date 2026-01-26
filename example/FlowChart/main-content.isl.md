@@ -87,11 +87,12 @@ Main body (main content) is where **TOOLs** are dragged.
 
 **Contract**: Deselects a specific item or clears selection.
 **Signature**:
-  - **Input**:
-    - id: string (optional)
-  - **Output**: NONE (State update)
-**Trigger**: `onDeselect` event from a Node.
-**Side Effects**:
+
+- **Input**:
+  - id: string (optional)
+- **Output**: NONE (State update)
+  **Trigger**: `onDeselect` event from a Node.
+  **Side Effects**:
 - Clears the selection.
 
 #### Create Connection Flow
@@ -203,12 +204,13 @@ Main body (main content) is where **TOOLs** are dragged.
 
 **Contract**: Updates Connection label.
 **Signature**:
-  - **Input**:
-    - id: string
-    - label: string
-  - **Output**: NONE (State update)
-**Trigger**: `onLabelChange` event from a Connection.
-**Side Effects**:
+
+- **Input**:
+  - id: string
+  - label: string
+- **Output**: NONE (State update)
+  **Trigger**: `onLabelChange` event from a Connection.
+  **Side Effects**:
 
 - Updates label of the Connection.
 
@@ -216,11 +218,12 @@ Main body (main content) is where **TOOLs** are dragged.
 
 **Contract**: Updates the flow with data loaded from JSON.
 **Signature**:
-  - **Input**:
-    - data: { nodes: Node[], connections: Connection[] }
-  - **Output**: NONE (State update)
-**Trigger**: `onLoadJson` event from TOOLBarMain.
-**Side Effects**:
+
+- **Input**:
+  - data: { nodes: Node[], connections: Connection[] }
+- **Output**: NONE (State update)
+  **Trigger**: `onLoadJson` event from TOOLBarMain.
+  **Side Effects**:
 - Replaces current nodes and connections with loaded data.
 
 #### Panning
@@ -249,7 +252,11 @@ Main body (main content) is where **TOOLs** are dragged.
 - add "Reset View" button to return to zoom 1.0 and offset 0,0.
   **🚨 Constraint**:
 - zoom MUST be centered on the current mouse cursor position (Zoom-to-Cursor).
-- **Math Formula**: Use `CoordinateUtils.toWorldCoordinates` to get the mouse position in world space *before* zoom. Then calculate new pan based on that stable world point.
+- **Math Formula (Strict)**:
+  1. Get the SVG container's bounding rectangle: `rect = svgRef.current.getBoundingClientRect()`.
+  2. Calculate the mouse position relative to the SVG container: `screenX = event.clientX - rect.left`, `screenY = event.clientY - rect.top`.
+  3. Get the mouse position in world space using the utility: `worldPoint = CoordinateUtils.toWorldCoordinates(event.clientX, event.clientY)`.
+  4. Calculate the new pan: `newPanX = screenX - worldPoint.x * newZoom`, `newPanY = screenY - worldPoint.y * newZoom`.
 - **Transform Target**: Apply the transform to the **Root Group** `<g>`, NEVER to the `<svg>` element.
 
 #### start group selection

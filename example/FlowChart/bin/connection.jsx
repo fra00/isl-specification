@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 /**
  * @typedef {object} ConnectionProps
- * @property {string} id - The unique identifier for the connection.
+ * @property {string} id - The unique ID of the connection.
  * @property {number} startX - The X coordinate of the start point.
  * @property {number} startY - The Y coordinate of the start point.
  * @property {number} endX - The X coordinate of the end point.
@@ -15,9 +15,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
  */
 
 /**
- * Connection component draws a single curved line between two coordinates with an optional label and delete button.
- * It handles selection, label editing, and deletion.
+ * Connection component draws a single curved line (Bezier) between two coordinates.
+ * It supports selection, label editing via double-click, and deletion.
+ *
  * @param {ConnectionProps} props
+ * @returns {JSX.Element}
  */
 export default function Connection({
   id,
@@ -33,209 +35,181 @@ export default function Connection({
 }) {
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [currentLabel, setCurrentLabel] = useState(label || '');
-  const clickTimer = useRef(null);
-  const clicks = useRef(0);
+  const clickTimerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Calculate path data for a curved line (Bezier)
-  // Using control points for a "Z" or "S" shape common in flowcharts
-  // This creates a curve that goes horizontally from start, then vertically, then horizontally to end.
-  const cp1x = startX + (endX - startX) / 2;
-  const cp1y = startY;
-  const cp2x = startX + (endX - startX) / 2;
-  const cp2y = endY;
-  const pathData = `M ${startX},${startY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${endY}`;
+  // Sync currentLabel with prop label when it changes externally
+  useEffect(() => {
+    setCurrentLabel(label || '');
+  }, [label]);
 
-  // Calculate midpoint for label and delete button positioning
+  // Calculate midpoint for label and delete button, and control points for Bezier curve
   const midX = (startX + endX) / 2;
   const midY = (startY + endY) / 2;
 
+  // Simple quadratic Bezier control point calculation for a smooth arc
+  // Offset perpendicular to the line segment to create curvature
+  const controlX = midX + (startY - endY) * 0.3;
+  const controlY = midY + (endX - startX) * 0.3;
+
+  const pathData = `M ${startX},${startY} Q ${controlX},${controlY} ${endX},${endY}`;
+
   /**
-   * Handles single and double clicks on the connection line.
-   * Distinguishes between single click (select) and double click (edit label) using a timer.
-   * @param {React.MouseEvent<SVGPathElement | HTMLDivElement>} e - The mouse event.
+   * Handles click events on the connection path, distinguishing between single and double clicks.
+   * A single click triggers selection, a double click triggers label editing.
+   * @param {React.MouseEvent<SVGPathElement>} e - The mouse event.
    */
-  const handleClick = useCallback((e) => {
-    e.stopPropagation(); // Prevent canvas selection/deselection
-
-    clicks.current++;
-
-    if (clickTimer.current) {
-      clearTimeout(clickTimer.current);
-    }
-
-    clickTimer.current = setTimeout(() => {
-      if (clicks.current === 1) {
-        console.log(`Connection ${id} selected.`);
+  const handlePathClick = useCallback((e) => {
+    console.log(`Connection ${id} clicked.`);
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      setIsEditingLabel(true);
+      console.log(`Connection ${id} double-clicked. Entering edit mode.`);
+    } else {
+      clickTimerRef.current = setTimeout(() => {
         onSelect(id, 'connection');
-      } else if (clicks.current === 2) {
-        console.log(`Connection ${id} double clicked for editing.`);
-        setIsEditingLabel(true);
-        // Focus input after render cycle to ensure it's mounted
-        setTimeout(() => inputRef.current?.focus(), 0);
-      }
-      clicks.current = 0;
-      clickTimer.current = null;
-    }, 250); // 250ms threshold for double click
+        console.log(`Connection ${id} selected.`);
+        clickTimerRef.current = null;
+      }, 250); // 250ms threshold for double click
+    }
   }, [id, onSelect]);
 
   /**
-   * Handles changes to the label input field.
-   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
+   * Handles double click specifically on the label text to enter edit mode.
+   * @param {React.MouseEvent<SVGTextElement>} e - The mouse event.
    */
-  const handleLabelChange = useCallback((e) => {
-    setCurrentLabel(e.target.value);
-  }, []);
+  const handleLabelDoubleClick = useCallback((e) => {
+    e.stopPropagation(); // Prevent path click from also firing
+    setIsEditingLabel(true);
+    console.log(`Connection ${id} label double-clicked. Entering edit mode.`);
+  }, [id]);
 
   /**
    * Handles blur event on the label input field.
-   * Emits onLabelChange and exits edit mode.
-   * @param {React.FocusEvent<HTMLInputElement>} e - The focus event.
+   * Emits onLabelChange if editing was active and exits edit mode.
    */
-  const handleLabelBlur = useCallback(() => {
-    console.log(`Connection ${id} label changed to: ${currentLabel}`);
-    onLabelChange(id, currentLabel);
-    setIsEditingLabel(false);
-  }, [id, currentLabel, onLabelChange]);
+  const handleInputBlur = useCallback(() => {
+    if (isEditingLabel) {
+      onLabelChange(id, currentLabel);
+      setIsEditingLabel(false);
+      console.log(`Connection ${id} label changed to: "${currentLabel}" and exited edit mode.`);
+    }
+  }, [id, currentLabel, isEditingLabel, onLabelChange]);
 
   /**
    * Handles key down events on the label input field.
-   * Exits edit mode on Enter (and saves) or Esc (and cancels).
+   * 'Enter' key confirms changes, 'Escape' key cancels editing.
    * @param {React.KeyboardEvent<HTMLInputElement>} e - The keyboard event.
    */
-  const handleLabelKeyDown = useCallback((e) => {
-    e.stopPropagation(); // Prevent canvas keydown events
-
+  const handleInputKeyDown = useCallback((e) => {
+    e.stopPropagation(); // Stop propagation to prevent canvas events
     if (e.key === 'Enter') {
-      inputRef.current?.blur(); // Trigger blur to save and exit
+      e.currentTarget.blur(); // Trigger blur to save changes
     } else if (e.key === 'Escape') {
       setCurrentLabel(label || ''); // Revert to original label
       setIsEditingLabel(false);
+      console.log(`Connection ${id} label editing cancelled.`);
     }
-  }, [label]);
+  }, [id, label]);
 
   /**
-   * Handles click on the delete button.
+   * Handles click event on the delete button.
    * Emits onDelete event.
-   * @param {React.MouseEvent<HTMLButtonElement>} e - The mouse event.
+   * @param {React.MouseEvent<SVGGElement>} e - The mouse event.
    */
   const handleDeleteClick = useCallback((e) => {
-    e.stopPropagation(); // CRITICAL: Prevent parent SVG from catching the event and deselecting
-    console.log(`Delete button clicked for connection ${id}.`);
+    e.stopPropagation(); // CRITICAL: Prevent parent canvas from deselecting
     onDelete(id, 'connection');
+    console.log(`Connection ${id} delete requested.`);
   }, [id, onDelete]);
 
-  // Effect to handle 'Delete' key press for selected connection
+  // Effect to focus the input field when editing starts
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    if (isEditingLabel && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select(); // Select all text for easy editing
+    }
+  }, [isEditingLabel]);
+
+  // Effect to listen for 'Delete' key press when the connection is selected
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
       if (isSelected && e.key === 'Delete') {
-        e.preventDefault(); // Prevent default browser behavior (e.g., backspace navigation)
-        console.log(`Delete key pressed for connection ${id}.`);
+        console.log(`Connection ${id} selected, Delete key pressed.`);
         onDelete(id, 'connection');
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [id, isSelected, onDelete]);
-
-  // Update currentLabel if the prop changes while not editing
-  useEffect(() => {
-    if (!isEditingLabel) {
-      setCurrentLabel(label || '');
-    }
-  }, [label, isEditingLabel]);
-
-  // Dimensions for label/input foreignObject
-  const labelWidth = isEditingLabel ? 150 : Math.max(50, (label?.length || 0) * 8 + 10);
-  const labelHeight = isEditingLabel ? 30 : 20;
+  }, [isSelected, id, onDelete]);
 
   return (
     <g>
-      {/* Arrowhead definition - placed here for self-containment, ideally in parent SVG defs */}
+      {/* SVG Definitions for Arrowhead Marker */}
       <defs>
-        <marker
-          id="arrowhead"
-          markerWidth="10"
-          markerHeight="7"
-          refX="9"
-          refY="3.5"
-          orient="auto"
-          markerUnits="strokeWidth"
-        >
-          <polygon points="0 0, 10 3.5, 0 7" className="fill-current text-gray-700" />
+        <marker id={`arrowhead-${id}`} markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" className={isSelected ? "fill-blue-500" : "fill-gray-400"} />
         </marker>
       </defs>
 
-      {/* Invisible path for easier clicking/selection */}
+      {/* Connection Path */}
       <path
         d={pathData}
-        fill="none"
-        stroke="transparent"
-        strokeWidth="15" // Make it wider for easier interaction
-        className="cursor-pointer"
-        onClick={handleClick}
-      />
-
-      {/* Visible connection line */}
-      <path
-        d={pathData}
-        fill="none"
-        stroke={isSelected ? 'rgb(59, 130, 246)' : 'rgb(75, 85, 99)'} // Tailwind blue-500 vs gray-700
-        strokeWidth={isSelected ? '3' : '2'}
-        className="transition-all duration-100 ease-in-out cursor-pointer"
-        markerEnd="url(#arrowhead)"
-        onClick={handleClick}
+        className={`
+          ${isSelected ? 'stroke-blue-500 stroke-[4px]' : 'stroke-gray-400 stroke-[2px]'}
+          fill-none cursor-pointer transition-all duration-200 ease-in-out
+        `}
+        markerEnd={`url(#arrowhead-${id})`}
+        onClick={handlePathClick}
       />
 
       {/* Label or Input Field */}
-      {(label || isEditingLabel) && (
-        <foreignObject
-          x={midX - labelWidth / 2}
-          y={midY - labelHeight / 2}
-          width={labelWidth}
-          height={labelHeight}
-          className="overflow-visible"
-        >
-          {isEditingLabel ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={currentLabel}
-              onChange={handleLabelChange}
-              onBlur={handleLabelBlur}
-              onKeyDown={handleLabelKeyDown}
-              className="w-full h-full p-1 text-center text-sm border border-blue-500 rounded shadow-md focus:outline-none"
-            />
-          ) : (
-            <div
-              className="flex items-center justify-center w-full h-full text-center text-sm font-medium text-gray-800 bg-white px-2 py-1 rounded shadow-sm cursor-pointer"
-              onClick={handleClick} // Allow clicking on label to select/edit
-            >
-              {label}
-            </div>
-          )}
+      {isEditingLabel ? (
+        <foreignObject x={midX - 75} y={midY - 15} width="150" height="30">
+          <input
+            ref={inputRef}
+            type="text"
+            value={currentLabel}
+            onChange={(e) => setCurrentLabel(e.target.value)}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            className="w-full h-full text-center bg-white border border-blue-500 rounded shadow-md text-sm"
+            style={{ outline: 'none' }} // Remove default focus outline
+            onMouseDown={(e) => e.stopPropagation()} // Prevent canvas drag/select when interacting with input
+          />
         </foreignObject>
+      ) : (
+        label && (
+          <text
+            x={midX}
+            y={midY - 10}
+            textAnchor="middle"
+            className={`
+              ${isSelected ? 'fill-blue-700' : 'fill-gray-600'}
+              text-xs cursor-pointer select-none
+            `}
+            onDoubleClick={handleLabelDoubleClick}
+          >
+            {label}
+          </text>
+        )
       )}
 
-      {/* Delete Button (visible when selected) */}
+      {/* Delete Button (visible only when selected) */}
       {isSelected && (
-        <foreignObject
-          x={midX + 10} // Offset to the right of midpoint
-          y={midY - 12} // Centered vertically (24/2 = 12)
-          width="24"
-          height="24"
-          className="overflow-visible"
+        <g
+          transform={`translate(${midX + 10}, ${midY - 25})`}
+          className="cursor-pointer"
+          onMouseDown={handleDeleteClick} // CRITICAL: Stop propagation to prevent canvas deselect
         >
-          <button
-            className="flex items-center justify-center w-full h-full bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-            onMouseDown={handleDeleteClick} // CRITICAL: Use onMouseDown with stopPropagation
-            aria-label="Delete connection"
-          >
+          <circle r="10" className="fill-red-500 hover:fill-red-600" />
+          <text x="0" y="4" textAnchor="middle" className="fill-white text-xs font-bold pointer-events-none">
             X
-          </button>
-        </foreignObject>
+          </text>
+        </g>
       )}
     </g>
   );

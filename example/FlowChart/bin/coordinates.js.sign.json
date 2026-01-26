@@ -3,7 +3,7 @@
     {
       "type": "named",
       "name": "useCoordinateUtils",
-      "typeDef": "function"
+      "typeDef": "{ toWorldCoordinates: (svgElement: SVGSVGElement, worldGroupElement: SVGGraphicsElement, clientX: number, clientY: number) => { x: number, y: number } }"
     }
   ]
 }

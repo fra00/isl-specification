@@ -19,8 +19,10 @@ from here components are dragged **start drag**
 - **Layout**: Width 30%, Height 100%.
 - **Position**: Relative (part of the flex layout), NOT fixed.
 
-- **TOOLs** height 80px, width: 100%,
+- **TOOLs** height 80px, width: 100%
 
+**🚨 Constraint**:
+- the **TOOLs** Button MUST NOT be rotate
 ### ⚡ Capabilities
 
 #### Start Drag

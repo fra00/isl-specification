@@ -2,23 +2,8 @@
   "exports": [
     {
       "type": "named",
-      "name": "FLOW_CHART_NODE_TYPES",
-      "typeDef": "Object.<string, FlowChartNodeType>"
-    },
-    {
-      "type": "named",
-      "name": "FlowChartNodeType",
-      "typeDef": "typedef"
-    },
-    {
-      "type": "named",
-      "name": "Nodo",
-      "typeDef": "typedef"
-    },
-    {
-      "type": "named",
-      "name": "Connessione",
-      "typeDef": "typedef"
+      "name": "NODE_TYPES",
+      "typeDef": "object"
     }
   ]
 }

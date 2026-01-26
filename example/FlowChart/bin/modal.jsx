@@ -2,63 +2,60 @@ import React, { useState, useCallback, useImperativeHandle, forwardRef } from 'r
 
 /**
  * @typedef {object} ModalRef
- * @property {(content: React.ReactNode) => void} open - Displays modal window with specified content.
- * @property {() => void} close - Hides modal window.
+ * @property {(content: React.ReactNode) => void} open - Displays the modal window with specified content.
+ * @property {() => void} close - Hides the modal window.
  */
 
 /**
  * Modal window to display information.
+ * This component is controlled imperatively via a ref, exposing `open` and `close` methods.
  *
- * This component is a presentation-only modal that exposes imperative `open` and `close` methods
- * via a ref. It manages its own visibility and content state.
- *
- * @param {object} props - The component does not accept any direct props.
- * @param {React.Ref<ModalRef>} ref - A ref object to access the `open` and `close` methods imperatively.
- * @returns {JSX.Element|null} The modal UI when open, or null when closed.
+ * @param {object} props - The Modal component does not consume any direct props.
+ * @param {React.Ref<ModalRef>} ref - A ref object used to expose the `open` and `close` methods.
  */
 const Modal = forwardRef((props, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [content, setContent] = useState(null);
+  const [modalContent, setModalContent] = useState(null);
 
   /**
-   * Displays the modal window with the provided content.
-   * This function is exposed via the component's ref.
-   * @param {React.ReactNode} newContent - The React node to be displayed inside the modal.
+   * Displays the modal window with the specified content.
+   * @param {React.ReactNode} content - The ReactNode to be rendered inside the modal.
    */
-  const open = useCallback((newContent) => {
-    setContent(newContent);
+  const openModal = useCallback((content) => {
+    setModalContent(content);
     setIsOpen(true);
   }, []);
 
   /**
-   * Hides the modal window.
-   * This function is exposed via the component's ref.
+   * Hides the modal window and clears its content.
    */
-  const close = useCallback(() => {
+  const closeModal = useCallback(() => {
     setIsOpen(false);
-    setContent(null); // Clear content when closing
+    setModalContent(null); // Clear content when closing
   }, []);
 
-  // Expose the open and close capabilities via the ref
+  // Expose open and close methods via the ref
   useImperativeHandle(ref, () => ({
-    open,
-    close,
-  }), [open, close]); // Dependencies for useImperativeHandle
+    open: openModal,
+    close: closeModal,
+  }));
 
   if (!isOpen) {
-    return null;
+    return null; // Don't render anything if the modal is not open
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={close} // Close modal when clicking on the overlay
-    >
-      <div
-        className="bg-white rounded-lg shadow-lg p-6 w-[400px] max-w-[90vw] max-h-[90vh] overflow-auto relative"
-        onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from closing it
-      >
-        {content}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-[400px] relative">
+        {/* Close button */}
+        <button
+          onClick={closeModal}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
+          aria-label="Close modal"
+        >
+          &times;
+        </button>
+        {modalContent}
       </div>
     </div>
   );

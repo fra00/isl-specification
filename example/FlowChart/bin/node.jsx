@@ -1,32 +1,33 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 /**
+ * @typedef {'action' | 'condition'} NodeType
+ */
+
+/**
  * @typedef {Object} NodeProps
  * @property {string} id - The unique identifier for the node.
- * @property {number} x - The x-coordinate of the node's position.
- * @property {number} y - The y-coordinate of the node's position.
+ * @property {number} x - The x-coordinate of the node's top-left corner.
+ * @property {number} y - The y-coordinate of the node's top-left corner.
  * @property {number} width - The width of the node.
  * @property {number} height - The height of the node.
- * @property {'action' | 'condition'} type - The type of the node, determines its shape.
- * @property {string} label - The text label displayed on the node.
- * @property {boolean} isSelected - Indicates if the node is currently selected.
+ * @property {NodeType} type - The type of the node ('action' or 'condition').
+ * @property {string} label - The text label for the node.
+ * @property {boolean} isSelected - True if the node is currently selected.
  * @property {(id: string, type: 'node') => void} onSelect - Callback when the node is selected.
+ * @property {(id: string) => void} onDeselect - Callback when the node is deselected (e.g., during label edit).
  * @property {(id: string, newX: number, newY: number) => void} onDrag - Callback when the node is dragged.
  * @property {(id: string, newWidth: number, newHeight: number) => void} onResize - Callback when the node is resized.
  * @property {(id: string, newLabel: string) => void} onLabelChange - Callback when the node's label changes.
  * @property {(id: string, type: 'node') => void} onDelete - Callback when the node is requested to be deleted.
- * @property {(id: string, anchorType: 'top' | 'bottom' | 'left' | 'right', x: number, y: number) => void} onAnchorDragStart - Callback when a connection drag starts from an anchor.
- * @property {(id: string) => void} onDeselect - Callback to deselect the node, typically used during label editing.
+ * @property {(nodeId: string, anchorType: string, x: number, y: number) => void} onAnchorDragStart - Callback when a connection drag starts from an anchor.
  */
 
 /**
  * Node component for a flow chart.
- * Renders a node with a label, interaction handles, and supports drag, resize, label editing, and deletion.
- *
  * @param {NodeProps} props
- * @returns {JSX.Element} An SVG group element representing the node.
  */
-function Node({
+export default function Node({
   id,
   x,
   y,
@@ -36,185 +37,174 @@ function Node({
   label,
   isSelected,
   onSelect,
+  onDeselect,
   onDrag,
   onResize,
   onLabelChange,
   onDelete,
   onAnchorDragStart,
-  onDeselect,
 }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [currentLabel, setCurrentLabel] = useState(label);
-  const [showInteractionHandles, setShowInteractionHandles] = useState(false);
-  const inputRef = useRef(null);
-  const clickTimerRef = useRef(null);
-  const nodeRef = useRef(null);
+  const labelInputRef = useRef(null);
+  const dragStartCoords = useRef({ x: 0, y: 0 });
+  const nodeStartCoords = useRef({ x: 0, y: 0 });
+  const resizeStartCoords = useRef({ x: 0, y: 0 });
+  const nodeStartDimensions = useRef({ width: 0, height: 0 });
 
+  // Update currentLabel if prop.label changes while not editing
   useEffect(() => {
-    setCurrentLabel(label); // Update currentLabel if prop changes
-  }, [label]);
+    if (!isEditingLabel) {
+      setCurrentLabel(label);
+    }
+  }, [label, isEditingLabel]);
 
-  // --- Capability: MouseOver Node ---
+  // Focus the input when editing starts
+  useEffect(() => {
+    if (isEditingLabel && labelInputRef.current) {
+      console.log('Node: Applying focus to textbox.');
+      labelInputRef.current.focus();
+      labelInputRef.current.select(); // Select all text
+    }
+  }, [isEditingLabel]);
+
   const handleMouseEnter = useCallback(() => {
-    setShowInteractionHandles(true);
+    setIsHovered(true);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    setShowInteractionHandles(false);
+    setIsHovered(false);
   }, []);
 
-  // --- Capability: Select Node & edit label Node (double click detection) ---
   const handleNodeClick = useCallback((e) => {
-    e.stopPropagation(); // Prevent global click handlers from firing
-    if (clickTimerRef.current) {
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      // Double click detected, activate label edit mode
-      console.log('Node: Double click detected, activating label edit.');
-      setIsEditingLabel(true);
-      onDeselect(id); // Emit onDeselect to clear selection
-      // Wait a small interval to ensure input is rendered and focusable
-      setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select(); // Select text for easier editing
-      }, 50);
-    } else {
-      // First click, set timer for double click detection
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null;
-        if (!isEditingLabel) { // Only select if not already editing
-          console.log('Node: Single click detected, selecting node.');
-          onSelect(id, 'node');
-        }
-      }, 300); // 300ms for double click detection
+    e.stopPropagation(); // Prevent event from bubbling up to the SVG canvas
+    if (!isEditingLabel) {
+      onSelect(id, 'node');
     }
-  }, [id, onSelect, onDeselect, isEditingLabel]);
+  }, [id, isEditingLabel, onSelect]);
 
-  // --- Capability: move ---
-  const handleDragStart = useCallback((e) => {
-    if (isEditingLabel) return; // Do not drag if editing label
-    e.stopPropagation(); // Prevent other handlers from firing
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const initialNodeX = x;
-    const initialNodeY = y;
-
-    const onMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = moveEvent.clientY - startY;
-      onDrag(id, initialNodeX + deltaX, initialNodeY + deltaY);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      if (nodeRef.current) {
-        nodeRef.current.style.cursor = isSelected ? 'grab' : 'default'; // Restore cursor
+  const handleNodeDoubleClick = useCallback((e) => {
+    e.stopPropagation();
+    console.log('Node: Double click detected, entering label edit mode.');
+    setIsEditingLabel(true);
+    onDeselect(id); // Emit onDeselect to clear selection
+    // Small interval to avoid conflicts and ensure foreignObject is rendered
+    // before attempting to focus.
+    setTimeout(() => {
+      if (labelInputRef.current) {
+        labelInputRef.current.focus();
+        labelInputRef.current.select();
       }
+    }, 50); // A small delay
+  }, [id, onDeselect]);
+
+  const saveLabelEdit = useCallback(() => {
+    console.log('Node: Label edit saved.');
+    onLabelChange(id, currentLabel);
+    setIsEditingLabel(false);
+  }, [id, currentLabel, onLabelChange]);
+
+  const cancelLabelEdit = useCallback(() => {
+    console.log('Node: Label edit cancelled.');
+    setCurrentLabel(label); // Restore original label
+    setIsEditingLabel(false);
+  }, [label]);
+
+  const handleInputKeyDown = useCallback((e) => {
+    // CRITICAL: Stop propagation of keydown events (specifically Delete and Backspace)
+    // on the input element to prevent triggering global deletion handlers.
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.stopPropagation();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.stopPropagation();
+      saveLabelEdit();
+    } else if (e.key === 'Escape') {
+      e.stopPropagation();
+      cancelLabelEdit();
+    }
+  }, [saveLabelEdit, cancelLabelEdit]);
+
+  const handleInputBlur = useCallback(() => {
+    console.log('Node: On blur, saving label edit.');
+    saveLabelEdit();
+  }, [saveLabelEdit]);
+
+  const handleLabelInputChange = useCallback((e) => {
+    setCurrentLabel(e.target.value);
+  }, []);
+
+  const handleDragMouseDown = useCallback((e) => {
+    e.stopPropagation(); // Prevent node selection on drag start
+    if (isEditingLabel) return;
+
+    onSelect(id, 'node'); // Select node if not already selected
+    dragStartCoords.current = { x: e.clientX, y: e.clientY };
+    nodeStartCoords.current = { x, y };
+
+    const handleMouseMove = (moveEvent) => {
+      const dx = moveEvent.clientX - dragStartCoords.current.x;
+      const dy = moveEvent.clientY - dragStartCoords.current.y;
+      onDrag(id, nodeStartCoords.current.x + dx, nodeStartCoords.current.y + dy);
     };
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    if (nodeRef.current) {
-      nodeRef.current.style.cursor = 'grabbing'; // Change cursor while dragging
-    }
-  }, [id, x, y, onDrag, isEditingLabel, isSelected]);
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
 
-  // --- Capability: resize ---
-  const handleResizeStart = useCallback((e) => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [id, x, y, isEditingLabel, onDrag, onSelect]);
+
+  const handleResizeMouseDown = useCallback((e) => {
     e.stopPropagation(); // Prevent node drag from starting
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const initialWidth = width;
-    const initialHeight = height;
+    resizeStartCoords.current = { x: e.clientX, y: e.clientY };
+    nodeStartDimensions.current = { width, height };
 
-    const onMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = moveEvent.clientY - startY;
-      const newWidth = Math.max(50, initialWidth + deltaX); // Min width 50
-      const newHeight = Math.max(30, initialHeight + deltaY); // Min height 30
+    const handleMouseMove = (moveEvent) => {
+      const dx = moveEvent.clientX - resizeStartCoords.current.x;
+      const dy = moveEvent.clientY - resizeStartCoords.current.y;
+      const newWidth = Math.max(20, nodeStartDimensions.current.width + dx); // Min width 20
+      const newHeight = Math.max(20, nodeStartDimensions.current.height + dy); // Min height 20
       onResize(id, newWidth, newHeight);
     };
 
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   }, [id, width, height, onResize]);
 
-  // --- Capability: Start Connection Drag ---
-  const handleAnchorDragStart = useCallback((e, anchorType) => {
-    e.stopPropagation(); // Prevent node drag
+  const handleDeleteClick = useCallback((e) => {
+    // CRITICAL: The delete button MUST handle onMouseDown and call e.stopPropagation()
+    // to prevent the Node's drag logic from starting.
+    e.stopPropagation();
+    onDelete(id, 'node');
+  }, [id, onDelete]);
+
+  const handleAnchorMouseDown = useCallback((anchorType, e) => {
+    e.stopPropagation(); // Prevent node drag/selection
     const anchorX = x + (anchorType === 'left' ? 0 : anchorType === 'right' ? width : width / 2);
     const anchorY = y + (anchorType === 'top' ? 0 : anchorType === 'bottom' ? height : height / 2);
     onAnchorDragStart(id, anchorType, anchorX, anchorY);
   }, [id, x, y, width, height, onAnchorDragStart]);
 
-  // --- Capability: edit label Node (input handlers) ---
-  const handleLabelInputChange = useCallback((e) => {
-    setCurrentLabel(e.target.value);
-  }, []);
-
-  const handleLabelInputKeyDown = useCallback((e) => {
-    // CRITICAL: Stop propagation of keydown events
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      e.stopPropagation();
-      console.log(`Node: Stopped propagation for key: ${e.key}`);
-      return;
-    }
-
-    if (e.key === 'Enter') {
-      console.log('Node: Enter pressed, saving label.');
-      onLabelChange(id, currentLabel);
-      setIsEditingLabel(false);
-    } else if (e.key === 'Escape') {
-      console.log('Node: Escape pressed, canceling label edit.');
-      setCurrentLabel(label); // Restore original label
-      setIsEditingLabel(false);
-    }
-    e.stopPropagation(); // Stop propagation for all keydown events in the input
-  }, [id, currentLabel, label, onLabelChange]);
-
-  const handleLabelInputBlur = useCallback(() => {
-    if (isEditingLabel) {
-      console.log('Node: Input blurred, saving label.');
-      onLabelChange(id, currentLabel);
-      setIsEditingLabel(false);
-    }
-  }, [id, currentLabel, isEditingLabel, onLabelChange]);
-
-  // --- Capability: delete ---
-  const handleDeleteClick = useCallback((e) => {
-    e.stopPropagation(); // CRITICAL: Prevent node drag from starting
-    console.log('Node: Delete button clicked.');
-    onDelete(id, 'node');
-  }, [id, onDelete]);
-
-  // Handle global 'Del' key press for deletion
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (isSelected && (e.key === 'Delete' || e.key === 'Backspace')) {
-        console.log('Node: Delete key pressed for selected node.');
-        onDelete(id, 'node');
-        e.preventDefault(); // Prevent browser back/forward or other default actions
-      }
-    };
-
-    if (isSelected) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [id, isSelected, onDelete]);
-
-  // Calculate shape specific attributes
+  // Determine shape based on type
   let shapeElement;
-  const strokeColor = isSelected ? '#3b82f6' : '#94a3b8'; // Blue for selected, gray for unselected
-  const strokeWidth = isSelected ? 2 : 1;
+  const commonShapeProps = {
+    fill: '#e0e7ff',
+    stroke: isSelected ? '#3b82f6' : '#94a3b8', // Blue for selected, gray for unselected
+    strokeWidth: isSelected ? 2 : 1,
+    onMouseDown: handleDragMouseDown,
+    onDoubleClick: handleNodeDoubleClick,
+    onClick: handleNodeClick,
+  };
 
   if (type.toLowerCase() === 'action') {
     shapeElement = (
@@ -223,11 +213,9 @@ function Node({
         y="0"
         width={width}
         height={height}
-        rx="8" // Rounded corners for action nodes
-        ry="8"
-        fill="#e0e7ff"
-        stroke={strokeColor}
-        strokeWidth={strokeWidth}
+        rx="5" // Rounded corners for action nodes
+        ry="5"
+        {...commonShapeProps}
       />
     );
   } else if (type.toLowerCase() === 'condition') {
@@ -236,9 +224,7 @@ function Node({
     shapeElement = (
       <polygon
         points={points}
-        fill="#e0e7ff"
-        stroke={strokeColor}
-        strokeWidth={strokeWidth}
+        {...commonShapeProps}
       />
     );
   } else {
@@ -249,26 +235,25 @@ function Node({
         y="0"
         width={width}
         height={height}
-        rx="8"
-        ry="8"
-        fill="#e0e7ff"
-        stroke={strokeColor}
-        strokeWidth={strokeWidth}
+        rx="5"
+        ry="5"
+        {...commonShapeProps}
       />
     );
   }
 
-  const showControls = isSelected || showInteractionHandles;
+  const showHandles = isHovered || isSelected;
+
+  // Connection handle dimensions
+  const handleSize = 10;
+  const halfHandleSize = handleSize / 2;
 
   return (
     <g
-      ref={nodeRef}
-      transform={`translate(${x},${y})`}
+      transform={`translate(${x}, ${y})`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onClick={handleNodeClick}
-      onMouseDown={handleDragStart} // Node drag handler
-      style={{ cursor: isSelected ? 'grab' : 'default' }}
+      style={{ cursor: isSelected ? 'grabbing' : 'grab' }} // Cursor for the whole group
     >
       {/* Main Shape */}
       {shapeElement}
@@ -276,28 +261,36 @@ function Node({
       {/* Label */}
       {isEditingLabel ? (
         <foreignObject x="0" y="0" width={width} height={height}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={currentLabel}
-            onChange={handleLabelInputChange}
-            onKeyDown={handleLabelInputKeyDown}
-            onBlur={handleLabelInputBlur}
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
             style={{
               width: '100%',
               height: '100%',
-              border: '1px solid #3b82f6',
-              borderRadius: '4px',
-              padding: '0 8px',
-              boxSizing: 'border-box',
-              textAlign: 'center',
-              backgroundColor: '#ffffff',
-              color: '#1f2937',
-              fontSize: '14px',
-              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-            className="focus:ring-2 focus:ring-blue-500" // Tailwind for focus style
-          />
+          >
+            <input
+              ref={labelInputRef}
+              type="text"
+              value={currentLabel}
+              onChange={handleLabelInputChange}
+              onKeyDown={handleInputKeyDown}
+              onBlur={handleInputBlur}
+              style={{
+                width: 'calc(100% - 10px)', // Small padding
+                height: 'calc(100% - 10px)',
+                border: '1px solid #3b82f6',
+                borderRadius: '3px',
+                textAlign: 'center',
+                fontSize: '14px',
+                background: '#fff',
+                boxSizing: 'border-box',
+                outline: 'none',
+              }}
+            />
+          </div>
         </foreignObject>
       ) : (
         <text
@@ -305,101 +298,96 @@ function Node({
           y={height / 2}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#1f2937" // Dark gray text
-          style={{ userSelect: 'none', pointerEvents: 'none' }} // Prevent text selection/drag
+          fill="#333"
+          fontSize="14"
+          pointerEvents="none" // Allow mouse events to pass through to the shape
         >
           {label}
         </text>
       )}
 
-      {/* Interaction Handles (Connection Handles, Resize Handle, Delete Button) */}
-      {showControls && (
+      {/* Connection Handles (Z-index: Node > Connection Handles) */}
+      {showHandles && !isEditingLabel && (
         <>
-          {/* Connection Handles (Z-index: Node > Connection Handles) */}
-          {/* Top Anchor */}
-          <circle
-            cx={width / 2}
-            cy={0}
-            r="6"
-            fill="#3b82f6" // Blue
-            stroke="#ffffff"
-            strokeWidth="1"
-            cursor="crosshair"
-            onMouseDown={(e) => handleAnchorDragStart(e, 'top')}
-          />
-          {/* Bottom Anchor */}
-          <circle
-            cx={width / 2}
-            cy={height}
-            r="6"
-            fill="#3b82f6"
-            stroke="#ffffff"
-            strokeWidth="1"
-            cursor="crosshair"
-            onMouseDown={(e) => handleAnchorDragStart(e, 'bottom')}
-          />
-          {/* Left Anchor */}
-          <circle
-            cx={0}
-            cy={height / 2}
-            r="6"
-            fill="#3b82f6"
-            stroke="#ffffff"
-            strokeWidth="1"
-            cursor="crosshair"
-            onMouseDown={(e) => handleAnchorDragStart(e, 'left')}
-          />
-          {/* Right Anchor */}
-          <circle
-            cx={width}
-            cy={height / 2}
-            r="6"
-            fill="#3b82f6"
-            stroke="#ffffff"
-            strokeWidth="1"
-            cursor="crosshair"
-            onMouseDown={(e) => handleAnchorDragStart(e, 'right')}
-          />
-
-          {/* Resize Handle (Z-index: Connection Handles > resize handle) */}
+          {/* Top Handle */}
           <rect
-            x={width - 10}
-            y={height - 10}
-            width="10"
-            height="10"
-            fill="#3b82f6" // Blue
-            stroke="#ffffff"
+            x={width / 2 - halfHandleSize}
+            y={-halfHandleSize}
+            width={handleSize}
+            height={handleSize}
+            fill="#3b82f6"
+            stroke="#fff"
             strokeWidth="1"
-            cursor="nwse-resize"
-            onMouseDown={handleResizeStart}
+            cursor="crosshair"
+            onMouseDown={(e) => handleAnchorMouseDown('top', e)}
           />
-
-          {/* Delete Icon Button (Z-index: resize handle > Delete Icon Button) */}
-          <circle
-            cx={width}
-            cy={0}
-            r="10"
-            fill="#ef4444" // Red
-            stroke="#ffffff"
+          {/* Bottom Handle */}
+          <rect
+            x={width / 2 - halfHandleSize}
+            y={height - halfHandleSize}
+            width={handleSize}
+            height={handleSize}
+            fill="#3b82f6"
+            stroke="#fff"
             strokeWidth="1"
-            cursor="pointer"
-            onMouseDown={handleDeleteClick} // CRITICAL: Stop propagation here
+            cursor="crosshair"
+            onMouseDown={(e) => handleAnchorMouseDown('bottom', e)}
           />
-          <text
-            x={width}
-            y={0}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#ffffff"
-            fontSize="12"
-            style={{ pointerEvents: 'none' }} // Ensure click goes to circle
-          >
-            X
-          </text>
+          {/* Left Handle */}
+          <rect
+            x={-halfHandleSize}
+            y={height / 2 - halfHandleSize}
+            width={handleSize}
+            height={handleSize}
+            fill="#3b82f6"
+            stroke="#fff"
+            strokeWidth="1"
+            cursor="crosshair"
+            onMouseDown={(e) => handleAnchorMouseDown('left', e)}
+          />
+          {/* Right Handle */}
+          <rect
+            x={width - halfHandleSize}
+            y={height / 2 - halfHandleSize}
+            width={handleSize}
+            height={handleSize}
+            fill="#3b82f6"
+            stroke="#fff"
+            strokeWidth="1"
+            cursor="crosshair"
+            onMouseDown={(e) => handleAnchorMouseDown('right', e)}
+          />
         </>
+      )}
+
+      {/* Resize Handle (Z-index: Connection Handles > Resize Handle) */}
+      {showHandles && !isEditingLabel && (
+        <rect
+          x={width - halfHandleSize}
+          y={height - halfHandleSize}
+          width={handleSize}
+          height={handleSize}
+          fill="#ef4444" // Red for resize
+          stroke="#fff"
+          strokeWidth="1"
+          cursor="nwse-resize"
+          onMouseDown={handleResizeMouseDown}
+        />
+      )}
+
+      {/* Delete Icon Button (Z-index: Resize Handle > Delete Icon Button) */}
+      {isSelected && !isEditingLabel && (
+        <g
+          transform={`translate(${width - 20}, -10)`} // Position top-right
+          cursor="pointer"
+          onClick={handleDeleteClick}
+          onMouseDown={handleDeleteClick} // CRITICAL: Stop propagation on mousedown
+        >
+          <circle cx="10" cy="10" r="10" fill="#ef4444" /> {/* Red background circle */}
+          <line x1="5" y1="5" x2="15" y2="15" stroke="#fff" strokeWidth="2" />
+          <line x1="15" y1="5" x2="5" y2="15" stroke="#fff" strokeWidth="2" />
+        </g>
       )}
     </g>
   );
 }
-
-export default Node;

@@ -1,0 +1,140 @@
+import * as fs from "fs";
+import * as path from "path";
+import { LLMClient, LLMProvider } from "./llm-client";
+
+interface ManifestEntry {
+  sourceFile: string;
+  buildFile: string;
+  implementationPath: string | null;
+  hash: string;
+}
+
+export class ISLTestGenerator {
+  private manifestPath: string;
+  private outputBaseDir: string;
+  private llmClient: LLMClient;
+
+  constructor(
+    manifestPath: string,
+    outputBaseDir: string,
+    llmProvider: LLMProvider = "openai",
+  ) {
+    this.manifestPath = path.resolve(manifestPath);
+    this.outputBaseDir = path.resolve(outputBaseDir);
+    this.llmClient = new LLMClient(llmProvider);
+  }
+
+  public async run() {
+    if (!fs.existsSync(this.manifestPath)) {
+      console.error(`❌ Manifest not found: ${this.manifestPath}`);
+      return;
+    }
+
+    const manifest: ManifestEntry[] = JSON.parse(
+      fs.readFileSync(this.manifestPath, "utf-8"),
+    );
+
+    console.log(`🚀 Starting Test Generation`);
+    console.log(`📂 Manifest: ${this.manifestPath}`);
+    console.log(`🎯 Output Base: ${this.outputBaseDir}`);
+
+    const testDir = path.join(this.outputBaseDir, "test");
+    if (!fs.existsSync(testDir)) {
+      fs.mkdirSync(testDir, { recursive: true });
+    }
+
+    for (const entry of manifest) {
+      if (!entry.implementationPath) continue;
+
+      await this.generateTestForComponent(entry);
+    }
+
+    console.log(`✅ Test Generation Completed.`);
+  }
+
+  private async generateTestForComponent(entry: ManifestEntry) {
+    const componentName = path
+      .basename(entry.sourceFile)
+      .replace(".isl.md", "");
+    const implPath = path.join(this.outputBaseDir, entry.implementationPath!);
+
+    if (!fs.existsSync(implPath)) {
+      console.warn(
+        `⚠️ Implementation not found for ${componentName}: ${implPath}`,
+      );
+      return;
+    }
+
+    console.log(`🧪 Generating tests for: ${componentName}`);
+
+    const islContent = fs.readFileSync(entry.sourceFile, "utf-8");
+    const implContent = fs.readFileSync(implPath, "utf-8");
+
+    let signatureContent = "";
+    const signPath = implPath + ".sign.json";
+    if (fs.existsSync(signPath)) {
+      signatureContent = fs.readFileSync(signPath, "utf-8");
+    }
+
+    // Determine test file path (e.g., bin/test/component.test.jsx)
+    const fileName = path.basename(implPath);
+    const testFileName = fileName.replace(/\.(jsx|js|ts|tsx)$/, ".test.$1");
+    const testFilePath = path.join(this.outputBaseDir, "test", testFileName);
+
+    const prompt = `
+      You are a QA Engineer expert in Unit Testing logic and functions.
+      
+      **Objective**: Write a comprehensive unit test suite for the component "${componentName}".
+      
+      **Input 1: ISL Specification (Intent)**
+      ${islContent}
+      
+      **Input 2: Implementation Code**
+      ${implContent}
+      
+      **Input 3: Signature (Exports)**
+      ${signatureContent}
+      
+      **Rules:**
+      1. **Prioritize User Scenarios**: If the ISL contains a "🧪 Test Scenarios" section, implement those tests first.
+      2. **Focus on Logic**: Prioritize testing pure functions, hooks logic, and state transitions. Avoid UI rendering tests (like checking if an SVG element exists at specific coordinates).
+      3. **Coverage**: Analyze "Contract" and "Constraint" sections in ISL. Generate tests for edge cases, error handling, and constraints.
+      4. **Mocking**: Use \`vi.fn()\` for function props. Mock external dependencies if necessary (based on imports in implementation).
+      5. **Style**: Use \`describe\`, \`it\`, \`expect\`.
+      6. **Environment**: Assume a Vitest environment.
+      7. **Imports**: The test file will be in a 'test' subdirectory. Import the component from '../${fileName}'.
+      
+      **Output:**
+      Return ONLY the code for the test file inside a markdown code block.
+    `;
+
+    try {
+      const testCode = await this.llmClient.generateCode(prompt);
+      fs.writeFileSync(testFilePath, testCode);
+      console.log(`   -> Created: ${path.basename(testFilePath)}`);
+    } catch (error: any) {
+      console.error(
+        `   ❌ Failed to generate test for ${componentName}: ${error.message}`,
+      );
+    }
+  }
+}
+
+// CLI Entry Point
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const useGemini = args.includes("--gemini");
+
+  const positionalArgs = args.filter((arg) => !arg.startsWith("--"));
+  const projectRoot = positionalArgs[0] || ".";
+  const manifestPath = path.join(projectRoot, "build", "build-manifest.json");
+  const outputBaseDir = path.join(projectRoot, "bin");
+  const provider = useGemini ? "gemini" : "openai";
+
+  const testGenerator = new ISLTestGenerator(
+    manifestPath,
+    outputBaseDir,
+    provider,
+  );
+  testGenerator.run();
+}

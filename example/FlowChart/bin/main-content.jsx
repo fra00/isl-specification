@@ -1,12 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import TOOLBarMain from "./toolbar";
-import Sidebar from "./sidebar";
-import Node from "./node";
-import Connection from "./connection";
-import { useCoordinateUtils } from "./coordinates";
-
-// Helper for unique IDs
-const generateId = () => crypto.randomUUID();
+import TOOLBarMain from './toolbar.jsx';
+import Sidebar from './sidebar.jsx';
+import Node from './node.jsx';
+import Connection from './connection.jsx';
+import { useCoordinateUtils } from './coordinates.js';
 
 /**
  * @typedef {object} NodeData
@@ -24,9 +21,9 @@ const generateId = () => crypto.randomUUID();
  * @property {string} id
  * @property {string} sourceNodeId
  * @property {string} targetNodeId
- * @property {string} sourceAnchorType
- * @property {string} targetAnchorType
- * @property {string} [label]
+ * @property {string} sourceAnchor
+ * @property {string} targetAnchor
+ * @property {string} label
  */
 
 /**
@@ -37,671 +34,752 @@ const generateId = () => crypto.randomUUID();
  * @property {number} endX
  * @property {number} endY
  * @property {boolean} isSelected
- * @property {string} [label]
+ * @property {string} label
  */
 
 /**
- * @typedef {object} FlowData
- * @property {NodeData[]} nodes
- * @property {ConnectionData[]} connections
+ * @typedef {object} SelectionRect
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
  */
 
-/**
- * MainContent component is the main body where TOOLs are dragged and rendered.
- * It manages the state of nodes, connections, selection, pan, and zoom.
- * @returns {JSX.Element} The MainContent component.
- */
+const NODE_WIDTH = 150;
+const NODE_HEIGHT = 80;
+const ANCHOR_THRESHOLD = 20; // px for connection snapping
+const ZOOM_SENSITIVITY = 0.001; // How fast zoom changes
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 2.0;
+
 export default function MainContent() {
-    const [nodes, setNodes] = useState([]);
-    const [connections, setConnections] = useState([]);
-    /**
-     * @type {string | string[] | null}
-     */
-    const [selectedId, setSelectedId] = useState(null);
-    /**
-     * @type {'node' | 'connection' | 'node-group' | null}
-     */
-    const [selectedType, setSelectedType] = useState(null);
+  const [nodes, setNodes] = useState(/** @type {NodeData[]} */ ([]));
+  const [connections, setConnections] = useState(/** @type {ConnectionData[]} */ ([]));
 
-    const [isPanning, setIsPanning] = useState(false);
-    const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-    const [startPanOffset, setStartPanOffset] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
+  // For single item selection (last clicked)
+  const [selectedId, setSelectedId] = useState(/** @type {string | null} */ (null));
+  const [selectedType, setSelectedType] = useState(/** @type {'node' | 'connection' | null} */ (null));
 
-    /**
-     * @type {{startX: number, startY: number, endX: number, endY: number, sourceNodeId: string, sourceAnchorType: string} | null}
-     */
-    const [tempConnection, setTempConnection] = useState(null);
-    const [isConnecting, setIsConnecting] = useState(false);
+  // For group selection
+  const [selectedNodeIds, setSelectedNodeIds] = useState(/** @type {Set<string>} */ (new Set()));
+  const [selectedConnectionIds, setSelectedConnectionIds] = useState(/** @type {Set<string>} */ (new Set()));
 
-    /**
-     * @type {{x: number, y: number, width: number, height: number} | null}
-     */
-    const [selectionRect, setSelectionRect] = useState(null);
-    const [isSelecting, setIsSelecting] = useState(false);
-    /**
-     * @type {{x: number, y: number} | null}
-     */
-    const [selectionStartPoint, setSelectionStartPoint] = useState(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0 }); // Client coordinates where pan started
 
-    const [mermaidCode, setMermaidCode] = useState('');
-    const [showMermaidModal, setShowMermaidModal] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [tempConnection, setTempConnection] = useState(/** @type {{ startX: number, startY: number, endX: number, endY: number } | null} */ (null));
+  const sourceNodeIdRef = useRef(/** @type {string | null} */ (null));
+  const sourceAnchorTypeRef = useRef(/** @type {string | null} */ (null));
 
-    const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [isSelectingGroup, setIsSelectingGroup] = useState(false);
+  const [selectionRect, setSelectionRect] = useState(/** @type {SelectionRect | null} */ (null));
+  const selectionStartRef = useRef({ x: 0, y: 0 }); // World coordinates where selection started
 
-    const svgRef = useRef(null);
-    const transformGroupRef = useRef(null);
+  // Refs for group drag logic
+  const initialDraggedNodePositionRef = useRef(/** @type {{x: number, y: number} | null} */ (null));
+  const initialSelectedNodePositionsRef = useRef(/** @type {Map<string, {x: number, y: number}> | null} */ (null));
 
-    const { toWorldCoordinates } = useCoordinateUtils();
+  const svgRef = useRef(/** @type {SVGSVGElement | null} */ (null));
+  const transformGroupRef = useRef(/** @type {SVGGraphicsElement | null} */ (null));
 
-    // --- Capabilities: Allow Drop ---
-    const handleDragOver = useCallback((event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-    }, []);
+  const { toWorldCoordinates } = useCoordinateUtils();
 
-    // --- Capabilities: drop ---
-    const handleDrop = useCallback((event) => {
-        event.preventDefault();
-        const data = event.dataTransfer.getData('application/json');
-        if (data) {
-            try {
-                const { type: rawType } = JSON.parse(data);
-                const type = rawType.toLowerCase(); // Data Normalization
+  /**
+   * Generates a unique ID.
+   * @returns {string}
+   */
+  const generateId = useCallback(() => Date.now().toString(36) + Math.random().toString(36).substring(2, 7), []);
 
-                if (svgRef.current && transformGroupRef.current) {
-                    const { x: worldX, y: worldY } = toWorldCoordinates(
-                        svgRef.current,
-                        transformGroupRef.current,
-                        event.clientX,
-                        event.clientY
-                    );
+  /**
+   * Calculates the world coordinates of an anchor point for a given node.
+   * @param {NodeData} node
+   * @param {string} anchorType - 'top', 'bottom', 'left', 'right'
+   * @returns {{x: number, y: number}}
+   */
+  const getAnchorPoint = useCallback((node, anchorType) => {
+    const { x, y, width, height } = node;
+    switch (anchorType) {
+      case 'top': return { x: x + width / 2, y: y };
+      case 'bottom': return { x: x + width / 2, y: y + height };
+      case 'left': return { x: x, y: y + height / 2 };
+      case 'right': return { x: x + width, y: y + height / 2 };
+      default: return { x: x, y: y };
+    }
+  }, []);
 
-                    const newNode = {
-                        id: generateId(),
-                        x: worldX - 50, // Center the node roughly
-                        y: worldY - 25,
-                        width: 100,
-                        height: 50,
-                        type: type,
-                        label: `${rawType} ${nodes.length + 1}`,
-                    };
-                    setNodes((prevNodes) => [...prevNodes, newNode]);
-                }
-            } catch (error) {
-                console.error("Failed to parse dropped data:", error);
+  /**
+   * Handles drag over event to allow dropping.
+   * @param {React.DragEvent<HTMLDivElement>} event
+   */
+  const handleDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  /**
+   * Handles drop event to create a new node.
+   * @param {React.DragEvent<HTMLDivElement>} event
+   */
+  const handleDrop = useCallback((event) => {
+    event.preventDefault();
+    if (!svgRef.current || !transformGroupRef.current) return;
+
+    const data = event.dataTransfer.getData('application/json');
+    if (!data) return;
+
+    try {
+      const { type: rawType } = JSON.parse(data);
+      const type = rawType.toLowerCase();
+
+      const { x: worldX, y: worldY } = toWorldCoordinates(
+        svgRef.current,
+        transformGroupRef.current,
+        event.clientX,
+        event.clientY
+      );
+
+      const newNode = {
+        id: generateId(),
+        x: worldX - NODE_WIDTH / 2,
+        y: worldY - NODE_HEIGHT / 2,
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+        type: type,
+        label: `${type.charAt(0).toUpperCase() + type.slice(1)} ${nodes.length + 1}`,
+      };
+
+      setNodes((prevNodes) => [...prevNodes, newNode]);
+    } catch (error) {
+      console.error('Failed to parse dropped data:', error);
+    }
+  }, [generateId, nodes.length, toWorldCoordinates]);
+
+  /**
+   * Handles selection of a node or connection.
+   * @param {string} id
+   * @param {'node' | 'connection'} type
+   */
+  const handleSelect = useCallback((id, type) => {
+    setSelectedId(id);
+    setSelectedType(type);
+    setSelectedNodeIds(new Set()); // Clear group selection
+    setSelectedConnectionIds(new Set()); // Clear group selection
+  }, []);
+
+  /**
+   * Handles deselection of an item or clears all selections.
+   * @param {string | null} [id=null] - The ID of the item to deselect. If null, clears all selections.
+   */
+  const handleDeselect = useCallback((id = null) => {
+    if (id === selectedId) {
+      setSelectedId(null);
+      setSelectedType(null);
+    }
+    if (selectedNodeIds.has(id)) {
+      const newSet = new Set(selectedNodeIds);
+      newSet.delete(id);
+      setSelectedNodeIds(newSet);
+    }
+    if (selectedConnectionIds.has(id)) {
+      const newSet = new Set(selectedConnectionIds);
+      newSet.delete(id);
+      setSelectedConnectionIds(newSet);
+    }
+    if (!id || (selectedId === id && selectedNodeIds.size === 0 && selectedConnectionIds.size === 0)) {
+      // If no ID provided, or if the last selected item is being deselected and no group is selected
+      setSelectedId(null);
+      setSelectedType(null);
+      setSelectedNodeIds(new Set());
+      setSelectedConnectionIds(new Set());
+    }
+  }, [selectedId, selectedNodeIds, selectedConnectionIds]);
+
+  /**
+   * Handles the start of a connection drag from a node anchor.
+   * @param {string} nodeId
+   * @param {string} anchorType
+   * @param {number} x
+   * @param {number} y
+   */
+  const handleAnchorDragStart = useCallback((nodeId, anchorType, x, y) => {
+    setIsConnecting(true);
+    setTempConnection({ startX: x, startY: y, endX: x, endY: y });
+    sourceNodeIdRef.current = nodeId;
+    sourceAnchorTypeRef.current = anchorType;
+  }, []);
+
+  /**
+   * Calculates the path for a Bezier curve connection.
+   * @param {number} startX
+   * @param {number} startY
+   * @param {number} endX
+   * @param {number} endY
+   * @returns {string} SVG path string
+   */
+  const calculateBezierPath = useCallback((startX, startY, endX, endY) => {
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
+    const curveFactor = 0.5; // Adjust for more or less curve
+
+    let path = `M ${startX} ${startY}`;
+
+    // Simple horizontal/vertical bezier for now
+    if (Math.abs(endX - startX) > Math.abs(endY - startY)) {
+      // More horizontal
+      const midX = startX + (endX - startX) * curveFactor;
+      path += ` C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+    } else {
+      // More vertical
+      const midY = startY + (endY - startY) * curveFactor;
+      path += ` C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+    }
+
+    return path;
+  }, []);
+
+  /**
+   * Calculates connection render data (start/end coordinates).
+   * @type {ConnectionRenderData[]}
+   */
+  const connectionRenderData = useMemo(() => {
+    return connections.map((conn) => {
+      const sourceNode = nodes.find((n) => n.id === conn.sourceNodeId);
+      const targetNode = nodes.find((n) => n.id === conn.targetNodeId);
+
+      if (!sourceNode || !targetNode) {
+        console.warn(`Missing node for connection ${conn.id}`);
+        return null;
+      }
+
+      const { x: startX, y: startY } = getAnchorPoint(sourceNode, conn.sourceAnchor);
+      const { x: endX, y: endY } = getAnchorPoint(targetNode, conn.targetAnchor);
+
+      return {
+        id: conn.id,
+        startX,
+        startY,
+        endX,
+        endY,
+        isSelected: selectedId === conn.id || selectedConnectionIds.has(conn.id),
+        label: conn.label,
+      };
+    }).filter(Boolean);
+  }, [connections, nodes, getAnchorPoint, selectedId, selectedConnectionIds]);
+
+  /**
+   * Handles deletion of a node or connection.
+   * @param {string} id
+   * @param {'node' | 'connection'} type
+   */
+  const handleDelete = useCallback((id, type) => {
+    if (type === 'node') {
+      setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
+      setConnections((prevConnections) =>
+        prevConnections.filter((conn) => conn.sourceNodeId !== id && conn.targetNodeId !== id)
+      );
+    } else if (type === 'connection') {
+      setConnections((prevConnections) => prevConnections.filter((conn) => conn.id !== id));
+    }
+    handleDeselect(id); // Deselect the item after deletion
+  }, [handleDeselect]);
+
+  /**
+   * Handles node drag event.
+   * @param {string} id - The ID of the node being dragged.
+   * @param {number} newX - The new X coordinate for the dragged node.
+   * @param {number} newY - The new Y coordinate for the dragged node.
+   */
+  const handleNodeDrag = useCallback((id, newX, newY) => {
+    setNodes((prevNodes) => {
+      // If this is the very first drag event in a sequence, capture initial states
+      if (!initialDraggedNodePositionRef.current) {
+        const draggedNode = prevNodes.find(node => node.id === id);
+        if (!draggedNode) return prevNodes;
+
+        initialDraggedNodePositionRef.current = { x: draggedNode.x, y: draggedNode.y };
+
+        // If the dragged node is part of a multi-selection, store initial positions for all selected nodes
+        if (selectedNodeIds.has(id) && selectedNodeIds.size > 1) {
+          const initialPositions = new Map();
+          selectedNodeIds.forEach(selectedId => {
+            const node = prevNodes.find(n => n.id === selectedId);
+            if (node) {
+              initialPositions.set(selectedId, { x: node.x, y: node.y });
             }
-        }
-    }, [nodes.length, toWorldCoordinates]);
-
-    // --- Capabilities: Manage Selection & Handle Deselect ---
-    const handleSelect = useCallback((id, type) => {
-        setSelectedId(id);
-        setSelectedType(type);
-    }, []);
-
-    const handleDeselect = useCallback(() => {
-        setSelectedId(null);
-        setSelectedType(null);
-    }, []);
-
-    // --- Capabilities: Handle Delete Request ---
-    const handleDelete = useCallback((id, type) => {
-        if (type === 'node') {
-            setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
-            setConnections((prevConnections) =>
-                prevConnections.filter((conn) => conn.sourceNodeId !== id && conn.targetNodeId !== id)
-            );
-        } else if (type === 'connection') {
-            setConnections((prevConnections) => prevConnections.filter((conn) => conn.id !== id));
-        }
-        // If the deleted item was selected, deselect it
-        if ((Array.isArray(selectedId) && selectedId.includes(id)) || selectedId === id) {
-            handleDeselect();
-        }
-    }, [selectedId, handleDeselect]);
-
-    // --- Capabilities: Handle Node Drag & move group selection ---
-    const handleNodeDrag = useCallback((id, newX, newY) => {
-        setNodes((prevNodes) => {
-            const draggedNode = prevNodes.find((node) => node.id === id);
-            if (!draggedNode) return prevNodes;
-
-            const dx = newX - draggedNode.x;
-            const dy = newY - draggedNode.y;
-
-            // If a group is selected and the dragged node is part of it
-            if (selectedType === 'node-group' && Array.isArray(selectedId) && selectedId.includes(id)) {
-                return prevNodes.map((node) => {
-                    if (selectedId.includes(node.id)) {
-                        return { ...node, x: node.x + dx, y: node.y + dy };
-                    }
-                    return node;
-                });
-            } else {
-                // Single node drag
-                return prevNodes.map((node) =>
-                    node.id === id ? { ...node, x: newX, y: newY } : node
-                );
-            }
-        });
-    }, [selectedId, selectedType]);
-
-    // --- Capabilities: Handle Node Resize ---
-    const handleNodeResize = useCallback((id, width, height) => {
-        setNodes((prevNodes) =>
-            prevNodes.map((node) =>
-                node.id === id ? { ...node, width, height } : node
-            )
-        );
-    }, []);
-
-    // --- Capabilities: Handle Node Label Change ---
-    const handleNodeLabelChange = useCallback((id, newLabel) => {
-        setNodes((prevNodes) =>
-            prevNodes.map((node) =>
-                node.id === id ? { ...node, label: newLabel } : node
-            )
-        );
-        handleDeselect(); // As per spec, deselect after label change
-    }, [handleDeselect]);
-
-    // --- Capabilities: Handle Connection Label Change ---
-    const handleConnectionLabelChange = useCallback((id, newLabel) => {
-        setConnections((prevConnections) =>
-            prevConnections.map((conn) =>
-                conn.id === id ? { ...conn, label: newLabel } : conn
-            )
-        );
-    }, []);
-
-    // --- Capabilities: Handle Load Json ---
-    const handleLoadJson = useCallback((data) => {
-        if (data && Array.isArray(data.nodes) && Array.isArray(data.connections)) {
-            setNodes(data.nodes);
-            setConnections(data.connections);
-            handleDeselect();
-            setPanOffset({ x: 0, y: 0 });
-            setZoom(1);
+          });
+          initialSelectedNodePositionsRef.current = initialPositions;
         } else {
-            console.error("Invalid JSON data structure for loading flow.");
+          // If it's a single drag, ensure group selection is cleared and only this node is selected
+          setSelectedNodeIds(new Set([id]));
+          setSelectedConnectionIds(new Set());
+          setSelectedId(id);
+          setSelectedType('node');
+          initialSelectedNodePositionsRef.current = null; // No group to track
         }
-    }, [handleDeselect]);
+      }
 
-    // --- Capabilities: Create Connection Flow (Helper for anchor coordinates) ---
-    const getAnchorCoordinates = useCallback((node, anchorType) => {
-        const { x, y, width, height } = node;
-        switch (anchorType) {
-            case 'top': return { x: x + width / 2, y: y };
-            case 'bottom': return { x: x + width / 2, y: y + height };
-            case 'left': return { x: x, y: y + height / 2 };
-            case 'right': return { x: x + width, y: y + height / 2 };
-            default: return { x: x + width / 2, y: y + height / 2 }; // Fallback to center
+      // Calculate the delta based on the movement of the *currently dragged node*
+      const initialX = initialDraggedNodePositionRef.current.x;
+      const initialY = initialDraggedNodePositionRef.current.y;
+      const dx = newX - initialX;
+      const dy = newY - initialY;
+
+      // Apply the delta
+      return prevNodes.map((node) => {
+        if (selectedNodeIds.has(node.id) && initialSelectedNodePositionsRef.current) {
+          // This node is part of the group being dragged
+          const startPos = initialSelectedNodePositionsRef.current.get(node.id);
+          if (startPos) {
+            return { ...node, x: startPos.x + dx, y: startPos.y + dy };
+          }
+        } else if (node.id === id && !initialSelectedNodePositionsRef.current) {
+          // This is the single node being dragged (no group selection active)
+          return { ...node, x: newX, y: newY };
         }
-    }, []);
+        return node;
+      });
+    });
+  }, [selectedNodeIds]); // `nodes` is accessed via `prevNodes` in `setNodes`.
 
-    const handleAnchorDragStart = useCallback((nodeId, anchorType, x, y) => {
-        setIsConnecting(true);
-        setTempConnection({
-            startX: x,
-            startY: y,
-            endX: x,
-            endY: y,
-            sourceNodeId: nodeId,
-            sourceAnchorType: anchorType,
-        });
-    }, []);
-
-    const handleMouseMove = useCallback((event) => {
-        if (svgRef.current && transformGroupRef.current) {
-            const { x: worldX, y: worldY } = toWorldCoordinates(
-                svgRef.current,
-                transformGroupRef.current,
-                event.clientX,
-                event.clientY
-            );
-
-            // --- Panning ---
-            if (isPanning) {
-                const dx = worldX - startPanOffset.x;
-                const dy = worldY - startPanOffset.y;
-                setPanOffset({ x: panOffset.x + dx, y: panOffset.y + dy });
-                setStartPanOffset({ x: worldX, y: worldY }); // Update start for continuous pan
-                return; // Prevent other interactions while panning
-            }
-
-            // --- Create Connection Flow (temporary line) ---
-            if (isConnecting && tempConnection) {
-                setTempConnection((prev) => ({
-                    ...prev,
-                    endX: worldX,
-                    endY: worldY,
-                }));
-            }
-
-            // --- start group selection ---
-            if (isSelecting && selectionStartPoint) {
-                const rectX = Math.min(selectionStartPoint.x, worldX);
-                const rectY = Math.min(selectionStartPoint.y, worldY);
-                const rectWidth = Math.abs(selectionStartPoint.x - worldX);
-                const rectHeight = Math.abs(selectionStartPoint.y - worldY);
-                setSelectionRect({ x: rectX, y: rectY, width: rectWidth, height: rectHeight });
-            }
-        }
-    }, [isPanning, startPanOffset, panOffset, isConnecting, tempConnection, isSelecting, selectionStartPoint, toWorldCoordinates]);
-
-    const handleMouseUp = useCallback((event) => {
-        setIsPanning(false);
-
-        // --- Create Connection Flow (finalize connection) ---
-        if (isConnecting && tempConnection) {
-            if (svgRef.current && transformGroupRef.current) {
-                const { x: mouseWorldX, y: mouseWorldY } = toWorldCoordinates(
-                    svgRef.current,
-                    transformGroupRef.current,
-                    event.clientX,
-                    event.clientY
-                );
-
-                let targetNode = null;
-                let targetAnchorType = null;
-                const ANCHOR_THRESHOLD = 20; // pixels
-
-                for (const node of nodes) {
-                    if (node.id === tempConnection.sourceNodeId) continue; // Target Node MUST be different from Source Node
-
-                    const anchors = ['top', 'bottom', 'left', 'right'];
-                    for (const anchorType of anchors) {
-                        const { x: anchorX, y: anchorY } = getAnchorCoordinates(node, anchorType);
-                        const distance = Math.sqrt(
-                            Math.pow(mouseWorldX - anchorX, 2) + Math.pow(mouseWorldY - anchorY, 2)
-                        );
-                        if (distance < ANCHOR_THRESHOLD) {
-                            targetNode = node;
-                            targetAnchorType = anchorType;
-                            break;
-                        }
-                    }
-                    if (targetNode) break;
-                }
-
-                if (targetNode && targetAnchorType) {
-                    const newConnection = {
-                        id: generateId(),
-                        sourceNodeId: tempConnection.sourceNodeId,
-                        targetNodeId: targetNode.id,
-                        sourceAnchorType: tempConnection.sourceAnchorType,
-                        targetAnchorType: targetAnchorType,
-                        label: '', // Default empty label
-                    };
-                    setConnections((prevConnections) => [...prevConnections, newConnection]);
-                }
-            }
-            setTempConnection(null);
-            setIsConnecting(false);
-        }
-
-        // --- end group selection ---
-        if (isSelecting && selectionRect) {
-            const newSelectedIds = [];
-            nodes.forEach(node => {
-                // Check if node is completely enclosed in the selection rectangle
-                const nodeLeft = node.x;
-                const nodeRight = node.x + node.width;
-                const nodeTop = node.y;
-                const nodeBottom = node.y + node.height;
-
-                const rectLeft = selectionRect.x;
-                const rectRight = selectionRect.x + selectionRect.width;
-                const rectTop = selectionRect.y;
-                const rectBottom = selectionRect.y + selectionRect.height;
-
-                if (
-                    nodeLeft >= rectLeft &&
-                    nodeRight <= rectRight &&
-                    nodeTop >= rectTop &&
-                    nodeBottom <= rectBottom
-                ) {
-                    newSelectedIds.push(node.id);
-                }
-            });
-            if (newSelectedIds.length > 0) {
-                setSelectedId(newSelectedIds); // Store array of IDs for group selection
-                setSelectedType('node-group');
-            } else {
-                handleDeselect();
-            }
-            setSelectionRect(null);
-            setSelectionStartPoint(null);
-            setIsSelecting(false);
-        }
-    }, [isPanning, isConnecting, tempConnection, nodes, getAnchorCoordinates, toWorldCoordinates, isSelecting, selectionRect, handleDeselect]);
-
-    // --- Capabilities: Panning & start group selection & deselect group selection ---
-    const handleMouseDown = useCallback((event) => {
-        if (svgRef.current && transformGroupRef.current) {
-            const { x: worldX, y: worldY } = toWorldCoordinates(
-                svgRef.current,
-                transformGroupRef.current,
-                event.clientX,
-                event.clientY
-            );
-
-            // --- Panning ---
-            if (event.button === 1 || (event.button === 0 && isSpacePressed)) { // Middle mouse button or Space + Left click
-                setIsPanning(true);
-                setStartPanOffset({ x: worldX, y: worldY });
-                event.preventDefault(); // Prevent default browser drag behavior
-                return;
-            }
-
-            // If clicking on empty space (svg or transform group), deselect everything and potentially start group selection
-            if (event.target === svgRef.current || event.target === transformGroupRef.current) {
-                handleDeselect();
-                // --- start group selection ---
-                setIsSelecting(true);
-                setSelectionStartPoint({ x: worldX, y: worldY });
-                setSelectionRect({ x: worldX, y: worldY, width: 0, height: 0 });
-            }
-        }
-    }, [handleDeselect, toWorldCoordinates, isSpacePressed]);
-
-    // --- Capabilities: Calculate Connection Coordinates ---
-    const connectionRenderData = useMemo(() => {
-        return connections.map((conn) => {
-            const sourceNode = nodes.find((n) => n.id === conn.sourceNodeId);
-            const targetNode = nodes.find((n) => n.id === conn.targetNodeId);
-
-            if (!sourceNode || !targetNode) {
-                console.warn(`Missing node for connection ${conn.id}`);
-                return null;
-            }
-
-            const { x: startX, y: startY } = getAnchorCoordinates(sourceNode, conn.sourceAnchorType);
-            const { x: endX, y: endY } = getAnchorCoordinates(targetNode, conn.targetAnchorType);
-
-            return {
-                id: conn.id,
-                startX,
-                startY,
-                endX,
-                endY,
-                isSelected: selectedId === conn.id && selectedType === 'connection',
-                label: conn.label,
-            };
-        }).filter(Boolean);
-    }, [connections, nodes, selectedId, selectedType, getAnchorCoordinates]);
-
-    // --- Capabilities: Zoom ---
-    const handleWheel = useCallback((event) => {
-        event.preventDefault();
-        if (!svgRef.current || !transformGroupRef.current) return;
-
-        const scaleFactor = 1.1;
-        const newZoom = event.deltaY < 0 ? zoom * scaleFactor : zoom / scaleFactor;
-        const clampedZoom = Math.max(0.1, Math.min(5, newZoom)); // Clamp zoom level
-
-        const { x: mouseWorldX, y: mouseWorldY } = toWorldCoordinates(
-            svgRef.current,
-            transformGroupRef.current,
-            event.clientX,
-            event.clientY
-        );
-
-        // Calculate new pan offset to keep the mouse position stable in world coordinates
-        const newPanX = event.clientX - (mouseWorldX * clampedZoom);
-        const newPanY = event.clientY - (mouseWorldY * clampedZoom);
-
-        setZoom(clampedZoom);
-        setPanOffset({ x: newPanX, y: newPanY });
-
-    }, [zoom, panOffset, toWorldCoordinates]);
-
-    const resetView = useCallback(() => {
-        setPanOffset({ x: 0, y: 0 });
-        setZoom(1);
-    }, []);
-
-    // Keyboard event listener for Delete key and Space key
-    useEffect(() => {
-        const handleKeyDown = (event) => {
-            if (event.key === 'Delete' || event.key === 'Backspace') {
-                if (selectedId && selectedType) {
-                    if (Array.isArray(selectedId)) { // Group selection
-                        selectedId.forEach(id => handleDelete(id, 'node'));
-                    } else {
-                        handleDelete(selectedId, selectedType);
-                    }
-                    handleDeselect();
-                }
-            }
-            if (event.key === ' ') {
-                setIsSpacePressed(true);
-                event.preventDefault(); // Prevent page scroll
-            }
-        };
-
-        const handleKeyUp = (event) => {
-            if (event.key === ' ') {
-                setIsSpacePressed(false);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [selectedId, selectedType, handleDelete, handleDeselect]);
-
-    // --- TOOLBarMain capabilities (Mermaid Export) ---
-    const getSvgElement = useCallback(() => svgRef.current, []);
-
-    const flowData = useMemo(() => ({ nodes, connections }), [nodes, connections]);
-
-    const handleExportMermaid = useCallback(() => {
-        let mermaidString = 'graph TD\n';
-
-        // Add nodes
-        nodes.forEach(node => {
-            let shape = '';
-            switch (node.type) {
-                case 'action':
-                    shape = `[${node.label}]`; // Rectangular
-                    break;
-                case 'condition':
-                    shape = `{${node.label}}`; // Rhombus
-                    break;
-                default:
-                    shape = `(${node.label})`; // Default to rounded rect
-            }
-            mermaidString += `    ${node.id}${shape}\n`;
-        });
-
-        // Add connections
-        connections.forEach(conn => {
-            const sourceNode = nodes.find(n => n.id === conn.sourceNodeId);
-            const targetNode = nodes.find(n => n.id === conn.targetNodeId);
-
-            if (sourceNode && targetNode) {
-                const labelPart = conn.label ? `|${conn.label}|` : '';
-                mermaidString += `    ${sourceNode.id} -->${labelPart} ${targetNode.id}\n`;
-            }
-        });
-
-        setMermaidCode(mermaidString);
-        setShowMermaidModal(true);
-    }, [nodes, connections]);
-
-    const copyMermaidToClipboard = useCallback(() => {
-        navigator.clipboard.writeText(mermaidCode).then(() => {
-            alert('Mermaid code copied to clipboard!');
-        }).catch(err => {
-            console.error('Failed to copy mermaid code: ', err);
-        });
-    }, [mermaidCode]);
-
-    return (
-        <div className="flex h-screen overflow-hidden">
-            {/* TOOLBarMain */}
-            <div className="absolute top-0 left-0 right-0 z-10 bg-gray-100 shadow-md p-2">
-                {/*
-                    NOTE: TOOLBarMain's interface does not explicitly list onExportMermaid or onResetView.
-                    Assuming it's flexible or will be updated to accept these props.
-                */}
-                <TOOLBarMain
-                    getSvgElement={getSvgElement}
-                    flowData={flowData}
-                    onLoadJson={handleLoadJson}
-                    onExportMermaid={handleExportMermaid}
-                    onResetView={resetView}
-                />
-            </div>
-
-            {/* Sidebar */}
-            <div className="w-1/5 bg-gray-100 p-4 pt-16 flex-shrink-0"> {/* pt-16 to account for toolbar */}
-                <Sidebar />
-            </div>
-
-            {/* Main Content Area */}
-            <div className="flex-grow bg-white relative pt-16"> {/* pt-16 to account for toolbar */}
-                <svg
-                    ref={svgRef}
-                    className="absolute inset-0 w-full h-full"
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onWheel={handleWheel}
-                    style={{ cursor: isPanning ? 'grabbing' : (isConnecting ? 'crosshair' : (isSelecting ? 'crosshair' : 'default')) }}
-                >
-                    {/* SVG Definitions for Arrowhead */}
-                    <defs>
-                        <marker
-                            id="arrowhead"
-                            viewBox="0 0 10 10"
-                            refX="8"
-                            refY="5"
-                            markerWidth="6"
-                            markerHeight="6"
-                            orient="auto"
-                        >
-                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#333" />
-                        </marker>
-                    </defs>
-
-                    {/* Grid Background */}
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 L 0 20" fill="none" stroke="#f3f4f6" strokeWidth="0.5" />
-                    </pattern>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-
-                    {/* Root Group for Pan and Zoom Transforms */}
-                    <g
-                        ref={transformGroupRef}
-                        transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoom})`}
-                    >
-                        {/* Render Connections */}
-                        {connectionRenderData.map((conn) =>
-                            conn && (
-                                <Connection
-                                    key={conn.id}
-                                    id={conn.id}
-                                    startX={conn.startX}
-                                    startY={conn.startY}
-                                    endX={conn.endX}
-                                    endY={conn.endY}
-                                    isSelected={conn.isSelected}
-                                    label={conn.label}
-                                    onSelect={handleSelect}
-                                    onLabelChange={handleConnectionLabelChange}
-                                    onDelete={handleDelete}
-                                />
-                            )
-                        )}
-
-                        {/* Render Temporary Connection Line */}
-                        {tempConnection && (
-                            <path
-                                d={`M ${tempConnection.startX} ${tempConnection.startY} L ${tempConnection.endX} ${tempConnection.endY}`}
-                                stroke="blue"
-                                strokeWidth="2"
-                                fill="none"
-                                strokeDasharray="5,5"
-                            />
-                        )}
-
-                        {/* Render Nodes */}
-                        {nodes.map((node) => (
-                            <Node
-                                key={node.id}
-                                id={node.id}
-                                x={node.x}
-                                y={node.y}
-                                width={node.width}
-                                height={node.height}
-                                type={node.type}
-                                label={node.label}
-                                isSelected={
-                                    (selectedType === 'node' && selectedId === node.id) ||
-                                    (selectedType === 'node-group' && Array.isArray(selectedId) && selectedId.includes(node.id))
-                                }
-                                onSelect={handleSelect}
-                                onDrag={handleNodeDrag}
-                                onResize={handleNodeResize}
-                                onLabelChange={handleNodeLabelChange}
-                                onDelete={handleDelete}
-                                onAnchorDragStart={handleAnchorDragStart}
-                                onDeselect={handleDeselect}
-                            />
-                        ))}
-
-                        {/* Render Selection Rectangle */}
-                        {isSelecting && selectionRect && (
-                            <rect
-                                x={selectionRect.x}
-                                y={selectionRect.y}
-                                width={selectionRect.width}
-                                height={selectionRect.height}
-                                fill="rgba(0, 120, 215, 0.1)"
-                                stroke="#0078D7"
-                                strokeWidth="1"
-                                strokeDasharray="3,3"
-                            />
-                        )}
-                    </g>
-                </svg>
-            </div>
-
-            {/* Mermaid Export Modal */}
-            {showMermaidModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl w-1/2">
-                        <h2 className="text-xl font-bold mb-4">Mermaid Code Export</h2>
-                        <textarea
-                            className="w-full h-64 p-2 border border-gray-300 rounded-md font-mono text-sm"
-                            readOnly
-                            value={mermaidCode}
-                        />
-                        <div className="mt-4 flex justify-end space-x-2">
-                            <button
-                                onClick={copyMermaidToClipboard}
-                                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                            >
-                                Copy to Clipboard
-                            </button>
-                            <button
-                                onClick={() => setShowMermaidModal(false)}
-                                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+  /**
+   * Handles node resize event.
+   * @param {string} id
+   * @param {number} width
+   * @param {number} height
+   */
+  const handleNodeResize = useCallback((id, width, height) => {
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => (node.id === id ? { ...node, width, height } : node))
     );
+  }, []);
+
+  /**
+   * Handles node label change event.
+   * @param {string} id
+   * @param {string} label
+   */
+  const handleNodeLabelChange = useCallback((id, label) => {
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => (node.id === id ? { ...node, label } : node))
+    );
+  }, []);
+
+  /**
+   * Handles connection label change event.
+   * @param {string} id
+   * @param {string} label
+   */
+  const handleConnectionLabelChange = useCallback((id, label) => {
+    setConnections((prevConnections) =>
+      prevConnections.map((conn) => (conn.id === id ? { ...conn, label } : conn))
+    );
+  }, []);
+
+  /**
+   * Handles loading flow data from JSON.
+   * @param {{ nodes: NodeData[], connections: ConnectionData[] }} data
+   */
+  const handleLoadJson = useCallback((data) => {
+    setNodes(data.nodes || []);
+    setConnections(data.connections || []);
+    setSelectedId(null);
+    setSelectedType(null);
+    setSelectedNodeIds(new Set());
+    setSelectedConnectionIds(new Set());
+  }, []);
+
+  /**
+   * Handles mouse down event on the SVG canvas.
+   * @param {React.MouseEvent<SVGSVGElement>} event
+   */
+  const handleCanvasMouseDown = useCallback((event) => {
+    if (!svgRef.current || !transformGroupRef.current) return;
+
+    const { x: worldX, y: worldY } = toWorldCoordinates(
+      svgRef.current,
+      transformGroupRef.current,
+      event.clientX,
+      event.clientY
+    );
+
+    // Panning (Space key + Left click OR Middle click)
+    if (event.button === 1 || (event.button === 0 && event.nativeEvent.code === 'Space')) {
+      event.preventDefault(); // Prevent default middle click behavior (e.g., autoscroll)
+      setIsPanning(true);
+      panStartRef.current = { x: event.clientX - pan.x, y: event.clientY - pan.y };
+      return;
+    }
+
+    // Group selection start (Left click on empty area)
+    if (event.button === 0 && !event.target.closest('.node-element, .connection-element')) {
+      handleDeselect(); // Deselect any single item or group
+      setIsSelectingGroup(true);
+      selectionStartRef.current = { x: worldX, y: worldY };
+      setSelectionRect({ x: worldX, y: worldY, width: 0, height: 0 });
+      return;
+    }
+
+    // Deselect all if clicking on empty canvas and not starting group selection
+    if (!event.target.closest('.node-element, .connection-element')) {
+      handleDeselect();
+    }
+  }, [pan, toWorldCoordinates, handleDeselect]);
+
+  /**
+   * Handles mouse move event on the SVG canvas.
+   * @param {React.MouseEvent<SVGSVGElement>} event
+   */
+  const handleCanvasMouseMove = useCallback((event) => {
+    if (!svgRef.current || !transformGroupRef.current) return;
+
+    const { x: worldX, y: worldY } = toWorldCoordinates(
+      svgRef.current,
+      transformGroupRef.current,
+      event.clientX,
+      event.clientY
+    );
+
+    // Panning
+    if (isPanning) {
+      setPan({
+        x: event.clientX - panStartRef.current.x,
+        y: event.clientY - panStartRef.current.y,
+      });
+      return;
+    }
+
+    // Connection creation (temporary line)
+    if (isConnecting && tempConnection) {
+      setTempConnection((prev) => (prev ? { ...prev, endX: worldX, endY: worldY } : null));
+      return;
+    }
+
+    // Group selection rectangle drawing
+    if (isSelectingGroup && selectionRect) {
+      const startX = selectionStartRef.current.x;
+      const startY = selectionStartRef.current.y;
+      const newX = Math.min(startX, worldX);
+      const newY = Math.min(startY, worldY);
+      const newWidth = Math.abs(worldX - startX);
+      const newHeight = Math.abs(worldY - startY);
+      setSelectionRect({ x: newX, y: newY, width: newWidth, height: newHeight });
+      return;
+    }
+  }, [isPanning, isConnecting, tempConnection, isSelectingGroup, selectionRect, pan, toWorldCoordinates]);
+
+  /**
+   * Handles mouse up event on the SVG canvas.
+   * @param {React.MouseEvent<SVGSVGElement>} event
+   */
+  const handleCanvasMouseUp = useCallback((event) => {
+    if (!svgRef.current || !transformGroupRef.current) return;
+
+    const { x: worldX, y: worldY } = toWorldCoordinates(
+      svgRef.current,
+      transformGroupRef.current,
+      event.clientX,
+      event.clientY
+    );
+
+    // End Panning
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+
+    // End Connection creation
+    if (isConnecting) {
+      setIsConnecting(false);
+      setTempConnection(null);
+
+      const sourceNodeId = sourceNodeIdRef.current;
+      const sourceAnchorType = sourceAnchorTypeRef.current;
+
+      if (!sourceNodeId || !sourceAnchorType) return;
+
+      let targetNodeId = null;
+      let targetAnchorType = null;
+
+      // Find potential target anchor
+      for (const node of nodes) {
+        if (node.id === sourceNodeId) continue; // Cannot connect to self
+
+        const anchors = ['top', 'bottom', 'left', 'right'];
+        for (const anchorType of anchors) {
+          const { x: anchorX, y: anchorY } = getAnchorPoint(node, anchorType);
+          const distance = Math.hypot(worldX - anchorX, worldY - anchorY);
+
+          if (distance < ANCHOR_THRESHOLD) {
+            targetNodeId = node.id;
+            targetAnchorType = anchorType;
+            break;
+          }
+        }
+        if (targetNodeId) break;
+      }
+
+      if (targetNodeId && targetAnchorType) {
+        const newConnection = {
+          id: generateId(),
+          sourceNodeId,
+          targetNodeId,
+          sourceAnchor: sourceAnchorType,
+          targetAnchor: targetAnchorType,
+          label: '',
+        };
+        setConnections((prev) => [...prev, newConnection]);
+      }
+
+      sourceNodeIdRef.current = null;
+      sourceAnchorTypeRef.current = null;
+      return;
+    }
+
+    // End Group selection
+    if (isSelectingGroup) {
+      setIsSelectingGroup(false);
+      if (selectionRect) {
+        const newSelectedNodeIds = new Set();
+        nodes.forEach((node) => {
+          // Check if node is completely enclosed by selectionRect
+          const nodeRect = { x: node.x, y: node.y, width: node.width, height: node.height };
+          if (
+            nodeRect.x >= selectionRect.x &&
+            nodeRect.y >= selectionRect.y &&
+            nodeRect.x + nodeRect.width <= selectionRect.x + selectionRect.width &&
+            nodeRect.y + nodeRect.height <= selectionRect.y + selectionRect.height
+          ) {
+            newSelectedNodeIds.add(node.id);
+          }
+        });
+        setSelectedNodeIds(newSelectedNodeIds);
+        setSelectedConnectionIds(new Set()); // Clear connection selection
+        setSelectedId(null); // Clear single selection
+      }
+      setSelectionRect(null);
+      return;
+    }
+  }, [isPanning, isConnecting, tempConnection, nodes, getAnchorPoint, generateId, isSelectingGroup, selectionRect, toWorldCoordinates]);
+
+  /**
+   * Handles mouse wheel event for zooming.
+   * @param {React.WheelEvent<SVGSVGElement>} event
+   */
+  const handleWheel = useCallback((event) => {
+    event.preventDefault();
+    if (!svgRef.current || !transformGroupRef.current) return;
+
+    const scaleAmount = event.deltaY * -ZOOM_SENSITIVITY;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * (1 + scaleAmount)));
+
+    const { x: mouseWorldX, y: mouseWorldY } = toWorldCoordinates(
+      svgRef.current,
+      transformGroupRef.current,
+      event.clientX,
+      event.clientY
+    );
+
+    // Calculate new pan to keep the mouse position fixed in world space
+    const newPanX = event.clientX - mouseWorldX * newZoom;
+    const newPanY = event.clientY - mouseWorldY * newZoom;
+
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [zoom, pan, toWorldCoordinates]);
+
+  /**
+   * Resets the view to default pan and zoom.
+   */
+  const resetView = useCallback(() => {
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  }, []);
+
+  // Keyboard event listener for Delete key
+  useEffect(() => {
+    /**
+     * @param {KeyboardEvent} event
+     */
+    const handleKeyDown = (event) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (selectedId) {
+          handleDelete(selectedId, selectedType);
+        } else if (selectedNodeIds.size > 0) {
+          selectedNodeIds.forEach(id => handleDelete(id, 'node'));
+          setSelectedNodeIds(new Set()); // Clear after deleting
+        } else if (selectedConnectionIds.size > 0) {
+          selectedConnectionIds.forEach(id => handleDelete(id, 'connection'));
+          setSelectedConnectionIds(new Set()); // Clear after deleting
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedId, selectedType, selectedNodeIds, selectedConnectionIds, handleDelete]);
+
+  // Reset drag state on mouse up/leave (anywhere on canvas)
+  useEffect(() => {
+    const resetDragState = () => {
+      initialDraggedNodePositionRef.current = null;
+      initialSelectedNodePositionsRef.current = null;
+    };
+    const svgElement = svgRef.current;
+    if (svgElement) {
+      svgElement.addEventListener('mouseup', resetDragState);
+      svgElement.addEventListener('mouseleave', resetDragState);
+    }
+    return () => {
+      if (svgElement) {
+        svgElement.removeEventListener('mouseup', resetDragState);
+        svgElement.removeEventListener('mouseleave', resetDragState);
+      }
+    };
+  }, []);
+
+  // Cursor style for panning
+  useEffect(() => {
+    if (svgRef.current) {
+      svgRef.current.style.cursor = isPanning ? 'grabbing' : 'default';
+    }
+  }, [isPanning]);
+
+  /**
+   * Returns the SVG element for the toolbar's export functions.
+   * @returns {SVGSVGElement | null}
+   */
+  const getSvgElementForExport = useCallback(() => svgRef.current, []);
+
+  const flowData = useMemo(() => ({ nodes, connections }), [nodes, connections]);
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-gray-100">
+      <Sidebar />
+      <div className="flex flex-col flex-grow">
+        <TOOLBarMain
+          getSvgElement={getSvgElementForExport}
+          flowData={flowData}
+          onLoadJson={handleLoadJson}
+        />
+        <div
+          className="relative flex-grow bg-white"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          style={{
+            backgroundImage: `linear-gradient(to right, #eee 1px, transparent 1px), linear-gradient(to bottom, #eee 1px, transparent 1px)`,
+            backgroundSize: '20px 20px',
+          }}
+        >
+          <svg
+            ref={svgRef}
+            className="absolute inset-0 w-full h-full"
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseUp} // End drag/pan/connect if mouse leaves SVG
+            onWheel={handleWheel}
+          >
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="8"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+              </marker>
+            </defs>
+
+            <g
+              ref={transformGroupRef}
+              style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
+            >
+              {/* Connections */}
+              {connectionRenderData.map((conn) => (
+                <Connection
+                  key={conn.id}
+                  id={conn.id}
+                  startX={conn.startX}
+                  startY={conn.startY}
+                  endX={conn.endX}
+                  endY={conn.endY}
+                  isSelected={conn.isSelected}
+                  label={conn.label}
+                  onSelect={handleSelect}
+                  onLabelChange={handleConnectionLabelChange}
+                  onDelete={handleDelete}
+                />
+              ))}
+
+              {/* Nodes */}
+              {nodes.map((node) => (
+                <Node
+                  key={node.id}
+                  id={node.id}
+                  x={node.x}
+                  y={node.y}
+                  width={node.width}
+                  height={node.height}
+                  type={node.type}
+                  label={node.label}
+                  isSelected={selectedId === node.id || selectedNodeIds.has(node.id)}
+                  onSelect={handleSelect}
+                  onDrag={handleNodeDrag}
+                  onResize={handleNodeResize}
+                  onLabelChange={handleNodeLabelChange}
+                  onDelete={handleDelete}
+                  onAnchorDragStart={handleAnchorDragStart}
+                  onDeselect={handleDeselect}
+                />
+              ))}
+
+              {/* Temporary Connection Line */}
+              {isConnecting && tempConnection && (
+                <path
+                  d={calculateBezierPath(
+                    tempConnection.startX,
+                    tempConnection.startY,
+                    tempConnection.endX,
+                    tempConnection.endY
+                  )}
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                />
+              )}
+
+              {/* Group Selection Rectangle */}
+              {isSelectingGroup && selectionRect && (
+                <rect
+                  x={selectionRect.x}
+                  y={selectionRect.y}
+                  width={selectionRect.width}
+                  height={selectionRect.height}
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                />
+              )}
+            </g>
+          </svg>
+          {/* Reset View Button */}
+          <button
+            onClick={resetView}
+            className="absolute bottom-4 right-4 bg-gray-700 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-600"
+          >
+            Reset View
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

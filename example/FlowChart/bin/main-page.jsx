@@ -2,15 +2,21 @@ import React from 'react';
 import MainContent from "./main-content";
 
 /**
- * MainPage component represents the main page of the web application.
- * It primarily renders the MainContent component.
+ * @typedef {object} MainPageProps
+ * // No props defined for MainPage
+ */
+
+/**
+ * Main page of the web application.
+ * This component renders the MainContent which is the primary area for flow chart interaction.
  *
- * @returns {JSX.Element} The rendered main page.
+ * @param {MainPageProps} props - The props for the MainPage component.
+ * @returns {JSX.Element} The rendered Main Page component.
  */
 export default function MainPage() {
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-100">
-      {/* MainContent is the primary content area where the flow chart tools are managed. */}
+      {/* The MainContent component handles the core logic and UI for the flow chart. */}
       <MainContent />
     </div>
   );

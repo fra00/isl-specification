@@ -19,18 +19,21 @@ from here components are dragged **start drag**
 - **Layout**: Width 30%, Height 100%.
 - **Position**: Relative (part of the flex layout), NOT fixed.
 
+- **TOOLs** height 80px, width: 100%,
+
 ### ⚡ Capabilities
 
 #### Start Drag
 
 **Contract**: Starts dragging a **TOOL** towards the Main Content.
 **Signature**:
-  - **Input**:
-    - event: DragEvent
-    - toolType: string
-  - **Output**: NONE (Side effect on dataTransfer)
-**Trigger**: DragStart on a list element.
-**Side Effects**:
+
+- **Input**:
+  - event: DragEvent
+  - toolType: string
+- **Output**: NONE (Side effect on dataTransfer)
+  **Trigger**: DragStart on a list element.
+  **Side Effects**:
 
 - Sets data in `dataTransfer`.
 - Sets `effectAllowed` to 'copy'.

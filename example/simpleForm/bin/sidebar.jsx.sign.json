@@ -1,0 +1,13 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "SideBar",
+      "props": [
+        "handleMenuSelection",
+        "activeMenuId",
+        "toggleSidebar"
+      ]
+    }
+  ]
+}

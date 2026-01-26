@@ -1,0 +1,13 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "TOOLBarMain",
+      "props": [
+        "getSvgElement",
+        "flowData",
+        "onLoadJson"
+      ]
+    }
+  ]
+}

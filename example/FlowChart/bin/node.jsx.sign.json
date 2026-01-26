@@ -1,0 +1,25 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "Node",
+      "props": [
+        "id",
+        "x",
+        "y",
+        "width",
+        "height",
+        "type",
+        "label",
+        "isSelected",
+        "onSelect",
+        "onDrag",
+        "onResize",
+        "onLabelChange",
+        "onDelete",
+        "onAnchorDragStart",
+        "onDeselect"
+      ]
+    }
+  ]
+}

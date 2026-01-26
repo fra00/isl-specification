@@ -1,0 +1,14 @@
+{
+  "exports": [
+    {
+      "type": "named",
+      "name": "useApiUser",
+      "typeDef": "object<fetchAllUsers, createUser, updateUser, deleteUser>"
+    },
+    {
+      "type": "named",
+      "name": "useApiRole",
+      "typeDef": "object<fetchAllRoles, createRole, updateRole, deleteRole>"
+    }
+  ]
+}

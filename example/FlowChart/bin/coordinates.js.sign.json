@@ -1,0 +1,9 @@
+{
+  "exports": [
+    {
+      "type": "named",
+      "name": "useCoordinateUtils",
+      "typeDef": "function"
+    }
+  ]
+}

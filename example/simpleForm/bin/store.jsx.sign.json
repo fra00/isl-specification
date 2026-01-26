@@ -1,0 +1,14 @@
+{
+  "exports": [
+    {
+      "type": "named",
+      "name": "useUserStore",
+      "typeDef": "object<users, loadingUsers, userError, loadUsers, addUser, saveUser, removeUser>"
+    },
+    {
+      "type": "named",
+      "name": "useRoleStore",
+      "typeDef": "object<roles, loadingRoles, roleError, loadRoles, addRole, saveRole, removeRole>"
+    }
+  ]
+}

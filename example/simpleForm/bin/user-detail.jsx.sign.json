@@ -1,0 +1,13 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "UserDetail",
+      "props": [
+        "user",
+        "onSaveSuccess",
+        "onCancel"
+      ]
+    }
+  ]
+}

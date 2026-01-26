@@ -1,0 +1,14 @@
+{
+  "exports": [
+    {
+      "type": "named",
+      "name": "User",
+      "typeDef": "User"
+    },
+    {
+      "type": "named",
+      "name": "Role",
+      "typeDef": "Role"
+    }
+  ]
+}

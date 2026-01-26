@@ -1,0 +1,9 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "MainPage",
+      "props": []
+    }
+  ]
+}

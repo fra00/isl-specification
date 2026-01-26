@@ -1,0 +1,14 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "RoleDetail",
+      "props": [
+        "role",
+        "onSaveSuccess",
+        "onSaveFailure",
+        "onCancel"
+      ]
+    }
+  ]
+}

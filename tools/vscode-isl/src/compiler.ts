@@ -8,27 +8,39 @@ export class ISLCompiler {
    */
   public static resolveReferences(
     filePath: string,
-    maxDepth: number = 3,
+    maxDepth: number = 1,
     baseDir?: string,
     depth: number = 0,
+    includedFiles: Set<string> = new Set(),
   ): string {
     if (depth > maxDepth) {
       return `\n<!-- Max recursion depth (${maxDepth}) reached for ${filePath} -->\n`;
     }
 
+    // Ensure absolute path for deduplication
+    const absolutePath = path.resolve(filePath);
+
     if (!baseDir) {
-      baseDir = path.dirname(filePath);
+      baseDir = path.dirname(absolutePath);
     }
 
-    if (!fs.existsSync(filePath)) {
-      return `\n[ERROR: File not found: ${filePath}]\n`;
+    if (!fs.existsSync(absolutePath)) {
+      return `\n[ERROR: File not found: ${absolutePath}]\n`;
     }
+
+    // Deduplication: If not root and already included
+    if (depth > 0 && includedFiles.has(absolutePath)) {
+      return "";
+    }
+
+    // Register file
+    includedFiles.add(absolutePath);
 
     let content: string;
     try {
-      content = fs.readFileSync(filePath, "utf-8");
+      content = fs.readFileSync(absolutePath, "utf-8");
     } catch (e) {
-      return `\n[ERROR: Could not read file ${filePath}: ${e}]\n`;
+      return `\n[ERROR: Could not read file ${absolutePath}: ${e}]\n`;
     }
 
     // Strip BOM (Byte Order Mark) se presente
@@ -50,7 +62,6 @@ export class ISLCompiler {
         const absPath = path.resolve(baseDir, relPath);
 
         resolvedContent.push(line); // Mantiene la linea di riferimento per contesto
-        resolvedContent.push(`\n<!-- START EXTERNAL CONTEXT: ${relPath} -->\n`);
 
         // Risoluzione ricorsiva
         const externalContent = this.resolveReferences(
@@ -58,15 +69,34 @@ export class ISLCompiler {
           maxDepth,
           path.dirname(absPath),
           depth + 1,
+          includedFiles,
         );
-        resolvedContent.push(externalContent);
 
-        resolvedContent.push(`\n<!-- END EXTERNAL CONTEXT -->\n`);
+        if (externalContent.trim() !== "") {
+          resolvedContent.push(
+            `\n<!-- START EXTERNAL CONTEXT: ${relPath} -->\n`,
+          );
+          resolvedContent.push(externalContent);
+          resolvedContent.push(`\n<!-- END EXTERNAL CONTEXT: ${relPath} -->\n`);
+        }
       } else {
         resolvedContent.push(line);
       }
     }
 
-    return resolvedContent.join("\n");
+    // Normalizzazione: Unisce le linee e riduce i ritorni a capo multipli (3+) a max 2
+    // Questo preserva la struttura dei paragrafi Markdown risparmiando token inutili.
+    const body = resolvedContent.join("\n").replace(/\n{3,}/g, "\n\n");
+
+    // Se siamo alla radice (depth 0), aggiungiamo la Context Map all'inizio
+    if (depth === 0) {
+      const fileList = Array.from(includedFiles)
+        .map((f) => `- 📄 ${path.basename(f)}`)
+        .join("\n");
+      const contextMap = `<!-- CONTEXT MAP (Files included in this compilation) -->\n${fileList}\n<!-- END CONTEXT MAP -->\n\n`;
+      return contextMap + body;
+    }
+
+    return body;
   }
 }

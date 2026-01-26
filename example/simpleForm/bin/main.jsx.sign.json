@@ -1,0 +1,13 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "MainPage",
+      "props": []
+    },
+    {
+      "type": "named",
+      "name": "Home"
+    }
+  ]
+}

@@ -1,23 +1,81 @@
 # ISL Code Generation Protocol
 
-This document defines the mandatory protocol for translating ISL specifications into executable code artifacts. It ensures that file organization and artifact classification remain deterministic without hardcoding filesystem paths in the specification.
+This document defines the mandatory protocol for translating ISL specifications into executable code artifacts. It ensures that file organization remains deterministic and enforces the distinction between **Source** (ISL) and **Artifact** (Code).
 
-## 1. Compilation Unit & Context Preparation
+## 1. The Compilation Pipeline
 
-- Each `.isl.md` file is treated as an independent compilation unit.
-- **Reference Resolution (Static Semantic Linking)**:
-  - Before any generation phase, all ISL References MUST be resolved by **full inclusion** (transclusion).
-  - This produces a single, **closed ISL compilation unit**.
-  - Referencing a file means importing its full intent into the current scope.
-- **Isolation**: The Generator operates exclusively on the resolved unit and MUST NOT assume the existence of external ISL files.
-- **Result**: A self-contained prompt where all dependencies are visible and local.
-- **Convergence**: If multiple compilation units generate the same artifact (e.g., a Shared Entity), they MUST resolve to the same filesystem path. Overwriting with semantically equivalent content is acceptable.
+The generation process is divided into two distinct phases to ensure determinism and referential integrity:
 
-## 2. Semantic Artifact Classification (MANDATORY)
+1.  **Build Phase (The Builder)**: Resolves dependencies, determines structure, and produces a build manifest.
+2.  **Compile Phase (The Generator)**: Translates resolved contexts into executable code.
 
-Every generated artifact MUST be classified by semantic role, inferred from its behavior and usage.
+### Directory Structure Standard
 
-**Allowed semantic categories (non-exhaustive but canonical):**
+- `src/` or `specs/`: Contains source `.isl.md` files.
+- `build/`: Contains intermediate build artifacts (`build-manifest.json`, resolved contexts).
+- `bin/`: Contains the final generated code (The "Binary" equivalent). **Files in `bin/` are read-only artifacts.**
+
+## 2. Phase 1: Context Preparation (The Builder)
+
+The Builder is responsible for analyzing the project structure and preparing self-contained contexts for the LLM.
+
+### 1. Dependency Analysis & Hierarchy
+
+- **Scanning**: The Builder scans all `.isl.md` files to identify nodes.
+- **Graph Construction**: It builds a dependency graph based on `> **Reference**:` directives.
+- **Circular Reference Check**: It MUST detect and report circular references (e.g., A -> B -> A) as fatal errors.
+- **Topological Sort**: It determines the deterministic build order (leaves first, then dependents).
+
+### 2. Manifest Generation
+
+- **Build Manifest**: Generates `build/build-manifest.json` containing the ordered list of compilation units.
+- **Hashing**: Calculates content hashes to enable incremental builds.
+
+### 3. Context Generation (For each file in order)
+
+- **Interface Extraction (.ref.md)**: Extracts public contracts (Headers, Signatures, Constraints) and strips implementation details (Flows).
+- **Transclusion (.build.md)**: Resolves all `> **Reference**:` directives by injecting the content of the referenced `.ref.md` files directly into the context. This produces a standalone file containing everything needed to generate the code.
+
+## 3. Phase 2: Code Generation (The Compiler)
+
+The Compiler executes the generation pipeline using the artifacts prepared by the Builder.
+
+### 1. Execution Loop
+
+- **Manifest Loading**: The Compiler loads `build/build-manifest.json`.
+- **Ordered Execution**: It iterates through components in the strict topological order calculated by the Builder.
+
+### 2. Context Assembly (Dependency Injection)
+
+For each component, the Compiler assembles the context:
+
+- **Reference Context (`.ref`)**: Loaded from the `.build.md`, providing Contracts, Constraints, and Usage Guides for dependencies.
+- **Implementation Signatures**: The Compiler checks for existing `.sign.json` files for all dependencies. If present, these signatures are injected into the prompt.
+
+**Result**: The component is compiled with **Intent** (ISL Source), **Dependency Contracts** (from `.ref`), and **Dependency Realities** (from `.sign.json`). This ensures the component is autonomous but fully aware of its dependencies' interfaces, minimizing context noise.
+
+### 3. Generation & Output
+
+- **Prompt Strategy**: The LLM is instructed to generate both the **Implementation Code** and the **Public Signatures** (exports).
+- **Path Resolution**: The output filename is derived strictly from the `**Implementation**` key in the ISL.
+- **Output Format Standard**: To ensure deterministic parsing, the LLM MUST return a multipart response using strict delimiters:
+  ```text
+  #[CODE]
+  (The implementation code)
+  #[CODE-END]
+  #[SIGNATURE]
+  (The JSON signature)
+  #[SIGNATURE-END]
+  ```
+- **Artifact Writing**:
+  - **Code File**: Written to `bin/` with the "DO NOT EDIT" header.
+  - **Signature File**: Written as `*.sign.json` alongside the code. This file becomes the source of truth for subsequent compilations.
+
+## 4. Artifact Categorization Standards (Convention)
+
+Since the `**Implementation**` path is explicitly defined in the ISL, this section defines the **Conventions** that the ISL Author (Human or LLM) MUST follow when defining paths. The Compiler does not infer these; it blindly follows the ISL.
+
+**Standard Semantic Categories:**
 
 - **Component**: UI or Backend main unit.
 - **Pure Function**: Deterministic, no side effects, no I/O.
@@ -26,61 +84,21 @@ Every generated artifact MUST be classified by semantic role, inferred from its 
 - **Adapter**: Integration boundary (external APIs, DBs).
 - **Model / Type**: Data structures, domain models, schemas.
 
-This classification MUST be deterministic and based on intent, not size.
-Classification MUST precede ownership resolution.
+## 5. File Structure Convention
 
-## 3. Ownership Resolution (CRITICAL RULE)
+**Rule**: The filesystem structure inside `bin/` is determined by the `**Implementation**` header in the ISL source. To maintain a clean architecture, ISL files SHOULD define paths following these rules:
 
-Every generated artifact MUST be assigned an **Owner** before placement.
+1.  **Source of Truth**: The `**Implementation**` header in `.isl.md` defines the relative path inside `bin/`.
+2.  **Path Convention (Recommended)**:
+    - `components/{ComponentName}/{ArtifactName}`
+    - `services/{ServiceName}/{ArtifactName}`
+    - `model/{DomainName}/{ArtifactName}`
 
-**Definition of Owner:**
-The semantic authority responsible for the artifact.
+## 6. Naming Conventions (Convention)
 
-**Resolution Rules (in order of precedence):**
+To enable deterministic tooling and maintain a readable project structure, ISL Authors SHOULD follow strict naming conventions when defining capability names. The Generator itself does not enforce these; it follows the ISL.
 
-1. If the artifact is defined inside a Component → **Owner = that Component**
-2. If the artifact exists to support a single Component → **Owner = that Component**
-3. If the artifact is tied to a Domain Concept → **Owner = that Domain Concept**
-4. If none apply → **Artifact is Shared**
-
-Ownership is **semantic**, not filesystem-based.
-Ownership MUST be resolved before filesystem placement.
-
-## 4. File Structure Derivation
-
-Generators MUST NOT hardcode filesystem paths inside ISL logic. Structure MUST be derived as follows:
-
-**Primary Axis: Semantic Category**
-Artifacts are grouped first by semantic role (logical grouping):
-
-- `components/`
-- `artifacts/`
-  - `pure/`
-  - `helpers/`
-  - `services/`
-  - `adapters/`
-  - `models/`
-
-**Secondary Axis: Owner (OPTIONAL)**
-If an artifact has a resolved Owner, it MUST be placed in a subfolder named after the Owner.
-
-**Example:**
-
-```text
-artifacts/pure/
-  UserProfileCard/       ← Owner
-    computeDisplayName.ts
-
-artifacts/pure/
-  (root)                 ← No Owner (Shared)
-    computeSlug.ts
-```
-
-## 5. Naming Conventions (STRICT)
-
-Generators MUST follow strict naming conventions to enable deterministic tooling.
-
-**Required Naming Signals:**
+**Recommended Naming Signals for Capabilities:**
 
 - `computeX`, `calculateX`, `formatX` → **Pure Functions**
 - `useX`, `buildX`, `resolveX` → **Helpers**
@@ -88,87 +106,47 @@ Generators MUST follow strict naming conventions to enable deterministic tooling
 - `XAdapter` → **Adapters**
 - `XModel`, `XType` → **Models**
 
-Naming MUST reflect semantic intent, not implementation detail. If a name is ambiguous, prefer clarity over brevity.
-If naming contradicts classification, classification prevails.
+## 7. Artifact Integrity & Linking
 
-## 6. Helper vs Pure Function Rule
+To support the "ISL as Source" paradigm:
 
-**Pure Functions:**
+1.  **Read-Only Artifacts**: Generated files in `bin/` are disposable.
+2.  **Signatures**: For every generated component, a corresponding `.sign.json` MUST be generated. This file contains the public interface (exports) of the component to enable Dynamic Linking in dependent components.
+3.  **Gen-Lock (Incremental Integrity)**: A `gen-lock.json` tracks the hash of the **Resolved Build Context** (Source + Dependencies).
+    - **Purpose**: It enables smart incremental builds. If a dependency changes (modifying the included `.ref.md`), the context hash changes, forcing a recompilation of the dependent component even if its source ISL was not touched.
 
-- No side effects
-- Deterministic output
-- No I/O
+## 8. Generation Scope & Content
 
-**Helpers:**
+The Generator operates within the strict boundary of the single file being compiled.
 
-- Support logic
-- MAY orchestrate calls
-- MAY depend on context or I/O
+**Content Requirements:**
 
-This distinction MUST be preserved in generation.
+- **Implementation of Intent**: The code MUST implement the Contracts and Flows defined in the ISL.
+- **Internal Helpers**: The Generator MAY create internal helper functions or constants _within the generated file_ if required to satisfy the logic.
+- **Boilerplate & Imports**: The Generator MUST include all necessary imports and framework scaffolding required to make the file executable.
 
-## 7. Generation Boundaries
+**Prohibitions:**
 
-**You MUST generate:**
+- **No Scope Creep**: Do NOT generate features not implied by the ISL.
+- **No External Files**: The Generator MUST NOT attempt to create or modify files other than the target implementation file.
+- **Role Adherence**: Do NOT generate visual logic in Backend components or business logic in Presentation components.
 
-- Only what is required by the ISL specification.
-- No speculative helpers unless strictly necessary.
-- If a helper is required to fulfill a Contract: Generate it, Classify it, Assign an Owner, Name it according to conventions.
-- **Implicit Artifacts**: You MAY generate files not explicitly defined in ISL (e.g., internal helpers) ONLY IF they are strictly necessary to satisfy a Contract. These MUST follow all classification and ownership rules.
+## 9. End-to-End Process Flow
 
-**You MUST NOT generate:**
+### Step 1: The Builder
 
-- Framework boilerplate (unless explicitly requested).
-- Infrastructure code unless explicitly required.
-- Visual or business logic outside the component role.
+1.  Scans `.isl.md` files.
+2.  Resolves imports/references.
+3.  Calculates hashes.
+4.  Writes `build/build-manifest.json`.
 
-## 8. Visibility & Encapsulation
+### Step 2: The Compiler
 
-- Artifacts owned by a Component MUST NOT be publicly exported unless explicitly required by ISL.
-- Shared artifacts MAY be public.
-
-## 9. Output Expectations
-
-The generation output MUST clearly indicate:
-
-1. Generated files
-2. Semantic category of each artifact
-3. Owner (if any)
-
-**Meta-Example:**
-
-```yaml
-Generated:
-  - path: artifacts/pure/UserProfileCard/computeDisplayName.ts
-    type: Pure Function
-    owner: UserProfileCard
-```
-
-## 10. End-to-End Process Flow (Reference)
-
-To ensure determinism, the generation process MUST follow this two-phase pipeline:
-
-### Phase 1: The Architect (Structure Strategy)
-
-**Goal**: Define _where_ code goes before writing it.
-
-1. **Input**: **Metadata extraction** of all `.isl.md` files (Headers, Roles, Capability names, References ONLY). Content bodies MUST be stripped to reduce context noise.
-2. **Analysis**: Identify Components, Capabilities, and required helpers.
-3. **Classification**: Assign semantic roles (Component, Pure, Helper...) (Rule 2).
-4. **Ownership**: Resolve semantic owner for each artifact (Rule 3).
-5. **Mapping**: Generate a virtual filesystem map based on derivation rules (Rule 4).
-6. **Output**: A `project-structure.json` manifest.
-
-### Phase 2: The Constructor (Implementation)
-
-**Goal**: Write the code following the map.
-
-1. **Input**: The same **Resolved ISL Unit** from Phase 1 + `project-structure.json` entry.
-2. **Context**: Inject resolved paths for imports (no guessing).
-3. **Generation**: Write code satisfying the Contract.
-4. **Validation**: Verify Naming (Rule 5) and Boundaries (Rule 7).
-5. **Output**: Final source code files.
-
-```
-
-```
+1.  Reads `build-manifest.json`.
+2.  Checks `gen-lock.json` for changes.
+3.  For each changed component:
+    - Injects Dependency Interfaces (from `.sign.json` of dependencies).
+    - Generates code.
+    - Writes to `bin/path/to/file`.
+    - Writes `bin/path/to/file.sign.json`.
+    - Updates `gen-lock.json`.

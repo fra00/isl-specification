@@ -8,7 +8,7 @@ Api definition for social media platform
 
 ## Domain Concepts
 
-> **Reference**: Core entities (like **User**) are defined in `./shared-domain.isl.md`.
+> **Reference**: Core entities (like **User**) are defined in `./api-shared-domain.isl.md`.
 
 ### Post
 

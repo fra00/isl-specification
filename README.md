@@ -62,8 +62,10 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 ## 🛠️ Available Tools
 
 - **[VS Code Extension](./tools/vscode-isl)**: The complete IDE experience with validation, snippets, and compilation.
-- **[ISL Compiler](./tools/isl_compiler.py)**: Standalone Python script to resolve ISL references and generate prompts.
-- **[ISL Lint](./tools/isl-lint-shell)**: CLI validator.
+- **[ISL Builder](./tools/vscode-isl/src/isl-builder.ts)**: Resolves dependencies, handles transclusion, and prepares build contexts.
+- **[ISL Compiler](./tools/vscode-isl/src/isl-generator.ts)**: Generates executable code (`bin/`) and signatures (`.sign.json`) using LLMs.
+- **ISL Test**: Generates unit tests automatically from ISL specs and implementations.
+- **ISL Create**: CLI tool to generate ISL drafts from natural language descriptions.
 
 ---
 
@@ -84,6 +86,13 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 - A UI mockup format
 - A database schema language (unless explicitly modeled)
 - A place for algorithms or step-by-step code logic
+
+### Key Concepts (v1.6.1)
+
+- **Source vs Artifact**: ISL files are the source. Generated code (in `bin/`) is a read-only artifact.
+- **Two-Phase Compilation**:
+  1. **Builder**: Resolves dependencies and creates a deterministic build manifest.
+  2. **Compiler**: Generates code and cryptographic signatures for dynamic linking.
 
 ---
 

@@ -11,7 +11,7 @@ The generation process is divided into two distinct phases to ensure determinism
 
 ### Directory Structure Standard
 
-- `src/` or `specs/`: Contains source `.isl.md` files.
+- Root Contains source `.isl.md` files.
 - `build/`: Contains intermediate build artifacts (`build-manifest.json`, resolved contexts).
 - `bin/`: Contains the final generated code (The "Binary" equivalent). **Files in `bin/` are read-only artifacts.**
 

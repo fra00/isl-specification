@@ -1,49 +1,75 @@
 import * as https from "https";
+import * as http from "http";
+import * as url from "url";
 
-export type LLMProvider = "openai" | "gemini";
+export type LLMProvider = "openai" | "gemini" | "lm-studio";
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
 
 export class LLMClient {
+  private baseUrl: string;
+
   constructor(
     private provider: LLMProvider = "openai",
     private model?: string,
+    baseUrl?: string,
   ) {
+    // Default Base URLs
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else if (this.provider === "lm-studio") {
+      this.baseUrl = process.env.LLM_BASE_URL || "http://localhost:1234/v1";
+    } else {
+      this.baseUrl = process.env.LLM_BASE_URL || "https://api.openai.com/v1";
+    }
+
+    // Default Models
     if (!this.model) {
-      this.model = this.provider === "gemini" ? "gemini-2.5-flash" : "gpt-4o";
+      if (this.provider === "gemini") this.model = "gemini-2.5-flash";
+      else if (this.provider === "lm-studio")
+        this.model = "local-model"; // LM Studio often ignores model name or uses loaded one
+      else this.model = "gpt-4o";
     }
   }
 
-  public async generateRaw(prompt: string): Promise<string> {
+  public async generateRaw(input: string | ChatMessage[]): Promise<string> {
     let rawOutput = "";
 
-    if (this.provider === "openai") {
-      const apiKey = process.env.OPENAI_API_KEY;
+    if (this.provider === "openai" || this.provider === "lm-studio") {
+      const apiKey =
+        process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || "lm-studio"; // Fallback for local
       if (apiKey) {
-        console.log(`   (Calling OpenAI ${this.model}... 📡)`);
+        console.log(
+          `   (Calling ${this.provider} [${this.model}] at ${this.baseUrl}... 📡)`,
+        );
         try {
-          rawOutput = await this.callOpenAI(apiKey, prompt);
+          rawOutput = await this.callOpenAICompatible(apiKey, input);
         } catch (error: any) {
           console.error(`   ❌ LLM Call Failed: ${error.message}`);
           console.log(`   (Falling back to simulation...)`);
-          rawOutput = await this.simulate(prompt);
+          rawOutput = await this.simulate(input);
         }
       } else {
         console.log(`   (Simulating LLM call [No OpenAI Key]... ⏳)`);
-        rawOutput = await this.simulate(prompt);
+        rawOutput = await this.simulate(input);
       }
     } else if (this.provider === "gemini") {
       const apiKey = process.env.GEMINI_API_KEY;
       if (apiKey) {
         console.log(`   (Calling Gemini ${this.model}... 📡)`);
         try {
-          rawOutput = await this.callGemini(apiKey, prompt);
+          rawOutput = await this.callGemini(apiKey, input);
         } catch (error: any) {
           console.error(`   ❌ LLM Call Failed: ${error.message}`);
           console.log(`   (Falling back to simulation...)`);
-          rawOutput = await this.simulate(prompt);
+          rawOutput = await this.simulate(input);
         }
       } else {
         console.log(`   (Simulating LLM call [No Gemini Key]... ⏳)`);
-        rawOutput = await this.simulate(prompt);
+        rawOutput = await this.simulate(input);
       }
     }
 
@@ -55,10 +81,14 @@ export class LLMClient {
     return this.extractCode(rawOutput);
   }
 
-  private async simulate(prompt: string): Promise<string> {
+  private async simulate(input: string | ChatMessage[]): Promise<string> {
     // Simulazione di delay di rete
+    const promptText =
+      typeof input === "string"
+        ? input
+        : input.map((m) => m.content).join("\n");
     await new Promise((resolve) => setTimeout(resolve, 500));
-    return `// Generated Code for ${prompt.split("\n")[0]}\n// Timestamp: ${new Date().toISOString()}\n\nexport const Placeholder = () => {};`;
+    return `// Generated Code for ${promptText.split("\n")[0]}\n// Timestamp: ${new Date().toISOString()}\n\nexport const Placeholder = () => {};`;
   }
 
   private extractCode(markdown: string): string {
@@ -71,24 +101,42 @@ export class LLMClient {
     return markdown;
   }
 
-  private callOpenAI(apiKey: string, prompt: string): Promise<string> {
+  private callOpenAICompatible(
+    apiKey: string,
+    input: string | ChatMessage[],
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
+      const messages =
+        typeof input === "string"
+          ? [
+              {
+                role: "system",
+                content:
+                  "You are an expert software engineer. Generate code based on the ISL specification provided. Output only the code inside markdown code blocks.",
+              },
+              { role: "user", content: input },
+            ]
+          : input;
+
       const data = JSON.stringify({
         model: this.model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert software engineer. Generate code based on the ISL specification provided. Output only the code inside markdown code blocks.",
-          },
-          { role: "user", content: prompt },
-        ],
+        messages: messages,
         temperature: 0.2,
       });
 
+      const parsedUrl = url.parse(this.baseUrl);
+      const isHttps = parsedUrl.protocol === "https:";
+      const client = isHttps ? https : http;
+
+      // Ensure path ends with /chat/completions. Handle trailing slash in baseUrl.
+      const basePath =
+        parsedUrl.path && parsedUrl.path !== "/" ? parsedUrl.path : "";
+      const endpoint = `${basePath.replace(/\/$/, "")}/chat/completions`;
+
       const options = {
-        hostname: "api.openai.com",
-        path: "/v1/chat/completions",
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: endpoint,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,7 +145,7 @@ export class LLMClient {
         },
       };
 
-      const req = https.request(options, (res) => {
+      const req = client.request(options, (res) => {
         let body = "";
         res.on("data", (chunk) => (body += chunk));
         res.on("end", () => {
@@ -116,18 +164,41 @@ export class LLMClient {
     });
   }
 
-  private callGemini(apiKey: string, prompt: string): Promise<string> {
+  private callGemini(
+    apiKey: string,
+    input: string | ChatMessage[],
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const data = JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
+      let contents: any[] = [];
+      let systemInstruction: any = undefined;
+
+      if (typeof input === "string") {
+        contents = [{ parts: [{ text: input }] }];
+      } else {
+        const systemMsg = input.find((m) => m.role === "system");
+        if (systemMsg) {
+          systemInstruction = { parts: [{ text: systemMsg.content }] };
+        }
+        contents = input
+          .filter((m) => m.role !== "system")
+          .map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+          }));
+      }
+
+      const requestBody: any = {
+        contents,
         generationConfig: {
           temperature: 0.2,
         },
-      });
+      };
+
+      if (systemInstruction) {
+        requestBody.systemInstruction = systemInstruction;
+      }
+
+      const data = JSON.stringify(requestBody);
 
       const options = {
         hostname: "generativelanguage.googleapis.com",

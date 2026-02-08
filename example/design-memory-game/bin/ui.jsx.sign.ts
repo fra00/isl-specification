@@ -1,0 +1,1 @@
+export default function CardComponent(props: { card: { id: string; value: string; state: 'Covered' | 'Flipped' | 'Solved' }; onFlip: (cardId: string) => void }): React.Element;

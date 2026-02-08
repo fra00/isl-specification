@@ -1,0 +1,1 @@
+export default function CustomerPresentation(props: { initialPage?: number; pageSize?: number }): React.Element;

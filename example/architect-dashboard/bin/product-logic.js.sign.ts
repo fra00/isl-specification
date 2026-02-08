@@ -1,0 +1,5 @@
+export function fetchAllProducts(): Array<{ id: string; name: string; description: string; price: number; stock: number; category: string; imageUrl: string; }>;
+export function fetchProductById(productId: string): { id: string; name: string; description: string; price: number; stock: number; category: string; imageUrl: string; } | null;
+export function addProduct(productDetails: { name: string; description: string; price: number; stock: number; category: string; imageUrl: string; }): { id: string; name: string; description: string; price: number; stock: number; category: string; imageUrl: string; };
+export function updateProduct(productId: string, updateDetails: { name?: string; description?: string; price?: number; stock?: number; category?: string; imageUrl?: string; }): { id: string; name: string; description: string; price: number; stock: number; category: string; imageUrl: string; };
+export function deleteProduct(productId: string): boolean;

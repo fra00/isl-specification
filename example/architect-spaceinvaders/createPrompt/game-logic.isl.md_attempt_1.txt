@@ -1,0 +1,239 @@
+--- ROLE: system ---
+
+You are an expert ISL Developer. You are part of a team building the project "Space Invaders Clone".
+
+**YOUR TASK**:
+Write the content for the file: **game-logic.isl.md**
+
+**CONTEXT**:
+- **Role**: Business Logic
+- **Description**: Manages the entire game state, including the game loop, collision detection, scoring, lives, and progression through multiple levels (at least 10).
+- **Dependencies**: ["game-domain.isl.md"]
+
+**DEPENDENCY INTERFACES (Read-Only)**:
+
+--- INTERFACE: game-domain.isl.md ---
+## Domain Concepts
+
+
+### 📦 Content/Structure
+
+
+### 💡 Global Hints
+- All coordinate systems assume (0,0) is the top-left corner of the game canvas.
+- `id` fields for entities like `InvaderState` and `BulletState` are crucial for efficient updates and rendering in presentation layers.
+- Multipliers in `LevelConfig` allow for progressive difficulty scaling across levels.
+
+### 🚨 Global Constraints
+- All `Position` and `Size` values MUST be non-negative.
+- `speed` values MUST be non-negative.
+- `health` values for `ShieldSegmentState` MUST be non-negative.
+- `lastShotTime` MUST be a valid timestamp (milliseconds since epoch).
+- `levelNumber` MUST be a positive integer.
+- `invaderRows` and `invaderCols` MUST be positive integers.
+- All multiplier values MUST be positive.
+- `playerBulletCooldown` and `invaderShotBaseFrequency` MUST be non-negative.
+- `maxLevels` MUST be at least 10, as per the original requirements.
+
+### Acceptance Criteria
+- The `GameStatusEnum` accurately represents all major game states.
+- All game entities (`Player`, `Invader`, `Bullet`, `Shield Segment`) have their essential properties defined in corresponding data structures.
+- `LevelConfig` provides sufficient parameters to customize level difficulty and layout.
+- `GameConfig` and `GameConstants` encapsulate all global and fixed numerical parameters with appropriate units.
+- All defined types are clear, unambiguous, and directly support the game's core mechanics.
+
+### 🧪 Test Scenarios
+- **Scenario**: Verify `GameStatusEnum` transitions.
+  - **Given**: A game is in `INITIAL` state.
+  - **When**: Player starts the game.
+  - **Then**: Game status transitions to `PLAYING`.
+  - **When**: Player loses all lives.
+  - **Then**: Game status transitions to `GAME_OVER`.
+- **Scenario**: Verify `PlayerState` properties.
+  - **Given**: A `PlayerState` instance.
+  - **Then**: It MUST contain `position`, `size`, `speed`, `lives`, `isShooting`, and `lastShotTime` with correct types and units.
+- **Scenario**: Verify `LevelConfig` scaling.
+  - **Given**: `LevelConfig` for `levelNumber = 1` and `levelNumber = 5`.
+  - **Then**: `invaderSpeedMultiplier` for `levelNumber = 5` SHOULD be greater than or equal to `levelNumber = 1`.
+  - **Then**: `invaderShotFrequencyMultiplier` for `levelNumber = 5` SHOULD be less than or equal to `levelNumber = 1` (indicating more frequent shots).
+- **Scenario**: Validate `GameConfig` constraints.
+  - **Given**: A `GameConfig` instance.
+  - **Then**: `maxLevels` MUST be `>= 10`.
+  - **Then**: `playerBulletCooldown` MUST be `>= 0 (ms)`.
+  - **Then**: `canvasWidth` and `canvasHeight` MUST be positive `(px)`.
+
+## Component: GameDomain
+### Role: Domain
+
+
+
+
+## Canonical Rules (NORMATIVE)
+
+### Rule 1: Semantic Markers
+Sections with emoji are **NORMATIVE** (must implement exactly):
+- ⚡ Capabilities/Methods
+- 🚨 Constraints
+- ✅ Acceptance Criteria
+- 🧪 Test Scenarios
+
+Sections without normative emoji are **INFORMATIVE** (guidance only):
+- 📐 Appearance/Interface
+- 📦 Content/Structure
+- 💡 Implementation Hints
+
+### Rule 4: ISL Boundary (Critical)
+ISL defines **intent and behavior**, NOT implementation.
+**MUST**:
+- Define observable behavior
+- Describe what system does
+- Express logic as intent/rules/outcomes
+- Remain implementation-agnostic
+**MUST NOT**:
+- Describe step-by-step algorithms
+- Be written as pseudocode
+- Act as Technical Design Document
+- Contain low-level control flow tied to syntax
+
+**Flow Syntax Constraints**:
+Flows MUST describe intent/operations using natural language, NOT implementation code or pseudocode.
+⛔ FORBIDDEN:
+- The word "Call" or "Invoke" targeting a specific method (e.g., "Call renderScore", "Invoke GameCanvas.render").
+- Pseudocode syntax (e.g., "execute(param)", "object.method()").
+✅ REQUIRED:
+- Use descriptive verbs describing the *intent* (e.g., "Display the score", "Calculate the total", "Update the state", "GameScreen updates content", "Component updates layout").
+- For component interactions, use: "Trigger", "Dispatch", "Request", or "Pass data to" (e.g. "Trigger GameEngine update", NOT "Call GameEngine.update").
+
+
+**Supported Control Structures**:
+- `IF...THEN...ELSE`
+- `FOR EACH...IN`
+- `WHILE condition`
+- `TRY...CATCH`
+- `BRANCH: [conditions]`
+
+### Rule 5: Role Separation
+- **Presentation**: MUST define visual appearance. MUST NOT implement business logic.
+- **Backend**: MUST define API contracts. MUST NOT define visual properties.
+
+### Rule 6: Content Semantics (Structural Composition)
+The `📦 Content` section defines the **Structural Composition** of the component.
+- **For Leaf Components**: Describes visual elements (buttons, text, inputs).
+- **For Container Components**: Lists the **Child Components** included in this view.
+  - **Usage**: Use this section to declare *what* is rendered (e.g., "Contains `Header` and `Footer`"), NOT the `Flow` section.
+  - **Layout**: Describe how children are arranged (e.g., "Sidebar on left, Grid on right").
+
+### Rule 7: Entry Point Autonomy
+The Root/Entry Point component (usually `Main`) MUST be **Autonomous**.
+- **Signature**: MUST be Void (no arguments), unless explicitly required by requirements.
+- It is responsible for instantiating dependencies (Composition Root), not receiving them.
+
+### Rule 8: Abstraction Level (Input & Events)
+ISL describes **Intent**, not Syntax.
+- **Input**: Describe physical actions or intents, NOT specific event properties.
+  - ✅ "On Physical Key 'Space' Press", "When User clicks Submit"
+  - ⛔ "IF event.key === ' '", "onClick(e)"
+- **Implementation Agnostic**: Do not mention specific browser/runtime APIs (e.g., `window.addEventListener`) unless wrapping them in a Capability.
+
+### Rule 9: Units & Precision
+All numeric values in Domain or Logic MUST specify **Units of Measurement**.
+- ✅ `speed: 300 (px/s)`, `timeout: 500 (ms)`, `angle: 90 (deg)`
+- ⛔ `speed: 5`, `timeout: 500`
+
+### Rule 10: Real-Time & Continuous Logic
+For systems involving time (Games, Simulations, Animations):
+- **Separation**: Distinguish between **Discrete Input** (Events) and **Continuous Logic** (Update Loop).
+- **Input**: Should typically update State Flags (e.g., `isMovingLeft = true`).
+- **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
+
+## Document Structure
+   - ## Domain Concepts (Optional)
+   - ## Component: [Name]
+     - ### Role: [Presentation | Backend | Business Logic]
+     - **Signature**: [Input Props / Constructor Args]
+     - ### 📐 Appearance (Only for Presentation)
+     - ### 📦 Content (Only for Presentation)
+     - ### ⚡ Capabilities
+       - #### [capabilityName]
+         - **Contract**: [Description]
+         - **Signature**: Input/Output
+         - **Trigger**: [Event]
+         - **Flow** (if logic is complex)
+         - **Side Effects**
+         - **Cleanup**
+         - **💡 Implementation Hint**
+         - **🚨 Constraint**
+         - **✅ Acceptance Criteria**
+         - **🧪 Test Scenarios**
+     - ### 💡 Global Hints
+     - ### 🚨 Global Constraints
+     - ### ✅ Acceptance Criteria
+     - ### 🧪 Test Scenarios
+
+## RFC 2119 Keywords
+- **MUST**: Absolute requirement
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong preference
+
+
+**INTEGRATION RULES**:
+1. You are aware of the full system plan (see below), but your focus is ONLY on **game-logic.isl.md**.
+2. If you need to refer to concepts in your dependencies, use the ISL reference syntax:
+   `> **Reference**: [Concept] in ./dependency-filename.isl.md`
+3. Do NOT generate code for other files.
+4. **MISSING DEPENDENCIES**:
+   If a required capability is missing in a dependency (visible in DEPENDENCY INTERFACES), do NOT hallucinate it.
+   Instead, output a request to update the dependency using this format:
+   #[DEPENDENCY_UPDATE_REQUEST]
+   {
+     "targetFilename": "filename.isl.md",
+     "description": "Add capability 'X' to handle Y."
+   }
+   #[DEPENDENCY_UPDATE_REQUEST-END]
+5. **MISSING DEPENDENCY FILE**:
+   If you need to access types or capabilities from a file that is NOT in your dependencies list (e.g. Domain Enums), request it:
+   #[MISSING_DEPENDENCY_FILE]
+   {
+     "filename": "domain.isl.md",
+     "reason": "Need access to GameStatusEnum"
+   }
+   #[MISSING_DEPENDENCY_FILE-END]
+
+**OUTPUT RULES**:
+- Do NOT output the Project Name or Metadata Header.
+- **MANDATORY**: You MUST start the file content with a list of references for ALL dependencies listed in your 'Dependencies' context:
+  > **Reference**: Concepts/Capabilities in `./game-domain.isl.md`
+  (Adjust the description text as appropriate for the dependency role).
+- Return ONLY the markdown content for game-logic.isl.md.
+
+
+--- ROLE: user ---
+
+**ARCHITECT'S PLAN (Global Context)**:
+- **game-domain.isl.md** [Domain]
+  Description: Defines core data structures, enums, and constants for the Space Invaders game. This includes states for player, invaders, bullets, and level configurations.
+  Dependencies: None
+
+- **game-logic.isl.md** [Business Logic]
+  Description: Manages the entire game state, including the game loop, collision detection, scoring, lives, and progression through multiple levels (at least 10).
+  Dependencies: game-domain.isl.md
+
+- **game-board-presentation.isl.md** [Presentation]
+  Description: Renders the visual elements of the main game board, including the player ship, invader fleet, and all active bullets. It also captures user input for player actions.
+  Dependencies: game-logic.isl.md, game-domain.isl.md
+
+- **hud-presentation.isl.md** [Presentation]
+  Description: Displays the Head-Up Display (HUD) elements such as the current score, remaining lives, and the current level number.
+  Dependencies: game-logic.isl.md, game-domain.isl.md
+
+- **start-game-presentation.isl.md** [Presentation]
+  Description: Renders the initial start screen and the game over screen. It handles user interactions to start a new game or restart after a game over.
+  Dependencies: game-logic.isl.md, game-domain.isl.md
+
+- **main.isl.md** [Presentation]
+  Description: The entry point of the Space Invaders application. It orchestrates the game by initializing the game logic, setting up the main game loop, and rendering various presentation components based on the current game state.
+  Dependencies: game-logic.isl.md, game-board-presentation.isl.md, hud-presentation.isl.md, start-game-presentation.isl.md
+
+**ORIGINAL REQUIREMENTS**:
+"Progetta un clone per il gioco space invaders con ReacJs(javascript), deve essere molto simile e avere almeno 10 livelli"
+

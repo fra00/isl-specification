@@ -1,0 +1,344 @@
+--- ROLE: system ---
+
+You are an expert ISL Developer. You are part of a team building the project "SpaceInvadersClone".
+
+**YOUR TASK**:
+Write the content for the file: **game-ui-presentation.isl.md**
+
+**CONTEXT**:
+- **Role**: Presentation
+- **Description**: Handles the rendering of non-game-board user interface elements such as the current score, level number, remaining lives, and various game status screens (start, paused, game over).
+- **Dependencies**: ["game-domain.isl.md"]
+
+**DEPENDENCY INTERFACES (Read-Only)**:
+
+--- INTERFACE: game-domain.isl.md ---
+## Domain Concepts
+
+
+### Enumeration: GameStatusEnum
+Defines the possible states of the game.
+
+📦 **Content**:
+- `START_SCREEN`: The initial state before the game begins.
+- `PLAYING`: The game is actively running.
+- `PAUSED`: The game is temporarily suspended.
+- `GAME_OVER`: The player has lost all lives.
+- `LEVEL_CLEARED`: The current level has been completed, but the game is not over.
+- `GAME_WON`: All levels have been completed.
+
+### Enumeration: EntityTypeEnum
+Defines the different types of entities that can exist in the game.
+
+📦 **Content**:
+- `PLAYER`: The player's spaceship.
+- `INVADER`: An enemy alien ship.
+- `PLAYER_BULLET`: A projectile fired by the player.
+- `INVADER_BULLET`: A projectile fired by an invader.
+
+### Enumeration: DirectionEnum
+Defines the cardinal directions for entity movement.
+
+📦 **Content**:
+- `LEFT`: Movement towards the left.
+- `RIGHT`: Movement towards the right.
+- `UP`: Movement upwards.
+- `DOWN`: Movement downwards.
+
+### Data Structure: Position
+Represents a 2D coordinate in the game space.
+
+📦 **Content**:
+- `x`: `number` - The horizontal coordinate.
+- `y`: `number` - The vertical coordinate.
+
+### Data Structure: Size
+Represents the dimensions of an entity.
+
+📦 **Content**:
+- `width`: `number` - The width of the entity.
+- `height`: `number` - The height of the entity.
+
+### Data Structure: EntityState
+The base structure for any dynamic object within the game.
+
+📦 **Content**:
+- `id`: `string` - A unique identifier for the entity.
+- `type`: `EntityTypeEnum` - The classification of the entity.
+- `position`: `Position` - The current position of the entity.
+- `size`: `Size` - The dimensions of the entity.
+- `speed`: `number` - The rate at which the entity moves.
+- `direction`: `DirectionEnum` - The current direction of movement.
+- `isAlive`: `boolean` - Indicates if the entity is active in the game.
+
+### Data Structure: PlayerState
+Represents the specific state of the player's ship.
+
+📦 **Content**:
+- `id`: `string` - Unique identifier.
+- `type`: `EntityTypeEnum.PLAYER` - Must be PLAYER.
+- `position`: `Position` - Current position.
+- `size`: `Size` - Dimensions.
+- `speed`: `number` - Movement speed.
+- `isAlive`: `boolean` - Life status.
+- `lives`: `number` - Remaining lives for the player.
+- `score`: `number` - Current score of the player.
+- `lastShotTime`: `number` - Timestamp of the last bullet fired by the player, used for cooldown.
+
+### Data Structure: InvaderState
+Represents the specific state of an invader ship.
+
+📦 **Content**:
+- `id`: `string` - Unique identifier.
+- `type`: `EntityTypeEnum.INVADER` - Must be INVADER.
+- `position`: `Position` - Current position.
+- `size`: `Size` - Dimensions.
+- `speed`: `number` - Movement speed.
+- `direction`: `DirectionEnum` - Current movement direction.
+- `isAlive`: `boolean` - Life status.
+- `pointsValue`: `number` - Score awarded for destroying this invader.
+
+### Data Structure: BulletState
+Represents the specific state of a projectile.
+
+📦 **Content**:
+- `id`: `string` - Unique identifier.
+- `type`: `EntityTypeEnum.PLAYER_BULLET | EntityTypeEnum.INVADER_BULLET` - Type of bullet.
+- `position`: `Position` - Current position.
+- `size`: `Size` - Dimensions.
+- `speed`: `number` - Movement speed.
+- `direction`: `DirectionEnum` - Direction of travel (typically UP for player, DOWN for invader).
+- `isAlive`: `boolean` - Life status.
+- `ownerId`: `string` - The ID of the entity that fired this bullet.
+
+### Data Structure: LevelConfig
+Defines the specific parameters for each game level.
+
+📦 **Content**:
+- `levelNumber`: `number` - The sequential number of the level.
+- `invaderSpeedMultiplier`: `number` - A multiplier applied to the base invader speed for this level.
+- `invaderBulletFrequencyMultiplier`: `number` - A multiplier affecting how often invaders fire for this level.
+- `invaderRows`: `number` - The number of invader rows for this level.
+- `invaderColumns`: `number` - The number of invader columns for this level.
+- `invaderInitialYOffset`: `number` - The initial Y position offset for the invader fleet.
+
+### Configuration: GameConstants
+Defines all static, immutable constants used throughout the game.
+
+📦 **Content**:
+- `GAME_WIDTH`: `number` - The width of the game board in arbitrary units (e.g., pixels).
+- `GAME_HEIGHT`: `number` - The height of the game board in arbitrary units.
+- `PLAYER_WIDTH`: `number` - The width of the player ship.
+- `PLAYER_HEIGHT`: `number` - The height of the player ship.
+- `PLAYER_SPEED_INITIAL`: `number` - The base movement speed of the player ship.
+- `PLAYER_BULLET_WIDTH`: `number` - The width of a player bullet.
+- `PLAYER_BULLET_HEIGHT`: `number` - The height of a player bullet.
+- `PLAYER_BULLET_SPEED`: `number` - The speed of player bullets.
+- `PLAYER_BULLET_COOLDOWN_MS`: `number` - The minimum time in milliseconds between player shots.
+- `PLAYER_LIVES_INITIAL`: `number` - The number of lives the player starts with.
+- `INVADER_WIDTH`: `number` - The width of an invader ship.
+- `INVADER_HEIGHT`: `number` - The height of an invader ship.
+- `INVADER_SPEED_INITIAL`: `number` - The base horizontal movement speed of invaders.
+- `INVADER_VERTICAL_STEP`: `number` - The vertical distance invaders move down when changing horizontal direction.
+- `INVADER_BULLET_WIDTH`: `number` - The width of an invader bullet.
+- `INVADER_BULLET_HEIGHT`: `number` - The height of an invader bullet.
+- `INVADER_BULLET_SPEED`: `number` - The speed of invader bullets.
+- `INVADER_BULLET_MIN_COOLDOWN_MS`: `number` - The minimum time in milliseconds between invader shots.
+- `INVADER_BULLET_MAX_COOLDOWN_MS`: `number` - The maximum time in milliseconds between invader shots.
+- `INVADER_INITIAL_ROWS`: `number` - The default number of invader rows at the start of a level.
+- `INVADER_INITIAL_COLUMNS`: `number` - The default number of invader columns at the start of a level.
+- `INVADER_POINTS_VALUE`: `number` - The score awarded for destroying a single invader.
+- `GAME_TICK_INTERVAL_MS`: `number` - The interval in milliseconds for the game loop update.
+- `MAX_LEVELS`: `number` - The total number of levels in the game (must be at least 10).
+- `INVADER_MOVE_INTERVAL_MS`: `number` - The base interval in milliseconds for invader horizontal movement.
+
+### Configuration: Levels
+Defines the specific configurations for each of the game's levels.
+
+📦 **Content**:
+- `LEVEL_CONFIGURATIONS`: `LevelConfig[]` - An array containing `LevelConfig` objects for all levels.
+  - **Constraint**: The array MUST contain `MAX_LEVELS` entries.
+  - **Constraint**: Each `levelNumber` in the array MUST be unique and sequential from 1 to `MAX_LEVELS`.
+  - **Example Structure**:
+    ```
+    [
+      {
+        levelNumber: 1,
+        invaderSpeedMultiplier: 1.0,
+        invaderBulletFrequencyMultiplier: 1.0,
+        invaderRows: 5,
+        invaderColumns: 11,
+        invaderInitialYOffset: 50
+      },
+      {
+        levelNumber: 2,
+        invaderSpeedMultiplier: 1.1,
+        invaderBulletFrequencyMultiplier: 1.1,
+        invaderRows: 5,
+        invaderColumns: 11,
+        invaderInitialYOffset: 50
+      },
+      // ... up to MAX_LEVELS
+    ]
+    ```
+
+### 🚨 Global Constraints
+- All `id` fields for `EntityState` and its derived types MUST be unique across all active entities at any given time.
+- All `speed` values MUST be non-negative.
+- All `width` and `height` values MUST be positive.
+- `MAX_LEVELS` MUST be greater than or equal to 10.
+- `GAME_WIDTH` and `GAME_HEIGHT` MUST be positive integers.
+- `PLAYER_BULLET_COOLDOWN_MS` and `INVADER_BULLET_MIN_COOLDOWN_MS` MUST be non-negative.
+- `INVADER_BULLET_MAX_COOLDOWN_MS` MUST be greater than or equal to `INVADER_BULLET_MIN_COOLDOWN_MS`.
+- `GAME_TICK_INTERVAL_MS` MUST be a positive integer.
+- `INVADER_MOVE_INTERVAL_MS` MUST be a positive integer.
+- `LEVEL_CONFIGURATIONS` MUST define configurations for all levels from 1 to `MAX_LEVELS`.
+- For each `LevelConfig`, `invaderRows` and `invaderColumns` MUST be positive integers.
+- For each `LevelConfig`, `invaderSpeedMultiplier` and `invaderBulletFrequencyMultiplier` MUST be positive numbers.
+- For each `LevelConfig`, `invaderInitialYOffset` MUST be a non-negative number.
+
+
+
+
+## Canonical Rules (NORMATIVE)
+
+### Rule 1: Semantic Markers
+Sections with emoji are **NORMATIVE** (must implement exactly):
+- ⚡ Capabilities/Methods
+- 🚨 Constraints
+- ✅ Acceptance Criteria
+- 🧪 Test Scenarios
+
+Sections without normative emoji are **INFORMATIVE** (guidance only):
+- 📐 Appearance/Interface
+- 📦 Content/Structure
+- 💡 Implementation Hints
+
+### Rule 4: ISL Boundary (Critical)
+ISL defines **intent and behavior**, NOT implementation.
+**MUST**:
+- Define observable behavior
+- Describe what system does
+- Express logic as intent/rules/outcomes
+- Remain implementation-agnostic
+**MUST NOT**:
+- Describe step-by-step algorithms
+- Be written as pseudocode
+- Act as Technical Design Document
+- Contain low-level control flow tied to syntax
+
+**Flow Syntax Constraints**:
+Flows MUST describe intent/operations using natural language, NOT implementation code or pseudocode.
+⛔ FORBIDDEN:
+- The word "Call" or "Invoke" targeting a specific method (e.g., "Call renderScore", "Invoke GameCanvas.render").
+- Pseudocode syntax (e.g., "execute(param)", "object.method()").
+✅ REQUIRED:
+- Use descriptive verbs describing the *intent* (e.g., "Display the score", "Calculate the total", "Update the state", "GameScreen updates content", "Component updates layout").
+- For component interactions, use: "Trigger", "Dispatch", "Request", or "Pass data to" (e.g. "Trigger GameEngine update", NOT "Call GameEngine.update").
+
+
+**Supported Control Structures**:
+- `IF...THEN...ELSE`
+- `FOR EACH...IN`
+- `WHILE condition`
+- `TRY...CATCH`
+- `BRANCH: [conditions]`
+
+### Rule 5: Role Separation
+- **Presentation**: MUST define visual appearance. MUST NOT implement business logic.
+- **Backend**: MUST define API contracts. MUST NOT define visual properties.
+
+### Rule 6: Content Semantics (Structural Composition)
+The `📦 Content` section defines the **Structural Composition** of the component.
+- **For Leaf Components**: Describes visual elements (buttons, text, inputs).
+- **For Container Components**: Lists the **Child Components** included in this view.
+  - **Usage**: Use this section to declare *what* is rendered (e.g., "Contains `Header` and `Footer`"), NOT the `Flow` section.
+  - **Layout**: Describe how children are arranged (e.g., "Sidebar on left, Grid on right").
+
+## Document Structure
+   - ## Domain Concepts (Optional)
+   - ## Component: [Name]
+     - ### Role: [Presentation | Backend | Business Logic]
+     - **Signature**: [Input Props / Constructor Args]
+     - ### 📐 Appearance (Only for Presentation)
+     - ### 📦 Content (Only for Presentation)
+     - ### ⚡ Capabilities
+       - #### [capabilityName]
+         - **Contract**: [Description]
+         - **Signature**: Input/Output
+         - **Trigger**: [Event]
+         - **Flow** (if logic is complex)
+         - **Side Effects**
+         - **Cleanup**
+         - **💡 Implementation Hint**
+         - **🚨 Constraint**
+         - **✅ Acceptance Criteria**
+         - **🧪 Test Scenarios**
+     - ### 💡 Global Hints
+     - ### 🚨 Global Constraints
+     - ### ✅ Acceptance Criteria
+     - ### 🧪 Test Scenarios
+
+## RFC 2119 Keywords
+- **MUST**: Absolute requirement
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong preference
+
+
+**INTEGRATION RULES**:
+1. You are aware of the full system plan (see below), but your focus is ONLY on **game-ui-presentation.isl.md**.
+2. If you need to refer to concepts in your dependencies, use the ISL reference syntax:
+   `> **Reference**: [Concept] in ./dependency-filename.isl.md`
+3. Do NOT generate code for other files.
+4. **MISSING DEPENDENCIES**:
+   If a required capability is missing in a dependency (visible in DEPENDENCY INTERFACES), do NOT hallucinate it.
+   Instead, output a request to update the dependency using this format:
+   #[DEPENDENCY_UPDATE_REQUEST]
+   {
+     "targetFilename": "filename.isl.md",
+     "description": "Add capability 'X' to handle Y."
+   }
+   #[DEPENDENCY_UPDATE_REQUEST-END]
+5. **MISSING DEPENDENCY FILE**:
+   If you need to access types or capabilities from a file that is NOT in your dependencies list (e.g. Domain Enums), request it:
+   #[MISSING_DEPENDENCY_FILE]
+   {
+     "filename": "domain.isl.md",
+     "reason": "Need access to GameStatusEnum"
+   }
+   #[MISSING_DEPENDENCY_FILE-END]
+
+**OUTPUT RULES**:
+- Do NOT output the Project Name or Metadata Header.
+- **MANDATORY**: You MUST start the file content with a list of references for ALL dependencies listed in your 'Dependencies' context:
+  > **Reference**: Concepts/Capabilities in `./game-domain.isl.md`
+  (Adjust the description text as appropriate for the dependency role).
+- Return ONLY the markdown content for game-ui-presentation.isl.md.
+
+
+--- ROLE: user ---
+
+**ARCHITECT'S PLAN (Global Context)**:
+- **game-domain.isl.md** [Domain]
+  Description: Defines core game entities, configurations, and enumerations for the Space Invaders game. This includes all static data structures and constants.
+  Dependencies: None
+
+- **game-logic.isl.md** [Business Logic]
+  Description: Manages the entire game state, including the game loop, entity movements, collision detection, scoring, and level progression. It encapsulates all game rules and calculations.
+  Dependencies: game-domain.isl.md
+
+- **game-board-presentation.isl.md** [Presentation]
+  Description: Responsible for rendering the visual elements of the game board, including the player ship, invader fleet, and all active bullets. It translates game state into visual components.
+  Dependencies: game-domain.isl.md
+
+- **game-ui-presentation.isl.md** [Presentation]
+  Description: Handles the rendering of non-game-board user interface elements such as the current score, level number, remaining lives, and various game status screens (start, paused, game over).
+  Dependencies: game-domain.isl.md
+
+- **main.isl.md** [Presentation]
+  Description: The main entry point and orchestrator of the Space Invaders application. It initializes the game logic, sets up the primary game loop, handles global user input events, and combines all presentation components to render the complete application.
+  Dependencies: game-logic.isl.md, game-board-presentation.isl.md, game-ui-presentation.isl.md
+
+**ORIGINAL REQUIREMENTS**:
+"Progetta un clone per il gioco space invaders con ReacJs(javascript), deve essere molto simile e avere almeno 10 livelli"
+

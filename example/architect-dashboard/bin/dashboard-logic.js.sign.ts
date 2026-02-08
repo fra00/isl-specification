@@ -1,0 +1,5 @@
+export function getDashboardSummaryKPIs(period: string): { totalSales: number; totalOrders: number; averageOrderValue: number; newCustomers: number };
+export function getSalesTrendData(period: string, granularity: string): Array<{ date: string; sales: number }>;
+export function getTopSellingProducts(period: string, limit: number): Array<{ productId: string; productName: string; totalQuantitySold: number; totalRevenue: number }>;
+export function getOrderStatusDistribution(): Array<{ status: string; count: number; percentage: number }>;
+export function getDashboardOverview(timeframe: string, startDate?: Date, endDate?: Date): { totalSales: number; totalOrders: number; averageOrderValue: number; newCustomers: number; salesTrendData: Array<{ date: Date; sales: number }>; orderStatusDistribution: Array<{ status: string; count: number }>; topSellingProducts: Array<{ productId: string; name: string; quantitySold: number; totalRevenue: number }>; recentOrders: Array<{ orderId: string; customerName: string; orderDate: Date; totalAmount: number; status: string }>; };

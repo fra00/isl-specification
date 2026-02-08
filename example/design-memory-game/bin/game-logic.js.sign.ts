@@ -1,0 +1,11 @@
+export function initGameEngine(configData: { gridSize?: number[]; matchDelayMs?: number }): void;
+export function initializeGame(): void;
+export function flipCard(cardId: string): void;
+export function resetGame(): void;
+export function startGameTimer(): void;
+export function stopGameTimer(): void;
+export function getCards(): { id: string; value: string; state: 'Covered' | 'Flipped' | 'Solved' }[];
+export function getMoves(): number;
+export function constgetTimerSeconds(): number;
+export function getGameStatus(): 'NotStarted' | 'Playing' | 'Paused' | 'Won';
+export function getFlippedCards(): { id: string; value: string; state: 'Covered' | 'Flipped' | 'Solved' }[];

@@ -1,0 +1,14 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "HtmlInputEditor",
+      "inputs": [
+        "value",
+        "onHtmlChange"
+      ],
+      "output": "ReactElement",
+      "nativeType": "ReactElement"
+    }
+  ]
+}

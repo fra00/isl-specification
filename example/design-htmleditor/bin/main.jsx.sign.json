@@ -1,0 +1,11 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "Main",
+      "inputs": [],
+      "output": "ReactElement",
+      "nativeType": "ReactElement"
+    }
+  ]
+}

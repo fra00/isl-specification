@@ -1,0 +1,1 @@
+export default function ExpenseForm(props: { onAddExpense: (expenseData: { amount: number; description: string; date: string; category: 'FOOD' | 'TRANSPORT' | 'HOUSING' | 'ENTERTAINMENT' | 'UTILITIES' | 'HEALTH' | 'EDUCATION' | 'OTHER'; }) => void }): React.Element;

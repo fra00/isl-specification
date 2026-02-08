@@ -267,7 +267,7 @@ class ISLValidator {
     // FIX: Iterate through subsequent sections instead of regexing content
     // Domain entities are typically Level 3 subsections following the Domain Concepts header
     const domainSectionIndex = this.sections.indexOf(domainSection);
-    
+
     for (let i = domainSectionIndex + 1; i < this.sections.length; i++) {
       const section = this.sections[i];
 
@@ -355,6 +355,22 @@ class ISLValidator {
       }
     }
 
+    // Verifica presenza di Signature (RECOMMENDED)
+    // Può trovarsi nel content del Component (prima di Role) o nel content di Role
+    const hasSignature =
+      component.content.includes("**Signature**:") ||
+      (roleSection && roleSection.content.includes("**Signature**:"));
+
+    if (!hasSignature) {
+      this.info.push({
+        severity: "info",
+        line: component.line,
+        section: `Component: ${componentName}`,
+        message: "Missing recommended field: **Signature** (Props/Constructor)",
+        rule: "ISL-025",
+      });
+    }
+
     // Verifica presenza di almeno una Capability o giustificazione
     const capabilitiesSection = this.findSubsection(component, "capabilities");
 
@@ -432,8 +448,7 @@ class ISLValidator {
         severity: "info",
         line: capability.line,
         section: `Capability: ${capName}`,
-        message:
-          "Missing recommended field: **Signature** or **Input**",
+        message: "Missing recommended field: **Signature** or **Input**",
         rule: "ISL-031",
       });
     }
@@ -708,7 +723,7 @@ Rules:
   // Leggi file
   let content = fs.readFileSync(filepath, "utf-8");
   // Strip BOM if present (common in Windows files)
-  if (content.charCodeAt(0) === 0xFEFF) {
+  if (content.charCodeAt(0) === 0xfeff) {
     content = content.slice(1);
   }
 

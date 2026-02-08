@@ -1,0 +1,324 @@
+--- ROLE: system ---
+
+You are an expert ISL Maintenance Engineer.
+
+**YOUR GOAL**:
+Update an existing ISL file to satisfy a specific change request from a dependent component.
+
+
+## Canonical Rules (NORMATIVE)
+
+### Rule 1: Semantic Markers
+Sections with emoji are **NORMATIVE** (must implement exactly):
+- ⚡ Capabilities/Methods
+- 🚨 Constraints
+- ✅ Acceptance Criteria
+- 🧪 Test Scenarios
+
+Sections without normative emoji are **INFORMATIVE** (guidance only):
+- 📐 Appearance/Interface
+- 📦 Content/Structure
+- 💡 Implementation Hints
+
+### Rule 4: ISL Boundary (Critical)
+ISL defines **intent and behavior**, NOT implementation.
+**MUST**:
+- Define observable behavior
+- Describe what system does
+- Express logic as intent/rules/outcomes
+- Remain implementation-agnostic
+**MUST NOT**:
+- Describe step-by-step algorithms
+- Be written as pseudocode
+- Act as Technical Design Document
+- Contain low-level control flow tied to syntax
+
+**Flow Syntax Constraints**:
+Flows MUST describe intent/operations using natural language, NOT implementation code or pseudocode.
+⛔ FORBIDDEN:
+- The word "Call" or "Invoke" targeting a specific method (e.g., "Call renderScore", "Invoke GameCanvas.render").
+- Pseudocode syntax (e.g., "execute(param)", "object.method()").
+✅ REQUIRED:
+- Use descriptive verbs describing the *intent* (e.g., "Display the score", "Calculate the total", "Update the state", "GameScreen updates content", "Component updates layout").
+- For component interactions, use: "Trigger", "Dispatch", "Request", or "Pass data to" (e.g. "Trigger GameEngine update", NOT "Call GameEngine.update").
+
+
+**Supported Control Structures**:
+- `IF...THEN...ELSE`
+- `FOR EACH...IN`
+- `WHILE condition`
+- `TRY...CATCH`
+- `BRANCH: [conditions]`
+
+### Rule 5: Role Separation
+- **Presentation**: MUST define visual appearance. MUST NOT implement business logic.
+- **Backend**: MUST define API contracts. MUST NOT define visual properties.
+
+### Rule 6: Content Semantics (Structural Composition)
+The `📦 Content` section defines the **Structural Composition** of the component.
+- **For Leaf Components**: Describes visual elements (buttons, text, inputs).
+- **For Container Components**: Lists the **Child Components** included in this view.
+  - **Usage**: Use this section to declare *what* is rendered (e.g., "Contains `Header` and `Footer`"), NOT the `Flow` section.
+  - **Layout**: Describe how children are arranged (e.g., "Sidebar on left, Grid on right").
+
+### Rule 7: Entry Point Autonomy
+The Root/Entry Point component (usually `Main`) MUST be **Autonomous**.
+- **Signature**: MUST be Void (no arguments), unless explicitly required by requirements.
+- It is responsible for instantiating dependencies (Composition Root), not receiving them.
+
+### Rule 8: Abstraction Level (Input & Events)
+ISL describes **Intent**, not Syntax.
+- **Input**: Describe physical actions or intents, NOT specific event properties.
+  - ✅ "On Physical Key 'Space' Press", "When User clicks Submit"
+  - ⛔ "IF event.key === ' '", "onClick(e)"
+- **Implementation Agnostic**: Do not mention specific browser/runtime APIs (e.g., `window.addEventListener`) unless wrapping them in a Capability.
+
+### Rule 9: Units & Precision
+All numeric values in Domain or Logic MUST specify **Units of Measurement**.
+- ✅ `speed: 300 (px/s)`, `timeout: 500 (ms)`, `angle: 90 (deg)`
+- ⛔ `speed: 5`, `timeout: 500`
+
+### Rule 10: Real-Time & Continuous Logic
+For systems involving time (Games, Simulations, Animations):
+- **Separation**: Distinguish between **Discrete Input** (Events) and **Continuous Logic** (Update Loop).
+- **Input**: Should typically update State Flags (e.g., `isMovingLeft = true`).
+- **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
+
+## Document Structure
+   - ## Domain Concepts (Optional)
+   - ## Component: [Name]
+     - ### Role: [Presentation | Backend | Business Logic]
+     - **Signature**: [Input Props / Constructor Args]
+     - ### 📐 Appearance (Only for Presentation)
+     - ### 📦 Content (Only for Presentation)
+     - ### ⚡ Capabilities
+       - #### [capabilityName]
+         - **Contract**: [Description]
+         - **Signature**: Input/Output
+         - **Trigger**: [Event]
+         - **Flow** (if logic is complex)
+         - **Side Effects**
+         - **Cleanup**
+         - **💡 Implementation Hint**
+         - **🚨 Constraint**
+         - **✅ Acceptance Criteria**
+         - **🧪 Test Scenarios**
+     - ### 💡 Global Hints
+     - ### 🚨 Global Constraints
+     - ### ✅ Acceptance Criteria
+     - ### 🧪 Test Scenarios
+
+## RFC 2119 Keywords
+- **MUST**: Absolute requirement
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong preference
+
+
+**UPDATE RULES**:
+1. **Preserve Existing Logic**: Do not remove or break existing capabilities unless explicitly asked.
+2. **Consistency**: Ensure the new capability matches the style and role of the file.
+3. **Structure**: Maintain strict markdown hierarchy. Capabilities MUST be Level 4 headers (####).
+4. **Minimal Changes**: Only make necessary changes.
+5. **Formatting**: Do NOT use backticks in headers (e.g., use `#### AddProduct`, NOT `#### `AddProduct``).
+
+**OUTPUT RULES**:
+- Return the FULL updated content of the ISL file.
+- Do NOT output the Project Name or Metadata Header (Version, Implementation).
+
+
+--- ROLE: user ---
+
+**UPDATE TASK**:
+1. **File to Update**:
+## Component: GameDomain
+### Role: Domain
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `GameStatusEnum`
+Defines the possible states of the game.
+- `INITIAL`: The game is at the start screen, awaiting player input to begin.
+- `PLAYING`: The game is actively running, and entities are moving and interacting.
+- `PAUSED`: The game is temporarily suspended.
+- `GAME_OVER`: The player has lost all lives, and the game has ended.
+- `LEVEL_CLEARED`: The player has defeated all invaders in the current level.
+- `GAME_WON`: The player has completed all levels.
+
+#### `EntityTypeEnum`
+Defines the types of entities present in the game for identification and collision purposes.
+- `PLAYER`: The player's spaceship.
+- `INVADER`: An enemy invader ship.
+- `PLAYER_BULLET`: A projectile fired by the player.
+- `INVADER_BULLET`: A projectile fired by an invader.
+- `SHIELD_SEGMENT`: A destructible part of a shield barrier.
+
+#### `DirectionEnum`
+Defines cardinal directions for movement and orientation.
+- `LEFT`
+- `RIGHT`
+- `UP`
+- `DOWN`
+
+#### `InvaderTypeEnum`
+Defines different types of invaders, potentially affecting their appearance, points, or behavior.
+- `TYPE_A`: Base invader type.
+- `TYPE_B`: Second invader type.
+- `TYPE_C`: Third invader type.
+- `UFO`: Special invader (often appears randomly, high points).
+
+#### `Position`
+Represents a 2D coordinate in the game canvas.
+- `x`: `number` (px) - Horizontal coordinate.
+- `y`: `number` (px) - Vertical coordinate.
+
+#### `Size`
+Represents the dimensions of an entity.
+- `width`: `number` (px) - Width of the entity.
+- `height`: `number` (px) - Height of the entity.
+
+#### `Velocity`
+Represents the rate of change of position.
+- `dx`: `number` (px/s) - Velocity component along the X-axis.
+- `dy`: `number` (px/s) - Velocity component along the Y-axis.
+
+#### `PlayerState`
+Represents the current state of the player's ship.
+- `position`: `Position` - Current position of the player.
+- `size`: `Size` - Dimensions of the player ship.
+- `speed`: `number` (px/s) - Movement speed of the player.
+- `lives`: `number` - Remaining lives for the player.
+- `isShooting`: `boolean` - Indicates if the player is currently attempting to shoot (input state).
+- `lastShotTime`: `number` (ms) - Timestamp of the last bullet fired by the player, used for cooldown.
+
+#### `InvaderState`
+Represents the current state of an individual invader.
+- `id`: `string` - Unique identifier for the invader.
+- `position`: `Position` - Current position of the invader.
+- `size`: `Size` - Dimensions of the invader.
+- `type`: `InvaderTypeEnum` - The specific type of invader.
+- `isAlive`: `boolean` - True if the invader is active and not destroyed.
+- `direction`: `DirectionEnum` - Current horizontal movement direction of the invader fleet.
+- `speed`: `number` (px/s) - Movement speed of this invader.
+- `points`: `number` - Score awarded when this invader is destroyed.
+
+#### `BulletState`
+Represents the current state of a projectile.
+- `id`: `string` - Unique identifier for the bullet.
+- `position`: `Position` - Current position of the bullet.
+- `size`: `Size` - Dimensions of the bullet.
+- `speed`: `number` (px/s) - Movement speed of the bullet.
+- `direction`: `DirectionEnum` - Vertical movement direction (UP for player, DOWN for invader).
+- `owner`: `EntityTypeEnum` - The entity type that fired the bullet (`PLAYER` or `INVADER`).
+- `isAlive`: `boolean` - True if the bullet is active and has not hit anything or left the screen.
+
+#### `ShieldSegmentState`
+Represents a single destructible segment of a shield barrier.
+- `id`: `string` - Unique identifier for the shield segment.
+- `position`: `Position` - Current position of the shield segment.
+- `size`: `Size` - Dimensions of the shield segment.
+- `health`: `number` - Remaining hits the segment can withstand before being destroyed.
+- `isDestroyed`: `boolean` - True if the segment has been destroyed.
+
+#### `LevelConfig`
+Defines the parameters for a specific game level.
+- `levelNumber`: `number` - The current level number.
+- `invaderRows`: `number` - Number of rows of invaders for this level.
+- `invaderCols`: `number` - Number of columns of invaders for this level.
+- `invaderSpeedMultiplier`: `number` - Multiplier applied to the base invader speed for this level.
+- `invaderBulletSpeedMultiplier`: `number` - Multiplier applied to the base invader bullet speed for this level.
+- `invaderShotFrequencyMultiplier`: `number` - Multiplier applied to the base invader shot frequency (lower value means more frequent shots).
+- `playerBulletSpeedMultiplier`: `number` - Multiplier applied to the base player bullet speed for this level.
+- `playerSpeedMultiplier`: `number` - Multiplier applied to the base player speed for this level.
+- `initialPlayerLives`: `number` - Initial lives for the player at the start of this level (can override global).
+- `shieldConfiguration`: `Position[]` - An array of positions where shield segments should be placed for this level.
+
+#### `GameConfig`
+Defines global game configuration parameters.
+- `canvasWidth`: `number` (px) - The width of the main game canvas.
+- `canvasHeight`: `number` (px) - The height of the main game canvas.
+- `playerBaseSpeed`: `number` (px/s) - The base movement speed of the player.
+- `playerBulletBaseSpeed`: `number` (px/s) - The base speed of player bullets.
+- `playerBulletCooldown`: `number` (ms) - The minimum time between player shots.
+- `invaderBaseSpeed`: `number` (px/s) - The base movement speed of invaders.
+- `invaderBulletBaseSpeed`: `number` (px/s) - The base speed of invader bullets.
+- `invaderShotBaseFrequency`: `number` (ms) - The base average time between invader shots.
+- `invaderHorizontalSpacing`: `number` (px) - Horizontal spacing between invaders.
+- `invaderVerticalSpacing`: `number` (px) - Vertical spacing between invader rows.
+- `invaderDescentAmount`: `number` (px) - How much invaders descend when hitting a horizontal edge.
+- `initialLives`: `number` - The number of lives the player starts with at the beginning of a new game.
+- `maxLevels`: `number` - The total number of levels in the game.
+- `shieldCount`: `number` - The number of shield barriers to generate.
+- `shieldSegmentHealth`: `number` - The initial health of each shield segment.
+- `scorePerInvader`: `number` - Base score awarded for destroying a standard invader.
+- `scorePerUFO`: `number` - Score awarded for destroying a UFO.
+- `scorePerLevelClear`: `number` - Bonus score awarded for clearing a level.
+
+#### `GameConstants`
+A collection of fixed, non-configurable values used throughout the game.
+- `PLAYER_WIDTH`: `number` (px) - Fixed width of the player ship.
+- `PLAYER_HEIGHT`: `number` (px) - Fixed height of the player ship.
+- `INVADER_WIDTH`: `number` (px) - Fixed width of an invader.
+- `INVADER_HEIGHT`: `number` (px) - Fixed height of an invader.
+- `BULLET_WIDTH`: `number` (px) - Fixed width of a bullet.
+- `BULLET_HEIGHT`: `number` (px) - Fixed height of a bullet.
+- `SHIELD_SEGMENT_WIDTH`: `number` (px) - Fixed width of a shield segment.
+- `SHIELD_SEGMENT_HEIGHT`: `number` (px) - Fixed height of a shield segment.
+- `PLAYER_START_Y_OFFSET`: `number` (px) - Distance from the bottom of the canvas where the player starts.
+- `INVADER_START_Y_OFFSET`: `number` (px) - Distance from the top of the canvas where the invader fleet starts.
+- `UFO_SPAWN_INTERVAL`: `number` (ms) - Average time between UFO spawns.
+- `UFO_SPEED`: `number` (px/s) - Speed of the UFO.
+- `UFO_Y_POSITION`: `number` (px) - Fixed Y-position for UFOs.
+- `INVADER_MIN_X_OFFSET`: `number` (px) - Minimum horizontal offset for invader fleet movement.
+- `INVADER_MAX_X_OFFSET`: `number` (px) - Maximum horizontal offset for invader fleet movement.
+
+### 💡 Global Hints
+- All coordinate systems assume (0,0) is the top-left corner of the game canvas.
+- `id` fields for entities like `InvaderState` and `BulletState` are crucial for efficient updates and rendering in presentation layers.
+- Multipliers in `LevelConfig` allow for progressive difficulty scaling across levels.
+
+### 🚨 Global Constraints
+- All `Position` and `Size` values MUST be non-negative.
+- `speed` values MUST be non-negative.
+- `health` values for `ShieldSegmentState` MUST be non-negative.
+- `lastShotTime` MUST be a valid timestamp (milliseconds since epoch).
+- `levelNumber` MUST be a positive integer.
+- `invaderRows` and `invaderCols` MUST be positive integers.
+- All multiplier values MUST be positive.
+- `playerBulletCooldown` and `invaderShotBaseFrequency` MUST be non-negative.
+- `maxLevels` MUST be at least 10, as per the original requirements.
+
+### ✅ Acceptance Criteria
+- The `GameStatusEnum` accurately represents all major game states.
+- All game entities (`Player`, `Invader`, `Bullet`, `Shield Segment`) have their essential properties defined in corresponding data structures.
+- `LevelConfig` provides sufficient parameters to customize level difficulty and layout.
+- `GameConfig` and `GameConstants` encapsulate all global and fixed numerical parameters with appropriate units.
+- All defined types are clear, unambiguous, and directly support the game's core mechanics.
+
+### 🧪 Test Scenarios
+- **Scenario**: Verify `GameStatusEnum` transitions.
+  - **Given**: A game is in `INITIAL` state.
+  - **When**: Player starts the game.
+  - **Then**: Game status transitions to `PLAYING`.
+  - **When**: Player loses all lives.
+  - **Then**: Game status transitions to `GAME_OVER`.
+- **Scenario**: Verify `PlayerState` properties.
+  - **Given**: A `PlayerState` instance.
+  - **Then**: It MUST contain `position`, `size`, `speed`, `lives`, `isShooting`, and `lastShotTime` with correct types and units.
+- **Scenario**: Verify `LevelConfig` scaling.
+  - **Given**: `LevelConfig` for `levelNumber = 1` and `levelNumber = 5`.
+  - **Then**: `invaderSpeedMultiplier` for `levelNumber = 5` SHOULD be greater than or equal to `levelNumber = 1`.
+  - **Then**: `invaderShotFrequencyMultiplier` for `levelNumber = 5` SHOULD be less than or equal to `levelNumber = 1` (indicating more frequent shots).
+- **Scenario**: Validate `GameConfig` constraints.
+  - **Given**: A `GameConfig` instance.
+  - **Then**: `maxLevels` MUST be `>= 10`.
+  - **Then**: `playerBulletCooldown` MUST be `>= 0 (ms)`.
+  - **Then**: `canvasWidth` and `canvasHeight` MUST be positive `(px)`.
+
+2. **Change Request**:
+"Add `PlayerActionEnum` to define player input actions (e.g., MOVE_LEFT, MOVE_RIGHT, SHOOT). This is crucial for `GameLogic` to interpret player input."
+
+**ACTION**:
+Regenerate the file content including the requested changes.
+

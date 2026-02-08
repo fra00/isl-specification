@@ -1,0 +1,13 @@
+{
+  "exports": [
+    {
+      "type": "default",
+      "name": "HtmlRenderer",
+      "inputs": [
+        "htmlContent"
+      ],
+      "output": "ReactElement",
+      "nativeType": "ReactElement"
+    }
+  ]
+}

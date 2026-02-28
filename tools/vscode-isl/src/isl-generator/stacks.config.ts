@@ -20,6 +20,12 @@ const UNIVERSAL_SAFETY = [
 // Export alias for backward compatibility if needed, though internal usage is preferred
 export const UNIVERSAL_SAFETY_CONSTRAINTS = UNIVERSAL_SAFETY;
 
+const PYTHON_SAFETY = [
+  "Null Safety: ALWAYS use safe access (`is not None`) for nested properties/uninitialized variables",
+  "Default Init: prefer valid default values (empty string/list, zero) vs `None`",
+  "Error Handling: Use try/except blocks for external operations (I/O, API calls)",
+];
+
 export const STACKS: Record<string, StackConfig> = {
   "react-js": {
     id: "react-js",
@@ -33,6 +39,7 @@ export const STACKS: Record<string, StackConfig> = {
     },
     promptPersona: "Senior React Developer - Functional Components & Hooks",
     constraints: [
+      "NO: TypeScript types, JsDoc, import @typedef, defaultProps (use ES6 default params)",
       "Naming Conventions: Function exports (Logic/Helpers) MUST be camelCase (e.g. `updateGame`). React Components & Domain Factories MUST be PascalCase.",
       'Import: signature "export default [Name]" → `import Name from...` otherwise "export name" → `import { Name } from...`',
       "Import: Use correct **Implementation** as path for import",
@@ -46,11 +53,12 @@ export const STACKS: Record<string, StackConfig> = {
       "Declare hooks ONLY inside a function body",
       "Hooks: Custom Hooks (useName). Exposed functions MUST be stable (use refs for state access) to prevent consumer re-renders.",
       "Consumption: Hook import → call hook to get function. NO direct import of functions from hooks",
+      "DON'T use hooks inside useMemo or useCallback dependencies. Instead, call the hook at the top level and use the returned function inside the memoized callback.",
+      "Custom Hooks Signature: Custom Hooks MUST always accept a single configuration object as an argument, never positional arguments. Example: useMyHook({ param1, param2 }).",
       "Business Logic: MUST use Named Exports for functions. DO NOT export a singleton object.",
       "Immutability: Always return new objects/arrays when updating state. Never mutate state in place.",
       "Visibility: All Capabilities in Business Logic/Domain MUST be exported. Presentation capabilities are internal to the component.",
       "Presentation Components: MUST NOT expose imperative methods (render, update). Logic must be driven by Props/State changes.",
-      "NO: TypeScript types, JsDoc, import @typedef, defaultProps (use ES6 default params)",
       "Comments: standard syntax only",
     ],
     safetyConstraints: [
@@ -86,6 +94,32 @@ Examples:
 Examples:
 - Function: \`def calculate(a: int) -> int: ...\`
 - Class: \`class MyModel(BaseModel): ...\`
+- Variable: \`MAX_VALUE: int = ...\``,
+  },
+  python: {
+    id: "python",
+    techStack: ["Python 3.10"],
+    extensions: {
+      default: ".py",
+      Presentation: ".py",
+      "Business Logic": ".py",
+      Domain: ".py",
+      Model: ".py",
+      Backend: ".py",
+    },
+    promptPersona: "Senior Python Developer",
+    constraints: [
+      "Export: standard Python classes/functions",
+      "Type Hints: Python 3.10+",
+      "Import: absolute or standard relative",
+      "Domain: use dataclasses for data structures",
+      "Style: Follow PEP 8 guidelines",
+    ],
+    safetyConstraints: [...PYTHON_SAFETY],
+    signatureFormat: `You MUST output the signature as Python Type Hints (Stub file style).
+Examples:
+- Function: \`def calculate(a: int) -> int: ...\`
+- Class: \`class MyClass: ...\`
 - Variable: \`MAX_VALUE: int = ...\``,
   },
 };

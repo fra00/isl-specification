@@ -1,0 +1,133 @@
+export const Hero: (data?: {
+    id?: number;
+    classe?: string;
+    attacco?: number;
+    difesa?: number;
+    movimento?: number;
+    mente?: number;
+    corpo?: number;
+    miniature?: string;
+    miniatureDeath?: string;
+    portrait?: string;
+}) => {
+    id: number;
+    classe: string;
+    attacco: number;
+    difesa: number;
+    movimento: number;
+    mente: number;
+    corpo: number;
+    miniature: string;
+    miniatureDeath: string;
+    portrait: string;
+};
+
+export const Monster: (data?: {
+    id?: number;
+    nome?: string;
+    movimento?: number;
+    attacco?: number;
+    difesa?: number;
+    corpo?: number;
+    mente?: number;
+    immagine?: string;
+    immalarge?: string;
+    nonmorto?: boolean;
+}) => {
+    id: number;
+    nome: string;
+    movimento: number;
+    attacco: number;
+    difesa: number;
+    corpo: number;
+    mente: number;
+    immagine: string;
+    immalarge: string;
+    nonmorto: boolean;
+};
+
+export const Equipment: (data?: {
+    id?: number;
+    nome?: string;
+    dadatt?: number;
+    daddif?: number;
+    daddifex?: number;
+    numdadicontr?: number;
+    doppioatt?: boolean;
+    mosdoppio?: number;
+    puntimente?: number;
+    doppiamag?: boolean;
+    movim?: number;
+    noogg?: number;
+    diago?: boolean;
+    tiro?: boolean;
+    tirounavo?: boolean;
+    disinnesc?: boolean;
+    nopsg?: boolean;
+    nopsgid?: number;
+    solopsg?: boolean;
+    solopsgid?: number;
+    prezzo?: number;
+    immagine?: string;
+}) => {
+    id: number;
+    nome: string;
+    dadatt: number;
+    daddif: number;
+    daddifex: number;
+    numdadicontr: number;
+    doppioatt: boolean;
+    mosdoppio: number;
+    puntimente: number;
+    doppiamag: boolean;
+    movim: number;
+    noogg: number;
+    diago: boolean;
+    tiro: boolean;
+    tirounavo: boolean;
+    disinnesc: boolean;
+    nopsg: boolean;
+    nopsgid: number;
+    solopsg: boolean;
+    solopsgid: number;
+    prezzo: number;
+    immagine: string;
+};
+
+export const Item: (data?: {
+    id?: number;
+    nome?: string;
+    hp?: number;
+    mp?: number;
+    movimento?: number;
+    attacco?: number;
+    difesa?: number;
+    natt?: number;
+    acqua?: boolean;
+    danni?: number;
+}) => {
+    id: number;
+    nome: string;
+    hp: number;
+    mp: number;
+    movimento: number;
+    attacco: number;
+    difesa: number;
+    natt: number;
+    acqua: boolean;
+    danni: number;
+};
+
+export const TreasureCard: (data?: {
+    id?: number;
+    effetto?: string;
+    azione?: string;
+    valore?: number;
+    immagine?: string;
+}) => {
+    id: number;
+    effetto: string;
+    azione: string;
+    valore: number;
+    immagine: string;
+};

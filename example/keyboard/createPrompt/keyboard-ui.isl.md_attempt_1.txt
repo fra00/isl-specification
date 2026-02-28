@@ -1,0 +1,293 @@
+--- ROLE: system ---
+
+You are an expert ISL Developer. You are part of a team building the project "Musical Keyboard".
+
+**YOUR TASK**:
+Write the content for the file: **keyboard-ui.isl.md**
+
+**CONTEXT**:
+- **Role**: Presentation
+- **Description**: Renders the visual keyboard interface (keys for 3 octaves) and handles user interactions (mouse clicks on keys, keyboard presses). Key Capabilities: `renderKeyboard(noteIdentifiers)` (draws the keys), `onNotePressed(callback)` (registers a callback for when a key is pressed), `onNoteReleased(callback)` (registers a callback for when a key is released), `highlightKey(noteIdentifier)` (visually highlights a key), `unhighlightKey(noteIdentifier)` (removes highlight).
+- **Dependencies**: ["keyboard-domain.isl.md"]
+
+**DEPENDENCY INTERFACES (Read-Only)**:
+
+--- INTERFACE: keyboard-domain.isl.md ---
+## Domain Concepts
+
+
+### NoteNameEnum
+Represents the twelve distinct pitch classes in Western music.
+
+**📦 Content**:
+- `C`
+- `C#`
+- `D`
+- `D#`
+- `E`
+- `F`
+- `F#`
+- `G`
+- `G#`
+- `A`
+- `A#`
+- `B`
+
+### OctaveRangeConstant
+Defines the specific range of octaves covered by the musical keyboard.
+
+**📦 Content**:
+- `START_OCTAVE`: 3
+- `END_OCTAVE`: 5
+
+### NoteIdentifier
+A string type that uniquely identifies a specific musical note by combining its `NoteNameEnum` and its octave number (e.g., "C3", "F#4", "B5").
+
+## Component: KeyboardDomain
+### Role: Domain
+
+### Capabilities
+#### getNoteIdentifier
+**Contract**: Generates a canonical string representation for a given note name and octave.
+- **Signature**: `(noteName: NoteNameEnum, octave: number) -> NoteIdentifier`
+- **Flow**:
+  1.  Concatenate the `noteName` string with the `octave` number.
+  2.  Return the resulting `NoteIdentifier` string.
+- **🚨 Constraint**:
+  - The `octave` input MUST be an integer within the range defined by `OctaveRangeConstant`.
+  - The `noteName` input MUST be one of the values from `NoteNameEnum`.
+- **✅ Acceptance Criteria**:
+  - Given `NoteNameEnum.C` and `octave: 4`, the output MUST be "C4".
+  - Given `NoteNameEnum.F_SHARP` and `octave: 3`, the output MUST be "F#3".
+- **🧪 Test Scenarios**:
+  - Test with `C`, `3` -> "C3"
+  - Test with `G#`, `4` -> "G#4"
+  - Test with `B`, `5` -> "B5"
+**Signature**: `(noteName: NoteNameEnum, octave: number) -> NoteIdentifier`
+- **Flow**:
+  1.  Concatenate the `noteName` string with the `octave` number.
+  2.  Return the resulting `NoteIdentifier` string.
+- **🚨 Constraint**:
+  - The `octave` input MUST be an integer within the range defined by `OctaveRangeConstant`.
+  - The `noteName` input MUST be one of the values from `NoteNameEnum`.
+- **✅ Acceptance Criteria**:
+  - Given `NoteNameEnum.C` and `octave: 4`, the output MUST be "C4".
+  - Given `NoteNameEnum.F_SHARP` and `octave: 3`, the output MUST be "F#3".
+- **🧪 Test Scenarios**:
+  - Test with `C`, `3` -> "C3"
+  - Test with `G#`, `4` -> "G#4"
+  - Test with `B`, `5` -> "B5"
+
+#### getAllNotesInKeyboardRange
+**Contract**: Provides a complete, ordered inventory of all playable notes on the keyboard.
+- **Signature**: `() -> Array<NoteIdentifier>`
+- **Flow**:
+  1.  Initialize an empty list `allNotes`.
+  2.  FOR EACH `octave` from `OctaveRangeConstant.START_OCTAVE` to `OctaveRangeConstant.END_OCTAVE`:
+      1.  FOR EACH `noteName` in `NoteNameEnum` in its defined order (C, C#, D, ... B):
+          1.  Generate `noteIdentifier` using `getNoteIdentifier(noteName, octave)`.
+          2.  Add `noteIdentifier` to `allNotes`.
+  3.  Return `allNotes`.
+- **🚨 Constraint**:
+  - The order of notes within an octave MUST follow the standard chromatic scale (C, C#, D, D#, E, F, F#, G, G#, A, A#, B).
+  - The order of octaves MUST be ascending (e.g., Octave 3 notes, then Octave 4 notes, then Octave 5 notes).
+- **✅ Acceptance Criteria**:
+  - The returned array MUST contain exactly 36 `NoteIdentifier`s (12 notes/octave * 3 octaves).
+  - The first element of the array MUST be "C3".
+  - The last element of the array MUST be "B5".
+  - The array MUST be ordered chromatically and by ascending octave.
+- **🧪 Test Scenarios**:
+  - Verify `getAllNotesInKeyboardRange().length` is 36.
+  - Verify `getAllNotesInKeyboardRange()[0]` is "C3".
+  - Verify `getAllNotesInKeyboardRange()[11]` is "B3".
+  - Verify `getAllNotesInKeyboardRange()[12]` is "C4".
+  - Verify `getAllNotesInKeyboardRange()[35]` is "B5".
+  - Verify that "E4" is present in the list.
+**Signature**: `() -> Array<NoteIdentifier>`
+- **Flow**:
+  1.  Initialize an empty list `allNotes`.
+  2.  FOR EACH `octave` from `OctaveRangeConstant.START_OCTAVE` to `OctaveRangeConstant.END_OCTAVE`:
+      1.  FOR EACH `noteName` in `NoteNameEnum` in its defined order (C, C#, D, ... B):
+          1.  Generate `noteIdentifier` using `getNoteIdentifier(noteName, octave)`.
+          2.  Add `noteIdentifier` to `allNotes`.
+  3.  Return `allNotes`.
+- **🚨 Constraint**:
+  - The order of notes within an octave MUST follow the standard chromatic scale (C, C#, D, D#, E, F, F#, G, G#, A, A#, B).
+  - The order of octaves MUST be ascending (e.g., Octave 3 notes, then Octave 4 notes, then Octave 5 notes).
+- **✅ Acceptance Criteria**:
+  - The returned array MUST contain exactly 36 `NoteIdentifier`s (12 notes/octave * 3 octaves).
+  - The first element of the array MUST be "C3".
+  - The last element of the array MUST be "B5".
+  - The array MUST be ordered chromatically and by ascending octave.
+- **🧪 Test Scenarios**:
+  - Verify `getAllNotesInKeyboardRange().length` is 36.
+  - Verify `getAllNotesInKeyboardRange()[0]` is "C3".
+  - Verify `getAllNotesInKeyboardRange()[11]` is "B3".
+  - Verify `getAllNotesInKeyboardRange()[12]` is "C4".
+  - Verify `getAllNotesInKeyboardRange()[35]` is "B5".
+  - Verify that "E4" is present in the list.
+
+
+
+
+## Canonical Rules (NORMATIVE)
+
+### Rule 1: Semantic Markers
+Sections with emoji are **NORMATIVE** (must implement exactly):
+- ⚡ Capabilities/Methods
+- 🚨 Constraints
+- ✅ Acceptance Criteria
+- 🧪 Test Scenarios
+
+Sections without normative emoji are **INFORMATIVE** (guidance only):
+- 📐 Appearance/Interface
+- 📦 Content/Structure
+- 💡 Implementation Hints
+
+### Rule 4: ISL Boundary (Critical)
+ISL defines **intent and behavior**, NOT implementation.
+**MUST**:
+- Define observable behavior
+- Describe what system does
+- Express logic as intent/rules/outcomes
+- Remain implementation-agnostic
+**MUST NOT**:
+- Describe step-by-step algorithms
+- Be written as pseudocode
+- Act as Technical Design Document
+- Contain low-level control flow tied to syntax
+
+**Flow Syntax Constraints**:
+Flows MUST describe intent/operations using natural language, NOT implementation code or pseudocode.
+⛔ FORBIDDEN:
+- The word "Call" or "Invoke" targeting a specific method (e.g., "Call renderScore", "Invoke GameCanvas.render").
+- Pseudocode syntax (e.g., "execute(param)", "object.method()").
+✅ REQUIRED:
+- Use descriptive verbs describing the *intent* (e.g., "Display the score", "Calculate the total", "Update the state", "GameScreen updates content", "Component updates layout").
+- For component interactions, use: "Trigger", "Dispatch", "Request", or "Pass data to" (e.g. "Trigger GameEngine update", NOT "Call GameEngine.update").
+
+
+**Supported Control Structures**:
+- `IF...THEN...ELSE`
+- `FOR EACH...IN`
+- `WHILE condition`
+- `TRY...CATCH`
+- `BRANCH: [conditions]`
+
+### Rule 5: Role Separation
+- **Presentation**: MUST define visual appearance. MUST NOT implement business logic.
+- **Backend**: MUST define API contracts. MUST NOT define visual properties.
+
+### Rule 6: Content Semantics (Structural Composition)
+The `📦 Content` section defines the **Structural Composition** of the component.
+- **For Leaf Components**: Describes visual elements (buttons, text, inputs).
+- **For Container Components**: Lists the **Child Components** included in this view.
+  - **Usage**: Use this section to declare *what* is rendered (e.g., "Contains `Header` and `Footer`"), NOT the `Flow` section.
+  - **Layout**: Describe how children are arranged (e.g., "Sidebar on left, Grid on right").
+
+### Rule 7: Entry Point Autonomy
+The Root/Entry Point component (usually `Main`) MUST be **Autonomous**.
+- **Signature**: MUST be Void (no arguments), unless explicitly required by requirements.
+- It is responsible for instantiating dependencies (Composition Root), not receiving them.
+
+### Rule 8: Abstraction Level (Input & Events)
+ISL describes **Intent**, not Syntax.
+- **Input**: Describe physical actions or intents, NOT specific event properties.
+  - ✅ "On Physical Key 'Space' Press", "When User clicks Submit"
+  - ⛔ "IF event.key === ' '", "onClick(e)"
+- **Implementation Agnostic**: Do not mention specific browser/runtime APIs (e.g., `window.addEventListener`) unless wrapping them in a Capability.
+
+### Rule 9: Units & Precision
+All numeric values in Domain or Logic MUST specify **Units of Measurement**.
+- ✅ `speed: 300 (px/s)`, `timeout: 500 (ms)`, `angle: 90 (deg)`
+- ⛔ `speed: 5`, `timeout: 500`
+
+### Rule 10: Real-Time & Continuous Logic
+For systems involving time (Games, Simulations, Animations):
+- **Separation**: Distinguish between **Discrete Input** (Events) and **Continuous Logic** (Update Loop).
+- **Input**: Should typically update State Flags (e.g., `isMovingLeft = true`).
+- **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
+
+## Document Structure
+   - ## Domain Concepts (Optional)
+   - ## Component: [Name]
+     - ### Role: [Presentation | Backend | Business Logic]
+     - **Signature**: [Input Props / Constructor Args]
+     - ### 📐 Appearance (Only for Presentation)
+     - ### 📦 Content (Only for Presentation)
+     - ### ⚡ Capabilities
+       - #### [capabilityName]
+         - **Contract**: [Description]
+         - **Signature**: Input/Output
+         - **Trigger**: [Event]
+         - **Flow** (if logic is complex)
+         - **Side Effects**
+         - **Cleanup**
+         - **💡 Implementation Hint**
+         - **🚨 Constraint**
+         - **✅ Acceptance Criteria**
+         - **🧪 Test Scenarios**
+     - ### 💡 Global Hints
+     - ### 🚨 Global Constraints
+     - ### ✅ Acceptance Criteria
+     - ### 🧪 Test Scenarios
+
+## RFC 2119 Keywords
+- **MUST**: Absolute requirement
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong preference
+
+
+**INTEGRATION RULES**:
+1. You are aware of the full system plan (see below), but your focus is ONLY on **keyboard-ui.isl.md**.
+2. If you need to refer to concepts in your dependencies, use the ISL reference syntax:
+   `> **Reference**: [Concept] in ./dependency-filename.isl.md`
+3. Do NOT generate code for other files.
+4. **MISSING DEPENDENCIES**:
+   If a required capability is missing in a dependency (visible in DEPENDENCY INTERFACES), do NOT hallucinate it.
+   Instead, output a request to update the dependency using this format:
+   #[DEPENDENCY_UPDATE_REQUEST]
+   {
+     "targetFilename": "filename.isl.md",
+     "description": "Add capability 'X' to handle Y."
+   }
+   #[DEPENDENCY_UPDATE_REQUEST-END]
+5. **MISSING DEPENDENCY FILE**:
+   If you need to access types or capabilities from a file that is NOT in your dependencies list (e.g. Domain Enums), request it:
+   #[MISSING_DEPENDENCY_FILE]
+   {
+     "filename": "domain.isl.md",
+     "reason": "Need access to GameStatusEnum"
+   }
+   #[MISSING_DEPENDENCY_FILE-END]
+
+**OUTPUT RULES**:
+- Do NOT output the Project Name or Metadata Header.
+- **MANDATORY**: You MUST start the file content with a list of references for ALL dependencies listed in your 'Dependencies' context:
+  > **Reference**: Concepts/Capabilities in `./keyboard-domain.isl.md`
+  (Adjust the description text as appropriate for the dependency role).
+- Return ONLY the markdown content for keyboard-ui.isl.md.
+
+
+--- ROLE: user ---
+
+**ARCHITECT'S PLAN (Global Context)**:
+- **keyboard-domain.isl.md** [Domain]
+  Description: Defines musical notes, octaves, and the structure of a 3-octave keyboard. Key Concepts: `NoteNameEnum` (e.g., C, C#, D), `OctaveRangeConstant` (e.g., 3-5 for 3 octaves), `getNoteIdentifier(noteName, octave)` function, `getAllNotesInKeyboardRange()` function to list all playable notes.
+  Dependencies: None
+
+- **tone-synth-logic.isl.md** [Business Logic]
+  Description: Manages the Tone.js synthesizer, including initialization, playing, and stopping notes. Key Capabilities: `initSynth()` (initializes Tone.js context and synth), `playNote(noteIdentifier, duration)` (triggers a note sound), `stopNote(noteIdentifier)` (stops a playing note), `setVolume(level)` (adjusts master volume). Uses Tone.js for sound generation.
+  Dependencies: keyboard-domain.isl.md
+
+- **keyboard-ui.isl.md** [Presentation]
+  Description: Renders the visual keyboard interface (keys for 3 octaves) and handles user interactions (mouse clicks on keys, keyboard presses). Key Capabilities: `renderKeyboard(noteIdentifiers)` (draws the keys), `onNotePressed(callback)` (registers a callback for when a key is pressed), `onNoteReleased(callback)` (registers a callback for when a key is released), `highlightKey(noteIdentifier)` (visually highlights a key), `unhighlightKey(noteIdentifier)` (removes highlight).
+  Dependencies: keyboard-domain.isl.md
+
+- **main.isl.md** [Presentation]
+  Description: The application entry point. Imports Tone.js from CDN, initializes the synthesizer logic, renders the keyboard UI, and connects UI events to sound logic. Responsibilities: `Import Tone.js from CDN (cdnjs)`, `Initialize ToneSynthLogic`, `Render KeyboardUI using notes from KeyboardDomain`, `Wire up KeyboardUI.onNotePressed to ToneSynthLogic.playNote`, `Wire up KeyboardUI.onNoteReleased to ToneSynthLogic.stopNote`, `Handle global keyboard events (e.g., 'keydown', 'keyup') to trigger note playback and UI highlighting.`
+  Dependencies: tone-synth-logic.isl.md, keyboard-ui.isl.md
+
+**ORIGINAL REQUIREMENTS**:
+"fai una tastiera musicale a 3 ottave che usa tone.js , importandolo da cdnjs"
+

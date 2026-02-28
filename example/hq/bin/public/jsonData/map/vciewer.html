@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>HeroQuest 2004 - Mission Viewer</title>
+    <style>
+      body {
+        background: #222;
+        color: #eee;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #controls {
+        margin: 20px;
+        padding: 15px;
+        background: #333;
+        border-radius: 8px;
+      }
+      #map-container {
+        display: grid;
+        grid-template-columns: repeat(27, 30px);
+        grid-template-rows: repeat(20, 30px);
+        gap: 1px;
+        background: #555;
+        border: 2px solid #000;
+      }
+      .cell {
+        width: 30px;
+        height: 30px;
+        background: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        position: relative;
+        cursor: pointer;
+      }
+      .cell:hover {
+        border: 1px solid yellow;
+      }
+      .wall {
+        background: #333 !important;
+      }
+      .hero {
+        border-radius: 50%;
+        width: 80%;
+        height: 80%;
+        background: blue;
+        color: white;
+      }
+      .monster {
+        border-radius: 4px;
+        width: 80%;
+        height: 80%;
+        background: red;
+        color: white;
+      }
+      .furniture {
+        background: saddlebrown;
+        color: white;
+        font-weight: bold;
+      }
+      .door {
+        background: orange;
+        width: 100%;
+        height: 5px;
+        position: absolute;
+        top: 0;
+      }
+      #info {
+        margin-top: 20px;
+        width: 400px;
+        background: #333;
+        padding: 15px;
+        border-left: 5px solid #0078d7;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HQ 2004 Mission Viewer</h1>
+
+    <div id="controls">
+      <label>Carica il JSON della mappa: </label>
+      <input type="file" id="fileInput" accept=".json" />
+    </div>
+
+    <div id="map-container" id="grid"></div>
+
+    <div id="info">
+      <h3>Dettagli Casella</h3>
+      <div id="details">Seleziona una casella sulla mappa...</div>
+    </div>
+
+    <script>
+      const container = document.getElementById("map-container");
+      const details = document.getElementById("details");
+
+      document
+        .getElementById("fileInput")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const data = JSON.parse(e.target.result);
+            renderMap(data);
+          };
+          reader.readAsText(file);
+        });
+
+      function renderMap(data) {
+        container.innerHTML = ""; // Pulisce la mappa
+
+        // Creiamo la griglia base
+        data.grid.forEach((cell) => {
+          const div = document.createElement("div");
+          div.className = "cell";
+
+          // Gestione Muri (area non transitabile)
+          if (cell.arnt.antroc == "1") div.classList.add("wall");
+
+          // Mobili
+          if (cell.mobili.num != "0") {
+            div.classList.add("furniture");
+            div.innerText = "M"; // Mobili
+          }
+
+          // Mostri
+          if (cell.mostab.mosid != "0" && cell.mostab.mosid != "") {
+            const m = document.createElement("div");
+            m.className = "monster";
+            m.innerText = cell.mostab.mosid;
+            div.appendChild(m);
+          }
+
+          // Evento click per i dettagli
+          div.onclick = () => {
+            details.innerHTML = `
+                    <strong>Posizione:</strong> X:${cell.x}, Y:${cell.y}<br>
+                    <strong>Mostro:</strong> ${cell.mostab.mos || "Nessuno"}<br>
+                    <strong>Mobile:</strong> ${cell.mobili.img || "Nessuno"}<br>
+                    <strong>Tesoro:</strong> ${cell.tes.mon > 0 ? cell.tes.mon + " Oro" : "No"}<br>
+                    <strong>Script:</strong> ${cell.fine == "1" ? "Punto Arrivo" : "Standard"}
+                `;
+          };
+
+          container.appendChild(div);
+        });
+
+        // Posizionamento Eroi
+        data.eroi_start.forEach((eroe) => {
+          const index = parseInt(eroe.y) * 27 + parseInt(eroe.x);
+          const cellDiv = container.children[index];
+          if (cellDiv) {
+            const h = document.createElement("div");
+            h.className = "hero";
+            h.innerText = "H" + eroe.id;
+            cellDiv.appendChild(h);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

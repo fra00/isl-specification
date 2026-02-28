@@ -1,0 +1,10 @@
+export default function MissionCard(props: {
+    mission: {
+        ordine: number;
+        file: string;
+        titolo: string;
+    };
+    index: number;
+    status: string;
+    onSelect: (index: number) => void;
+}): React.Element;

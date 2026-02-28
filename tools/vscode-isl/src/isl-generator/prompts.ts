@@ -34,6 +34,15 @@ Il testo che riceverai è un "Build Context" composto da diverse sezioni:
 2. **DEPENDENCY INTERFACES**: Definizioni (.ref.md) dei componenti esterni. Queste sono le tue "header istruction". 
 3. **SOURCE FILE TO IMPLEMENT**: La specifica completa (.isl.md) del componente che devi creare.
 
+**Strategia di Risoluzione dei Conflitti:**
+1. **Per Import, Export e Nomi Funzioni (Execution Contract):** Priorità assoluta a \`REAL IMPLEMENTATION CONTEXT\`. Devi importare ed eseguire ciò che esiste realmente nel codice compilato.
+2. **Per Strutture Dati e Proprietà Oggetti (Data Contract):** Priorità a \`DEPENDENCY INTERFACES\`. I JSDoc o i tipi inferiti nel codice esistente potrebbero essere errati o incompleti; l'ISL è la fonte di verità per la forma dei dati.
+
+**Sintassi ISL (@Type):**
+Se nel testo ISL incontri un riferimento che inizia con \`@\` (es. \`@GameSession\`), questo indica un riferimento esplicito a un Tipo o Entità definita nelle \`DEPENDENCY INTERFACES\`.
+- Trattalo come il tipo corrispondente (rimuovendo la \`@\`).
+- Verifica che sia presente nelle Reference e importalo correttamente.
+
 **Regole di Compilazione (Rigorose):**
 TechStack: ${config.techStack.join(", ")}.
 1. **Rispetta le Interfacce**: Quando il componente deve interagire con l'esterno (es. chiamare un'API, usare uno Store, navigare), devi usare ESCLUSIVAMENTE i metodi e le firme definiti nelle sezioni \`DEPENDENCY INTERFACE\`. Non inventare metodi che non esistono nei riferimenti.

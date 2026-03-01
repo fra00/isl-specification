@@ -146,7 +146,7 @@ class LLMJudgeProvider:
             # For this exercise, we assume it's set or provide a placeholder.
             # In a real application, consider using a dedicated configuration management.
             if not genai.get_default_retriever(): # Check if already configured to avoid re-configuring
-                 genai.configure(api_key=os.getenv("GEMINI_API_KEY", "AIzaSyD2kBXpXUHx0Ncs9yBEMRTlYXkQb8NtQJw"))
+                 genai.configure(api_key=os.getenv("GEMINI_API_KEY", "your-api-key-here"))
             self._model = genai.GenerativeModel(llm_model_name)
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Gemini LLM model '{llm_model_name}': {e}")

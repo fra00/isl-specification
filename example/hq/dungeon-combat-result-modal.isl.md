@@ -36,12 +36,28 @@
     - Background Color: Blue gradient (e.g., `bg-gradient-to-bl from-blue-900 to-blue-700`).
     - Shape: Fills the container (visible part is what's not covered by Left Panel).
     - Z-Index: 0.
+- **Attacker Portrait (Left)**
+  - z-index: 2
+  - pnly gor barbarian use margin negative to move the image more to the center of the screen because of the diagonal split
+- **Defender Portrait (Right)**
+- **Center Info**:
+  - **VS Text**:
+    - Centered horizontally and vertically (top 20%), Font size 4rem, Bold, Italic, Color White/Gold, Text Shadow.
+  - **Dice Container**:
+    - Position: Centered horizontally, below "VS" text.
+    - Layout: Flex column or grid.
+  - **Result Text**:
+    - Positioned bottom center, large font, appears after dice animation.
+  - **Close Button**:
+    - Bottom center (below Result Text),
+    - Button style (e.g., bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500),
+  - z-index: 3
 
 ### 📦 Content
 
 - **Attacker Portrait (Left)**:
   - **Source**:
-    - IF `attacker` has `hero`: `/img/eroi/` + `@Hero.portrait`. (z-index 2)
+    - IF `attacker` has `hero`: `/img/eroi/` + `@Hero.portrait`.)
     - IF `attacker` has `monster`: `/img/mostri/` + `@Monster.immalarge`.
   - **Style**: Large image, positioned left-center, object-contain/cover, fade into background.
 - **Defender Portrait (Right)**:
@@ -52,31 +68,25 @@
 - **Center Info**:
   - **VS Text**:
     - Text: "VS".
-    - Style: Centered horizontally and vertically (top 20%), Font size 4rem, Bold, Italic, Color White/Gold, Text Shadow.
-    - Z-Index: 10.
   - **Dice Container**:
-    - Position: Centered horizontally, below "VS" text.
-    - Layout: Flex column or grid.
     - **Attacker Dice Row**:
       - Label: "Attacker".
       - Content: List of dice images based on `combatResult.attackerDice`.
         - IF `SKULL`: `/img/altro/teschio.jpg`.
         - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
-        - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.jpg`.
+        - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Left** towards the center with a staggered delay (e.g., 0.1s per die).
     - **Defender Dice Row**:
       - Label: "Defender".
       - Content: List of dice images based on `combatResult.defenderDice`.
         - IF `SKULL`: `/img/altro/teschio.jpg`.
         - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
-        - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.jpg`.
+        - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Right** towards the center with a staggered delay (e.g., 0.1s per die).
   - **Result Text**:
     - Content: "Damage Dealt: " + `combatResult.damageDealt`.
-    - Style: Bottom center, large text, appears after dice animation.
   - **Close Button**:
     - Text: "OK".
-    - Style: Bottom center (below Result Text), Button style (e.g., bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500), z-index 20.
     - Action: onClick triggers `onClose`.
 
 ### ⚡ Capabilities

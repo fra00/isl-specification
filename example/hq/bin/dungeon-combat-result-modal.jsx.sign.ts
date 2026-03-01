@@ -1,14 +1,14 @@
 export default function CombatResultModal(props: {
-    isOpen?: boolean;
-    onClose?: () => void;
-    combatResult?: {
+    isOpen: boolean;
+    onClose: () => void;
+    combatResult: {
         attackerDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
         defenderDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
         skulls: number;
         shields: number;
         damageDealt: number;
     };
-    attacker?: {
+    attacker: {
         heroId: number;
         turnOrder: number;
         currentBody: number;
@@ -49,7 +49,7 @@ export default function CombatResultModal(props: {
         currentBody: number;
         currentMind: number;
     };
-    defender?: {
+    defender: {
         heroId: number;
         turnOrder: number;
         currentBody: number;

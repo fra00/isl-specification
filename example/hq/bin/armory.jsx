@@ -6,59 +6,56 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import HeroSummary from './hero-summary';
-import ShopInventory from './shop-inventory';
-import { PageNavigationEnum } from './game-domain-core';
-import { loadShopData, validatePurchase, executePurchase } from './shop-logic';
-// Hero, Equipment, GameSession, HeroState are imported for type understanding and data structure,
-// but their factories are not directly called in this presentation component.
-// Their types are implicitly used in the props and state definitions.
-import { Hero, Equipment } from './game-domain-ruleset';
-import { GameSession, HeroState } from './game-domain-session';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { PageNavigationEnum } from "./domain-core";
+import { loadShopData, validatePurchase, executePurchase } from "./shop-logic";
+import HeroSummary from "./hero-summary";
+import ShopInventory from "./shop-inventory";
 
 const Armory = ({ gameSession, onUpdateSession, onChangePageView }) => {
   const [staticHeroes, setStaticHeroes] = useState([]);
   const [shopItems, setShopItems] = useState([]);
   const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
-  const [canBuySelected, setCanBuySelected] = useState(false);
-  const [buyReasonSelected, setBuyReasonSelected] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Capability: initialize
   useEffect(() => {
-    const initializeShop = async () => {
+    const initShop = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const data = await loadShopData();
         setStaticHeroes(data.heroes);
         setShopItems(data.items);
-        // Set default selectedHeroIndex to 0 if heroes exist in the session
-        if (gameSession?.heroes?.length > 0) {
-          setSelectedHeroIndex(0);
-        }
-      } catch (error) {
-        console.error("Failed to load shop data:", error);
-        // In a real application, you might want to display an error message to the user
+        setSelectedHeroIndex(0); // Default to the first hero
+        setSelectedEquipmentId(null); // No item selected initially
+      } catch (err) {
+        console.error("Failed to load shop data:", err);
+        setError("Failed to load shop data.");
+      } finally {
+        setIsLoading(false);
       }
     };
-    initializeShop();
-  }, []); // Run once on component mount
+    initShop();
+  }, []);
 
-  // Effect to re-evaluate purchase validity when selected hero, selected item, or gameSession changes
-  useEffect(() => {
-    const currentHeroState = gameSession?.heroes?.[selectedHeroIndex];
-    const selectedItem = shopItems.find(item => item.id === selectedEquipmentId);
+  const currentHeroState = useMemo(() => {
+    return gameSession?.heroes?.[selectedHeroIndex] || null;
+  }, [gameSession, selectedHeroIndex]);
 
-    if (currentHeroState && selectedItem) {
-      const { allowed, reason } = validatePurchase(currentHeroState, selectedItem);
-      setCanBuySelected(allowed);
-      setBuyReasonSelected(reason);
-    } else {
-      // If no hero or item is selected, purchase is not possible
-      setCanBuySelected(false);
-      setBuyReasonSelected('Select a hero and an item to proceed.');
+  const selectedItem = useMemo(() => {
+    return shopItems.find(item => item.id === selectedEquipmentId) || null;
+  }, [shopItems, selectedEquipmentId]);
+
+  // Derived state for purchase validation
+  const { allowed: canBuy, reason: buyReason } = useMemo(() => {
+    if (!currentHeroState || !selectedItem) {
+      return { allowed: false, reason: "Select a hero and an item" };
     }
-  }, [selectedHeroIndex, selectedEquipmentId, gameSession, shopItems]);
+    return validatePurchase(currentHeroState, selectedItem);
+  }, [currentHeroState, selectedItem]);
 
   // Capability: selectHero
   const handleSelectHero = useCallback((index) => {
@@ -73,28 +70,17 @@ const Armory = ({ gameSession, onUpdateSession, onChangePageView }) => {
 
   // Capability: buyItem
   const handleBuyItem = useCallback(() => {
-    const currentHeroState = gameSession?.heroes?.[selectedHeroIndex];
-    const selectedItem = shopItems.find(item => item.id === selectedEquipmentId);
-
     if (!currentHeroState || !selectedItem) {
-      console.warn("Cannot buy: current hero or selected item not found.");
       return;
     }
 
-    // Re-validate just before purchase to ensure state is fresh
     const { allowed } = validatePurchase(currentHeroState, selectedItem);
 
     if (allowed) {
       const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
       onUpdateSession(updatedSession);
-      // Optionally reset selected item after a successful purchase
-      setSelectedEquipmentId(null);
-    } else {
-      // This case should ideally be prevented by the disabled state of the button,
-      // but it's a good safety check.
-      console.warn("Purchase not allowed:", buyReasonSelected);
     }
-  }, [gameSession, selectedHeroIndex, selectedEquipmentId, shopItems, onUpdateSession, buyReasonSelected]);
+  }, [gameSession, currentHeroState, selectedItem, selectedHeroIndex, onUpdateSession]);
 
   // Capability: enterDungeon
   const handleEnterDungeon = useCallback(() => {
@@ -106,29 +92,35 @@ const Armory = ({ gameSession, onUpdateSession, onChangePageView }) => {
     onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
   }, [onChangePageView]);
 
-  // Ensure gameSession.heroes is an array before passing to HeroSummary
-  const heroesInSession = gameSession?.heroes || [];
+  if (isLoading) {
+    return <div className="text-white p-4">Loading shop...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">Error: {error}</div>;
+  }
+
+  if (!gameSession || !gameSession.heroes || gameSession.heroes.length === 0) {
+    return <div className="text-white p-4">No active game session or heroes found.</div>;
+  }
 
   return (
     <div className="grid grid-cols-2 gap-4 p-4 h-screen bg-gray-800 text-white">
-      {/* Left Column: HeroSummary */}
-      <div className="col-span-1 bg-gray-700 p-4 rounded-lg shadow-lg overflow-y-auto">
+      <div className="col-span-1">
         <HeroSummary
-          heroes={heroesInSession}
+          heroes={gameSession.heroes}
           staticHeroes={staticHeroes}
-          staticEquipment={shopItems} // Pass shopItems as staticEquipment for HeroSummary to display owned items
+          staticEquipment={shopItems}
           selectedIndex={selectedHeroIndex}
           onSelect={handleSelectHero}
         />
       </div>
-
-      {/* Right Column: ShopInventory */}
-      <div className="col-span-1 bg-gray-700 p-4 rounded-lg shadow-lg flex flex-col">
+      <div className="col-span-1">
         <ShopInventory
           items={shopItems}
           selectedItemId={selectedEquipmentId}
-          canBuy={canBuySelected}
-          buyReason={buyReasonSelected}
+          canBuy={canBuy}
+          buyReason={buyReason}
           onSelect={handleSelectItem}
           onBuy={handleBuyItem}
           onEnterDungeon={handleEnterDungeon}

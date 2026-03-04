@@ -16,11 +16,7 @@
 
 ### Role: Business Logic
 
-**Signature**:
-
-- `gameSession`: @GameSession
-- `visibilityMap`: @VisibilityMap
-- `onUpdateSession`: (session: @GameSession) -> void
+**Signature**: `useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession })`
 
 ### ⚡ Capabilities
 

@@ -6,113 +6,113 @@
  * Edit the ISL file instead.
  */
 
-import { Monster, Item, Equipment } from "./game-domain-ruleset";
+import { Monster, Equipment, Item } from "./game-domain-ruleset";
 
 export const BlockCellArea = (data = {}) => ({
-    antroc: data.antroc ?? false,
-    inv: data.inv ?? false,
+  antroc: data.antroc ?? false,
+  inv: data.inv ?? false,
 });
 
 export const MapCellFurniture = (data = {}) => ({
-    num: data.num ?? null,
-    img: data.img ?? '',
+  num: data.num ?? null,
+  img: data.img ?? '',
 });
 
 export const MapCellMonster = (data = {}) => ({
-    mosid: data.mosid ?? 0,
-    mos: data.mos ?? false,
-    corpo: data.corpo ?? 0,
+  mosid: data.mosid ?? 0,
+  mos: data.mos ?? false,
+  corpo: data.corpo ?? 0,
 });
 
 export const MapCellTreasure = (data = {}) => ({
-    mon: data.mon ?? 0,
-    ogg: data.ogg ?? null,
-    arma: data.arma ?? null,
-    trp: data.trp ?? 0,
+  mon: data.mon ?? 0,
+  ogg: data.ogg ?? 0,
+  arma: data.arma ?? 0,
+  trp: data.trp ?? 0,
 });
 
 export const MapCellPassage = (data = {}) => ({
-    ps: data.ps ?? null,
-    oriz: data.oriz ?? false,
+  ps: data.ps ?? null,
+  oriz: data.oriz ?? false,
 });
 
 export const MapCellTrap = (data = {}) => ({
-    tipo: data.tipo ?? 0,
+  tipo: data.tipo ?? 0,
 });
 
 export const MapCell = (data = {}) => ({
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-    arnt: BlockCellArea(data.arnt),
-    mobili: MapCellFurniture(data.mobili),
-    mostab: MapCellMonster(data.mostab),
-    tes: MapCellTreasure(data.tes),
-    psgg: MapCellPassage(data.psgg),
-    trpl: MapCellTrap(data.trpl),
-    fine: data.fine ?? '',
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  arnt: BlockCellArea(data.arnt || {}),
+  mobili: MapCellFurniture(data.mobili || {}),
+  mostab: MapCellMonster(data.mostab || {}),
+  tes: MapCellTreasure(data.tes || {}),
+  psgg: MapCellPassage(data.psgg || {}),
+  trpl: MapCellTrap(data.trpl || {}),
+  fine: data.fine ?? '',
 });
 
 export const MapHeader = (data = {}) => ({
-    descrizione: data.descrizione ?? '',
-    mostro_uscita: data.mostro_uscita ?? '',
-    nfine: data.nfine ?? 0,
+  descrizione: data.descrizione ?? '',
+  mostro_uscita: data.mostro_uscita ?? '',
+  nfine: data.nfine ?? 0,
 });
 
 export const MapHeroStart = (data = {}) => ({
-    id: data.id ?? 0,
-    x: data.x ?? 0,
-    y: data.y ?? 0,
+  id: data.id ?? 0,
+  x: data.x ?? 0,
+  y: data.y ?? 0,
 });
 
 export const MapDoor = (data = {}) => ({
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-    oriz: data.oriz ?? false,
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  oriz: data.oriz ?? false,
 });
 
 export const MapScript = (data = {}) => ({
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-    text: data.text ?? '',
-    evento: data.evento ?? 0,
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  text: data.text ?? '',
+  evento: data.evento ?? 0,
 });
 
 export const MapDefinition = (data = {}) => ({
-    header: MapHeader(data.header),
-    grid: (data.grid || []).map(MapCell),
-    eroi_start: (data.eroi_start || []).map(MapHeroStart),
-    porte: (data.porte || []).map(MapDoor),
-    scripts: (data.scripts || []).map(MapScript),
+  header: MapHeader(data.header || {}),
+  grid: (data.grid || []).map(MapCell),
+  eroi_start: (data.eroi_start || []).map(MapHeroStart),
+  porte: (data.porte || []).map(MapDoor),
+  scripts: (data.scripts || []).map(MapScript),
 });
 
 export const Mission = (data = {}) => ({
-    ordine: data.ordine ?? 0,
-    file: data.file ?? '',
-    titolo: data.titolo ?? '',
+  ordine: data.ordine ?? 0,
+  file: data.file ?? '',
+  titolo: data.titolo ?? '',
 });
 
 export const Campaign = (data = {}) => ({
-    nome_campagna: data.nome_campagna ?? '',
-    missioni: (data.missioni || []).map(Mission),
+  nome_campagna: data.nome_campagna ?? '',
+  missioni: (data.missioni || []).map(Mission),
 });
 
 export const VisibilityCell = (data = {}) => ({
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-    valo: data.valo ?? '',
-    vis1: data.vis1 ?? '',
-    vis2: data.vis2 ?? '',
-    fog: data.fog ?? true,
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  valo: data.valo ?? '',
+  vis1: data.vis1 ?? '',
+  vis2: data.vis2 ?? '',
+  fog: data.fog ?? true,
 });
 
 export const VisibilityMap = (data = {}) => ({
-    source: data.source ?? '',
-    image: data.image ?? '',
-    data: (data.data || []).map(VisibilityCell),
+  source: data.source ?? '',
+  image: data.image ?? '',
+  data: (data.data || []).map(VisibilityCell),
 });
 
 export const GameScript = (data = {}) => ({
-    command: data.command ?? '',
-    params: data.params ?? 0,
-    isOneTime: data.isOneTime ?? false,
+  command: data.command ?? '',
+  params: data.params ?? 0,
+  isOneTime: data.isOneTime ?? false,
 });

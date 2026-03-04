@@ -6,45 +6,50 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-import { GameSession } from './game-domain-session';
-import { VisibilityMap } from './game-domain-map';
+import React, { useMemo } from 'react';
+import { GameSession } from './domain-session';
+import { MapCell, VisibilityMap } from './domain-map';
 
-export function useDungeonFurniture(gameSession, boardVisibilityMap) {
-    const visibleFurniture = React.useMemo(() => {
-        // Safety Constraint: Null Safety and Default Init
-        // If currentMap or visibility data is missing, return an empty list.
-        if (!gameSession?.currentMap || !boardVisibilityMap?.data) {
-            return [];
+export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
+  const visibleFurniture = useMemo(() => {
+    // IF gameSession.currentMap OR boardVisibilityMap is missing RETURN empty list.
+    if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
+      return [];
+    }
+
+    const visibleItems = [];
+    const mapGrid = gameSession.currentMap.grid;
+    const visibilityData = boardVisibilityMap.data;
+
+    // Create a quick lookup map for visibility cells for efficient access
+    const visibilityMapLookup = new Map();
+    for (const vCell of visibilityData) {
+      visibilityMapLookup.set(`${vCell.x},${vCell.y}`, vCell);
+    }
+
+    // Iterate through gameSession.currentMap.grid (each cell is a @MapCell).
+    for (const cell of mapGrid) {
+      // IF @MapCell.arnt.antroc is true AND @MapCell.arnt.inv is false THEN
+      // Add the rock image at coordinates x,y using the image `public/pietra.jpg`
+      if (cell.arnt?.antroc === true && cell.arnt?.inv === false) {
+        visibleItems.push({ x: cell.x, y: cell.y, img: 'public/pietra.jpg' });
+      }
+
+      // FOR each cell with `mobili.num` diverso da null :
+      if (cell.mobili?.num != null) {
+        // Find the corresponding cell in `boardVisibilityMap` (matching x, y).
+        const visibilityCell = visibilityMapLookup.get(`${cell.x},${cell.y}`);
+
+        // IF the visibility cell exists AND `fog` is false:
+        // Add the furniture item to the result list (including x, y, and image).
+        if (visibilityCell && visibilityCell.fog === false) {
+          visibleItems.push({ x: cell.x, y: cell.y, img: cell.mobili.img });
         }
+      }
+    }
 
-        const visibleItems = [];
-        const visibilityDataMap = new Map();
+    return visibleItems;
+  }, [gameSession?.currentMap?.grid, boardVisibilityMap?.data]); // Dependencies for useMemo to re-calculate when map or visibility changes
 
-        // Create a map for quick lookup of visibility cells by their coordinates (x,y)
-        for (const cell of boardVisibilityMap.data) {
-            visibilityDataMap.set(`${cell.x},${cell.y}`, cell);
-        }
-
-        // Iterate through each cell in the game map grid
-        for (const cell of gameSession.currentMap.grid) {
-            const furniture = cell.mobili;
-            // Check if the cell contains furniture (mobili.num is not null)
-            if (furniture?.num != null) {
-                // Find the corresponding visibility cell using its coordinates
-                const visibilityCell = visibilityDataMap.get(`${cell.x},${cell.y}`);
-                // If the visibility cell exists and it's not covered by fog, the furniture is visible
-                if (visibilityCell && !visibilityCell.fog) {
-                    visibleItems.push({
-                        x: cell.x,
-                        y: cell.y,
-                        img: furniture.img
-                    });
-                }
-            }
-        }
-        return visibleItems;
-    }, [gameSession, boardVisibilityMap]); // Trigger: Recalculate when gameSession or boardVisibilityMap changes.
-
-    return { visibleFurniture };
-}
+  return { visibleFurniture };
+};

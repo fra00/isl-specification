@@ -17,6 +17,8 @@
 > **Reference**: @useDungeonMonsters in `./dungeon-use-monsters.isl.md`
 > **Reference**: @CombatResultModal in `./dungeon-combat-result-modal.isl.md`
 > **Reference**: @DungeonTurnControls in `./dungeon-turn-controls.isl.md`
+> **Reference**: @useSecretPassages in `./dungeon-use-secret-passages.isl.md`
+> **Reference**: @DungeonNotification in `./dungeon-notification.isl.md`
 
 ## Component: Dungeon
 
@@ -45,6 +47,8 @@
     - `isMoving`: `hooksTurnLogic.isMoving`.
     - `onRollMovement`: `hooksTurnLogic.rollMovement`.
     - `onEndTurn`: `hooksTurnLogic.endTurn`.
+    - `onSearchPassages`: `hooksSecretPassages.searchPassages`.
+    - `hasActed`: `hooksTurnLogic.hasActed` AND `!areMonstersVisible`.
 - **Combat Result**: Renders `CombatResultModal` if `gameSession.lastAttack` is not null.
   - **Props**:
     - `isOpen`: true.
@@ -52,6 +56,10 @@
     - `attacker`: `gameSession.lastAttack.hero`.
     - `defender`: `gameSession.lastAttack.monster`.
     - `onClose`: Trigger `closeCombatResult`.
+- **Notification**: Renders `DungeonNotification` if `notificationMessage` is not null.
+  - **Props**:
+    - `message`: `notificationMessage`.
+    - `onClose`: Trigger `handleCloseNotification`.
 
 ### ⚡ Capabilities
 
@@ -59,9 +67,12 @@
 
 - `staticVisibilityMap`: @VisibilityMap (The static visibility map loaded from the mission data, used as reference for calculations).
 - `boardVisibilityMap`: current visibility map derived from `hooksFogOfWar`.
+- `notificationMessage`: String (Current message to display to the user, null if none).
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
-- `hooksTurnLogic`:@useTurnLogic= Manages turn phases, movement points, and pathfinding logic.
+- `hooksTurnLogic`:@useTurnLogic Manages turn phases, movement points, and pathfinding logic.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, and `onUpdateSession`.
+- `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
+- `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
 
 #### loadMissionData
 

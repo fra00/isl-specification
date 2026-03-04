@@ -44,7 +44,7 @@
 - **Flow**:
   - Initialize `canAttack` to false.
   - Iterate through @GameSession.monsters:
-    - IF hasActed is false
+    - IF `turnPhase.hasPerformedAction` is true return false
     - IF monster is within attack range of current hero position (e.g., Manhattan distance <= 1):
       - Set `canAttack` to true.
       - BREAK loops.
@@ -55,23 +55,23 @@
 - **Contract**: Rolls 2d6 to determine movement points.
 - **Trigger**: User clicks "Roll Movement".
 - **Flow**:
-  - IF `turnPhase` is NOT `START` RETURN.
   - Generate random number 2-12 (2d6).
   - Set `movementPoints`.
-  - Set `turnPhase` to `MOVEMENT`.
 
 #### handleBoardHover
 
 - **Contract**: Calculates path preview when mouse hovers a cell.
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
-  - IF `turnPhase` is NOT `MOVEMENT` OR `movementPoints` <= 0 OR `isMoving` is true:
+  - IF `movementPoints` <= 0 OR `isMoving` is true:
     - Set `hoveredPath` to empty.
+    - Set `turnPhase` to include `hasMoved` true (if movementPoints is 0).
     - RETURN.
-  - `hooksPathfinding.pathfind` from Current Hero Position to (x, y).
-  - IF path found:
-    - Prepend Current Hero Position to the path (to include start).
-    - Set `hoveredPath` to the calculated path.
+  - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - Call `hooksPathfinding.calculatePath(hero.x, hero.y, x, y, movementPoints, hero.heroId)` and store result in `path`.
+  - IF `path` is not empty:
+    - Prepend `{x: hero.x, y: hero.y}` to `path` (to include start).
+    - Set `hoveredPath` to `path`.
   - ELSE: Set `hoveredPath` to empty.
 
 #### handleBoardClick
@@ -79,19 +79,27 @@
 - **Contract**: Executes movement along the calculated path.
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
-  - IF `hoveredPath` is valid AND ends at (x, y) AND `isMoving` is false:
+  - IF `isMoving` is true OR `movementPoints` <= 0 RETURN.
+  - Find `currentHero` in `gameSession.heroes`.
+  - Initialize `path` with `hoveredPath`.
+  - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
+    - Calculate path from `currentHero` to (x, y) using `hooksPathfinding`.
+    - IF calculated path is valid (length > 0):
+      - Set `path` to [`currentHero` position, ...calculated path].
+  - IF `path` length > 1 AND last point of `path` is (x, y):
     - Set `isMoving` to true.
-    - Set `activePath` to `hoveredPath`.
-    - Reset `hoveredPath`.
+    - Set `activePath` to a copy of `path`.
+    - Set `hoveredPath` to empty.
 
 #### movementEffect
 
 - **Contract**: Handles the step-by-step movement animation and logic.
 - **Trigger**: `activePath` changes.
 - **Flow**:
-  - IF `activePath` is empty OR length < 2:
-    - Set `isMoving` to false.
-    - Set `activePath` to empty.
+  - IF `activePath` length < 2:
+    - IF `isMoving` is true:
+      - Set `isMoving` to false.
+      - Set `activePath` to empty.
     - RETURN.
   - Wait 300ms.
   - Get next step `nextPos` = `activePath[1]`.
@@ -115,9 +123,17 @@
       - Remove monster from `@GameSession.monsters`.
         ELSE IF `newBody` > 0:
       - Update monster's state in `@GameSession.monsters` with new `currentBody`.
-    - Set `hasActed` to true.
+    - Set `turnPhase` to include `hasPerformedAction` true.
+    - IF the Hero has started to move before attack set `turnPhase` to include `hasMoved` true.
     - Set `lastAttack` on session to {hero:@HeroState,monster:@MonsterState,combatResult: @CombatResult} for potential UI display.
     - Trigger `onUpdateSession`.
+
+#### markActionDone
+
+- **Contract**: Manually marks the turn action as completed (e.g., after searching).
+- **Signature**: `()`
+- **Flow**:
+  - Set `turnPhase` to include `hasPerformedAction` true.
 
 #### endTurn
 
@@ -127,9 +143,8 @@
   - IF `isMoving` is true RETURN.
   - Increment `gameSession.currentTurn`.
   - IF `currentTurn` > number of heroes, reset to 1 (and potentially trigger Monster turn in future).
-  - Reset `turnPhase` to `START`.
+  - Reset all the prop in the object `turnPhase` to false.
   - Reset `movementPoints` to 0.
-  - Reset `hasActed` to false.
   - Trigger `onUpdateSession`.
 
-- **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, rollMovement, handleBoardHover, handleBoardClick, endTurn }`
+- **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, hasActed, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`

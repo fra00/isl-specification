@@ -14,7 +14,7 @@
 
 ### Role: Business Logic
 
-**Signature**: `useFogOfWar(gameSession: GameSession, staticVisibilityMap: VisibilityMap): VisibilityMap`
+**Signature**: `useFogOfWar({ gameSession: GameSession, staticVisibilityMap: VisibilityMap }): VisibilityMap`
 
 - `gameSession`: @GameSession (Current session state containing heroes).
 - `staticVisibilityMap`: @VisibilityMap (The static board configuration loaded from JSON).
@@ -33,9 +33,9 @@
   - Create a new `fogVisibilityMap` structure based on `staticVisibilityMap`.
   - Find all cells currently occupied by heroes in @gameSession.heroes (using their x and y coordinates).
   - Find the corresponding @VisibilityCell in `fogVisibilityMap.data` for those coordinates.
-  - Collect and distinct `vis1` and `vis2` values into a set of `activeVisibilityIds` (excluding '0').
+  - Collect and distinct `vis1` and `vis2` (ignore valo) values into a set of `activeVisibilityIds` (excluding '0').
   - Iterate through all cells in `fogVisibilityMap.data`.
-  - Set `fog` to `false` IF the cell's `vis1` OR `vis2` is present in `activeVisibilityIds`.
+  - Set `fog` to `false` IF the cell's `vis1` OR `vis2` (ignore valo) is present in `activeVisibilityIds`.
   - Return the processed `fogVisibilityMap`.
 
 **🚨 Constraint**:

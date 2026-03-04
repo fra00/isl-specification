@@ -9,11 +9,11 @@
 
 > **Reference**: PageNavigationEnum in `./domain-core.isl.md`
 > **Reference**: GameSession in `./domain-session.isl.md`
-> **Reference**: Domain object are defined in `./play-game.isl.md`.
-> **Reference**: Domain object are defined in `./editor-game.isl.md`.
-> **Reference**: Domain object are defined in `./main-menu.isl.md`.
-> **Reference**: Domain object are defined in `./armory.isl.md`.
-> **Reference**: Domain object are defined in `./dungeon.isl.md`.
+> **Reference**: PlayGame in `./play-game.isl.md`
+> **Reference**: EditorGame in `./editor-game.isl.md`
+> **Reference**: MainMenu in `./main-menu.isl.md`
+> **Reference**: Armory in `./armory.isl.md`
+> **Reference**: Dungeon in `./dungeon.isl.md`
 > **Reference**: DungeonDescription in `./dungeon-description.isl.md`
 
 ## Component: PageContent
@@ -49,7 +49,7 @@ showPageView se la pagina corrente è vuota visualizza quella di default
 #### changePageView
 
 **Contract**: Cambia la `PageView` corrente
-**Signature**: `(nextPageView: > **Reference**: `PageNavigationEnum`in`./domain.isl.md`) => void`
+**Signature**: `(nextPageView: @PageNavigationEnum) -> void`
 **Side Effects**:
 Setta in `NavigationStatus` nextPageView la valore passato in input
 
@@ -77,9 +77,9 @@ Carica il componente PageView visualizzare
 **Flow**:
 
 1. SWITCH currentPageView (PageNavigationEnum)
-   CASE `MAIN_MENU` visualizza il componente PageView `./main-menu.isl.md` .
-   CASE `PLAY_GAME` visualizza il componente PageView `./play-game.isl.md` .
-   CASE `EDITOR_GAME` visualizza il componente PageView `./editor-game.isl.md`
-   CASE `SHOP` visualizza il componente PageView `./armory.isl.md` .
-   CASE `DUNGEON` visualizza il componente PageView `./dungeon.isl.md` .
-   CASE `DUNGEON_DESCRIPTION` visualizza il componente PageView `./dungeon-description.isl.md` .
+   CASE `MAIN_MENU` Render `@MainMenu` with `onChangePageView` = `changePageView`.
+   CASE `PLAY_GAME` Render `@PlayGame` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+   CASE `EDITOR_GAME` Render `@EditorGame`.
+   CASE `SHOP` Render `@Armory` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+   CASE `DUNGEON` Render `@Dungeon` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+   CASE `DUNGEON_DESCRIPTION` Render `@DungeonDescription` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.

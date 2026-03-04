@@ -1,1 +1,1 @@
-export function getEditorGameTitle(): string;
+export default function PlayGame(): React.Element;

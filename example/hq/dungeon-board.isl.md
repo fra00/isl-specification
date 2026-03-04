@@ -27,6 +27,7 @@
 - `onCellHover`: (x: Integer, y: Integer) -> void (Callback when a cell is hovered).
 - `onMonsterClick`: (monsterId: Integer) -> void (Callback when a monster is clicked).
 - `hoveredPath`: List of {x, y} (Path to highlight).
+- `secretPassages`: List of {x: Integer, y: Integer, img: String} (List of discovered secret passages).
 
 ### 🔍 Appearance
 
@@ -42,7 +43,7 @@
 - **Grid**: Container for grid cells.
   - **Visibility**: Use `boardVisibilityMap` prop (@VisibilityMap).
   - **Cells**: Divs representing the grid squares (26x19 0-indexed) widht:34px,height:34px - area width 884px and height 646px .
-    - **Fog of War**: Black overlay 70% opacity, removed/transparent if cell have `boardVisibilityMap.data[n].fog` as false.
+    - **Fog of War**: Black overlay 70% opacity, removed/transparent if cell at `x+1, y+1` in `boardVisibilityMap.data` has `fog` as false.
     - **Path Highlight**: If cell {x,y} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
 - **Furniture**: Visual elements for map furniture.
   - **Data Source**: Derive `visibleFurniture` using `useDungeonFurniture(@GameSession, @VisibilityMap)`.
@@ -52,6 +53,9 @@
   - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. do not scale
 - **Monsters**: Visual tokens for `@GameSession.monsters` (@MonsterState) at their x,y coordinates (start from 1).
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
+- **Secret Passages**: Visual elements for discovered secret passages.
+  - **Data Source**: `secretPassages` prop.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)

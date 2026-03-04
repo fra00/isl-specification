@@ -1,2 +1,1 @@
-import React from 'react';
-export default function PlayGame(props: { onChangePageView: (page: "MAIN_MENU" | "PLAY_GAME" | "EDITOR_GAME" | "SHOP" | "DUNGEON" | "DUNGEON_DESCRIPTION") => void }): React.Element;
+export default function MainMenu(props: { onChangePageView: (page: 'MAIN_MENU' | 'PLAY_GAME' | 'EDITOR_GAME' | 'SHOP' | 'DUNGEON' | 'DUNGEON_DESCRIPTION') => void }): React.Element;

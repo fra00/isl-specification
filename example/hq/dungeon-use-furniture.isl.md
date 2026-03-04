@@ -9,7 +9,7 @@
 
 > **Reference**: @GameSession in `./domain-session.isl.md`
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
-> **Reference**: @MapCellFurniture in `./domain-map.isl.md`
+> **Reference**: @MapCellFurniture, @MapCell in `./domain-map.isl.md`
 
 ## Component: useDungeonFurniture
 
@@ -31,7 +31,10 @@ hooks for manage visibility for furniture
 - **Trigger**: When `gameSession.currentMap` or `boardVisibilityMap` changes.
 - **Flow**:
   - IF `gameSession.currentMap` OR `boardVisibilityMap` is missing RETURN empty list.
-  - Iterate through `gameSession.currentMap.grid`.
+  - get @MapCell from `gameSession.currentMap.grid` with coordinates x,y
+  - IF @MapCell.arnt.antroc is true AND @MapCell.arnt.inv is false THEN
+    - Add th rock image at coordinates x,y using the image `public/img/cell/pietra.jpg`
+  - Iterate through `gameSession.currentMap.grid` @MapCell.
   - FOR each cell with `mobili.num` diverso da null :
     - Find the corresponding cell in `boardVisibilityMap` (matching x, y).
     - IF the visibility cell exists AND `fog` is false:

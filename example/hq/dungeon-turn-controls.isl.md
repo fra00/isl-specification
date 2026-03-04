@@ -17,10 +17,12 @@
 
 - `currentHero`: @HeroState (The hero currently taking their turn).
 - `movementPoints`: Integer (Current movement points available).
-- `turnPhase`: @TurnPhase (Current phase of the turn).
+- `turnPhase`: @TurnPhase (info about the current activity of the turn).
 - `isMoving`: Boolean (Whether the hero is currently animating movement).
 - `onRollMovement`: () -> void (Callback to roll for movement).
 - `onEndTurn`: () -> void (Callback to end the turn).
+- `onSearchPassages`: () -> void (Callback to search for secret passages).
+- `hasActed`: Boolean (True if action is allowed).
 
 ### 🔍 Appearance
 
@@ -38,16 +40,23 @@
 - **Info Section**:
   - Display `currentHero.hero.classe` (or "Unknown" if null).
   - Display `movementPoints`.
-  - Display `turnPhase`.
 - **Action Buttons**:
   - **Roll Movement**:
-    - Visible IF `turnPhase` is `START`.
+    - Diabled IF `turnPhase` have `hasMoved` true
     - Style: Blue primary button.
     - OnClick: Trigger `onRollMovement`.
+  - **Search Passages**:
+    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Style: Yellow/Orange button.
+    - OnClick: Trigger `onSearchPassages`.
+  - **Search Treasure**:
+    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Style: Yellow/Orange button.
+  - **Search Trap**:
+    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Style: Yellow/Orange button.
   - **End Turn**:
-    - Always visible.
-    - Disabled IF `isMoving` is true.
-    - Style: Red danger button (Gray if disabled).
+    - Style: Red danger button.
     - OnClick: Trigger `onEndTurn`.
 
 ### ⚡ Capabilities

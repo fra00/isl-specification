@@ -83,7 +83,7 @@ For systems involving time (Games, Simulations, Animations):
 - **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
 
 ## Document Structure
-   - ## Domain Concepts (Optional)
+   - ## Domain Concepts (Optional IF exist must be exported and accessible for capabilities)
    - ## Component: [Name]
      - ### Role: [Presentation | Backend | Business Logic]
      - **Signature**: [Input Props / Constructor Args]

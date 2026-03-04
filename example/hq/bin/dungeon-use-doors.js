@@ -8,48 +8,54 @@
 
 import { useMemo } from 'react';
 
-export function useDungeonDoors(gameSession, boardVisibilityMap) {
-  const visibleDoors = useMemo(() => {
-    // IF gameSession.currentMap OR boardVisibilityMap is missing RETURN empty list.
-    if (!gameSession?.currentMap || !boardVisibilityMap) {
-      return [];
-    }
+export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
+    const visibleDoors = useMemo(() => {
+        const doorsList = [];
 
-    const doors = gameSession.currentMap.porte || [];
-    const visibilityData = boardVisibilityMap.data || [];
+        // GUARDRAIL: Return empty list if essential data is missing
+        if (!gameSession?.currentMap?.porte || !boardVisibilityMap?.data) {
+            return doorsList;
+        }
 
-    // Create a quick lookup map for visibility cells for O(1) access
-    const visibilityMapLookup = new Map();
-    for (const cell of visibilityData) {
-      visibilityMapLookup.set(`${cell.x},${cell.y}`, cell);
-    }
+        // Optimize visibility map lookup for O(1) access
+        const visibilityLookup = new Map();
+        for (const cell of boardVisibilityMap.data) {
+            visibilityLookup.set(`${cell.x},${cell.y}`, cell);
+        }
 
-    const result = [];
+        for (const door of gameSession.currentMap.porte) {
+            // Ensure door coordinates are numbers
+            const doorX = door.x;
+            const doorY = door.y;
 
-    // Iterate through gameSession.currentMap.porte.
-    for (const door of doors) {
-      const doorX = door.x;
-      const doorY = door.y;
+            // According to the flow, check specific adjacent cells for visibility
+            // (matching: x-1, y-1 or x, y-1 or x-1, y)
+            const checkCoords = [
+                { x: doorX - 1, y: doorY - 1 },
+                { x: doorX, y: doorY - 1 },
+                { x: doorX - 1, y: doorY }
+            ];
 
-      // Find the corresponding cell in boardVisibilityMap (matching x-1, y-1).
-      const visibilityCell = visibilityMapLookup.get(`${doorX - 1},${doorY - 1}`);
+            let isVisible = false;
+            for (const coord of checkCoords) {
+                const visibilityCell = visibilityLookup.get(`${coord.x},${coord.y}`);
+                // If a visibility cell exists and its fog property is false, the door is visible
+                if (visibilityCell && visibilityCell.fog === false) {
+                    isVisible = true;
+                    break; // Found a visible adjacent cell, no need to check further
+                }
+            }
 
-      // IF the visibility cell exists AND fog is false:
-      if (visibilityCell && visibilityCell.fog === false) {
-        // Determine image: IF oriz is true THEN portao.jpg ELSE portav.jpg.
-        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+            if (isVisible) {
+                // Determine image based on door orientation
+                const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+                doorsList.push({ x: doorX, y: doorY, img });
+            }
+        }
 
-        // Add the door to the result list (including x, y, and image).
-        result.push({
-          x: doorX,
-          y: doorY,
-          img: img,
-        });
-      }
-    }
+        return doorsList;
+    }, [gameSession?.currentMap?.porte, boardVisibilityMap?.data]); // Dependencies for useMemo
 
-    return result;
-  }, [gameSession, boardVisibilityMap]);
-
-  return { visibleDoors };
+    // The capability contract specifies returning an object with a 'visibleDoors' property
+    return { visibleDoors };
 }

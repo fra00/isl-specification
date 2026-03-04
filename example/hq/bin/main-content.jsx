@@ -9,10 +9,12 @@
 import React from 'react';
 import PageContent from './page-presentation';
 
-export default function MainContent() {
+function MainContent() {
   return (
-    <div className="w-full h-screen flex items-center justify-center">
+    <div className="w-full h-screen flex items-center justify-center bg-black">
       <PageContent />
     </div>
   );
 }
+
+export default MainContent;

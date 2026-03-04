@@ -24,7 +24,7 @@
 
 - **Layout**: Centered content box with a parchment or dark theme.
 - **Title**: "Mission Description".
-- **Text**: The `description` text from th current map in `gameSession.currentMap.header.descrizione`, scrollable if long.
+- **Text**: The `description` text from th current map in @gameSession.currentMap.header.descrizione, scrollable if long.
 - **Actions**: Row of buttons.
   - "Entra nel dungeon" (Primary action).
   - "Armeria" (Secondary action).
@@ -45,6 +45,6 @@
 - **Contract**: Delegates user actions to parent callbacks.
 - **Trigger**: User clicks one of the buttons.
 - **Flow**:
-  - IF "Entra nel dungeon" clicked -> - onChangePageView to `PageNavigationEnum.DUNGEON`.
-  - IF "Armeria" clicked -> - onChangePageView to `PageNavigationEnum.SHOP`.
-  - IF "Indietro" clicked -> - onChangePageView to `PageNavigationEnum.PLAY_GAME`.
+  - IF "Entra nel dungeon" clicked -> - onChangePageView to @PageNavigationEnum.DUNGEON.
+  - IF "Armeria" clicked -> - onChangePageView to @PageNavigationEnum.SHOP.
+  - IF "Indietro" clicked -> - onChangePageView to @PageNavigationEnum.PLAY_GAME.

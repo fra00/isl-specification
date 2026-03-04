@@ -3,7 +3,7 @@
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
 **Created**: 2026-02-09
-**Implementation**: ./game-domain-session
+**Implementation**: ./domain-session
 
 ---
 
@@ -60,9 +60,8 @@ Represents the current active session state.
 
 #### `TurnPhase`
 
-Enum representing the current phase of a hero's turn.
+Object representing the possible activity of a hero's turn.
 
-- `START`: Turn started, waiting for movement roll or action.
-- `MOVEMENT`: Movement roll done, hero can move.
-- `ACTION`: Hero performed an action (cannot move anymore).
-- `FINISHED`: Turn ended.
+- `HasMoved`: Turn started, waiting for movement roll or action.
+- `HasPerformedAction`: The hero have searched for secret passage, trap , treasure or have attacked.
+- `IsTurnFinished`: The hero have ended the turn, waiting for next hero turn or monster turn in future.

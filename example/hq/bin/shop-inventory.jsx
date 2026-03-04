@@ -6,92 +6,80 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-import { Equipment } from './game-domain-ruleset';
+import React, { useMemo } from 'react';
+import { Equipment } from './domain-ruleset';
 
-export default function ShopInventory({
-    items = [],
-    selectedItemId = null,
-    canBuy = false,
-    buyReason = '',
-    onSelect = () => {},
-    onBuy = () => {},
-    onEnterDungeon = () => {},
-    onExit = () => {},
-}) {
-    const selectedItem = items.find(item => item.id === selectedItemId);
+const ShopInventory = ({
+  items = [],
+  selectedItemId,
+  canBuy,
+  buyReason = '',
+  onSelect,
+  onBuy,
+  onEnterDungeon,
+  onExit,
+}) => {
+  const selectedItem = useMemo(() => {
+    return items.find(item => item.id === selectedItemId);
+  }, [items, selectedItemId]);
 
-    return (
-        <div className="flex flex-col h-screen bg-gray-800 text-white p-4">
-            {/* Header */}
-            <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400">Negozio dell'Avventura</h1>
+  return (
+    <div className="flex flex-col h-full p-4 bg-gray-800 text-white">
+      {/* Item List */}
+      <div className="flex-grow overflow-y-auto mb-4 border border-gray-700 rounded p-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={`flex justify-between items-center p-2 mb-1 rounded cursor-pointer
+                        ${selectedItemId === item.id ? 'bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'}
+                        ${!canBuy && selectedItemId === item.id ? 'opacity-50' : ''}`}
+            onClick={() => onSelect(item.id)}
+          >
+            <span>{item.nome}</span>
+            <span>{item.prezzo} G</span>
+          </div>
+        ))}
+      </div>
 
-            <div className="flex flex-grow overflow-hidden">
-                {/* Item List */}
-                <div className="w-1/2 pr-4 overflow-y-auto custom-scrollbar">
-                    <h2 className="text-xl font-semibold mb-4 text-blue-300">Oggetti Disponibili</h2>
-                    <ul className="space-y-2">
-                        {items.map((item) => (
-                            <li
-                                key={item.id}
-                                className={`p-3 rounded-lg cursor-pointer transition-all duration-200
-                                    ${item.id === selectedItemId ? 'bg-blue-600 shadow-lg border border-blue-400' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                onClick={() => onSelect(item.id)}
-                            >
-                                <div className="flex justify-between items-center">
-                                    <span className="text-lg font-medium">{item.nome}</span>
-                                    <span className="text-yellow-300">{item.prezzo} G</span>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+      {/* Preview */}
+      <div className="mb-4 p-4 bg-gray-700 rounded flex justify-center items-center h-48">
+        {selectedItem ? (
+          <img
+            src={`/img/equip/${selectedItem.immagine}`}
+            alt={selectedItem.nome}
+            className="max-h-full max-w-full object-contain"
+          />
+        ) : (
+          <p className="text-gray-400">Seleziona un oggetto</p>
+        )}
+      </div>
 
-                {/* Item Preview */}
-                <div className="w-1/2 pl-4 flex flex-col items-center justify-center bg-gray-700 rounded-lg p-4">
-                    {selectedItem ? (
-                        <>
-                            <h2 className="text-2xl font-bold mb-4 text-green-400">{selectedItem.nome}</h2>
-                            <img
-                                src={`/img/equip/${selectedItem.immagine}`}
-                                alt={selectedItem.nome}
-                                className="max-w-full h-auto max-h-64 object-contain rounded-lg shadow-md mb-4"
-                            />
-                            <p className="text-gray-300 text-center">
-                                Prezzo: <span className="font-semibold text-yellow-300">{selectedItem.prezzo} G</span>
-                            </p>
-                            {/* Add more details if needed, based on Equipment structure */}
-                        </>
-                    ) : (
-                        <p className="text-gray-400 text-lg">Seleziona un oggetto per vederne i dettagli</p>
-                    )}
-                </div>
-            </div>
+      {/* Actions */}
+      <div className="flex flex-col space-y-2">
+        <button
+          className={`px-4 py-2 rounded font-bold
+                      ${canBuy ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 cursor-not-allowed'}`}
+          onClick={onBuy}
+          disabled={!canBuy}
+          title={!canBuy ? buyReason : ''}
+        >
+          Acquista
+        </button>
+        <button
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-bold"
+          onClick={onEnterDungeon}
+        >
+          Entra nel dungeon
+        </button>
+        <button
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded font-bold"
+          onClick={onExit}
+        >
+          Esci
+        </button>
+      </div>
+    </div>
+  );
+};
 
-            {/* Action Buttons */}
-            <div className="flex justify-around mt-6 p-4 bg-gray-900 rounded-lg shadow-inner">
-                <button
-                    className={`px-6 py-3 rounded-lg font-semibold text-lg transition-all duration-200
-                        ${canBuy ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-500 cursor-not-allowed text-gray-300'}`}
-                    onClick={canBuy ? onBuy : null}
-                    disabled={!canBuy}
-                    title={!canBuy ? buyReason : ''}
-                >
-                    Acquista
-                </button>
-                <button
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg transition-all duration-200"
-                    onClick={onEnterDungeon}
-                >
-                    Entra nel dungeon
-                </button>
-                <button
-                    className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-lg transition-all duration-200"
-                    onClick={onExit}
-                >
-                    Esci
-                </button>
-            </div>
-        </div>
-    );
-}
+export default ShopInventory;

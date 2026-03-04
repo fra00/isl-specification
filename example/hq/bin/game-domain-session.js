@@ -7,85 +7,45 @@
  */
 
 import { MapDefinition } from "./game-domain-map";
-import { Hero, Monster, Item, Equipment } from "./game-domain-ruleset";
+import { Hero, Monster } from "./game-domain-ruleset";
 
-export const HeroState = (data = {}) => {
-    const {
-        heroId = 0,
-        turnOrder = 0,
-        currentBody = 0,
-        currentMind = 0,
-        gold = 500,
-        inventory = [],
-        equipment = [],
-        x = 0,
-        y = 0,
-        hero = null,
-    } = data;
+export const HeroState = (data = {}) => ({
+  heroId: data.heroId ?? 0,
+  turnOrder: data.turnOrder ?? 0,
+  currentBody: data.currentBody ?? 0,
+  currentMind: data.currentMind ?? 0,
+  gold: data.gold ?? 500,
+  inventory: data.inventory ?? [],
+  equipment: data.equipment ?? [],
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  hero: data.hero ? Hero(data.hero) : Hero(),
+});
 
-    return {
-        heroId,
-        turnOrder,
-        currentBody,
-        currentMind,
-        gold,
-        inventory: [...inventory],
-        equipment: [...equipment],
-        x,
-        y,
-        hero: hero ? Hero(hero) : null,
-    };
-};
+export const MonsterState = (data = {}) => ({
+  id: data.id ?? 0,
+  monster: data.monster ? Monster(data.monster) : Monster(),
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  currentBody: data.currentBody ?? 0,
+  currentMind: data.currentMind ?? 0,
+});
 
-export const MonsterState = (data = {}) => {
-    const {
-        id = 0,
-        monster = null,
-        x = 0,
-        y = 0,
-        currentBody = 0,
-        currentMind = 0,
-    } = data;
-
-    return {
-        id,
-        monster: monster ? Monster(monster) : null,
-        x,
-        y,
-        currentBody,
-        currentMind,
-    };
-};
-
-export const GameSession = (data = {}) => {
-    const {
-        campaignName = "",
-        currentMap = null,
-        currentMissionIndex = 0,
-        heroes = [],
-        monsters = [],
-        spawnedLocations = [],
-        currentTurn = 1,
-        isHeroOrderConfirmed = false,
-        lastAttack = null,
-    } = data;
-
-    return {
-        campaignName,
-        currentMap: currentMap ? MapDefinition(currentMap) : null,
-        currentMissionIndex,
-        heroes: heroes.map(HeroState),
-        monsters: monsters.map(MonsterState),
-        spawnedLocations: [...spawnedLocations],
-        currentTurn,
-        isHeroOrderConfirmed,
-        lastAttack: lastAttack ? { ...lastAttack } : null,
-    };
-};
+export const GameSession = (data = {}) => ({
+  campaignName: data.campaignName ?? '',
+  currentMap: data.currentMap ? MapDefinition(data.currentMap) : MapDefinition(),
+  currentMissionIndex: data.currentMissionIndex ?? 0,
+  heroes: (data.heroes ?? []).map(heroData => HeroState(heroData)),
+  monsters: (data.monsters ?? []).map(monsterData => MonsterState(monsterData)),
+  spawnedLocations: data.spawnedLocations ?? [],
+  currentTurn: data.currentTurn ?? 1,
+  isHeroOrderConfirmed: data.isHeroOrderConfirmed ?? false,
+  lastAttack: data.lastAttack ?? {},
+});
 
 export const TurnPhase = {
-    START: "START",
-    MOVEMENT: "MOVEMENT",
-    ACTION: "ACTION",
-    FINISHED: "FINISHED",
+  START: 'START',
+  MOVEMENT: 'MOVEMENT',
+  ACTION: 'ACTION',
+  FINISHED: 'FINISHED',
 };

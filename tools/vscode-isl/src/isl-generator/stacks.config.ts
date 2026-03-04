@@ -11,14 +11,15 @@ export interface StackConfig {
   signatureFormat: string;
 }
 
-const UNIVERSAL_SAFETY = [
+// GUARDRAILS: Universal rules applicable to ANY programming language to prevent common runtime errors.
+const UNIVERSAL_GUARDRAILS = [
   "Null Safety: ALWAYS use safe access (`?.`, `!= null`, `is not None`) for nested properties/uninitialized variables",
   "Default Init: prefer valid default values (empty string/array, zero object) vs `null`/`undefined`",
   "Async State: EXPLICITLY handle loading (Loading, retry, blocking) - never assume data is immediately available",
 ];
 
 // Export alias for backward compatibility if needed, though internal usage is preferred
-export const UNIVERSAL_SAFETY_CONSTRAINTS = UNIVERSAL_SAFETY;
+export const UNIVERSAL_SAFETY_CONSTRAINTS = UNIVERSAL_GUARDRAILS;
 
 const PYTHON_SAFETY = [
   "Null Safety: ALWAYS use safe access (`is not None`) for nested properties/uninitialized variables",
@@ -40,21 +41,22 @@ export const STACKS: Record<string, StackConfig> = {
     promptPersona: "Senior React Developer - Functional Components & Hooks",
     constraints: [
       "NO: TypeScript types, JsDoc, import @typedef, defaultProps (use ES6 default params)",
+      "React Hook Rules: Hooks (functions starting with `use`) MUST be called at the top level. NEVER call hooks inside loops, conditions, or nested functions (including callbacks of `useMemo`, `useEffect`).",
+      "React Stability: Functions passed as props to child components or used in `useEffect` dependencies MUST be wrapped in `useCallback` to ensure referential stability.",
+      "Custom Hooks Signature: Custom Hooks MUST always accept a single configuration object as an argument. Example: `useMyHook({ param1, param2 })`. NEVER use positional arguments.",
       "Naming Conventions: Function exports (Logic/Helpers) MUST be camelCase (e.g. `updateGame`). React Components & Domain Factories MUST be PascalCase.",
       'Import: signature "export default [Name]" → `import Name from...` otherwise "export name" → `import { Name } from...`',
-      "Import: Use correct **Implementation** as path for import",
-      "Runtime: import ONLY real constants/functions/classes. NEVER types/interfaces (they do not exist in JS)",
+      "Import: Use correct **Implementation** as path for import, using relative paths",
+      'Import: the start root MUST be "./ (e.g. \`from "./domain"\`). NEVER use absolute imports or paths starting with src/ or similar.',
       "Import: relative, ONLY necessary for execution",
+      "Runtime: import ONLY real constants/functions/classes. NEVER types/interfaces (they do not exist in JS)",
       "Signature: ReactElement → use as JSX `<Comp />`",
       "Instantiation: use object literals `{}` or Factory Functions. NEVER use `new` for project components. Use `new` ONLY for built-in classes (Date, Map).",
       "Domain: only ES6 objects",
       "Domain Entity Naming: For each Entity (e.g. `User`), generate an exported Factory Function with the SAME PascalCase name (e.g. `export const User = (data) => ({...})`). NO `create`/`make` prefixes.",
       "Domain Objects: MUST be instantiated using Domain Factory Functions (e.g. `Paddle()`). DO NOT create ad-hoc object literals that might miss properties.",
-      "Declare hooks ONLY inside a function body",
       "Hooks: Custom Hooks (useName). Exposed functions MUST be stable (use refs for state access) to prevent consumer re-renders.",
       "Consumption: Hook import → call hook to get function. NO direct import of functions from hooks",
-      "DON'T use hooks inside useMemo or useCallback dependencies. Instead, call the hook at the top level and use the returned function inside the memoized callback.",
-      "Custom Hooks Signature: Custom Hooks MUST always accept a single configuration object as an argument, never positional arguments. Example: useMyHook({ param1, param2 }).",
       "Business Logic: MUST use Named Exports for functions. DO NOT export a singleton object.",
       "Immutability: Always return new objects/arrays when updating state. Never mutate state in place.",
       "Visibility: All Capabilities in Business Logic/Domain MUST be exported. Presentation capabilities are internal to the component.",
@@ -62,9 +64,9 @@ export const STACKS: Record<string, StackConfig> = {
       "Comments: standard syntax only",
     ],
     safetyConstraints: [
-      ...UNIVERSAL_SAFETY,
+      ...UNIVERSAL_GUARDRAILS,
       "State Init: if synchronous use Lazy Init `useState(() => init())`. NEVER `useEffect` for synchronous init",
-      "Conditional Render: state `null`/`undefined` → verify before passing to children `{data && <Child data={data} />}`",
+      "Conditional Render: state `null`/`undefined` → verify before passing to children (object or nested properties) `{data && <Child data={data} />}`",
       "Default Props: always default in destructuring if object might be missing",
     ],
     signatureFormat: `You MUST output the signature as a TypeScript Declaration (pseudo-code) block.
@@ -87,7 +89,7 @@ Examples:
       "Import: absolute or standard relative",
     ],
     safetyConstraints: [
-      ...UNIVERSAL_SAFETY,
+      ...UNIVERSAL_GUARDRAILS,
       "Models: default values in Pydantic to avoid missing fields",
     ],
     signatureFormat: `You MUST output the signature as Python Type Hints (Stub file style).
@@ -115,7 +117,7 @@ Examples:
       "Domain: use dataclasses for data structures",
       "Style: Follow PEP 8 guidelines",
     ],
-    safetyConstraints: [...PYTHON_SAFETY],
+    safetyConstraints: [...PYTHON_SAFETY, ...UNIVERSAL_GUARDRAILS],
     signatureFormat: `You MUST output the signature as Python Type Hints (Stub file style).
 Examples:
 - Function: \`def calculate(a: int) -> int: ...\`

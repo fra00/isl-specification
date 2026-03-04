@@ -6,73 +6,131 @@
  * Edit the ISL file instead.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { GameSession, HeroState, MonsterState } from './domain-session';
+import { MapCell, MapDefinition, VisibilityCell, VisibilityMap } from './domain-map';
 
+/**
+ * Custom hook for querying dungeon map data and visibility information.
+ * @param {object} props - The hook's configuration object.
+ * @param {GameSession} props.gameSession - The current game session data.
+ * @param {VisibilityMap | null | undefined} props.visibilityMap - The visibility map data, which can be null or undefined.
+ */
 export function useDungeonMapQuery({ gameSession, visibilityMap }) {
-    const queries = useMemo(() => {
-        const getMapCell = (x, y) => {
-            const grid = gameSession?.currentMap?.grid;
-            if (!grid) {
-                return null;
-            }
-            return grid.find(cell => cell.x === x && cell.y === y) || null;
-        };
+  const mapGrid = useMemo(() => gameSession?.currentMap?.grid || [], [gameSession]);
+  const mapDoors = useMemo(() => gameSession?.currentMap?.porte || [], [gameSession]);
+  const visibilityData = useMemo(() => visibilityMap?.data || [], [visibilityMap]);
+  const heroes = useMemo(() => gameSession?.heroes || [], [gameSession]);
+  const monsters = useMemo(() => gameSession?.monsters || [], [gameSession]);
 
-        const getVisibilityCell = (x, y) => {
-            const visibilityData = visibilityMap?.data;
-            if (!visibilityData) {
-                return null;
-            }
-            return visibilityData.find(cell => cell.x === x && cell.y === y) || null;
-        };
+  /**
+   * Retrieves the MapCell data at the given coordinates.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {MapCell | null} The MapCell object or null if not found.
+   */
+  const getMapCell = useCallback((x, y) => {
+    return mapGrid.find(cell => cell.x === x && cell.y === y) || null;
+  }, [mapGrid]);
 
-        const isDoor = (x, y) => {
-            const doors = gameSession?.currentMap?.porte;
-            if (!doors) {
-                return false;
-            }
-            return doors.some(door => door.x === x && door.y === y);
-        };
+  /**
+   * Retrieves the VisibilityCell data at the given coordinates.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {VisibilityCell | null} The VisibilityCell object or null if not found.
+   */
+  const getVisibilityCell = useCallback((x, y) => {
+    return visibilityData.find(cell => cell.x === x && cell.y === y) || null;
+  }, [visibilityData]);
 
-        const isSecretPassage = (x, y) => {
-            const cell = getMapCell(x, y);
-            return cell?.psgg?.ps != null;
-        };
+  /**
+   * Checks if a door exists at the given coordinates.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {boolean} True if a door exists, false otherwise.
+   */
+  const isDoor = useCallback((x, y) => {
+    return mapDoors.some(door => door.x === x && door.y === y);
+  }, [mapDoors]);
 
-        const isBlockedByFurniture = (x, y) => {
-            const cell = getMapCell(x, y);
-            return cell?.mobili?.num != null;
-        };
+  /**
+   * Checks if a secret passage exists at the given coordinates.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {boolean} True if a secret passage exists, false otherwise.
+   */
+  const isSecretPassage = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return !!cell?.psgg?.ps;
+  }, [getMapCell]);
 
-        const isBlockedByMonster = (x, y, excludeEntityId) => {
-            const monsters = gameSession?.monsters || [];
-            return monsters.some(monster =>
-                monster.x === x && monster.y === y && monster.id !== excludeEntityId
-            );
-        };
+  /**
+   * Checks if the cell is blocked by furniture.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {boolean} True if blocked by furniture, false otherwise.
+   */
+  const isBlockedByFurniture = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return !!cell?.mobili?.num;
+  }, [getMapCell]);
 
-        const isOccupiedByHero = (x, y, excludeEntityId) => {
-            const heroes = gameSession?.heroes || [];
-            return heroes.some(hero =>
-                hero.x === x && hero.y === y && hero.heroId !== excludeEntityId
-            );
-        };
+  /**
+   * Checks if the cell is occupied by a monster, excluding a specific entity.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @param {number} excludeEntityId - The ID of the monster to exclude from the check.
+   * @returns {boolean} True if occupied by a monster, false otherwise.
+   */
+  const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
+    const monster = monsters.find(
+      (m) => m.x === x && m.y === y && m.id !== excludeEntityId && m.currentBody > 0
+    );
+    return !!monster;
+  }, [monsters]);
 
-        const getMapDimensions = () => {
-            return { width: 26, height: 19 };
-        };
+  /**
+   * Checks if the cell is occupied by a hero, excluding a specific entity.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @param {number} excludeEntityId - The ID of the hero to exclude from the check.
+   * @returns {boolean} True if occupied by a hero, false otherwise.
+   */
+  const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
+    const hero = heroes.find(
+      (h) => h.x === x && h.y === y && h.heroId !== excludeEntityId && h.currentBody > 0
+    );
+    return !!hero;
+  }, [heroes]);
 
-        return {
-            getMapCell,
-            getVisibilityCell,
-            isDoor,
-            isSecretPassage,
-            isBlockedByFurniture,
-            isBlockedByMonster,
-            isOccupiedByHero,
-            getMapDimensions,
-        };
-    }, [gameSession, visibilityMap]);
+  /**
+   * Checks if the cell is blocked by rock.
+   * @param {number} x - The X coordinate.
+   * @param {number} y - The Y coordinate.
+   * @returns {boolean} True if blocked by rock, false otherwise.
+   */
+  const isBlockedByRock = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return !!cell?.arnt?.antroc;
+  }, [getMapCell]);
 
-    return queries;
+  /**
+   * Returns the width and height of the map.
+   * @returns {{ width: number, height: number }} An object with width and height.
+   */
+  const getMapDimensions = useCallback(() => {
+    return { width: 26, height: 19 };
+  }, []);
+
+  return {
+    getMapCell,
+    getVisibilityCell,
+    isDoor,
+    isSecretPassage,
+    isBlockedByFurniture,
+    isBlockedByMonster,
+    isOccupiedByHero,
+    isBlockedByRock,
+    getMapDimensions,
+  };
 }

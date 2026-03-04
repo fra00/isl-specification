@@ -6,71 +6,53 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from 'react';
-import { PageNavigationEnum } from './game-domain-core';
-import { GameSession } from './game-domain-session';
-import PlayGameScreen from './play-game'; // Aliased to avoid conflict with MainMenu's PlayGame
-import { getEditorGameTitle } from './editor-game'; // Function, not a component
-import MainMenuScreen from './main-menu'; // Aliased to avoid conflict with PlayGame's PlayGame
+import React, { useState, useCallback } from 'react';
+
+// Imports from REAL IMPLEMENTATION CONTEXT
+import { PageNavigationEnum } from './domain-core';
+import PlayGame from './play-game';
+import PlayGameEditor from './editor-game'; // Aliased to avoid conflict with PlayGame from './play-game'. The signature for './editor-game' is 'export default function PlayGame(): React.Element;'
+import MainMenu from './main-menu';
 import Armory from './armory';
 import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
-const PageContent = () => {
-  // internal State
-  // Initialize currentPageView to MAIN_MENU as the default page.
+export default function PageContent() {
   const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);
-  // Initialize gameSession with a default GameSession object to satisfy non-nullable prop requirements
-  // for components like Armory, Dungeon, and DungeonDescription, as per REAL IMPLEMENTATION CONTEXT.
-  const [gameSession, setGameSession] = useState(() => GameSession());
+  const [gameSession, setGameSession] = useState(null);
 
-  // Capabilities: FirstLoad
-  // The "FirstLoad" capability is implicitly handled by the useState initialization of currentPageView.
-  // No explicit useEffect is needed for this specific flow.
-  useEffect(() => {
-    // Placeholder for any future synchronous initialization logic if needed,
-    // but currently, the default state handles the "FirstLoad" requirement.
+  // Capability: changePageView
+  const changePageView = useCallback((nextPageView) => {
+    setCurrentPageView(nextPageView);
   }, []);
 
-  // Capabilities: changePageView
-  const changePageView = (nextPageView) => {
-    setCurrentPageView(nextPageView);
-  };
-
-  // Capabilities: updateSession
-  const updateSession = (session) => {
+  // Capability: updateSession
+  const updateSession = useCallback((session) => {
     setGameSession(session);
-  };
+  }, []);
 
-  // Capabilities: startMission
-  // This capability is defined in the ISL but not consumed by any child components
-  // based on their provided signatures. It's implemented as a placeholder.
-  const startMission = (missionIndex) => {
-    console.log(`Mission ${missionIndex} started! (Placeholder logic)`);
-  };
+  // Capability: startMission (Placeholder as per ISL)
+  const startMission = useCallback((missionIndex) => {
+    // Log or handle mission start logic.
+    console.log(`Starting mission with index: ${missionIndex}`);
+  }, []);
 
-  // Capabilities: showPageView
+  // Capability: showPageView (Render logic)
   const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
-        return <MainMenuScreen onChangePageView={changePageView} />;
+        return <MainMenu onChangePageView={changePageView} />;
       case PageNavigationEnum.PLAY_GAME:
         return (
-          <PlayGameScreen
+          <PlayGame
             gameSession={gameSession}
             onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
       case PageNavigationEnum.EDITOR_GAME:
-        // As per REAL IMPLEMENTATION CONTEXT, './editor-game' only exports 'getEditorGameTitle',
-        // which is a function, not a React component.
-        // To fulfill the "visualizza il componente PageView" requirement, we display its output.
-        return (
-          <div className="flex items-center justify-center h-full text-white text-2xl">
-            {getEditorGameTitle()}
-          </div>
-        );
+        // Using the aliased component for editor-game, which is named PlayGame in its signature.
+        return <PlayGameEditor />;
       case PageNavigationEnum.SHOP:
         return (
           <Armory
@@ -96,11 +78,8 @@ const PageContent = () => {
           />
         );
       default:
-        return (
-          <div className="flex items-center justify-center h-full text-white text-2xl">
-            Page Not Found
-          </div>
-        );
+        // Fallback to MainMenu if currentPageView is somehow invalid
+        return <MainMenu onChangePageView={changePageView} />;
     }
   };
 
@@ -109,6 +88,4 @@ const PageContent = () => {
       {renderPageView()}
     </div>
   );
-};
-
-export default PageContent;
+}

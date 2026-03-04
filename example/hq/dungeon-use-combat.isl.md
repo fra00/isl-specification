@@ -83,4 +83,4 @@ Structure containing the details of a combat interaction.
   - **5. Return**:
     - Create and return `@CombatResult` with `attackerDice`, `defenderDice`, `skulls`, `shields`, `damageDealt`.
 
-- **Return**: `{ resolveCombat }`
+- **Return**:`{ resolveCombat }`

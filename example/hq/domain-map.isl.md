@@ -3,7 +3,7 @@
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
 **Created**: 2026-02-09
-**Implementation**: ./game-domain-map
+**Implementation**: ./domain-map
 
 ---
 

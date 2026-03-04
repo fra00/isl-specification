@@ -6,160 +6,144 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
-// REAL IMPLEMENTATION CONTEXT IMPORTS
-import { PageNavigationEnum } from "./game-domain-core";
-import { GameSession, HeroState } from "./game-domain-session";
-import { VisibilityMap } from "./game-domain-map";
-import DungeonBoard from "./dungeon-board";
-import DungeonHeroOrder from "./dungeon-hero-order";
-import { useTurnLogic } from "./dungeon-use-turn-logic";
-import { useFogOfWar } from "./dungeon-use-fog-of-war";
-import { useDungeonMonsters } from "./dungeon-use-monsters";
-import CombatResultModal from "./dungeon-combat-result-modal";
-import DungeonTurnControls from "./dungeon-turn-controls";
+import DungeonBoard from './dungeon-board';
+import DungeonHeroOrder from './dungeon-hero-order';
+import { useTurnLogic } from './dungeon-use-turn-logic';
+import { useFogOfWar } from './dungeon-use-fog-of-war';
+import { useDungeonMonsters } from './dungeon-use-monsters';
+import CombatResultModal from './dungeon-combat-result-modal';
+import DungeonTurnControls from './dungeon-turn-controls';
+import { useSecretPassages } from './dungeon-use-secret-passages';
+import DungeonNotification from './dungeon-notification';
 
-export default function Dungeon({
-  gameSession,
-  onChangePageView,
-  onUpdateSession,
-}) {
-  // internal state
+import { GameSession, HeroState } from './domain-session';
+import { VisibilityMap } from './domain-map';
+// PageNavigationEnum is imported but not directly used in this component's logic or render,
+// it's part of the onChangePageView prop's signature, which is handled by the parent.
+
+export default function Dungeon({ gameSession, onChangePageView, onUpdateSession }) {
   const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
-  const [isMissionDataLoading, setIsMissionDataLoading] = useState(true);
+  const [notificationMessage, setNotificationMessage] = useState(null);
+  const [isMissionDataLoaded, setIsMissionDataLoaded] = useState(false);
 
-  // Capability: loadMissionData
+  const boardVisibilityMap = useFogOfWar({ gameSession, staticVisibilityMap: staticVisibilityMap || VisibilityMap() });
+
+  const hooksTurnLogic = useTurnLogic({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onUpdateSession: useCallback((session) => onUpdateSession(session), [onUpdateSession]),
+  });
+
+  // useDungeonMonsters does not return anything, but its internal logic is triggered by props changes
+  useDungeonMonsters({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onUpdateSession: useCallback((session) => onUpdateSession(session), [onUpdateSession]),
+  });
+
+  const hooksSecretPassages = useSecretPassages({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onNotify: useCallback((message) => setNotificationMessage(message), []),
+    onActionDone: useCallback(() => hooksTurnLogic.markActionDone(), [hooksTurnLogic]),
+  });
+
+  const areMonstersVisible = useMemo(() => {
+    if (!gameSession?.monsters || !boardVisibilityMap?.data) {
+      return false;
+    }
+    return gameSession.monsters.some(monster => {
+      const cell = boardVisibilityMap.data.find(c => c.x === monster.x && c.y === monster.y);
+      return cell && !cell.fog;
+    });
+  }, [gameSession?.monsters, boardVisibilityMap?.data]);
+
   useEffect(() => {
     const loadData = async () => {
-      // Only proceed if gameSession is available and staticVisibilityMap hasn't been loaded yet.
-      // The condition `!gameSession.currentMap` is also part of the trigger, implying initial load.
-      if (!gameSession || staticVisibilityMap) {
-        setIsMissionDataLoading(false);
-        return;
-      }
+      if (isMissionDataLoaded || !gameSession?.currentMap?.eroi_start) return;
 
-      setIsMissionDataLoading(true);
       try {
-        // Fetch static visibility map
-        const visibilityResponse = await fetch(
-          "/jsonData/tabellone/default.json",
-        );
-        if (!visibilityResponse.ok) {
+        const response = await fetch('/jsonData/tabellone/default.json');
+        if (!response.ok) {
           throw new Error("Failed to load default.json: File not found");
         }
-        const loadedStaticVisibilityMap = await visibilityResponse.json();
-        setStaticVisibilityMap(VisibilityMap(loadedStaticVisibilityMap));
+        const data = await response.json();
+        const loadedStaticVisibilityMap = VisibilityMap(data);
+        setStaticVisibilityMap(loadedStaticVisibilityMap);
 
-        // Update Hero Positions
-        // This part assumes gameSession.currentMap is eventually provided by the parent or another mechanism.
-        // If gameSession.currentMap is null here, hero positions cannot be initialized from it.
-        // The ISL states "IF gameSession.currentMap is present THEN: Set loadedMap to gameSession.currentMap."
-        // and "Update Hero Positions". We'll perform the hero position update if currentMap is available.
-        if (
-          gameSession.currentMap &&
-          gameSession.currentMap.eroi_start &&
-          gameSession.heroes
-        ) {
-          const updatedHeroes = gameSession.heroes.map((heroState) => {
-            const startPos = gameSession.currentMap.eroi_start.find(
-              (start) => start.id === heroState.heroId,
-            );
-            if (startPos) {
-              return HeroState({ ...heroState, x: startPos.x, y: startPos.y });
-            }
-            return heroState;
-          });
-          // Only update if hero positions actually changed to avoid unnecessary re-renders
-          const hasHeroPositionsChanged = updatedHeroes.some(
-            (hero, index) =>
-              hero.x !== gameSession.heroes[index].x ||
-              hero.y !== gameSession.heroes[index].y,
-          );
-          if (hasHeroPositionsChanged) {
-            onUpdateSession(
-              GameSession({ ...gameSession, heroes: updatedHeroes }),
-            );
+        let updatedGameSession = { ...gameSession };
+        const loadedMap = updatedGameSession.currentMap; // currentMap is expected to be present as per GameSession signature
+
+        const updatedHeroes = updatedGameSession.heroes.map(hero => {
+          const startPos = loadedMap.eroi_start.find(pos => pos.id === hero.hero.id);
+          if (startPos) {
+            return HeroState({ ...hero, x: startPos.x, y: startPos.y });
           }
-        }
+          return hero;
+        });
+
+        updatedGameSession = GameSession({
+          ...updatedGameSession,
+          heroes: updatedHeroes,
+          currentMap: loadedMap,
+        });
+
+        onUpdateSession(updatedGameSession);
+        setIsMissionDataLoaded(true);
+
       } catch (error) {
         console.error("Error loading mission data:", error);
-        // In a real app, you might want to show an error UI or navigate away.
-        // For now, we just log and keep loading state.
-      } finally {
-        setIsMissionDataLoading(false);
+        setNotificationMessage(`Error loading mission: ${error.message}`);
       }
     };
 
     loadData();
-  }, [gameSession, onUpdateSession, staticVisibilityMap]); // Add staticVisibilityMap to dependencies to prevent re-fetching if it's already set.
+  }, [isMissionDataLoaded, gameSession, onUpdateSession]);
 
-  // Derived state for hooks
-  // Ensure staticVisibilityMap is not null before passing to useFogOfWar
-  const boardVisibilityMap = useFogOfWar({
-    gameSession,
-    staticVisibilityMap: staticVisibilityMap || VisibilityMap(),
-  });
+  const handleConfirmHeroOrder = useCallback((orderedHeroIds) => {
+    const updatedHeroes = gameSession.heroes.map(hero => {
+      const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
+      return HeroState({ ...hero, turnOrder });
+    });
 
-  // Ensure gameSession and boardVisibilityMap are not null before passing to useTurnLogic
-  const hooksTurnLogic = useTurnLogic({
-    gameSession: gameSession,
-    visibilityMap: boardVisibilityMap,
-    onUpdateSession: onUpdateSession,
-  });
-
-  // Capability: hooksMonsters (side effect hook)
-  // Ensure gameSession and boardVisibilityMap are not null before passing to useDungeonMonsters
-  useDungeonMonsters({
-    gameSession: gameSession,
-    visibilityMap: boardVisibilityMap,
-    onUpdateSession: onUpdateSession,
-  });
-
-  // Capability: order turn selection
-  const handleConfirmHeroOrder = useCallback(
-    (orderedHeroIds) => {
-      const updatedHeroes = gameSession.heroes.map((heroState) => {
-        const turnOrder = orderedHeroIds.indexOf(heroState.heroId) + 1;
-        return HeroState({ ...heroState, turnOrder: turnOrder });
-      });
-      onUpdateSession(
-        GameSession({
-          ...gameSession,
-          heroes: updatedHeroes,
-          isHeroOrderConfirmed: true,
-        }),
-      );
-    },
-    [gameSession, onUpdateSession],
-  );
-
-  // Capability: closeCombatResult
-  const closeCombatResult = useCallback(() => {
-    onUpdateSession(GameSession({ ...gameSession, lastAttack: null }));
+    const updatedSession = GameSession({
+      ...gameSession,
+      heroes: updatedHeroes,
+      isHeroOrderConfirmed: true,
+    });
+    onUpdateSession(updatedSession);
   }, [gameSession, onUpdateSession]);
 
-  // Derived current hero for DungeonTurnControls
-  const currentHero = useMemo(() => {
-    // Provide a default HeroState if no hero is found to ensure null safety for props
-    return (
-      gameSession.heroes.find((h) => h.turnOrder === gameSession.currentTurn) ||
-      HeroState()
-    );
-  }, [gameSession.heroes, gameSession.currentTurn]);
+  const closeCombatResult = useCallback(() => {
+    const updatedSession = GameSession({
+      ...gameSession,
+      lastAttack: null,
+    });
+    onUpdateSession(updatedSession);
+  }, [gameSession, onUpdateSession]);
 
-  // Loading state check
-  if (isMissionDataLoading || !staticVisibilityMap || !gameSession.currentMap) {
+  const handleCloseNotification = useCallback(() => {
+    setNotificationMessage(null);
+  }, []);
+
+  const currentHero = useMemo(() => {
+    if (!gameSession?.heroes || !gameSession?.isHeroOrderConfirmed) return null;
+    return gameSession.heroes.find(hero => hero.turnOrder === gameSession.currentTurn);
+  }, [gameSession?.heroes, gameSession?.currentTurn, gameSession?.isHeroOrderConfirmed]);
+
+
+  if (!isMissionDataLoaded || !staticVisibilityMap) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-gray-900 text-white text-2xl">
+      <div className="flex items-center justify-center h-screen bg-gray-900 text-white text-2xl">
         Loading Mission...
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gray-900">
-      {/* DungeonHeroOrder Modal */}
+    <div className="relative w-full h-full overflow-hidden">
       {!gameSession.isHeroOrderConfirmed && (
         <DungeonHeroOrder
           heroes={gameSession.heroes}
@@ -167,7 +151,6 @@ export default function Dungeon({
         />
       )}
 
-      {/* Dungeon Board */}
       <DungeonBoard
         gameSession={gameSession}
         boardVisibilityMap={boardVisibilityMap}
@@ -175,9 +158,9 @@ export default function Dungeon({
         onCellHover={hooksTurnLogic.handleBoardHover}
         onMonsterClick={hooksTurnLogic.handleMonsterClick}
         hoveredPath={hooksTurnLogic.hoveredPath}
+        secretPassages={hooksSecretPassages.getFoundPassages()}
       />
 
-      {/* Turn Controls */}
       {gameSession.isHeroOrderConfirmed && (
         <DungeonTurnControls
           currentHero={currentHero}
@@ -186,17 +169,25 @@ export default function Dungeon({
           isMoving={hooksTurnLogic.isMoving}
           onRollMovement={hooksTurnLogic.rollMovement}
           onEndTurn={hooksTurnLogic.endTurn}
+          onSearchPassages={hooksSecretPassages.searchPassages}
+          hasActed={hooksTurnLogic.hasActed && !areMonstersVisible}
         />
       )}
 
-      {/* Combat Result Modal */}
       {gameSession.lastAttack && (
         <CombatResultModal
-          isOpen={true} // Always open if lastAttack is present
+          isOpen={true}
           onClose={closeCombatResult}
           combatResult={gameSession.lastAttack.combatResult}
           attacker={gameSession.lastAttack.hero}
           defender={gameSession.lastAttack.monster}
+        />
+      )}
+
+      {notificationMessage && (
+        <DungeonNotification
+          message={notificationMessage}
+          onClose={handleCloseNotification}
         />
       )}
     </div>

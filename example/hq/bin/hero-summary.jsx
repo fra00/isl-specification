@@ -6,9 +6,9 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-import { Hero, Equipment } from './game-domain-ruleset';
-import { HeroState } from './game-domain-session';
+import React, { useState, useCallback } from 'react';
+import { Hero, Equipment } from './domain-ruleset';
+import { HeroState } from './domain-session';
 
 const HeroSummary = ({
   heroes = [],
@@ -17,28 +17,31 @@ const HeroSummary = ({
   selectedIndex = 0,
   onSelect = () => {},
 }) => {
-  const selectedHeroState = heroes[selectedIndex];
-  const selectedStaticHero = staticHeroes.find(
-    (sh) => sh.id === selectedHeroState?.heroId
-  );
-
-  const handleSelect = (event) => {
-    const index = parseInt(event.target.value, 10);
+  const handleSelect = useCallback((index) => {
     onSelect(index);
-  };
+  }, [onSelect]);
+
+  const currentHeroState = heroes[selectedIndex];
+  const currentStaticHero = staticHeroes.find(hero => hero.id === currentHeroState?.heroId);
+
+  const equipmentMap = new Map(staticEquipment.map(eq => [eq.id, eq]));
+
+  const currentHeroEquipmentNames = currentHeroState?.equipment
+    ?.map(equipmentId => equipmentMap.get(equipmentId)?.nome)
+    .filter(Boolean) || [];
 
   return (
     <div className="flex flex-col p-4 bg-gray-800 text-white rounded-lg shadow-lg">
+      <h2 className="text-xl font-bold mb-4">Hero Summary</h2>
+
       {/* Hero Selector */}
       <div className="mb-4">
-        <label htmlFor="hero-selector" className="block text-lg font-bold mb-2">
-          Select Hero:
-        </label>
+        <label htmlFor="hero-selector" className="block text-sm font-medium text-gray-300 mb-1">Select Hero:</label>
         <select
           id="hero-selector"
-          className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full p-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500"
           value={selectedIndex}
-          onChange={handleSelect}
+          onChange={(e) => handleSelect(parseInt(e.target.value, 10))}
         >
           {heroes.map((heroState, index) => (
             <option key={heroState.heroId} value={index}>
@@ -48,50 +51,41 @@ const HeroSummary = ({
         </select>
       </div>
 
-      {selectedHeroState && selectedStaticHero ? (
+      {currentHeroState && currentStaticHero ? (
         <div className="flex flex-col items-center">
           {/* Portrait */}
           <div className="mb-4">
             <img
-              src={`/img/eroi/${selectedStaticHero.portrait}`}
-              alt={selectedStaticHero.classe}
-              className="w-32 h-32 object-cover rounded-full border-4 border-blue-500"
+              src={`/img/eroi/${currentStaticHero.portrait}`}
+              alt={`${currentStaticHero.classe} portrait`}
+              className="w-32 h-32 object-cover rounded-full border-2 border-blue-500"
             />
           </div>
 
           {/* Stats */}
-          <div className="text-center mb-4">
-            <h2 className="text-2xl font-bold mb-2">
-              {selectedStaticHero.classe}
-            </h2>
-            <p className="text-lg">Gold: {selectedHeroState.gold}</p>
-            <p className="text-lg">Body: {selectedHeroState.currentBody} / {selectedStaticHero.corpo}</p>
-            <p className="text-lg">Mind: {selectedHeroState.currentMind} / {selectedStaticHero.mente}</p>
+          <div className="text-lg mb-4">
+            <p className="font-semibold">{currentStaticHero.classe}</p>
+            <p>Gold: {currentHeroState.gold}</p>
+            <p>Body: {currentHeroState.currentBody}/{currentStaticHero.corpo}</p>
+            <p>Mind: {currentHeroState.currentMind}/{currentStaticHero.mente}</p>
           </div>
 
           {/* Equipment List */}
           <div className="w-full">
-            <h3 className="text-xl font-bold mb-2">Equipment:</h3>
-            {selectedHeroState.equipment.length > 0 ? (
-              <ul className="list-disc list-inside bg-gray-700 p-3 rounded-md">
-                {selectedHeroState.equipment.map((equipmentId) => {
-                  const equipmentItem = staticEquipment.find(
-                    (eq) => eq.id === equipmentId
-                  );
-                  return (
-                    <li key={equipmentId} className="text-gray-200">
-                      {equipmentItem?.nome || `Unknown Equipment (ID: ${equipmentId})`}
-                    </li>
-                  );
-                })}
+            <h3 className="text-lg font-semibold mb-2">Equipment:</h3>
+            {currentHeroEquipmentNames.length > 0 ? (
+              <ul className="list-disc list-inside text-gray-300">
+                {currentHeroEquipmentNames.map((name, index) => (
+                  <li key={index}>{name}</li>
+                ))}
               </ul>
             ) : (
-              <p className="text-gray-400">No equipment owned.</p>
+              <p className="text-gray-400">No equipment.</p>
             )}
           </div>
         </div>
       ) : (
-        <p className="text-center text-gray-400">No hero selected or data missing.</p>
+        <p className="text-center text-gray-400">No hero selected or available.</p>
       )}
     </div>
   );

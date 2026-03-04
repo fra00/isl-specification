@@ -32,7 +32,7 @@
   - Iterate through `gameSession.currentMap.porte`.
   - FOR each door:
     - Parse `x` and `y` to Integer.
-    - Find the corresponding cell in `boardVisibilityMap` (matching x-1, y-1).
+    - Find the corresponding cell in `boardVisibilityMap` (matching: x-1, y-1 or x, y-1 or x-1, y) .
     - IF the visibility cell exists AND `fog` is false:
       - Determine image: IF `oriz` is true THEN `portao.jpg` ELSE `portav.jpg`.
       - Add the door to the result list (including x, y, and image).

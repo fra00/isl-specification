@@ -6,6 +6,14 @@
  * Edit the ISL file instead.
  */
 
-export function getEditorGameTitle() {
-  return "editor game";
+import React from 'react';
+
+function PlayGame() {
+  return (
+    <div className="p-4 text-2xl font-bold">
+      editor game
+    </div>
+  );
 }
+
+export default PlayGame;

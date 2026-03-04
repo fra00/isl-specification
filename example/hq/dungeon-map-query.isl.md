@@ -55,13 +55,24 @@
 
 #### isBlockedByMonster
 
-- **Contract**: `getMapCell` (@MapCell) and Checks if the cell is occupied by a monster.
+- **Contract**: `getMapCell` (@MapCell) Checks if the cell is occupied by a monster.
 - **Signature**: `(x: Integer, y: Integer, excludeEntityId: Integer) -> Boolean`
+- **Flow**:
+  1. get the monster from the @GameSession.monsters list with coordinates `x` and `y` and id different from `excludeEntityId`.
+  2. if monster exist and monster.hp > 0 return TRUE else FALSE.
 
 #### isOccupiedByHero
 
 - **Contract**: Checks if the cell is occupied by a hero.
 - **Signature**: `(x: Integer, y: Integer, excludeEntityId: Integer) -> Boolean`
+
+#### isBlockedByRock
+
+- **Contract**: Checks if the cell is blocked by rock .
+- **Signature**: `(x: Integer, y: Integer) -> Boolean`
+- **Flow**:
+  1. get the cell from `getMapCell` (@MapCell) with coordinates `x` and `y`.
+  2. if cell exist and cell.arnt.antroc is true return TRUE else FALSE.
 
 #### getMapDimensions
 

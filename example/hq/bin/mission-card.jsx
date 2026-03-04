@@ -6,88 +6,71 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-import { Mission } from './game-domain-map'; // Correct import based on REAL IMPLEMENTATION CONTEXT
-
-// Inline SVG icons for simplicity and single-file requirement
-const CheckIcon = () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-    </svg>
-);
-
-const PlayIcon = () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-    </svg>
-);
-
-const LockIcon = () => (
-    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-    </svg>
-);
+import React, { useCallback } from 'react';
 
 export default function MissionCard({ mission, index, status, onSelect }) {
-    // Default values for mission properties for null safety, though ISL implies they are present.
-    // Using object destructuring with defaults for robustness.
-    const { titolo = 'Unknown Mission', ordine } = mission || {};
+  const isLocked = status === 'LOCKED';
 
-    const handleInteraction = () => {
-        if (status === 'LOCKED') {
-            // Do nothing as per flow
-            return;
-        }
-        onSelect(index);
-    };
-
-    let cardClasses = "bg-white shadow-lg rounded-lg p-4 m-2 flex flex-col items-center text-center transition-all duration-200";
-    let iconComponent;
-    let buttonLabel;
-    let buttonClasses = "mt-4 px-6 py-2 rounded-md font-semibold transition-colors duration-200";
-    let titleClasses = "text-xl font-bold mb-1";
-    let subtitleClasses = "text-sm mb-3";
-
-    switch (status) {
-        case 'COMPLETED':
-            cardClasses += " border-2 border-green-500 text-green-700";
-            iconComponent = <CheckIcon />;
-            buttonLabel = "Replay";
-            buttonClasses += " bg-green-500 text-white hover:bg-green-600";
-            break;
-        case 'AVAILABLE':
-            cardClasses += " border-2 border-yellow-500 text-yellow-800";
-            iconComponent = <PlayIcon />;
-            buttonLabel = "Start";
-            buttonClasses += " bg-yellow-500 text-white hover:bg-yellow-600";
-            break;
-        case 'LOCKED':
-        default: // Default to LOCKED if status is unknown or missing
-            cardClasses += " border-2 border-gray-400 text-gray-500 opacity-60 cursor-not-allowed";
-            iconComponent = <LockIcon />;
-            buttonLabel = "Locked";
-            buttonClasses += " bg-gray-300 text-gray-600 cursor-not-allowed";
-            break;
+  const handleInteraction = useCallback(() => {
+    if (!isLocked) {
+      onSelect(index);
     }
+  }, [isLocked, onSelect, index]);
 
-    // Use mission.ordine if available, otherwise fallback to index + 1
-    const missionNumber = (ordine != null) ? ordine : index + 1;
+  const cardClasses = `
+    p-4 rounded-lg shadow-md flex flex-col items-center text-center transition-all duration-200
+    ${isLocked ? 'bg-gray-800 border-2 border-gray-600 text-gray-500 opacity-50 cursor-not-allowed' : ''}
+    ${status === 'AVAILABLE' ? 'bg-gray-800 border-2 border-yellow-500 text-yellow-400 hover:bg-yellow-900/20 cursor-pointer' : ''}
+    ${status === 'COMPLETED' ? 'bg-gray-800 border-2 border-green-500 text-green-400 hover:bg-green-900/20 cursor-pointer' : ''}
+  `;
 
-    return (
-        <div className={cardClasses} onClick={handleInteraction}>
-            <div className="mb-3">
-                {iconComponent}
-            </div>
-            <h3 className={titleClasses}>{titolo}</h3>
-            <p className={subtitleClasses}>Mission {missionNumber}</p>
-            <button
-                className={buttonClasses}
-                onClick={handleInteraction}
-                disabled={status === 'LOCKED'}
-            >
-                {buttonLabel}
-            </button>
-        </div>
-    );
+  const buttonClasses = `
+    mt-4 px-4 py-2 rounded-md font-bold
+    ${isLocked ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
+    ${status === 'AVAILABLE' ? 'bg-yellow-600 hover:bg-yellow-700 text-gray-900' : ''}
+    ${status === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+  `;
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'COMPLETED':
+        return '✅'; // Checkmark
+      case 'AVAILABLE':
+        return '▶️'; // Play
+      case 'LOCKED':
+        return '🔒'; // Lock
+      default:
+        return '';
+    }
+  };
+
+  const getButtonLabel = () => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'Replay';
+      case 'AVAILABLE':
+        return 'Start';
+      case 'LOCKED':
+        return 'Locked';
+      default:
+        return '';
+    }
+  };
+
+  return (
+    <div className={cardClasses} onClick={handleInteraction}>
+      <div className="text-4xl mb-2">
+        {getStatusIcon()}
+      </div>
+      <h3 className="text-xl font-bold mb-1">
+        {mission?.titolo}
+      </h3>
+      <p className="text-sm">
+        Mission {mission?.ordine || (index + 1)}
+      </p>
+      <button className={buttonClasses} disabled={isLocked} onClick={handleInteraction}>
+        {getButtonLabel()}
+      </button>
+    </div>
+  );
 }

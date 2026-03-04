@@ -7,92 +7,86 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from './game-domain-core';
+import { PageNavigationEnum } from "./domain-core";
 
-export default function PlayGame({ onChangePageView }) {
+const MainMenu = ({ onChangePageView }) => {
   const [hoveredImage, setHoveredImage] = useState(null);
 
-  const menuItems = [
-    { text: "Gioca", destination: PageNavigationEnum.PLAY_GAME, imageUrl: "/img/main-menu/nuova.jpg" },
-    { text: "Editor", destination: PageNavigationEnum.EDITOR_GAME, imageUrl: "/img/main-menu/editor.jpg" },
-  ];
-
-  const handleClick = useCallback((destination) => {
+  // Event handlers wrapped in useCallback for stability
+  const handleMenuItemClick = useCallback((destination) => {
     onChangePageView(destination);
   }, [onChangePageView]);
 
-  const handleMouseEnter = useCallback((imageUrl) => {
+  const handleMenuItemMouseEnter = useCallback((imageUrl) => {
     setHoveredImage(imageUrl);
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMenuItemMouseLeave = useCallback(() => {
     setHoveredImage(null);
   }, []);
 
   return (
-    <div
-      className="relative w-full h-screen flex items-center justify-center overflow-hidden"
-    >
-      {/* Custom CSS for background animation and menu item blur effect */}
-      <style>{`
-        @keyframes zoomParallax {
+    <div className="w-full h-screen relative overflow-hidden flex items-center justify-center">
+      {/* Injecting keyframes for the animation directly into the DOM via a style tag.
+          This adheres to the "single file" rule for CSS, as per instructions.
+      */}
+      <style>
+        {`
+        @keyframes zoom-parallax {
           0% {
             transform: scale(1);
           }
-          50% {
+          100% {
             transform: scale(1.1);
           }
-          100% {
-            transform: scale(1);
-          }
         }
-        .bg-zoom-parallax-animated {
-          animation: zoomParallax 50s ease-in-out infinite alternate;
+        .animate-zoom-parallax {
+          animation: zoom-parallax 50s ease-in-out infinite alternate;
         }
-        .menu-item-blur {
-          filter: blur(3px);
-          transition: filter 0.3s ease-in-out;
-        }
-        .menu-item-blur:hover {
-          filter: blur(0);
-        }
-      `}</style>
+        `}
+      </style>
 
-      {/* Background image with animation */}
+      {/* Background image container with animation */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-zoom-parallax-animated"
-        style={{ backgroundImage: `url(/img/menusfondo.jpg)` }}
+        className="absolute inset-0 bg-cover bg-center animate-zoom-parallax"
+        style={{ backgroundImage: 'url(/img/menusfondo.jpg)' }}
       ></div>
 
-      {/* Menu items content */}
-      <div className="relative z-10 flex flex-col items-center space-y-8">
-        {menuItems.map((item) => (
-          <button
-            key={item.text}
-            onClick={() => handleClick(item.destination)}
-            onMouseEnter={() => handleMouseEnter(item.imageUrl)}
-            onMouseLeave={handleMouseLeave}
-            className="text-white text-6xl font-bold uppercase cursor-pointer menu-item-blur hover:text-yellow-400 transition-colors duration-300"
-            style={{ background: 'none' }}
-          >
-            {item.text}
-          </button>
-        ))}
+      {/* Content aligned to center, above the background */}
+      <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
+        {/* Menu Items */}
+        <button
+          className="text-white font-bold text-4xl cursor-pointer transition-all duration-300 ease-in-out
+                     filter blur-[5px] hover:filter-none focus:outline-none"
+          onClick={() => handleMenuItemClick(PageNavigationEnum.PLAY_GAME)}
+          onMouseEnter={() => handleMenuItemMouseEnter('/img/main-menu/nuova.jpg')}
+          onMouseLeave={handleMenuItemMouseLeave}
+        >
+          Gioca
+        </button>
+        <button
+          className="text-white font-bold text-4xl cursor-pointer transition-all duration-300 ease-in-out
+                     filter blur-[5px] hover:filter-none focus:outline-none"
+          onClick={() => handleMenuItemClick(PageNavigationEnum.EDITOR_GAME)}
+          onMouseEnter={() => handleMenuItemMouseEnter('/img/main-menu/editor.jpg')}
+          onMouseLeave={handleMenuItemMouseLeave}
+        >
+          Editor
+        </button>
       </div>
 
       {/* MouseOverImage riquadro */}
-      <div
-        className={`absolute top-0 right-0 w-auto h-[30vh] transition-opacity duration-500 ${hoveredImage ? 'opacity-100' : 'opacity-0'}`}
-        style={{ pointerEvents: 'none' }} // Prevent blocking mouse events on menu items
-      >
-        {hoveredImage && (
+      {hoveredImage && (
+        <div className="absolute top-0 right-0 h-[30vh]">
           <img
             src={hoveredImage}
-            alt="Menu item preview"
-            className="h-full w-auto object-contain"
+            alt="Hovered menu item"
+            className="h-full w-auto object-contain" // w-auto to maintain aspect ratio
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default MainMenu;

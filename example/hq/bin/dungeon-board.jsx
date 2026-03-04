@@ -7,83 +7,85 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { GameSession, HeroState, MonsterState } from './domain-session';
+import { VisibilityMap } from './domain-map';
+import { Hero, Monster } from './domain-ruleset';
 import { useDungeonFurniture } from './dungeon-use-furniture';
 import { useDungeonDoors } from './dungeon-use-doors';
-import { GameSession, HeroState, MonsterState } from './game-domain-session';
-import { MapDefinition, VisibilityMap, MapCellFurniture, MapDoor, VisibilityCell } from './game-domain-map';
-import { Hero, Monster } from './game-domain-ruleset';
 
-const CELL_SIZE = 34;
-const BOARD_WIDTH = 884;
-const BOARD_HEIGHT = 646;
-const GRID_COLS = 26; // 884 / 34
-const GRID_ROWS = 19; // 646 / 34
+// Constants for grid dimensions
+const GRID_COLS = 26;
+const GRID_ROWS = 19;
+const CELL_SIZE = 34; // px
 
-const DungeonBoard = ({
-  gameSession = GameSession(),
-  boardVisibilityMap = VisibilityMap(),
-  onCellClick = () => {},
-  onCellHover = () => {},
-  onMonsterClick = () => {},
+export default function DungeonBoard({
+  gameSession,
+  boardVisibilityMap,
+  onCellClick,
+  onCellHover,
+  onMonsterClick,
   hoveredPath = [],
-}) => {
+  secretPassages = [],
+}) {
+  const [hoveredCellCoords, setHoveredCellCoords] = useState({ x: null, y: null, monsterId: null });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredCellInfo, setHoveredCellInfo] = useState(null);
-
-  const { visibleFurniture } = useDungeonFurniture(gameSession, boardVisibilityMap);
-  const { visibleDoors } = useDungeonDoors(gameSession, boardVisibilityMap);
 
   // Capability: initialize
+  // Sets isLoaded to true when @VisibilityMap is available.
   useEffect(() => {
-    if (boardVisibilityMap && boardVisibilityMap.data && boardVisibilityMap.data.length > 0) {
+    if (boardVisibilityMap) {
       setIsLoaded(true);
     } else {
       setIsLoaded(false);
     }
   }, [boardVisibilityMap]);
 
+  // Use custom hooks for furniture and doors visibility
+  const { visibleFurniture } = useDungeonFurniture({ gameSession, boardVisibilityMap });
+  const { visibleDoors } = useDungeonDoors({ gameSession, boardVisibilityMap });
+
+  // Capability: onCellClick
+  // Trigger onCellClick callback with 1-indexed coordinates.
   const handleCellClick = useCallback((x, y) => {
-    // Capability: onCellClick
     onCellClick(x + 1, y + 1); // Convert 0-indexed to 1-indexed
   }, [onCellClick]);
 
+  // Capability: onCellHover
+  // Trigger onCellHover callback with 1-indexed coordinates.
   const handleCellHover = useCallback((x, y) => {
-    // Capability: onCellHover
+    setHoveredCellCoords({ x: x + 1, y: y + 1, monsterId: null }); // Store 1-indexed for debug
     onCellHover(x + 1, y + 1); // Convert 0-indexed to 1-indexed
+  }, [onCellHover]);
 
-    const visibilityCell = boardVisibilityMap.data.find(cell => cell.x === x + 1 && cell.y === y + 1);
-    setHoveredCellInfo({
-      x: x + 1,
-      y: y + 1,
-      vis1: visibilityCell?.vis1 || 'N/A',
-      vis2: visibilityCell?.vis2 || 'N/A',
-      valo: visibilityCell?.valo || 'N/A',
-      fog: visibilityCell?.fog || true,
-      currentTurn: gameSession.currentTurn,
-    });
-  }, [onCellHover, boardVisibilityMap, gameSession.currentTurn]);
+  const handleCellLeave = useCallback(() => {
+    setHoveredCellCoords({ x: null, y: null, monsterId: null });
+  }, []);
+
+  // Capability: handleMonsterHover
+  // Show monster details on hover (optional enhancement).
+  const handleMonsterHover = useCallback((monsterState) => {
+    setHoveredCellCoords({ x: monsterState.x, y: monsterState.y, monsterId: monsterState.id });
+  }, []);
+
+  const handleMonsterLeave = useCallback(() => {
+    setHoveredCellCoords({ x: null, y: null, monsterId: null });
+  }, []);
 
   const handleMonsterClick = useCallback((monsterId) => {
     onMonsterClick(monsterId);
   }, [onMonsterClick]);
 
-  const handleMonsterHover = useCallback((monsterState) => {
-    // Capability: handleMonsterHover - Optional enhancement, basic trigger here.
-    // In a full implementation, this would trigger a UI update (tooltip, sidebar).
-    // console.log("Monster hovered:", monsterState.monster?.nome);
-    // console.log("Attackable status: (logic to be implemented elsewhere)");
-  }, []);
+  // Memoize visibility data lookup for debug panel
+  const debugVisibilityCell = useMemo(() => {
+    if (!boardVisibilityMap?.data || hoveredCellCoords.x === null || hoveredCellCoords.y === null) {
+      return null;
+    }
+    return boardVisibilityMap.data.find(
+      (cell) => cell.x === hoveredCellCoords.x && cell.y === hoveredCellCoords.y
+    );
+  }, [boardVisibilityMap, hoveredCellCoords]);
 
-  const hoveredPathSet = useMemo(() => {
-    return new Set(hoveredPath.map(p => `${p.x},${p.y}`));
-  }, [hoveredPath]);
-
-  const currentHeroIdInTurn = useMemo(() => {
-    const currentHero = gameSession.heroes.find(hero => hero.turnOrder === gameSession.currentTurn);
-    return currentHero?.heroId;
-  }, [gameSession.heroes, gameSession.currentTurn]);
-
-  if (!isLoaded) {
+  if (!isLoaded || !gameSession?.currentMap) {
     return (
       <div className="flex items-center justify-center w-[884px] h-[646px] bg-gray-800 text-white">
         Loading Dungeon Board...
@@ -91,158 +93,173 @@ const DungeonBoard = ({
     );
   }
 
+  const currentTurnHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+  const currentTurnHeroId = currentTurnHero?.heroId;
+
   return (
-    <div className="relative flex justify-center items-center w-full h-full overflow-hidden">
-      <div
-        className="relative"
-        style={{ width: `${BOARD_WIDTH}px`, height: `${BOARD_HEIGHT}px` }}
-      >
-        {/* Board Image */}
-        <img
-          src="/img/tabellone/default.bmp"
-          alt="Dungeon Board"
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        />
+    <div className="relative w-[884px] h-[646px] flex justify-center items-center overflow-hidden">
+      {/* Board Image */}
+      <img
+        src="/img/tabellone/default.bmp"
+        alt="Dungeon Board"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
 
-        {/* Grid Cells with Fog of War and Path Highlight */}
-        <div className="absolute top-0 left-0 w-full h-full grid" style={{
-          gridTemplateColumns: `repeat(${GRID_COLS}, ${CELL_SIZE}px)`,
-          gridTemplateRows: `repeat(${GRID_ROWS}, ${CELL_SIZE}px)`,
-        }}>
-          {Array.from({ length: GRID_ROWS }).map((_, y) =>
-            Array.from({ length: GRID_COLS }).map((__, x) => {
-              const visibilityCell = boardVisibilityMap.data.find(cell => cell.x === x + 1 && cell.y === y + 1);
-              const isFogged = visibilityCell?.fog ?? true;
-              const isHoveredPath = hoveredPathSet.has(`${x + 1},${y + 1}`);
+      {/* Grid Cells with Fog of War and Path Highlight */}
+      <div className="absolute inset-0 grid" style={{
+        gridTemplateColumns: `repeat(${GRID_COLS}, ${CELL_SIZE}px)`,
+        gridTemplateRows: `repeat(${GRID_ROWS}, ${CELL_SIZE}px)`,
+      }}>
+        {Array.from({ length: GRID_ROWS }).map((_, y) =>
+          Array.from({ length: GRID_COLS }).map((__, x) => {
+            const cellVisibility = boardVisibilityMap?.data?.find(
+              (cell) => cell.x === x + 1 && cell.y === y + 1
+            );
+            const isFoggy = cellVisibility?.fog !== false; // Default to foggy if not explicitly false
+            const isPathHighlighted = hoveredPath.some(
+              (pathCell) => pathCell.x === x + 1 && pathCell.y === y + 1
+            );
 
-              return (
-                <div
-                  key={`${x}-${y}`}
-                  className="relative"
-                  style={{ width: `${CELL_SIZE}px`, height: `${CELL_SIZE}px` }}
-                  onClick={() => handleCellClick(x, y)}
-                  onMouseEnter={() => handleCellHover(x, y)}
-                  onMouseLeave={() => setHoveredCellInfo(null)}
-                >
-                  {isFogged && (
-                    <div className="absolute inset-0 bg-black opacity-70"></div>
-                  )}
-                  {isHoveredPath && (
-                    <div className="absolute inset-0 bg-green-500/50"></div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Furniture */}
-        {visibleFurniture.map((furniture, index) => (
-          <img
-            key={`furniture-${index}`}
-            src={`/img/mobili/${furniture.img}`}
-            alt="Furniture"
-            className="absolute"
-            style={{
-              left: `${(furniture.x - 1) * CELL_SIZE}px`,
-              top: `${(furniture.y - 1) * CELL_SIZE}px`,
-              // Assuming furniture images are sized to fit cells or have transparent backgrounds
-              // No explicit scaling mentioned, so render as is.
-            }}
-          />
-        ))}
-
-        {/* Doors */}
-        {visibleDoors.map((door, index) => (
-          <img
-            key={`door-${index}`}
-            src={`/img/cell/${door.img}`}
-            alt="Door"
-            className="absolute"
-            style={{
-              left: `${(door.x - 1) * CELL_SIZE}px`,
-              top: `${(door.y - 1) * CELL_SIZE}px`,
-              // Doors are typically cell-sized or span cells, render as is.
-            }}
-          />
-        ))}
-
-        {/* Monsters */}
-        {gameSession.monsters.map((monsterState) => {
-          const visibilityCell = boardVisibilityMap.data.find(cell => cell.x === monsterState.x && cell.y === monsterState.y);
-          const isMonsterVisible = !(visibilityCell?.fog ?? true);
-
-          if (!isMonsterVisible || !monsterState.monster) return null;
-
-          return (
-            <div
-              key={`monster-${monsterState.id}`}
-              className="absolute flex items-center justify-center cursor-pointer"
-              style={{
-                left: `${(monsterState.x - 1) * CELL_SIZE}px`,
-                top: `${(monsterState.y - 1) * CELL_SIZE}px`,
-                width: `${CELL_SIZE}px`,
-                height: `${CELL_SIZE}px`,
-              }}
-              onClick={() => handleMonsterClick(monsterState.id)}
-              onMouseEnter={() => handleMonsterHover(monsterState)}
-            >
-              <img
-                src={`/img/mostri/${monsterState.monster.immagine}`}
-                alt={monsterState.monster.nome}
-                className="max-w-[34px] max-h-[34px] object-contain"
-              />
-            </div>
-          );
-        })}
-
-        {/* Heroes */}
-        {gameSession.heroes.map((heroState) => {
-          const visibilityCell = boardVisibilityMap.data.find(cell => cell.x === heroState.x && cell.y === heroState.y);
-          const isHeroVisible = !(visibilityCell?.fog ?? true);
-          const isCurrentHeroTurn = heroState.heroId === currentHeroIdInTurn;
-
-          if (!isHeroVisible || !heroState.hero) return null;
-
-          return (
-            <div
-              key={`hero-${heroState.heroId}`}
-              className={`absolute flex items-center justify-center transition-all duration-300 ease-linear ${isCurrentHeroTurn ? 'border-2 border-yellow-400' : ''}`}
-              style={{
-                left: `${(heroState.x - 1) * CELL_SIZE}px`,
-                top: `${(heroState.y - 1) * CELL_SIZE}px`,
-                width: `${CELL_SIZE}px`,
-                height: `${CELL_SIZE}px`,
-              }}
-            >
-              <img
-                src={`/img/eroi/${heroState.hero.miniature}`}
-                alt={heroState.hero.classe}
-                className="max-w-[34px] max-h-[34px] object-contain"
-              />
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={`${x}-${y}`}
+                className={`relative w-[${CELL_SIZE}px] h-[${CELL_SIZE}px]`}
+                onClick={() => handleCellClick(x, y)}
+                onMouseEnter={() => handleCellHover(x, y)}
+                onMouseLeave={handleCellLeave}
+              >
+                {isFoggy && (
+                  <div className="absolute inset-0 bg-black/70 pointer-events-none"></div>
+                )}
+                {isPathHighlighted && (
+                  <div className="absolute inset-0 bg-green-500/50 pointer-events-none"></div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
+      {/* Furniture */}
+      {visibleFurniture.map((furniture, index) => (
+        <img
+          key={`furniture-${index}`}
+          src={`/img/mobili/${furniture.img}`}
+          alt="Furniture"
+          className="absolute"
+          style={{
+            left: `${(furniture.x - 1) * CELL_SIZE}px`,
+            top: `${(furniture.y - 1) * CELL_SIZE}px`,
+          }}
+        />
+      ))}
+
+      {/* Doors */}
+      {visibleDoors.map((door, index) => (
+        <img
+          key={`door-${index}`}
+          src={`/img/cell/${door.img}`}
+          alt="Door"
+          className="absolute"
+          style={{
+            left: `${(door.x - 1) * CELL_SIZE}px`,
+            top: `${(door.y - 1) * CELL_SIZE}px`,
+          }}
+        />
+      ))}
+
+      {/* Secret Passages */}
+      {secretPassages.map((passage, index) => (
+        <img
+          key={`secret-passage-${index}`}
+          src={`/img/cell/${passage.img}`}
+          alt="Secret Passage"
+          className="absolute"
+          style={{
+            left: `${(passage.x - 1) * CELL_SIZE}px`,
+            top: `${(passage.y - 1) * CELL_SIZE}px`,
+          }}
+        />
+      ))}
+
+      {/* Monsters */}
+      {gameSession?.monsters?.map((monsterState) => {
+        const monsterDef = monsterState.monster;
+        if (!monsterDef) return null;
+
+        const cellVisibility = boardVisibilityMap?.data?.find(
+          (cell) => cell.x === monsterState.x && cell.y === monsterState.y
+        );
+        const isMonsterVisible = cellVisibility?.fog === false;
+
+        return isMonsterVisible ? (
+          <img
+            key={`monster-${monsterState.id}`}
+            src={`/img/mostri/${monsterDef.immagine}`}
+            alt={monsterDef.nome}
+            className="absolute max-w-[34px] cursor-pointer"
+            style={{
+              left: `${(monsterState.x - 1) * CELL_SIZE}px`,
+              top: `${(monsterState.y - 1) * CELL_SIZE}px`,
+            }}
+            onClick={() => handleMonsterClick(monsterState.id)}
+            onMouseEnter={() => handleMonsterHover(monsterState)}
+            onMouseLeave={handleMonsterLeave}
+          />
+        ) : null;
+      })}
+
+      {/* Heroes */}
+      {gameSession?.heroes?.map((heroState) => {
+        const heroDef = heroState.hero;
+        if (!heroDef) return null;
+
+        const cellVisibility = boardVisibilityMap?.data?.find(
+          (cell) => cell.x === heroState.x && cell.y === heroState.y
+        );
+        const isHeroVisible = cellVisibility?.fog === false;
+        const isCurrentTurnHero = heroState.heroId === currentTurnHeroId;
+
+        return isHeroVisible ? (
+          <div
+            key={`hero-${heroState.heroId}`}
+            className={`absolute transition-all duration-300 ease-linear ${isCurrentTurnHero ? 'border-2 border-yellow-400' : ''}`}
+            style={{
+              left: `${(heroState.x - 1) * CELL_SIZE}px`,
+              top: `${(heroState.y - 1) * CELL_SIZE}px`,
+              width: `${CELL_SIZE}px`,
+              height: `${CELL_SIZE}px`,
+            }}
+          >
+            <img
+              src={`/img/eroi/${heroDef.miniature}`}
+              alt={heroDef.classe}
+              className="max-w-[34px] h-full object-contain"
+            />
+          </div>
+        ) : null;
+      })}
+
       {/* Debug Panel */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 w-[250px] bg-gray-900 text-white p-4 text-sm z-50">
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 w-[250px] bg-gray-900 bg-opacity-80 text-white p-4 text-sm z-50">
         <h3 className="font-bold mb-2">Debug Info</h3>
-        {hoveredCellInfo ? (
-          <>
-            <p><strong>Cell:</strong> ({hoveredCellInfo.x}, {hoveredCellInfo.y})</p>
-            <p><strong>Vis1:</strong> {hoveredCellInfo.vis1}</p>
-            <p><strong>Vis2:</strong> {hoveredCellInfo.vis2}</p>
-            <p><strong>Valo:</strong> {hoveredCellInfo.valo}</p>
-            <p><strong>Fog:</strong> {hoveredCellInfo.fog ? 'True' : 'False'}</p>
-            <p><strong>Current Turn:</strong> {hoveredCellInfo.currentTurn}</p>
-          </>
-        ) : (
-          <p>Hover over a cell to see info.</p>
-        )}
+        <div>
+          <p>Mouse X: {hoveredCellCoords.x !== null ? hoveredCellCoords.x : 'N/A'}</p>
+          <p>Mouse Y: {hoveredCellCoords.y !== null ? hoveredCellCoords.y : 'N/A'}</p>
+          {debugVisibilityCell && (
+            <>
+              <p>Valo: {debugVisibilityCell.valo}</p>
+              <p>Vis1: {debugVisibilityCell.vis1}</p>
+              <p>Vis2: {debugVisibilityCell.vis2}</p>
+              <p>Fog: {debugVisibilityCell.fog ? 'true' : 'false'}</p>
+            </>
+          )}
+          <p>Current Turn: {gameSession?.currentTurn ?? 'N/A'}</p>
+          {hoveredCellCoords.monsterId && (
+            <p>Hovered Monster ID: {hoveredCellCoords.monsterId}</p>
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default DungeonBoard;
+}

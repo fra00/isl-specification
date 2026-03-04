@@ -1,34 +1,21 @@
-export const CombatResult: (data?: {
-    attackerDice?: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-    defenderDice?: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-    skulls?: number;
-    shields?: number;
-    damageDealt?: number;
-}) => {
-    attackerDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-    defenderDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-    skulls: number;
-    shields: number;
-    damageDealt: number;
+import { HeroState, MonsterState } from './domain-session';
+
+export const CombatDiceResult: {
+  SKULL: 'SKULL';
+  WHITE_SHIELD: 'WHITE_SHIELD';
+  BLACK_SHIELD: 'BLACK_SHIELD';
+};
+
+export type CombatDiceResult = 'SKULL' | 'WHITE_SHIELD' | 'BLACK_SHIELD';
+
+export type CombatResult = {
+  attackerDice: Array<CombatDiceResult>;
+  defenderDice: Array<CombatDiceResult>;
+  skulls: number;
+  shields: number;
+  damageDealt: number;
 };
 
 export function useCombatLogic(): {
-    resolveCombat: (
-        attacker: {
-            hero?: { attacco: number; };
-            monster?: { attacco: number; };
-            equipment?: number[]; // Present in HeroState, not MonsterState
-        },
-        defender: {
-            hero?: { difesa: number; };
-            monster?: { difesa: number; };
-            equipment?: number[]; // Present in HeroState, not MonsterState
-        }
-    ) => {
-        attackerDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-        defenderDice: Array<"SKULL" | "WHITE_SHIELD" | "BLACK_SHIELD">;
-        skulls: number;
-        shields: number;
-        damageDealt: number;
-    };
+  resolveCombat: (attacker: HeroState | MonsterState, defender: HeroState | MonsterState) => CombatResult;
 };

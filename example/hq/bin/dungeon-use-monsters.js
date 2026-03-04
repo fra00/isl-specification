@@ -6,52 +6,15 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { GameSession, MonsterState } from './game-domain-session';
-import { VisibilityMap } from './game-domain-map';
-import { Monster } from './game-domain-ruleset';
-
-// Helper to generate unique IDs for monster instances
-let monsterInstanceIdCounter = 0;
-const generateUniqueMonsterId = () => {
-  monsterInstanceIdCounter += 1;
-  return Date.now() + monsterInstanceIdCounter;
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { GameSession, MonsterState } from "./domain-session";
+import { Monster } from "./domain-ruleset";
 
 export function useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession }) {
-  // internalState
-  // Initialize spawnedLocations from gameSession if available, otherwise an empty array.
-  // Using a function for useState for lazy initialization.
-  const [spawnedLocations, setSpawnedLocations] = useState(() => gameSession?.spawnedLocations || []);
+  const [spawnedLocations, setSpawnedLocations] = useState([]);
   const [monsterDefinitions, setMonsterDefinitions] = useState([]);
 
-  // Use refs for props and state that are frequently updated but should not trigger the main effect
-  // to re-run unless their primary dependencies change. This ensures we always access the latest values.
-  const gameSessionRef = useRef(gameSession);
-  const visibilityMapRef = useRef(visibilityMap);
-  const onUpdateSessionRef = useRef(onUpdateSession);
-  const spawnedLocationsRef = useRef(spawnedLocations); // Ref for internal state
-
-  // Update refs whenever their corresponding prop/state changes
-  useEffect(() => {
-    gameSessionRef.current = gameSession;
-  }, [gameSession]);
-
-  useEffect(() => {
-    visibilityMapRef.current = visibilityMap;
-  }, [visibilityMap]);
-
-  useEffect(() => {
-    onUpdateSessionRef.current = onUpdateSession;
-  }, [onUpdateSession]);
-
-  useEffect(() => {
-    spawnedLocationsRef.current = spawnedLocations;
-  }, [spawnedLocations]);
-
-
-  // Capability: initialize
-  // Fetches monster definitions once on component mount.
+  // Capability: initialize - Fetch monster definitions
   useEffect(() => {
     const fetchMonsterDefinitions = async () => {
       try {
@@ -60,92 +23,84 @@ export function useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession
           throw new Error('Failed to load monsters.json: File not found');
         }
         const data = await response.json();
-        // Map raw data to Monster domain objects using the factory function
+        // Assuming the fetched data is an array of objects that can be passed directly to the Monster factory
         setMonsterDefinitions(data.map(Monster));
       } catch (error) {
-        console.error("Error fetching monster definitions:", error);
-        // In a real application, you might want to set an error state here
-        // or trigger a global error notification.
+        console.error(error.message);
+        // In a production app, you might want to set an error state or notify the user
       }
     };
 
     fetchMonsterDefinitions();
-  }, []); // Empty dependency array ensures this runs only once
+  }, []); // Empty dependency array means this runs once on mount
 
-
-  // Capability: spawnMonsters
-  // Triggers when visibilityMap or monsterDefinitions change.
+  // Capability: spawnMonsters - Triggered when visibilityMap changes
   useEffect(() => {
-    const currentVisibilityMap = visibilityMapRef.current;
-    const currentMonsterDefinitions = monsterDefinitions;
-    const currentSession = gameSessionRef.current;
-    const currentSpawnedLocations = spawnedLocationsRef.current; // Access latest internal state via ref
-    const currentOnUpdateSession = onUpdateSessionRef.current;
-
-    // Pre-conditions check: ensure all necessary data is available
-    if (!currentVisibilityMap || !currentSession?.currentMap?.grid || currentMonsterDefinitions.length === 0) {
+    // Return if essential data is missing or not yet loaded
+    if (!visibilityMap || !gameSession || monsterDefinitions.length === 0 || !gameSession.currentMap?.grid) {
       return;
     }
 
     const newMonstersToSpawn = [];
-    const newlySpawnedLocations = [];
+    // Use a Set for efficient lookup of already spawned locations within the current effect run
+    const currentSpawnedLocations = new Set(spawnedLocations);
 
-    // Iterate through visible cells to find new monsters to spawn
-    currentVisibilityMap.data.forEach(visibilityCell => {
-      const cellLocation = `${visibilityCell.x},${visibilityCell.y}`;
-
-      // Check if the cell is visible (not fogged) and no monster has been spawned there yet
-      if (!visibilityCell.fog && !currentSpawnedLocations.includes(cellLocation)) {
-        // Find the corresponding map cell in the game session's current map grid
-        const mapCell = currentSession.currentMap.grid.find(
-          gridCell => gridCell.x === visibilityCell.x && gridCell.y === visibilityCell.y
-        );
-
-        // If the map cell indicates a monster should be present
-        if (mapCell?.mostab?.mos === true) {
-          // Find the monster definition from the loaded ruleset
-          const monsterDef = currentMonsterDefinitions.find(
-            def => def.id === mapCell.mostab.mosid
+    visibilityMap.data.forEach(cell => {
+      // IF cell is NOT fogged (`fog` == false) AND `x,y` is NOT in `spawnedLocations`:
+      if (cell.fog === false) {
+        const coords = `${cell.x},${cell.y}`;
+        if (!currentSpawnedLocations.has(coords)) {
+          // Find map cell in `@GameSession.currentMap.grid` at (x, y).
+          const mapCell = gameSession.currentMap.grid.find(
+            gridCell => gridCell.x === cell.x && gridCell.y === cell.y
           );
 
-          // If a monster definition is found, create a new MonsterState instance
-          if (monsterDef) {
-            const newMonsterInstance = MonsterState({
-              id: generateUniqueMonsterId(), // Assign a unique ID for this specific monster instance
-              monster: monsterDef, // Reference to the static monster definition
-              x: visibilityCell.x,
-              y: visibilityCell.y,
-              currentBody: monsterDef.corpo, // Initialize current body points from definition
-              currentMind: monsterDef.mente, // Initialize current mind points from definition
-            });
+          // IF map cell has `mostab.mos` == true:
+          if (mapCell?.mostab?.mos === true && mapCell.mostab.mosid != null) {
+            // Find `@Monster` definition in `monsterDefinitions` where `id` == `mostab.mosid`
+            const monsterDef = monsterDefinitions.find(m => m.id === mapCell.mostab.mosid);
 
-            newMonstersToSpawn.push(newMonsterInstance);
-            newlySpawnedLocations.push(cellLocation);
+            // IF found:
+            if (monsterDef) {
+              // Create `@MonsterState`
+              const newMonster = MonsterState({
+                id: Date.now() + Math.random(), // Generate a simple unique ID
+                monster: monsterDef,
+                x: cell.x,
+                y: cell.y,
+                currentBody: monsterDef.corpo, // Use monster definition's body points
+                currentMind: monsterDef.mente, // Use monster definition's mind points
+              });
+              // Add to `newMonsters`.
+              newMonstersToSpawn.push(newMonster);
+              // Add "x,y" to `newSpawnedLocations`.
+              currentSpawnedLocations.add(coords);
+            }
           }
         }
       }
     });
 
-    // If any new monsters were found, update the game session
+    // IF `newMonsters` is not empty:
     if (newMonstersToSpawn.length > 0) {
-      // Create new arrays for immutability
-      const updatedMonsters = [...(currentSession.monsters || []), ...newMonstersToSpawn];
-      const updatedSpawnedLocations = [...currentSpawnedLocations, ...newlySpawnedLocations];
+      // Create updated `@GameSession` with appended `monsters` and `spawnedLocations`.
+      const updatedMonsters = [...gameSession.monsters, ...newMonstersToSpawn];
+      const updatedSpawnedLocationsArray = Array.from(currentSpawnedLocations);
 
-      // Create an updated GameSession object using the factory function
       const updatedSession = GameSession({
-        ...currentSession,
+        ...gameSession,
         monsters: updatedMonsters,
-        spawnedLocations: updatedSpawnedLocations,
+        spawnedLocations: updatedSpawnedLocationsArray,
       });
 
-      // Update the internal state for spawned locations
-      setSpawnedLocations(updatedSpawnedLocations);
-
-      // Notify the parent component/consumer about the updated session
-      currentOnUpdateSession(updatedSession);
+      // Trigger `onUpdateSession`.
+      onUpdateSession(updatedSession);
+      // Update internal `spawnedLocations` state
+      setSpawnedLocations(updatedSpawnedLocationsArray);
     }
-  }, [visibilityMap, monsterDefinitions]); // Effect re-runs when visibilityMap or monsterDefinitions change
-  // gameSession, onUpdateSession, and spawnedLocations are accessed via refs
-  // to prevent unnecessary re-renders and ensure the latest values are used.
+  }, [visibilityMap, gameSession, onUpdateSession, monsterDefinitions, spawnedLocations]); // Dependencies for spawnMonsters
+
+  // This hook primarily manages side effects and triggers a callback,
+  // so it does not need to return any specific values or functions.
+  return {};
 }

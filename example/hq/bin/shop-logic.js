@@ -6,12 +6,12 @@
  * Edit the ISL file instead.
  */
 
-import { Hero, Equipment } from "./game-domain-ruleset";
-import { GameSession, HeroState } from "./game-domain-session";
+import { Hero, Equipment } from "./domain-ruleset";
+import { GameSession, HeroState } from "./domain-session";
 
 /**
  * Loads static data for Heroes and Equipment.
- * @returns {Promise<{ heroes: Array<ReturnType<typeof Hero>>, items: Array<ReturnType<typeof Equipment>> }>}
+ * @returns {Promise<{ heroes: Array<object>, items: Array<object> }>} Combined data object.
  */
 export async function loadShopData() {
   const [heroesResponse, equipmentResponse] = await Promise.all([
@@ -19,49 +19,41 @@ export async function loadShopData() {
     fetch("/jsonData/equipment.json"),
   ]);
 
-  if (!heroesResponse.ok) {
-    throw new Error(`Failed to fetch heroes: ${heroesResponse.statusText}`);
-  }
-  if (!equipmentResponse.ok) {
-    throw new Error(`Failed to fetch equipment: ${equipmentResponse.statusText}`);
-  }
-
   const heroesData = await heroesResponse.json();
   const equipmentData = await equipmentResponse.json();
 
-  const heroes = (heroesData || []).map(Hero);
+  const heroes = (heroesData || []).map(data => Hero(data));
   const items = (equipmentData || [])
-    .filter((item) => (item?.prezzo ?? 0) > 0)
-    .map(Equipment);
+    .filter(item => item.prezzo > 0)
+    .map(data => Equipment(data));
 
   return { heroes, items };
 }
 
 /**
  * Checks if a hero is allowed to buy a specific item.
- * @param {ReturnType<typeof HeroState>} heroState - The current state of the hero.
- * @param {ReturnType<typeof Equipment>} item - The equipment item to validate.
- * @returns {{ allowed: boolean, reason: string }}
+ * @param {object} heroState - The current state of the hero.
+ * @param {object} item - The equipment item to purchase.
+ * @returns {{ allowed: boolean, reason: string }} Purchase validation result.
  */
 export function validatePurchase(heroState, item) {
-  const currentGold = heroState?.gold ?? 0;
-  const currentEquipmentIds = heroState?.equipment ?? [];
-  const itemId = item?.id;
-  const itemPrice = item?.prezzo ?? 0;
+  if (!heroState || !item) {
+    return { allowed: false, reason: "Invalid hero state or item provided." };
+  }
 
-  if (currentGold < itemPrice) {
+  if (heroState.gold < item.prezzo) {
     return { allowed: false, reason: "Not enough gold" };
   }
 
-  if (currentEquipmentIds.includes(itemId)) {
+  if ((heroState.equipment || []).includes(item.id)) {
     return { allowed: false, reason: "Already owned" };
   }
 
-  if (item?.nopsg === true && item?.nopsgid === heroState?.heroId) {
+  if (item.nopsg === true && item.nopsgid === heroState.heroId) {
     return { allowed: false, reason: "Forbidden for class" };
   }
 
-  if (item?.solopsg === true && item?.solopsgid !== heroState?.heroId) {
+  if (item.solopsg === true && item.solopsgid !== heroState.heroId) {
     return { allowed: false, reason: "Exclusive to other class" };
   }
 
@@ -70,35 +62,34 @@ export function validatePurchase(heroState, item) {
 
 /**
  * Performs the purchase transaction and returns the updated game session.
- * @param {ReturnType<typeof GameSession>} session - The current game session.
- * @param {number} heroIndex - The index of the hero in the session's heroes array.
- * @param {ReturnType<typeof Equipment>} item - The equipment item being purchased.
- * @returns {ReturnType<typeof GameSession>} The updated game session.
+ * @param {object} session - The current game session.
+ * @param {number} heroIndex - The index of the hero in the session's heroes list.
+ * @param {object} item - The equipment item being purchased.
+ * @returns {object} The updated game session.
  */
 export function executePurchase(session, heroIndex, item) {
   // Clone the session object to avoid mutation
   const newSession = GameSession({ ...session });
 
-  // Ensure heroes array exists and is mutable
-  const updatedHeroes = [...(newSession.heroes || [])];
-
-  const currentHeroState = updatedHeroes[heroIndex];
-
-  if (!currentHeroState) {
-    // If heroIndex is invalid, return the original (cloned) session without changes.
-    return newSession;
+  // Ensure heroes array exists and heroIndex is valid
+  if (!newSession.heroes || heroIndex < 0 || heroIndex >= newSession.heroes.length) {
+    console.error("Invalid heroIndex or heroes array in session.");
+    return session; // Return original session if invalid
   }
 
+  const currentHeroState = newSession.heroes[heroIndex];
+
   // Create a new HeroState with updated gold and equipment
-  const newHeroState = HeroState({
+  const updatedHeroState = HeroState({
     ...currentHeroState,
-    gold: (currentHeroState.gold ?? 0) - (item?.prezzo ?? 0),
-    equipment: [...(currentHeroState.equipment ?? []), item?.id].filter(id => id != null),
+    gold: currentHeroState.gold - item.prezzo,
+    equipment: [...(currentHeroState.equipment || []), item.id], // Ensure equipment is an array
   });
 
-  // Update the heroes list with the new HeroState
-  updatedHeroes[heroIndex] = newHeroState;
-  newSession.heroes = updatedHeroes;
+  // Update the session.heroes list with the new HeroState
+  newSession.heroes = newSession.heroes.map((hero, index) =>
+    index === heroIndex ? updatedHeroState : hero
+  );
 
   return newSession;
 }

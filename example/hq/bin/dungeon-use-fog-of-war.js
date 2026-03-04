@@ -6,73 +6,96 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from "react";
-import { VisibilityMap } from "./game-domain-map";
+import { useState, useEffect } from 'react';
+import { GameSession } from './domain-session';
+import { VisibilityMap, VisibilityCell } from './domain-map';
 
-export function useFogOfWar({ gameSession, staticVisibilityMap }) {
-  // Initialize fog map state. If staticVisibilityMap is provided, use it as a base, otherwise empty.
-  const [fogVisibilityMap, setFogVisibilityMap] = useState(() => {
-    return staticVisibilityMap
-      ? JSON.parse(JSON.stringify(staticVisibilityMap))
-      : VisibilityMap();
+export function useFogOfWar({
+  gameSession = GameSession(),
+  staticVisibilityMap = VisibilityMap()
+}) {
+  const [currentFogMap, setCurrentFogMap] = useState(() => {
+    if (!staticVisibilityMap || !staticVisibilityMap.data || staticVisibilityMap.data.length === 0) {
+      return VisibilityMap({ data: [] });
+    }
+
+    const initialMapData = staticVisibilityMap.data.map(cell =>
+      VisibilityCell({ ...cell, fog: cell.fog ?? true })
+    );
+    return VisibilityMap({ ...staticVisibilityMap, data: initialMapData });
   });
 
   useEffect(() => {
-    if (!staticVisibilityMap || !staticVisibilityMap.data) {
+    if (!gameSession?.heroes || !staticVisibilityMap?.data || staticVisibilityMap.data.length === 0) {
+      setCurrentFogMap(VisibilityMap({ data: [] }));
       return;
     }
 
-    setFogVisibilityMap((prevFogMap) => {
-      // Create a deep copy of the previous fog map to preserve revealed state
-      // If the static map changed significantly (e.g. new level), we might want to reset,
-      // but here we assume we are refining the current level's fog.
-      // However, if prevFogMap is empty/different size, we should probably start from staticVisibilityMap.
-      let newFogMap;
-      if (
-        !prevFogMap ||
-        prevFogMap.data.length !== staticVisibilityMap.data.length
-      ) {
-        newFogMap = JSON.parse(JSON.stringify(staticVisibilityMap));
-      } else {
-        newFogMap = JSON.parse(JSON.stringify(prevFogMap));
-      }
+    setCurrentFogMap(prevFogMap => {
+      // Create a new base map from staticVisibilityMap, ensuring all cells are initially fogged
+      const baseMapData = staticVisibilityMap.data.map(cell =>
+        VisibilityCell({ ...cell, fog: cell.fog ?? true })
+      );
+      const newCalculatedMap = VisibilityMap({ ...staticVisibilityMap, data: baseMapData });
 
-      // Find all cells currently occupied by heroes
-      const heroPositions = gameSession.heroes.map((h) => ({ x: h.x, y: h.y }));
-
-      // Collect active visibility IDs from cells occupied by heroes
       const activeVisibilityIds = new Set();
 
-      heroPositions.forEach((pos) => {
-        // Find the corresponding cell in the static map to get visibility IDs
-        const cell = staticVisibilityMap.data.find(
-          (c) => c.x === pos.x && c.y === pos.y,
+      // Collect active visibility IDs from hero positions
+      gameSession.heroes.forEach(heroState => {
+        const heroCell = staticVisibilityMap.data.find(
+          cell => cell.x === heroState.x && cell.y === heroState.y
         );
-        if (cell) {
-          if (cell.vis1 && cell.vis1 !== "0")
-            activeVisibilityIds.add(cell.vis1);
-          if (cell.vis2 && cell.vis2 !== "0")
-            activeVisibilityIds.add(cell.vis2);
+        if (heroCell) {
+          if (heroCell.vis1 && heroCell.vis1 !== '0') {
+            activeVisibilityIds.add(heroCell.vis1);
+          }
+          if (heroCell.vis2 && heroCell.vis2 !== '0') {
+            activeVisibilityIds.add(heroCell.vis2);
+          }
         }
       });
 
-      // Update fog status in the new map
-      newFogMap.data = newFogMap.data.map((cell) => {
-        // If it's already revealed (fog === false), keep it revealed (Constraint: permanently visible)
-        if (cell.fog === false) {
-          return cell;
-        }
+      let hasChanged = false;
 
-        // Check if this cell should be revealed now
-        const isVisible =
-          activeVisibilityIds.has(cell.vis1) ||
-          activeVisibilityIds.has(cell.vis2);
-        return isVisible ? { ...cell, fog: false } : cell;
+      // Apply current visibility and persistence
+      newCalculatedMap.data.forEach(cell => {
+        // Find the corresponding cell in the *previous* state to check for persistence
+        const prevCell = prevFogMap.data.find(
+          pCell => pCell.x === cell.x && pCell.y === cell.y
+        );
+
+        // If the cell was already unfogged in the previous state, it remains unfogged
+        if (prevCell && prevCell.fog === false) {
+          if (cell.fog !== false) {
+            cell.fog = false;
+            hasChanged = true;
+          }
+        } else {
+          // Otherwise, apply current visibility calculation
+          const shouldUnfog =
+            (cell.vis1 && activeVisibilityIds.has(cell.vis1)) ||
+            (cell.vis2 && activeVisibilityIds.has(cell.vis2));
+
+          if (shouldUnfog && cell.fog !== false) {
+            cell.fog = false;
+            hasChanged = true;
+          } else if (!shouldUnfog && cell.fog !== true) {
+            cell.fog = true;
+            hasChanged = true;
+          }
+        }
       });
 
-      return newFogMap;
+      // If no changes, return the previous state to prevent unnecessary re-renders
+      // Also check if the map structure itself changed (e.g., new static map loaded)
+      if (!hasChanged && prevFogMap.data.length === newCalculatedMap.data.length) {
+        return prevFogMap;
+      }
+
+      return newCalculatedMap;
     });
-  }, [gameSession.heroes, staticVisibilityMap]);
 
-  return fogVisibilityMap;
+  }, [gameSession?.heroes, staticVisibilityMap]);
+
+  return currentFogMap;
 }

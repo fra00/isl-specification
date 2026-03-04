@@ -7,138 +7,144 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { CombatDiceResult } from './dungeon-use-combat';
+import { HeroState, MonsterState } from './domain-session';
 
 const CombatResultModal = ({ isOpen, onClose, combatResult, attacker, defender }) => {
-    const [animationActive, setAnimationActive] = useState(false);
+  const [animationActive, setAnimationActive] = useState(false);
 
-    useEffect(() => {
-        if (isOpen) {
-            setAnimationActive(true);
-        } else {
-            setAnimationActive(false);
-        }
-    }, [isOpen]);
-
-    if (!isOpen) {
-        return null;
+  useEffect(() => {
+    if (isOpen) {
+      setAnimationActive(true);
+    } else {
+      // Reset animation state when modal closes, ready for next open
+      setAnimationActive(false);
     }
+  }, [isOpen]);
 
-    // Determine attacker portrait source
-    const attackerPortraitSrc = attacker?.hero?.portrait
-        ? `/img/eroi/${attacker.hero.portrait}`
-        : attacker?.monster?.immalarge
-            ? `/img/mostri/${attacker.monster.immalarge}`
-            : '';
+  if (!isOpen) {
+    return null;
+  }
 
-    // Determine defender portrait source
-    const defenderPortraitSrc = defender?.hero?.portrait
-        ? `/img/eroi/${defender.hero.portrait}`
-        : defender?.monster?.immalarge
-            ? `/img/mostri/${defender.monster.immalarge}`
-            : '';
+  // Determine attacker/defender portraits
+  const getPortraitSource = (entity) => {
+    if (entity?.hero) {
+      // Hero
+      return `/img/eroi/${entity.hero.portrait}`;
+    } else if (entity?.monster) {
+      // Monster
+      return `/img/mostri/${entity.monster.immalarge}`;
+    }
+    return ''; // Default empty string
+  };
 
-    const getDiceImage = (diceResult) => {
-        switch (diceResult) {
-            case 'SKULL':
-                return '/img/altro/teschio.jpg';
-            case 'WHITE_SHIELD':
-                return '/img/altro/scudo.jpg';
-            case 'BLACK_SHIELD':
-                return '/img/altro/scudo-nero.jpg';
-            default:
-                return '';
-        }
-    };
+  const attackerPortrait = getPortraitSource(attacker);
+  const defenderPortrait = getPortraitSource(defender);
 
-    return (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-            <div className="relative w-[800px] h-[500px] overflow-hidden rounded-xl shadow-2xl">
-                {/* Background Layout */}
-                <div className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10 [clip-path:polygon(0_0,60%_0,40%_100%,0%_100%)]"></div>
-                <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0"></div>
+  // Determine if attacker is barbarian for specific styling
+  const isAttackerBarbarian = attacker?.hero?.classe === 'Barbarian';
 
-                {/* Attacker Portrait */}
-                {attackerPortraitSrc && (
-                    <img
-                        src={attackerPortraitSrc}
-                        alt="Attacker"
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1/2 h-full object-contain z-20 opacity-70"
-                    />
-                )}
+  // Helper to get dice image source
+  const getDiceImage = (result) => {
+    switch (result) {
+      case CombatDiceResult.SKULL:
+        return '/img/altro/teschio.jpg';
+      case CombatDiceResult.WHITE_SHIELD:
+        return '/img/altro/scudo.jpg';
+      case CombatDiceResult.BLACK_SHIELD:
+        return '/img/altro/scudo-nero.png';
+      default:
+        return '';
+    }
+  };
 
-                {/* Defender Portrait */}
-                {defenderPortraitSrc && (
-                    <img
-                        src={defenderPortraitSrc}
-                        alt="Defender"
-                        className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full object-contain z-20 opacity-70"
-                    />
-                )}
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <div className="relative w-[800px] h-[500px] overflow-hidden rounded-xl shadow-2xl">
+        {/* Background Layout */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10 [clip-path:polygon(0_0,60%_0,40%_100%,0%_100%)]"></div>
+        <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0"></div>
 
-                {/* Center Info */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 text-white">
-                    {/* VS Text */}
-                    <div className="absolute top-[20%] text-7xl font-bold italic text-yellow-400">
-                        VS
-                    </div>
+        {/* Attacker Portrait */}
+        {attackerPortrait && (
+          <img
+            src={attackerPortrait}
+            alt="Attacker"
+            className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 h-full object-cover opacity-70 ${
+              isAttackerBarbarian ? '-ml-10' : '' // Specific styling for barbarian
+            }`}
+          />
+        )}
 
-                    {/* Dice Container */}
-                    <div className="flex flex-col gap-4 mt-20">
-                        {/* Attacker Dice Row */}
-                        <div className="flex flex-col items-center">
-                            <span className="text-xl font-semibold">Attacker</span>
-                            <div className="flex gap-2 mt-2">
-                                {combatResult?.attackerDice?.map((dice, index) => (
-                                    <img
-                                        key={`attacker-dice-${index}`}
-                                        src={getDiceImage(dice)}
-                                        alt={dice}
-                                        className="w-10 h-10 object-contain transition-transform duration-500 ease-out"
-                                        style={{
-                                            transform: animationActive ? 'translateX(0)' : 'translateX(-100%)',
-                                            transitionDelay: `${index * 0.1}s`,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
+        {/* Defender Portrait */}
+        {defenderPortrait && (
+          <img
+            src={defenderPortrait}
+            alt="Defender"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-full object-cover opacity-70"
+          />
+        )}
 
-                        {/* Defender Dice Row */}
-                        <div className="flex flex-col items-center mt-4">
-                            <span className="text-xl font-semibold">Defender</span>
-                            <div className="flex gap-2 mt-2">
-                                {combatResult?.defenderDice?.map((dice, index) => (
-                                    <img
-                                        key={`defender-dice-${index}`}
-                                        src={getDiceImage(dice)}
-                                        alt={dice}
-                                        className="w-10 h-10 object-contain transition-transform duration-500 ease-out"
-                                        style={{
-                                            transform: animationActive ? 'translateX(0)' : 'translateX(100%)',
-                                            transitionDelay: `${index * 0.1}s`,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+        {/* Center Info */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
+          {/* VS Text */}
+          <h2 className="absolute top-[20%] text-7xl font-bold italic text-white drop-shadow-lg">VS</h2>
 
-                    {/* Result Text */}
-                    <div className="absolute bottom-24 text-4xl font-bold mt-8">
-                        Damage Dealt: {combatResult?.damageDealt ?? 0}
-                    </div>
-
-                    {/* Close Button */}
-                    <button
-                        onClick={onClose}
-                        className="absolute bottom-8 bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500 transition-colors"
-                    >
-                        OK
-                    </button>
-                </div>
+          {/* Dice Container */}
+          <div className="flex flex-col items-center mt-8 space-y-4">
+            {/* Attacker Dice Row */}
+            <div className="flex flex-col items-center">
+              <span className="text-white text-lg font-semibold mb-2">Attacker</span>
+              <div className="flex space-x-2">
+                {combatResult?.attackerDice?.map((die, index) => (
+                  <img
+                    key={`attacker-die-${index}`}
+                    src={getDiceImage(die)}
+                    alt="Attacker Die"
+                    className={`w-12 h-12 object-contain transition-all duration-500 ${
+                      animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-full'
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
+                  />
+                ))}
+              </div>
             </div>
+
+            {/* Defender Dice Row */}
+            <div className="flex flex-col items-center">
+              <span className="text-white text-lg font-semibold mb-2">Defender</span>
+              <div className="flex space-x-2">
+                {combatResult?.defenderDice?.map((die, index) => (
+                  <img
+                    key={`defender-die-${index}`}
+                    src={getDiceImage(die)}
+                    alt="Defender Die"
+                    className={`w-12 h-12 object-contain transition-all duration-500 ${
+                      animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Result Text */}
+          <p className="absolute bottom-24 text-4xl font-bold text-white">
+            Damage Dealt: {combatResult?.damageDealt ?? 0}
+          </p>
+
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute bottom-8 bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500 font-bold transition-colors"
+          >
+            OK
+          </button>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default CombatResultModal;

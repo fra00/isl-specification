@@ -6,110 +6,85 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
 /**
- * @param {object} props
+ * Custom hook for defining dungeon movement rules.
+ * @param {object} props - The properties for the hook.
  * @param {object} props.mapQuery - The result object from useDungeonMapQuery.
  */
 export function useDungeonMovementRules({ mapQuery }) {
-  /**
-   * Checks if a unit can end its movement at the target cell.
-   * @param {number} x - The target X coordinate.
-   * @param {number} y - The target Y coordinate.
-   * @param {number} excludeEntityId - The ID of the entity to exclude from occupancy checks.
-   * @returns {boolean} - True if the destination is valid, false otherwise.
-   */
-  const isValidDestination = useCallback(
-    (x, y, excludeEntityId) => {
-      // Return FALSE if mapQuery.getMapCell(x, y) is null.
-      if (mapQuery.getMapCell(x, y) === null) {
-        return false;
+  const isValidDestination = useCallback((x, y, excludeEntityId) => {
+    // Return FALSE if mapQuery.getMapCell(x, y) (@MapCell) is null.
+    if (mapQuery.getMapCell(x, y) === null) {
+      return false;
+    }
+    // Return FALSE if mapQuery.isBlockedByFurniture(x, y).
+    if (mapQuery.isBlockedByFurniture(x, y)) {
+      return false;
+    }
+    // Return FALSE if mapQuery.isBlockedByMonster(x, y, excludeEntityId).
+    if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) {
+      return false;
+    }
+    // Return FALSE if mapQuery.isOccupiedByHero(x, y, excludeEntityId).
+    if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) {
+      return false;
+    }
+    // Return FALSE if mapQuery.isBlockedByRock(x, y).
+    if (mapQuery.isBlockedByRock(x, y)) {
+      return false;
+    }
+    // Return TRUE.
+    return true;
+  }, [mapQuery]);
+
+  const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
+    // Bounds Check
+    const { width, height } = mapQuery.getMapDimensions();
+    if (targetX < 1 || targetY < 1 || targetX > width || targetY > height) {
+      return false;
+    }
+
+    // Static Obstacles
+    if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
+      return false;
+    }
+
+    // Dynamic Obstacles
+    if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
+      return false;
+    }
+
+    // Rock Obstacles
+    if (mapQuery.isBlockedByRock(targetX, targetY)) {
+      return false;
+    }
+
+    // Room/Wall Logic
+    const sourceVisibilityCell = mapQuery.getVisibilityCell(sourceX, sourceY);
+    const targetVisibilityCell = mapQuery.getVisibilityCell(targetX, targetY);
+
+    const sourceValo = sourceVisibilityCell?.valo;
+    const targetValo = targetVisibilityCell?.valo;
+
+    // IF sourceValo != targetValo
+    if (sourceValo !== targetValo) {
+      if (
+        mapQuery.isDoor(sourceX, sourceY) ||
+        mapQuery.isDoor(targetX, targetY) ||
+        mapQuery.isSecretPassage(sourceX, sourceY) ||
+        mapQuery.isSecretPassage(targetX, targetY)
+      ) {
+        return true; // Can cross if there's a door or secret passage
+      } else {
+        return false; // Cannot cross different rooms without a door/secret passage
       }
+    }
 
-      // Return FALSE if mapQuery.isBlockedByFurniture(x, y).
-      if (mapQuery.isBlockedByFurniture(x, y)) {
-        return false;
-      }
-
-      // Return FALSE if mapQuery.isBlockedByMonster(x, y, excludeEntityId).
-      if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) {
-        return false;
-      }
-
-      // Return FALSE if mapQuery.isOccupiedByHero(x, y, excludeEntityId).
-      if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) {
-        return false;
-      }
-
-      // Return TRUE.
-      return true;
-    },
-    [mapQuery]
-  );
-
-  /**
-   * Checks if a unit can move from Source to Target (adjacent).
-   * @param {number} sourceX - The source X coordinate.
-   * @param {number} sourceY - The source Y coordinate.
-   * @param {number} targetX - The target X coordinate.
-   * @param {number} targetY - The target Y coordinate.
-   * @param {number} excludeEntityId - The ID of the entity to exclude from occupancy checks.
-   * @returns {boolean} - True if the movement is walkable, false otherwise.
-   */
-  const isWalkable = useCallback(
-    (sourceX, sourceY, targetX, targetY, excludeEntityId) => {
-      // Bounds Check: Return FALSE if target coordinates are less than 1 or greater than the map dimensions.
-      const { width, height } = mapQuery.getMapDimensions();
-      if (targetX < 1 || targetX > width || targetY < 1 || targetY > height) {
-        return false;
-      }
-
-      // Static Obstacles: Return FALSE if mapQuery.isBlockedByFurniture(targetX, targetY).
-      if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
-        return false;
-      }
-
-      // Dynamic Obstacles: Return FALSE if mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId).
-      if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
-        return false;
-      }
-
-      // Room/Wall Logic:
-      const sourceValo = mapQuery.getVisibilityCell(sourceX, sourceY)?.valo;
-      const targetValo = mapQuery.getVisibilityCell(targetX, targetY)?.valo;
-
-      // Rule 1 (Entering Wall): IF targetValo is NULL:
-      if (targetValo == null) {
-        // Return TRUE IF mapQuery.isDoor(targetX, targetY) OR mapQuery.isSecretPassage(targetX, targetY).
-        if (mapQuery.isDoor(targetX, targetY) || mapQuery.isSecretPassage(targetX, targetY)) {
-          return true;
-        }
-        // ELSE Return FALSE.
-        return false;
-      }
-
-      // Rule 2 (Crossing Rooms): IF sourceValo != targetValo:
-      if (sourceValo != null && targetValo != null && sourceValo !== targetValo) {
-        // Return TRUE IF mapQuery.isDoor(sourceX, sourceY) OR mapQuery.isDoor(targetX, targetY) OR
-        // mapQuery.isSecretPassage(sourceX, sourceY) OR mapQuery.isSecretPassage(targetX, targetY).
-        if (
-          mapQuery.isDoor(sourceX, sourceY) ||
-          mapQuery.isDoor(targetX, targetY) ||
-          mapQuery.isSecretPassage(sourceX, sourceY) ||
-          mapQuery.isSecretPassage(targetX, targetY)
-        ) {
-          return true;
-        }
-        // ELSE Return FALSE.
-        return false;
-      }
-
-      // Return TRUE.
-      return true;
-    },
-    [mapQuery]
-  );
+    // If sourceValo === targetValo (same room, or both null/undefined), it's walkable by default
+    return true;
+  }, [mapQuery]);
 
   return {
     isValidDestination,

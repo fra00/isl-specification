@@ -11,13 +11,15 @@ Short description
 
 > **Reference**: Core entities are defined in `./domain-core.isl.md`.
 
-## Component: PlayGame
+## Component: MainMenu
 
-Area di gioco
+Main Menu Screen
 
 ### Role: Presentation
 
-**signature**:(onChangePageView:(PageNavigationEnum) => void
+**Signature**:
+
+- `onChangePageView`: (page: @PageNavigationEnum) -> void
 
 ### 🔍 Appearance
 

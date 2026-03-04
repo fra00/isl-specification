@@ -21,9 +21,9 @@
 
 **Signature**:
 
-- `gameSession`: GameSession (Current state of the session, nullable).
-- `onChangePageView`: (nextPage: PageNavigationEnum) -> void (Callback to change page).
-- `onUpdateSession`: (session: GameSession) -> void (Callback to update the session state).
+- `gameSession`: @GameSession (Current state of the session, nullable).
+- `onChangePageView`: (nextPage: @PageNavigationEnum) -> void (Callback to change page).
+- `onUpdateSession`: (session: @GameSession) -> void (Callback to update the session state).
 
 ### 🔍 Appearance
 
@@ -61,12 +61,12 @@
 - **Trigger**: On Component Mount.
 - **Flow**:
   - Fetch data from `/jsonData/campagne.json`.
-  - Parse response into `Campaign` structure.
+  - Parse response into @Campaign structure.
   - Ignore data with x or y equals to 0. The data aren't zero based.
   - Store in local state `campaign`.
   - Handle fetch errors (e.g., log to console).
   - Fetch data from `/jsonData/heroes.json`.
-  - Parse response into `List<Hero>` structure
+  - Parse response into List<@Hero> structure
   - Store in local state `statsHeroes`.
 
 #### selectMission
@@ -80,8 +80,8 @@
   - IF `index` <= `maxAccessibleIndex` THEN:
     - Identify the mission file from `campaign.missioni[index].file`.
     - Fetch map data from `/jsonData/map/[filename]` (extension is included in the filename).
-    - Parse into `MapDefinition`.
-    - Create or Update `GameSession`:
+    - Parse into @MapDefinition.
+    - Create or Update @GameSession:
       - Create `heroes` list by mapping `statsHeroes` to `HeroState`:
         - `heroId`: `Hero.id`
         - `currentBody`: `Hero.corpo`
@@ -93,7 +93,7 @@
       - Set `currentMap` to the loaded map.
       - Set `currentMissionIndex` to `index`.
     - Trigger `onUpdateSession(updatedSession)`.
-    - onChangePageView to `PageNavigationEnum.DUNGEON_DESCRIPTION`
+    - onChangePageView to @PageNavigationEnum.DUNGEON_DESCRIPTION
   - ELSE:
     - (Optional) Show visual feedback that the mission is locked.
 
@@ -102,10 +102,10 @@
 - **Contract**: Returns to the main menu.
 - **Trigger**: User clicks "Back" button.
 - **Flow**:
-  - onChangePageView to `PageNavigationEnum.MAIN_MENU`.
+  - onChangePageView to @PageNavigationEnum.MAIN_MENU.
 
 ### 🚨 Constraints
 
 - **Progression Rule**: The user MUST NOT be able to start a mission with an index higher than `currentMissionIndex`.
-- **Default State**: If no `gameSession` exists, the user is treated as a new player (only Mission 0 is unlocked).
+- **Default State**: If no `gameSession` exists, the user is treated as a new player (only @Mission 0 is unlocked).
 - **Data Source**: Must load campaign structure strictly from `campagne.json`.

@@ -42,7 +42,7 @@
   - Display `movementPoints`.
 - **Action Buttons**:
   - **Roll Movement**:
-    - Diabled IF `turnPhase` have `hasMoved` true
+    - Diabled IF `turnPhase` have `movementPoints` > 0 OR `hasMoved` true
     - Style: Blue primary button.
     - OnClick: Trigger `onRollMovement`.
   - **Search Passages**:

@@ -6,101 +6,102 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { GameSession, MonsterState } from "./domain-session";
-import { Monster } from "./domain-ruleset";
+import { useState, useEffect } from 'react';
+import { MonsterState, GameSession } from './domain-session';
+import { Monster } from './domain-ruleset';
 
 export function useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession }) {
-  const [spawnedLocations, setSpawnedLocations] = useState([]);
-  const [monsterDefinitions, setMonsterDefinitions] = useState([]);
+    const [spawnedLocations, setSpawnedLocations] = useState([]);
+    const [monsterDefinitions, setMonsterDefinitions] = useState([]);
 
-  // Capability: initialize - Fetch monster definitions
-  useEffect(() => {
-    const fetchMonsterDefinitions = async () => {
-      try {
-        const response = await fetch('/jsonData/monsters.json');
-        if (!response.ok) {
-          throw new Error('Failed to load monsters.json: File not found');
-        }
-        const data = await response.json();
-        // Assuming the fetched data is an array of objects that can be passed directly to the Monster factory
-        setMonsterDefinitions(data.map(Monster));
-      } catch (error) {
-        console.error(error.message);
-        // In a production app, you might want to set an error state or notify the user
-      }
-    };
+    // initialize: Fetch monster definitions
+    useEffect(() => {
+        let isMounted = true;
 
-    fetchMonsterDefinitions();
-  }, []); // Empty dependency array means this runs once on mount
-
-  // Capability: spawnMonsters - Triggered when visibilityMap changes
-  useEffect(() => {
-    // Return if essential data is missing or not yet loaded
-    if (!visibilityMap || !gameSession || monsterDefinitions.length === 0 || !gameSession.currentMap?.grid) {
-      return;
-    }
-
-    const newMonstersToSpawn = [];
-    // Use a Set for efficient lookup of already spawned locations within the current effect run
-    const currentSpawnedLocations = new Set(spawnedLocations);
-
-    visibilityMap.data.forEach(cell => {
-      // IF cell is NOT fogged (`fog` == false) AND `x,y` is NOT in `spawnedLocations`:
-      if (cell.fog === false) {
-        const coords = `${cell.x},${cell.y}`;
-        if (!currentSpawnedLocations.has(coords)) {
-          // Find map cell in `@GameSession.currentMap.grid` at (x, y).
-          const mapCell = gameSession.currentMap.grid.find(
-            gridCell => gridCell.x === cell.x && gridCell.y === cell.y
-          );
-
-          // IF map cell has `mostab.mos` == true:
-          if (mapCell?.mostab?.mos === true && mapCell.mostab.mosid != null) {
-            // Find `@Monster` definition in `monsterDefinitions` where `id` == `mostab.mosid`
-            const monsterDef = monsterDefinitions.find(m => m.id === mapCell.mostab.mosid);
-
-            // IF found:
-            if (monsterDef) {
-              // Create `@MonsterState`
-              const newMonster = MonsterState({
-                id: Date.now() + Math.random(), // Generate a simple unique ID
-                monster: monsterDef,
-                x: cell.x,
-                y: cell.y,
-                currentBody: monsterDef.corpo, // Use monster definition's body points
-                currentMind: monsterDef.mente, // Use monster definition's mind points
-              });
-              // Add to `newMonsters`.
-              newMonstersToSpawn.push(newMonster);
-              // Add "x,y" to `newSpawnedLocations`.
-              currentSpawnedLocations.add(coords);
+        const fetchMonsters = async () => {
+            try {
+                const response = await fetch('/jsonData/monsters.json');
+                if (!response.ok) {
+                    throw new Error("Failed to load monsters.json: File not found");
+                }
+                
+                const data = await response.json();
+                
+                if (isMounted) {
+                    const parsedMonsters = (Array.isArray(data) ? data : []).map(m => Monster(m));
+                    setMonsterDefinitions(parsedMonsters);
+                }
+            } catch (error) {
+                console.error(error);
+                throw error;
             }
-          }
+        };
+
+        fetchMonsters();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // spawnMonsters: Check visibility and spawn monsters
+    useEffect(() => {
+        if (!visibilityMap || !visibilityMap.data) return;
+        if (!gameSession?.currentMap?.grid) return;
+        if (!monsterDefinitions || monsterDefinitions.length === 0) return;
+
+        const newMonsters = [];
+        const newSpawnedLocations = [];
+
+        visibilityMap.data.forEach(visCell => {
+            if (visCell.fog === false) {
+                const locKey = `${visCell.x},${visCell.y}`;
+                
+                if (!spawnedLocations.includes(locKey)) {
+                    const mapCell = gameSession.currentMap.grid.find(
+                        c => c.x === visCell.x && c.y === visCell.y
+                    );
+
+                    if (mapCell?.mostab?.mos === true) {
+                        const monsterDef = monsterDefinitions.find(
+                            m => m.id === mapCell.mostab.mosid
+                        );
+
+                        if (monsterDef) {
+                            const newMonsterState = MonsterState({
+                                id: Date.now() + Math.floor(Math.random() * 100000),
+                                monster: monsterDef,
+                                x: visCell.x,
+                                y: visCell.y,
+                                currentBody: monsterDef.corpo,
+                                currentMind: monsterDef.mente
+                            });
+                            
+                            newMonsters.push(newMonsterState);
+                            newSpawnedLocations.push(locKey);
+                        }
+                    }
+                }
+            }
+        });
+
+        if (newMonsters.length > 0) {
+            setSpawnedLocations(prev => [...prev, ...newSpawnedLocations]);
+
+            const updatedSession = GameSession({
+                ...gameSession,
+                monsters: [...(gameSession.monsters || []), ...newMonsters],
+                spawnedLocations: [...(gameSession.spawnedLocations || []), ...newSpawnedLocations]
+            });
+
+            if (typeof onUpdateSession === 'function') {
+                onUpdateSession(updatedSession);
+            }
         }
-      }
-    });
+    }, [visibilityMap, gameSession, monsterDefinitions, spawnedLocations, onUpdateSession]);
 
-    // IF `newMonsters` is not empty:
-    if (newMonstersToSpawn.length > 0) {
-      // Create updated `@GameSession` with appended `monsters` and `spawnedLocations`.
-      const updatedMonsters = [...gameSession.monsters, ...newMonstersToSpawn];
-      const updatedSpawnedLocationsArray = Array.from(currentSpawnedLocations);
-
-      const updatedSession = GameSession({
-        ...gameSession,
-        monsters: updatedMonsters,
-        spawnedLocations: updatedSpawnedLocationsArray,
-      });
-
-      // Trigger `onUpdateSession`.
-      onUpdateSession(updatedSession);
-      // Update internal `spawnedLocations` state
-      setSpawnedLocations(updatedSpawnedLocationsArray);
-    }
-  }, [visibilityMap, gameSession, onUpdateSession, monsterDefinitions, spawnedLocations]); // Dependencies for spawnMonsters
-
-  // This hook primarily manages side effects and triggers a callback,
-  // so it does not need to return any specific values or functions.
-  return {};
+    return {
+        spawnedLocations,
+        monsterDefinitions
+    };
 }

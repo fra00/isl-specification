@@ -80,6 +80,8 @@ Represents a single cell in the map grid.
 #### `MapCellTrap`
 
 - `tipo`: Trap type (Integer).
+- `rccadex`: X coordinate of falling rock trap (Integer).
+- `rccadey`: Y coordinate of falling rock trap (Integer).
 
 #### `MapHeroStart`
 

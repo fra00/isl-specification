@@ -93,6 +93,6 @@ Represents a treasure card definition.
 
 - `id`: Unique identifier (Integer).
 - `effetto`: Effect script or code (String).
-- `azione`: Action type identifier (String).
+- `azione`: Action type identifier (String) can be: ("mostro_errante"|"aggiungi_oggetto"|"aggiungi_oro"|"modifica_hp"|"nessuna"|"trappola_e_fine").
 - `valore`: Value associated with the action (Integer).
 - `immagine`: Image filename (String).

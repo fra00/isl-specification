@@ -26,9 +26,29 @@ export class LLMClient {
       this.baseUrl = process.env.LLM_BASE_URL || "https://api.openai.com/v1";
     }
 
+    // Resolve short codes for Gemini
+    if (this.provider === "gemini" && this.model) {
+      const shortCodes: { [key: string]: string } = {
+        "25p": "gemini-2.5-pro",
+        "25f": "gemini-2.5-flash",
+        "31p": "gemini-3.1-pro-preview",
+        "31f": "gemini-3.1-flash-lite-preview",
+      };
+      if (shortCodes[this.model]) {
+        this.model = shortCodes[this.model];
+      }
+    }
+
     // Default Models
     if (!this.model) {
-      if (this.provider === "gemini") this.model = "gemini-2.5-flash";
+      /*
+      gemini-3.1-pro-preview
+      gemini-3.1-flash-lite-preview
+      gemini-2.5-pro
+      gemini-2.5-flash
+      */
+      if (this.provider === "gemini")
+        this.model = "gemini-3.1-flash-lite-preview";
       else if (this.provider === "lm-studio")
         this.model = "local-model"; // LM Studio often ignores model name or uses loaded one
       else this.model = "gpt-4o";

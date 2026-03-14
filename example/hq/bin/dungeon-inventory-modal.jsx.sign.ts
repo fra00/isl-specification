@@ -1,0 +1,1 @@
+export default function DungeonInventoryModal(props: { isOpen: boolean; hero: any; onClose: () => void }): React.ReactElement | null;

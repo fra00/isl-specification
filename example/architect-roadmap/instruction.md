@@ -1,0 +1,260 @@
+# Roadmap Manager — Prompt di Specifica
+
+## Contesto e Obiettivo
+
+Devi progettare e sviluppare una Web App chiamata **Roadmap Manager**.
+Si tratta di una Single Page Application (SPA) statica, senza alcun backend,
+pensata esclusivamente per uso interno di team lead e management di un team
+di sviluppo software.
+
+L'obiettivo principale è sostituire la gestione manuale delle roadmap
+attualmente svolta tramite fogli Excel, offrendo uno strumento strutturato,
+visivo e facilmente distribuibile: basta aprire il browser, nessuna
+installazione richiesta.
+
+Il software **non è un task manager operativo**: per quella funzione il team
+utilizza già Jira. Questo strumento serve a pianificare strategicamente,
+monitorare l'avanzamento delle iniziative e comunicare lo stato della roadmap
+internamente al team. Non è prevista alcuna autenticazione: l'applicazione è
+ad accesso libero e non gestisce ruoli o utenti.
+
+In futuro potrebbe essere necessario leggere dati da Jira tramite le sue API,
+ma nella versione attuale il software è completamente standalone. È opportuno
+tenere in considerazione questa eventualità nella struttura del codice,
+predisponendo un modulo di integrazione vuoto ma con interfaccia definita.
+
+---
+
+## Architettura
+
+L'applicazione è interamente client-side. Non esiste alcun server remoto.
+Tutti i dati vengono salvati localmente nel browser tramite **IndexedDB**,
+che garantisce sufficiente capacità e struttura per i volumi previsti.
+
+La persistenza dei dati avviene esclusivamente in locale. Per consentire
+la condivisione tra colleghi e il backup, l'applicazione supporta:
+
+- **Export in formato JSON**: dump completo di tutti i dati presenti nel database locale, scaricabile come file.
+- **Import da file JSON**: ripristino o fusione dei dati da un file precedentemente esportato, con validazione dello schema prima dell'import.
+- **Export in formato Excel**: generazione di un file con più fogli, uno per ogni entità principale, pensato per la reportistica.
+
+La build finale deve produrre una cartella statica distribuibile su qualsiasi
+web server o apribile direttamente da file system locale.
+
+---
+
+## Modello Dati
+
+Il sistema gestisce le seguenti entità principali.
+
+### Progetto
+
+Il progetto è il contenitore principale. Possono esistere più progetti
+contemporaneamente. Ogni progetto ha un nome, una descrizione, un owner
+responsabile, delle date di inizio e fine pianificate e uno stato generale
+che può essere: in pianificazione, attivo, completato o in pausa.
+
+Il progresso del progetto non viene inserito manualmente, ma viene calcolato
+automaticamente come media del progresso di tutte le Epiche collegate.
+
+### Epica
+
+Ogni progetto contiene una o più Epiche. L'Epica rappresenta una macro
+iniziativa o funzionalità rilevante. Ha un codice identificativo
+auto-generato (formato EP-001), un titolo, una descrizione, una priorità,
+un quarter di appartenenza con relativo anno, delle date di inizio e fine
+pianificate, una categoria o tag libero (es. Frontend, Backend, Infra),
+un owner, un livello di rischio e un campo testo libero per inserire
+il riferimento alla corrispondente Epica in Jira.
+
+Il progresso dell'Epica viene calcolato automaticamente come media aritmetica
+del progresso di tutte le Stories collegate. Lo stato viene derivato
+automaticamente dal progresso: non avviata, in corso, completata.
+È possibile impostare manualmente lo stato "bloccata", che sovrascrive
+lo stato derivato indipendentemente dalla percentuale.
+
+### Story
+
+Ogni Epica contiene una o più Stories. La Story rappresenta un'unità
+di lavoro pianificabile. Ha un codice auto-generato (formato ST-001),
+un titolo, una descrizione, una priorità, una stima in story points
+(valori fibonacci: 1, 2, 3, 5, 8, 13, 21), un assignee, un sprint
+di appartenenza, delle date di inizio e fine pianificate, un campo testo
+libero per il riferimento Jira, un campo note e la possibilità di
+aggiungere link esterni.
+
+Il progresso della Story è **l'unico campo inserito manualmente** dall'utente,
+tramite uno slider da 0 a 100. Lo stato viene derivato dal progresso con
+la stessa logica dell'Epica, con la possibilità di override manuale
+a "bloccata".
+
+
+### Storico Modifiche (Changelog)
+
+Ogni modifica a qualsiasi campo di qualsiasi entità genera automaticamente
+un record di log. Il log contiene: il tipo di entità modificata, il suo
+identificativo e codice, il nome del campo modificato, il valore precedente,
+il nuovo valore e il timestamp della modifica. Il changelog è append-only
+e non può essere cancellato.
+
+---
+
+## Regole di Business
+
+### Calcolo del progresso
+
+Il progresso di una Story viene inserito manualmente dall'utente (0–100).
+
+Il progresso di un'Epica viene calcolato come media aritmetica dei progressi
+di tutte le Stories collegate. Se un'Epica non ha Stories, il suo progresso
+è 0. Il calcolo avviene in tempo reale, senza salvare il valore nel database.
+
+Il progresso di un Progetto viene calcolato come media aritmetica dei
+progressi delle Epiche collegate, anch'essi calcolati runtime. L'aggiornamento
+si propaga a cascata verso l'alto ogni volta che viene modificata la
+percentuale di una Story.
+
+### Derivazione dello stato
+
+Lo stato di ogni entità viene derivato automaticamente dal progresso:
+a 0% lo stato è "non avviata", tra 1% e 99% è "in corso", a 100% è
+"completata". Il flag "bloccata" può essere impostato manualmente in
+qualsiasi momento e ha priorità sullo stato derivato.
+
+### Codici auto-generati
+
+Ogni Epica e ogni Story riceve al momento della creazione un codice
+identificativo univoco all'interno del progetto, nel formato EP-001
+per le Epiche e ST-001 per le Stories, con numero incrementale.
+
+---
+
+## Viste e Funzionalità
+
+### Dashboard Globale
+
+La dashboard mostra una panoramica di tutti i progetti presenti. Per ogni
+progetto viene visualizzata una progress bar con la percentuale
+di avanzamento, il numero totale di epiche, il numero di epiche in ritardo
+(con data di fine superata e progresso inferiore al 100%) e il numero di
+epiche bloccate. Un'intestazione con KPI globali mostra: progetti attivi,
+totale epiche, stories completate nella settimana corrente. È possibile
+filtrare per stato del progetto e anno. Cliccando su un progetto si accede
+al dettaglio di quest'ultimo.
+
+### Roadmap Timeline (Gantt)
+
+La vista principale del progetto. L'asse orizzontale è diviso per Quarter
+e Sprint. Ogni riga rappresenta un'Epica, visualizzata come barra colorata
+in base al proprio stato. Le barre mostrano la percentuale di avanzamento
+scritta al loro interno. Un bordo colorato sul lato sinistro della barra
+indica il livello di rischio dell'Epica (rosso, arancione, verde). Le
+Epiche bloccate sono visualizzate con bordo tratteggiato rosso. Passando
+il cursore su una barra compare un tooltip con titolo, owner, percentuale e
+numero di Stories. Cliccando su una barra si apre un pannello laterale con
+il dettaglio dell'Epica e la lista delle Stories collegate. Sono disponibili
+filtri per quarter, categoria, priorità, owner e rischio. È possibile
+alternare la granularità della vista tra quarter e sprint.
+
+### Backlog
+
+Vista tabellare ad albero: le Epiche sono espandibili per mostrare le Stories
+collegate. Per ogni Epica sono visibili: codice, titolo, quarter, priorità,
+rischio, owner, una mini progress bar, lo stato, il riferimento Jira e le
+azioni disponibili. Per ogni Story sono visibili: codice, titolo, assignee,
+sprint, story points, uno slider per la modifica diretta del progresso,
+lo stato, il riferimento Jira e le azioni disponibili. La modifica del
+progresso tramite slider aggiorna in tempo reale la percentuale dell'Epica
+parent. Le azioni disponibili sono: modifica in modale, eliminazione con
+conferma e toggle del flag bloccata. È possibile aggiungere rapidamente
+una Story direttamente inline sotto un'Epica. Tutte le colonne sono
+ordinabili e filtrabili.
+
+### Report e Storico
+
+La sezione report offre un grafico a linee che mostra il trend di avanzamento
+delle Epiche nel tempo, costruito a partire dai record del changelog.
+Mostra il riepilogo per Quarter con le Epiche suddivise per stato. La tabella del changelog è filtrabile per tipo di
+entità, campo modificato e intervallo di date.
+
+### Export e Import
+
+**Export Excel**: genera un file con cinque fogli distinti. Il primo foglio
+contiene il riepilogo del progetto con i KPI. Il secondo foglio elenca tutte
+le Epiche con tutti i campi e il progresso calcolato. Il terzo foglio elenca
+tutte le Stories con tutti i campi. Il quarto foglio elenca gli Sprint con le
+Stories assegnate. Il quinto foglio contiene lo storico delle modifiche.
+Le celle relative al progresso sono colorate condizionalmente: rosso per
+valori bassi, giallo per valori intermedi, verde per valori alti.
+
+**Export JSON**: produce un file contenente tutti i dati presenti nel
+database locale, con indicazione della versione del formato e del timestamp
+di esportazione. Il file è scaricabile con nome che include la data corrente.
+
+**Import JSON**: permette di caricare un file JSON precedentemente esportato.
+Prima di procedere viene validato lo schema del file. Viene mostrata
+un'anteprima con il numero di entità che verranno importate. L'utente può
+scegliere tra due modalità: "Sostituisci tutto", che svuota il database prima
+dell'import, oppure "Aggiungi a esistenti", che aggiunge i dati senza
+cancellare quelli presenti. In caso di conflitto di identificativi, vengono
+generati nuovi identificativi univoci automaticamente.
+
+### Impostazioni
+
+La sezione impostazioni permette di gestire la lista dei membri del team,
+usata nei campi assignee e owner. Permette inoltre di gestire le categorie
+predefinite disponibili per le Epiche. È presente un'opzione per il reset
+completo del database, protetta da doppia conferma. Vengono mostrate
+informazioni sull'applicazione: versione e spazio occupato in IndexedDB.
+
+---
+
+## Interfaccia Utente
+
+L'interfaccia deve essere pulita, professionale e ottimizzata per l'uso
+su desktop e tablet. Non è richiesta la compatibilità con dispositivi mobile.
+
+Ogni operazione di modifica deve fornire un feedback visivo immediato
+tramite notifica di successo o errore. I caricamenti devono essere
+accompagnati da indicatori di attesa. Le operazioni distruttive come
+eliminazione e reset devono sempre richiedere una conferma esplicita.
+
+I componenti condivisi chiave sono:
+
+- Una progress bar con colore automatico in base al valore percentuale.
+- Uno slider per l'input manuale del progresso delle Stories, disabilitato se la Story è bloccata.
+- Badge colorati per stato, priorità e rischio, coerenti in tutta l'applicazione.
+- Un dialog di conferma riutilizzabile per tutte le operazioni distruttive.
+
+---
+
+## Qualità del Codice
+
+Il codice deve rispettare i seguenti principi:
+
+- Separazione netta tra logica di business, accesso ai dati e presentazione.
+- Le funzioni di calcolo del progresso devono essere pure, senza effetti collaterali e testabili in isolamento.
+- Il layer di accesso a IndexedDB deve essere incapsulato in un modulo dedicato, non chiamato direttamente dai componenti di presentazione.
+- Il modulo di integrazione Jira deve essere predisposto come interfaccia vuota con metodi stub, documentata e pronta per implementazione futura.
+- Il formato di export/import JSON deve essere versionato, per consentire migrazioni future del formato senza perdita di dati.
+
+---
+
+## Requisiti Non Funzionali
+
+- L'applicazione deve funzionare completamente offline, senza alcuna chiamata di rete a runtime.
+- Il ricalcolo del progresso a cascata deve avvenire in meno di 100 millisecondi per Epiche con fino a 50 Stories.
+- L'export Excel deve completarsi in meno di 2 secondi per un progetto con 50 Epiche e 300 Stories.
+- La build deve produrre una cartella statica distribuibile su qualsiasi web server o apribile direttamente tramite file system locale.
+- Nessuna dipendenza con licenza non adatta all'uso commerciale.
+
+---
+
+## Deliverable Attesi
+
+1. Progetto configurato e avviabile con un singolo comando.
+2. Schema del database locale completo e tipizzato.
+3. Tutti i service layer implementati con la logica di business separata dalla presentazione.
+4. Tutti i componenti per ogni vista descritta.
+5. Suite di test per la logica di calcolo del progresso e per le funzionalità di import/export.
+6. File README con: istruzioni di setup locale, struttura del progetto, guida all'export/import JSON, note per il deploy statico e istruzioni per l'implementazione futura dell'integrazione Jira.

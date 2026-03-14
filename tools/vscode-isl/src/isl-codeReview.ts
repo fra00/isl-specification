@@ -18,7 +18,7 @@ async function main() {
   const useGemini = args.includes("--gemini");
   const useLmStudio = args.includes("--lmstudio");
   const modelArg = args
-    .find((arg) => arg.startsWith("--model="))
+    .find((arg) => arg.startsWith("--model=") || arg.startsWith("--v="))
     ?.split("=")[1];
   const urlArg = args.find((arg) => arg.startsWith("--url="))?.split("=")[1];
   const stackArg =
@@ -131,7 +131,11 @@ async function main() {
   if (entry.buildFile && fs.existsSync(entry.buildFile)) {
     buildContext = fs.readFileSync(entry.buildFile, "utf-8");
   }
-  const signatures = collectSignatures(buildContext, outputBaseDir, stackConfig);
+  const signatures = collectSignatures(
+    buildContext,
+    outputBaseDir,
+    stackConfig,
+  );
 
   // 6. Run Review
   let provider: LLMProvider = "openai";

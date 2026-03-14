@@ -28,11 +28,11 @@
 #### internalState
 
 - `turnPhase`: @TurnPhase (Current phase of the turn).
-- `movementPoints`: Integer (Remaining movement steps).
-- `hasActed`: Boolean (True if action performed).
+- `movementPoints`: Integer (Remaining movement steps) Default: null.
 - `hoveredPath`: List of {x, y} (The valid path to the hovered cell, empty if invalid).
 - `canAttack`: Boolean (True if there is at least one visible monster in attack range).
 - `isMoving`: Boolean (True if hero is currently animating movement).
+- `isMovingStarted`: Boolean (True if hero has started moving).
 - `combatLogic`: `useCombatLogic` (Hook instance to access `resolveCombat`).
 - `activePath`: List of {x, y} (The path currently being traversed).
 - `hooksPathfinding`: `usePathfinding` (Hook instance to access pathfinding functions).
@@ -63,9 +63,8 @@
 - **Contract**: Calculates path preview when mouse hovers a cell.
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
-  - IF `movementPoints` <= 0 OR `isMoving` is true:
+  - IF `movementPoints` is null OR `movementPoints` <= 0 OR `isMoving` is true:
     - Set `hoveredPath` to empty.
-    - Set `turnPhase` to include `hasMoved` true (if movementPoints is 0).
     - RETURN.
   - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
   - Call `hooksPathfinding.calculatePath(hero.x, hero.y, x, y, movementPoints, hero.heroId)` and store result in `path`.
@@ -80,6 +79,7 @@
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
   - IF `isMoving` is true OR `movementPoints` <= 0 RETURN.
+  - Set `isMovingStarted` to true.
   - Find `currentHero` in `gameSession.heroes`.
   - Initialize `path` with `hoveredPath`.
   - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
@@ -96,10 +96,12 @@
 - **Contract**: Handles the step-by-step movement animation and logic.
 - **Trigger**: `activePath` changes.
 - **Flow**:
-  - IF `activePath` length < 2:
+  - IF `activePath` length < 2 Finished moving to destination:
     - IF `isMoving` is true:
       - Set `isMoving` to false.
       - Set `activePath` to empty.
+    - IF `movementPoints` <= 0 No movement left, mark action as done:
+      - Set `turnPhase.hasMoved` to true.
     - RETURN.
   - Wait 300ms.
   - Get next step `nextPos` = `activePath[1]`.
@@ -123,8 +125,8 @@
       - Remove monster from `@GameSession.monsters`.
         ELSE IF `newBody` > 0:
       - Update monster's state in `@GameSession.monsters` with new `currentBody`.
-    - Set `turnPhase` to include `hasPerformedAction` true.
-    - IF the Hero has started to move before attack set `turnPhase` to include `hasMoved` true.
+    - Set `turnPhase.hasPerformedAction` as true.
+    - IF the Hero has started to move before attack set `turnPhase.hasMoved` as true.
     - Set `lastAttack` on session to {hero:@HeroState,monster:@MonsterState,combatResult: @CombatResult} for potential UI display.
     - Trigger `onUpdateSession`.
 
@@ -133,7 +135,8 @@
 - **Contract**: Manually marks the turn action as completed (e.g., after searching).
 - **Signature**: `()`
 - **Flow**:
-  - Set `turnPhase` to include `hasPerformedAction` true.
+  - Set `turnPhase.hasPerformedAction` true.
+  - if `isMovingStarted` is true set `turnPhase.hasMoved` as true.
 
 #### endTurn
 
@@ -144,7 +147,8 @@
   - Increment `gameSession.currentTurn`.
   - IF `currentTurn` > number of heroes, reset to 1 (and potentially trigger Monster turn in future).
   - Reset all the prop in the object `turnPhase` to false.
-  - Reset `movementPoints` to 0.
+  - Reset `movementPoints` to null.
+  - Set `isMovingStarted` to false.
   - Trigger `onUpdateSession`.
 
-- **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, hasActed, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`
+- **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving,  rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`

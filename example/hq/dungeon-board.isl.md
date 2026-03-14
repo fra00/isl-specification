@@ -14,6 +14,7 @@
 > **Reference**: @Hero, @Monster in `./domain-ruleset.isl.md`
 > **Reference**: @useDungeonFurniture in `./dungeon-use-furniture.isl.md`
 > **Reference**: @useDungeonDoors in `./dungeon-use-doors.isl.md`
+> **Reference**: @useDungeonVisibleMonsters in `./dungeon-use-visible-monsters.isl.md`
 
 ## Component: DungeonBoard
 
@@ -28,6 +29,7 @@
 - `onMonsterClick`: (monsterId: Integer) -> void (Callback when a monster is clicked).
 - `hoveredPath`: List of {x, y} (Path to highlight).
 - `secretPassages`: List of {x: Integer, y: Integer, img: String} (List of discovered secret passages).
+- `treasures`: List of {x: Integer, y: Integer, img: String} (List of discovered treasures).
 
 ### 🔍 Appearance
 
@@ -52,9 +54,13 @@
   - **Data Source**: Derive `visibleDoors` using `useDungeonDoors(@GameSession, @VisibilityMap)`.
   - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. do not scale
 - **Monsters**: Visual tokens for `@GameSession.monsters` (@MonsterState) at their x,y coordinates (start from 1).
+  - **Data Source**: Derive `visibleMonsters` using `useDungeonVisibleMonsters(@GameSession, @VisibilityMap)`.
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
 - **Secret Passages**: Visual elements for discovered secret passages.
   - **Data Source**: `secretPassages` prop.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
+- **Treasures**: Visual elements for discovered treasures.
+  - **Data Source**: `treasures` prop.
   - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).

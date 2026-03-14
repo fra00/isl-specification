@@ -6,46 +6,32 @@
  * Edit the ISL file instead.
  */
 
-import React, { useEffect } from 'react';
+import { useEffect } from "react";
 
-const DungeonNotification = ({ message, duration = 3000, onClose }) => {
-  // Capability: autoClose
-  // Automatically closes the notification after `duration`.
-  // Trigger: When `message` changes and is not null.
-  // Flow:
-  // - Set a timeout for `duration` ms.
-  // - On timeout, trigger `onClose`.
-  // - Cleanup timeout on unmount or if message changes.
+export default function DungeonNotification({ message, duration = 3000, onClose }) {
   useEffect(() => {
-    let timer;
-    if (message) {
-      timer = setTimeout(() => {
-        onClose();
-      }, duration);
+    if (!message) {
+      return;
     }
 
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
+    const timer = setTimeout(() => {
+      if (onClose) {
+        onClose();
       }
-    };
-  }, [message, duration, onClose]); // Dependencies: message, duration, and onClose for re-evaluation
+    }, duration);
 
-  // If message is null or empty, component is hidden.
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [message, duration, onClose]);
+
   if (!message) {
     return null;
   }
 
   return (
-    <div
-      className="fixed top-20 left-1/2 -translate-x-1/2
-                 bg-black/80 border border-yellow-500
-                 text-white font-bold text-lg p-4 rounded-lg
-                 z-[100] transition-opacity duration-300 ease-out"
-    >
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-lg p-4 rounded-lg shadow-lg animate-fade-in-out">
       {message}
     </div>
   );
-};
-
-export default DungeonNotification;
+}

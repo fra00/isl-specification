@@ -6,113 +6,111 @@
  * Edit the ISL file instead.
  */
 
-import { Monster, Item, Equipment } from "./domain-ruleset";
+export const MapHeader = (data = {}) => ({
+  descrizione: String(data?.descrizione || ""),
+  mostro_uscita: String(data?.mostro_uscita || ""),
+  nfine: Number(data?.nfine || 0)
+});
 
 export const BlockCellArea = (data = {}) => ({
-  antroc: data.antroc ?? false,
-  inv: data.inv ?? false,
+  antroc: Boolean(data?.antroc || false),
+  inv: Boolean(data?.inv || false)
 });
 
 export const MapCellFurniture = (data = {}) => ({
-  num: data.num ?? null,
-  img: data.img ?? "",
+  num: data?.num != null ? Number(data.num) : null,
+  img: String(data?.img || "")
 });
 
 export const MapCellMonster = (data = {}) => ({
-  mosid: data.mosid ?? null,
-  mos: data.mos ?? false,
-  corpo: data.corpo ?? 0,
+  mosid: Number(data?.mosid || 0),
+  mos: Boolean(data?.mos || false),
+  corpo: Number(data?.corpo || 0)
 });
 
 export const MapCellTreasure = (data = {}) => ({
-  mon: data.mon ?? 0,
-  ogg: data.ogg ?? null,
-  arma: data.arma ?? null,
-  trp: data.trp ?? null,
+  mon: Number(data?.mon || 0),
+  ogg: Number(data?.ogg || 0),
+  arma: Number(data?.arma || 0),
+  trp: Number(data?.trp || 0)
 });
 
 export const MapCellPassage = (data = {}) => ({
-  ps: data.ps ?? null,
-  oriz: data.oriz ?? false,
+  ps: data?.ps != null ? Number(data.ps) : null,
+  oriz: Boolean(data?.oriz || false)
 });
 
 export const MapCellTrap = (data = {}) => ({
-  tipo: data.tipo ?? 0,
+  tipo: Number(data?.tipo || 0)
 });
 
 export const MapCell = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  arnt: BlockCellArea(data.arnt),
-  mobili: MapCellFurniture(data.mobili),
-  mostab: MapCellMonster(data.mostab),
-  tes: MapCellTreasure(data.tes),
-  psgg: MapCellPassage(data.psgg),
-  trpl: MapCellTrap(data.trpl),
-  fine: data.fine ?? "",
-});
-
-export const MapHeader = (data = {}) => ({
-  descrizione: data.descrizione ?? "",
-  mostro_uscita: data.mostro_uscita ?? null,
-  nfine: data.nfine ?? 0,
+  x: Number(data?.x || 0),
+  y: Number(data?.y || 0),
+  arnt: BlockCellArea(data?.arnt),
+  mobili: MapCellFurniture(data?.mobili),
+  mostab: MapCellMonster(data?.mostab),
+  tes: MapCellTreasure(data?.tes),
+  psgg: MapCellPassage(data?.psgg),
+  trpl: MapCellTrap(data?.trpl),
+  fine: String(data?.fine || "")
 });
 
 export const MapHeroStart = (data = {}) => ({
-  id: data.id ?? 0,
-  x: data.x ?? 0,
-  y: data.y ?? 0,
+  id: Number(data?.id || 0),
+  x: Number(data?.x || 0),
+  y: Number(data?.y || 0)
 });
 
 export const MapDoor = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  oriz: data.oriz ?? false,
+  x: Number(data?.x || 0),
+  y: Number(data?.y || 0),
+  oriz: Boolean(data?.oriz || false)
 });
 
 export const MapScript = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  text: data.text ?? "",
-  evento: data.evento ?? 0,
+  x: Number(data?.x || 0),
+  y: Number(data?.y || 0),
+  text: String(data?.text || ""),
+  evento: Number(data?.evento || 0)
 });
 
 export const MapDefinition = (data = {}) => ({
-  header: MapHeader(data.header),
-  grid: (data.grid ?? []).map(MapCell),
-  eroi_start: (data.eroi_start ?? []).map(MapHeroStart),
-  porte: (data.porte ?? []).map(MapDoor),
-  scripts: (data.scripts ?? []).map(MapScript),
+  header: MapHeader(data?.header),
+  grid: Array.isArray(data?.grid) ? data.grid.map(MapCell) : [],
+  eroi_start: Array.isArray(data?.eroi_start) ? data.eroi_start.map(MapHeroStart) : [],
+  porte: Array.isArray(data?.porte) ? data.porte.map(MapDoor) : [],
+  scripts: Array.isArray(data?.scripts) ? data.scripts.map(MapScript) : []
 });
 
 export const Mission = (data = {}) => ({
-  ordine: data.ordine ?? 0,
-  file: data.file ?? "",
-  titolo: data.titolo ?? "",
+  ordine: Number(data?.ordine || 0),
+  file: String(data?.file || ""),
+  titolo: String(data?.titolo || "")
 });
 
 export const Campaign = (data = {}) => ({
-  nome_campagna: data.nome_campagna ?? "",
-  missioni: (data.missioni ?? []).map(Mission),
+  nome_campagna: String(data?.nome_campagna || ""),
+  missioni: Array.isArray(data?.missioni) ? data.missioni.map(Mission) : []
 });
 
 export const VisibilityCell = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  valo: data.valo ?? "",
-  vis1: data.vis1 ?? "",
-  vis2: data.vis2 ?? "",
-  fog: data.fog ?? true,
+  x: Number(data?.x || 0),
+  y: Number(data?.y || 0),
+  valo: String(data?.valo || ""),
+  vis1: String(data?.vis1 || ""),
+  vis2: String(data?.vis2 || ""),
+  fog: data?.fog !== undefined ? Boolean(data.fog) : true
 });
 
 export const VisibilityMap = (data = {}) => ({
-  source: data.source ?? "",
-  image: data.image ?? "",
-  data: (data.data ?? []).map(VisibilityCell),
+  source: String(data?.source || ""),
+  image: String(data?.image || ""),
+  data: Array.isArray(data?.data) ? data.data.map(VisibilityCell) : []
 });
 
 export const GameScript = (data = {}) => ({
-  command: data.command ?? "",
-  params: data.params ?? 0,
-  isOneTime: data.isOneTime ?? false,
+  command: String(data?.command || ""),
+  params: Number(data?.params || 0),
+  isOneTime: Boolean(data?.isOneTime || false)
 });

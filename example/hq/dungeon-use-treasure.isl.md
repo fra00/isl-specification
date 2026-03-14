@@ -1,0 +1,113 @@
+# Project: Heroquest React
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.1
+**Created**: 2026-02-14
+**Implementation**: ./dungeon-use-treasure
+
+---
+
+> **Reference**: @GameSession in `./domain-session.isl.md`
+> **Reference**: @VisibilityMap in `./domain-map.isl.md`
+> **Reference**: @MapCellTreasure in `./domain-map.isl.md`
+> **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
+> **Reference**: @TreasureCard in `./domain-ruleset.isl.md`
+
+## Component: useTreasureSearch
+
+### Role: Business Logic
+
+**Signature**:
+
+- `gameSession`: @GameSession
+- `visibilityMap`: @VisibilityMap
+- `onNotify`: (message: String) -> void
+- `onActionDone`: () -> void
+- `onUpdateSession`: (session: @GameSession) -> void
+- `onTreasureCardDrawn`: (card: @TreasureCard) -> void
+
+### ⚡ Capabilities
+
+#### internalState
+
+- `foundTreasures`: List of {x: Integer, y: Integer, img: String} (Stores discovered treasures).
+- `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
+
+#### searchTreasure
+
+- **Contract**: Scans the current area for treasures.
+- **Trigger**: User clicks "Search Treasure".
+- **Flow**:
+  - IF `gameSession.monsters` is NOT empty:
+    - Trigger `onNotify("Non puoi cercare tesori con mostri vicini!")`
+    - RETURN.
+  - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
+  - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
+  - Initialize `treasureFound` as false.
+  - FOR each `cell` in `visibleCells`:
+    - Find corresponding `mapCell` in `gameSession.currentMap.grid` at `cell.x`, `cell.y`.
+    - IF `mapCell` exists:
+      - Check if `mapCell` has `tes` (Treasure property).
+      - IF `mapCell.tes` (@MapCellTreasure) have `mon` is NOT 0 OR `ogg` is NOT 0 OR `arma` is NOT 0 OR `trp` is NOT 0:
+        - Check if already found: IF (x, y) NOT in `foundTreasures`:
+          - Set `treasureFound` to true.
+          - Add `{x: mapCell.x, y: mapCell.y, img: "tesoro.jpg"}` to `foundTreasures`.
+          - Find `currentHero` in `gameSession.heroes` matching `gameSession.currentTurn`.
+          - IF `currentHero` is found:
+            - Initialize `notificationParts` as an empty list.
+            - IF `mapCell.tes.mon` > 0:
+              - Increase `currentHero.gold` by `mapCell.tes.mon`.
+              - Add "Hai trovato " + `mapCell.tes.mon` + " monete d'oro!" to `notificationParts`.
+            - IF `mapCell.tes.ogg` > 0:
+              - Add `mapCell.tes.ogg` to `currentHero.inventory`.
+              - Add "Hai trovato un oggetto!" to `notificationParts`.
+            - IF `mapCell.tes.arma` > 0:
+              - Add `mapCell.tes.arma` to `currentHero.inventory`.
+              - Add "Hai trovato un'arma!" to `notificationParts`.
+            - IF `mapCell.tes.trp` > 0:
+              - Add `-mapCell.tes.trp` to `currentHero.currentBody`.
+              - Add "È una trappola! Subisci " + `mapCell.tes.trp` + " danni." to `notificationParts`.
+            - Trigger `onNotify` with `notificationParts` joined by a newline.
+            - Set the `tes` property of the `mapCell` at `(cell.x, cell.y)` in `gameSession.currentMap.grid` to all zeros to prevent it from being found again.
+            - Trigger `onUpdateSession` with the updated `gameSession`.
+          - BREAK the loop (only one treasure per search action).
+  - IF `treasureFound` is true:
+    - // Specific notifications are handled inside the loop.
+  - ELSE:
+    - IF `gameSession.treasureDeck` is not empty:
+      - Draw top card from `gameSession.treasureDeck` -> `drawnCard`.
+      - Remove `drawnCard` from `gameSession.treasureDeck`.
+      - Trigger `onTreasureCardDrawn(drawnCard)`.
+      - Trigger `onUpdateSession` with updated `treasureDeck`.
+    - ELSE:
+      - Trigger `onNotify("Nessuna carta tesoro rimasta.")`.
+  - Trigger `onActionDone()`.
+
+#### getFoundTreasures
+
+- **Contract**: Returns the list of visible treasures.
+- **Return**: `foundTreasures`.
+
+#### applyTreasureEffect
+
+- **Contract**: Applies the effect of a treasure card to the current hero.
+- **Signature**: `(card: @TreasureCard)`
+- **Flow**:
+  - Find `currentHero` in `gameSession.heroes` matching `gameSession.currentTurn`.
+  - IF `currentHero` is found:
+    - SWITCH `card.azione`:
+      - CASE "aggiungi_oro":
+        - Increase `currentHero.gold` by `card.valore`.
+        - Trigger `onNotify("Hai trovato " + card.valore + " monete d'oro!")`.
+      - CASE "aggiungi_oggetto":
+        - Add `card.valore` (item name/id) to `currentHero.inventory`.
+        - Trigger `onNotify("Hai trovato un oggetto: " + card.valore)`.
+      - CASE "modifica_hp":
+        - Add `card.valore` to `currentHero.currentBody`.
+        - Trigger `onNotify("Punti Corpo modificati!")`.
+      - CASE "trappola_e_fine":
+        - Add `card.valore` to `currentHero.currentBody`.
+        - Trigger `onNotify("Trappola! Subisci danni.")`.
+      - CASE "mostro_errante":
+        - Trigger `onNotify("Mostro Errante! (TODO)")`.
+    - Trigger `onUpdateSession` with updated `gameSession`.

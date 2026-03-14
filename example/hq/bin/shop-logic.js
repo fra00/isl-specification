@@ -11,85 +11,103 @@ import { GameSession, HeroState } from "./domain-session";
 
 /**
  * Loads static data for Heroes and Equipment.
- * @returns {Promise<{ heroes: Array<object>, items: Array<object> }>} Combined data object.
+ * Fetches from JSON endpoints and filters equipment with a price greater than 0.
+ * 
+ * @returns {Promise<{ heroes: Array<object>, items: Array<object> }>}
  */
-export async function loadShopData() {
-  const [heroesResponse, equipmentResponse] = await Promise.all([
-    fetch("/jsonData/heroes.json"),
-    fetch("/jsonData/equipment.json"),
-  ]);
+export const loadShopData = async () => {
+    try {
+        const [heroesResponse, equipmentResponse] = await Promise.all([
+            fetch('/jsonData/heroes.json'),
+            fetch('/jsonData/equipment.json')
+        ]);
 
-  const heroesData = await heroesResponse.json();
-  const equipmentData = await equipmentResponse.json();
+        const heroesJson = await heroesResponse.json();
+        const equipmentJson = await equipmentResponse.json();
 
-  const heroes = (heroesData || []).map(data => Hero(data));
-  const items = (equipmentData || [])
-    .filter(item => item.prezzo > 0)
-    .map(data => Equipment(data));
+        const heroesData = Array.isArray(heroesJson) ? heroesJson : [];
+        const equipmentData = Array.isArray(equipmentJson) ? equipmentJson : [];
 
-  return { heroes, items };
-}
+        const heroes = heroesData.map(h => Hero(h));
+        const items = equipmentData
+            .map(e => Equipment(e))
+            .filter(item => (item.prezzo ?? 0) > 0);
+
+        return { heroes, items };
+    } catch (error) {
+        console.error("Failed to load shop data:", error);
+        return { heroes: [], items: [] };
+    }
+};
 
 /**
  * Checks if a hero is allowed to buy a specific item.
- * @param {object} heroState - The current state of the hero.
- * @param {object} item - The equipment item to purchase.
- * @returns {{ allowed: boolean, reason: string }} Purchase validation result.
+ * 
+ * @param {object} heroState - The current state of the hero
+ * @param {object} item - The equipment item to validate
+ * @returns {{ allowed: boolean, reason: string }}
  */
-export function validatePurchase(heroState, item) {
-  if (!heroState || !item) {
-    return { allowed: false, reason: "Invalid hero state or item provided." };
-  }
+export const validatePurchase = (heroState, item) => {
+    if (!heroState || !item) {
+        return { allowed: false, reason: "Invalid data provided" };
+    }
 
-  if (heroState.gold < item.prezzo) {
-    return { allowed: false, reason: "Not enough gold" };
-  }
+    const currentGold = heroState.gold ?? 0;
+    const itemPrice = item.prezzo ?? 0;
 
-  if ((heroState.equipment || []).includes(item.id)) {
-    return { allowed: false, reason: "Already owned" };
-  }
+    if (currentGold < itemPrice) {
+        return { allowed: false, reason: "Not enough gold" };
+    }
 
-  if (item.nopsg === true && item.nopsgid === heroState.heroId) {
-    return { allowed: false, reason: "Forbidden for class" };
-  }
+    const equipmentList = heroState.equipment || [];
+    if (equipmentList.includes(item.id)) {
+        return { allowed: false, reason: "Already owned" };
+    }
 
-  if (item.solopsg === true && item.solopsgid !== heroState.heroId) {
-    return { allowed: false, reason: "Exclusive to other class" };
-  }
+    if (item.nopsg === true && item.nopsgid === heroState.heroId) {
+        return { allowed: false, reason: "Forbidden for class" };
+    }
 
-  return { allowed: true, reason: "" };
-}
+    if (item.solopsg === true && item.solopsgid !== heroState.heroId) {
+        return { allowed: false, reason: "Exclusive to other class" };
+    }
+
+    return { allowed: true, reason: "" };
+};
 
 /**
  * Performs the purchase transaction and returns the updated game session.
- * @param {object} session - The current game session.
- * @param {number} heroIndex - The index of the hero in the session's heroes list.
- * @param {object} item - The equipment item being purchased.
- * @returns {object} The updated game session.
+ * 
+ * @param {object} session - The current game session
+ * @param {number} heroIndex - The index of the hero making the purchase
+ * @param {object} item - The equipment item being purchased
+ * @returns {object} The updated game session
  */
-export function executePurchase(session, heroIndex, item) {
-  // Clone the session object to avoid mutation
-  const newSession = GameSession({ ...session });
+export const executePurchase = (session, heroIndex, item) => {
+    if (!session || !session.heroes || !item) {
+        return session;
+    }
 
-  // Ensure heroes array exists and heroIndex is valid
-  if (!newSession.heroes || heroIndex < 0 || heroIndex >= newSession.heroes.length) {
-    console.error("Invalid heroIndex or heroes array in session.");
-    return session; // Return original session if invalid
-  }
+    const currentHeroState = session.heroes[heroIndex];
+    if (!currentHeroState) {
+        return session;
+    }
 
-  const currentHeroState = newSession.heroes[heroIndex];
+    const currentGold = currentHeroState.gold ?? 0;
+    const itemPrice = item.prezzo ?? 0;
+    const currentEquipment = currentHeroState.equipment || [];
 
-  // Create a new HeroState with updated gold and equipment
-  const updatedHeroState = HeroState({
-    ...currentHeroState,
-    gold: currentHeroState.gold - item.prezzo,
-    equipment: [...(currentHeroState.equipment || []), item.id], // Ensure equipment is an array
-  });
+    const updatedHeroState = HeroState({
+        ...currentHeroState,
+        gold: currentGold - itemPrice,
+        equipment: [...currentEquipment, item.id]
+    });
 
-  // Update the session.heroes list with the new HeroState
-  newSession.heroes = newSession.heroes.map((hero, index) =>
-    index === heroIndex ? updatedHeroState : hero
-  );
+    const updatedHeroes = [...session.heroes];
+    updatedHeroes[heroIndex] = updatedHeroState;
 
-  return newSession;
-}
+    return GameSession({
+        ...session,
+        heroes: updatedHeroes
+    });
+};

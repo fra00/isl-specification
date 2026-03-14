@@ -53,7 +53,7 @@ if (require.main === module) {
   const isReverse = args.includes("--reverse");
   const isArchitect = args.includes("--architect");
   const modelArg = args
-    .find((arg) => arg.startsWith("--model="))
+    .find((arg) => arg.startsWith("--model=") || arg.startsWith("--v="))
     ?.split("=")[1];
   const urlArg = args.find((arg) => arg.startsWith("--url="))?.split("=")[1];
   const positionalArgs = args.filter((arg) => !arg.startsWith("--"));
@@ -104,7 +104,22 @@ if (require.main === module) {
     inputContent = fs.readFileSync(inputArg, "utf-8");
   } else {
     // Design Mode: inputArg is description (or file containing description)
-    if (inputArg && fs.existsSync(inputArg) && fs.statSync(inputArg).isFile()) {
+    const inputPathInOutputDir = inputArg
+      ? path.resolve(outputDir, inputArg)
+      : "";
+
+    if (
+      inputArg &&
+      fs.existsSync(inputPathInOutputDir) &&
+      fs.statSync(inputPathInOutputDir).isFile()
+    ) {
+      console.log(`📖 Reading description from file: ${inputPathInOutputDir}`);
+      inputContent = fs.readFileSync(inputPathInOutputDir, "utf-8");
+    } else if (
+      inputArg &&
+      fs.existsSync(inputArg) &&
+      fs.statSync(inputArg).isFile()
+    ) {
       console.log(`📖 Reading description from file: ${inputArg}`);
       inputContent = fs.readFileSync(inputArg, "utf-8");
     } else if (inputArg) {

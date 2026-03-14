@@ -1,0 +1,1 @@
+export default function DataManagementPresentation(props: { dataManagementLogic: ReturnType<typeof DataManagementLogic>; ConfirmationDialog: React.ComponentType<{ isOpen: boolean; message: string; onConfirm: () => void; onCancel?: () => void }>; }): React.Element;

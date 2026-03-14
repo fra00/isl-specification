@@ -22,7 +22,8 @@
 - `onRollMovement`: () -> void (Callback to roll for movement).
 - `onEndTurn`: () -> void (Callback to end the turn).
 - `onSearchPassages`: () -> void (Callback to search for secret passages).
-- `hasActed`: Boolean (True if action is allowed).
+- `onSearchTreasure`: () -> void (Callback to search for treasure).
+- `onOpenInventory`: () -> void (Callback to open inventory modal).
 
 ### 🔍 Appearance
 
@@ -40,20 +41,30 @@
 - **Info Section**:
   - Display `currentHero.hero.classe` (or "Unknown" if null).
   - Display `movementPoints`.
+  - Display Gold.
+  - Display Health.
+  - Display Intelligence.
+  - Display Attack.
+  - Display Defense.
+- **Inventary Section**
+  - **Inventory button**
+    - Style: Blue primary button.
+    - OnClick: Trigger `onOpenInventory`.
 - **Action Buttons**:
   - **Roll Movement**:
-    - Diabled IF `turnPhase` have `movementPoints` > 0 OR `hasMoved` true
+    - Diabled IF `turnPhase.hasMoved` is true.
     - Style: Blue primary button.
     - OnClick: Trigger `onRollMovement`.
   - **Search Passages**:
-    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Disabled IF `turnPhase.hasPerformedAction` is true.
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchPassages`.
   - **Search Treasure**:
-    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Disabled IF `turnPhase.hasPerformedAction` is true.
     - Style: Yellow/Orange button.
+    - OnClick: Trigger `onSearchTreasure`.
   - **Search Trap**:
-    - Disabled IF `turnPhase` have `hasPerformedAction` true.
+    - Disabled IF `turnPhase.hasPerformedAction` is true.
     - Style: Yellow/Orange button.
   - **End Turn**:
     - Style: Red danger button.

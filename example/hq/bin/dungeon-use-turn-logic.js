@@ -6,218 +6,245 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameSession, HeroState, MonsterState, TurnPhase } from './domain-session';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathfinding } from './dungeon-use-pathfinding';
 import { useCombatLogic } from './dungeon-use-combat';
+import { TurnPhase } from './domain-session';
 
 export function useTurnLogic({ gameSession, visibilityMap, onUpdateSession }) {
-  // Internal State
-  const [turnPhase, setTurnPhase] = useState({ hasMoved: false, hasPerformedAction: false, isTurnFinished: false });
-  const [movementPoints, setMovementPoints] = useState(0);
-  const [hoveredPath, setHoveredPath] = useState([]);
-  const [canAttack, setCanAttack] = useState(false);
-  const [isMoving, setIsMoving] = useState(false);
-  const [activePath, setActivePath] = useState([]);
+    // Internal State
+    const [turnPhase, setTurnPhase] = useState(() => TurnPhase());
+    const [movementPoints, setMovementPoints] = useState(null);
+    const [hoveredPath, setHoveredPath] = useState([]);
+    const [canAttack, setCanAttack] = useState(false);
+    const [isMoving, setIsMoving] = useState(false);
+    const [isMovingStarted, setIsMovingStarted] = useState(false);
+    const [activePath, setActivePath] = useState([]);
 
-  // Hook instances
-  const { calculatePath } = usePathfinding({ gameSession, visibilityMap });
-  const { resolveCombat } = useCombatLogic();
+    // Refs for stable access in effects without triggering re-renders
+    const sessionRef = useRef(gameSession);
+    const updateSessionRef = useRef(onUpdateSession);
 
-  // Helper to get the current active hero
-  const getCurrentHero = useCallback(() => {
-    return gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
-  }, [gameSession.heroes, gameSession.currentTurn]);
+    useEffect(() => {
+        sessionRef.current = gameSession;
+        updateSessionRef.current = onUpdateSession;
+    }, [gameSession, onUpdateSession]);
 
-  // Capability: updateCanAttack
-  useEffect(() => {
-    const currentHero = getCurrentHero();
-    if (!currentHero || turnPhase.hasPerformedAction) {
-      setCanAttack(false);
-      return;
-    }
+    // Hooks
+    const { calculatePath } = usePathfinding({ gameSession, visibilityMap });
+    const { resolveCombat } = useCombatLogic();
 
-    let attackPossible = false;
-    for (const monster of gameSession.monsters) {
-      // Manhattan distance <= 1 for attack range
-      const distance = Math.abs(currentHero.x - monster.x) + Math.abs(currentHero.y - monster.y);
-      if (distance <= 1) {
-        attackPossible = true;
-        break;
-      }
-    }
-    setCanAttack(attackPossible);
-  }, [gameSession.monsters, getCurrentHero, turnPhase.hasPerformedAction]);
+    // Helper to get current hero
+    const getCurrentHero = useCallback(() => {
+        return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
+    }, [gameSession?.heroes, gameSession?.currentTurn]);
 
-  // Capability: rollMovement
-  const rollMovement = useCallback(() => {
-    if (isMoving) return;
-    const roll1 = Math.floor(Math.random() * 6) + 1;
-    const roll2 = Math.floor(Math.random() * 6) + 1;
-    setMovementPoints(roll1 + roll2);
-    setTurnPhase(prev => ({ ...prev, hasMoved: true }));
-  }, [isMoving]);
+    // Capability: updateCanAttack
+    useEffect(() => {
+        let attackPossible = false;
+        const currentHero = getCurrentHero();
 
-  // Capability: handleBoardHover
-  const handleBoardHover = useCallback((x, y) => {
-    if (movementPoints <= 0 || isMoving) {
-      setHoveredPath([]);
-      return;
-    }
+        if (!turnPhase.HasPerformedAction && currentHero && gameSession?.monsters) {
+            for (const monster of gameSession.monsters) {
+                const heroX = currentHero.x || 0;
+                const heroY = currentHero.y || 0;
+                const monsterX = monster.x || 0;
+                const monsterY = monster.y || 0;
+                
+                // Manhattan distance <= 1
+                const distance = Math.abs(heroX - monsterX) + Math.abs(heroY - monsterY);
+                
+                if (distance <= 1) {
+                    attackPossible = true;
+                    break;
+                }
+            }
+        }
+        
+        setCanAttack(attackPossible);
+    }, [gameSession?.monsters, getCurrentHero, turnPhase.HasPerformedAction]);
 
-    const currentHero = getCurrentHero();
-    if (!currentHero) {
-      setHoveredPath([]);
-      return;
-    }
+    // Capability: rollMovement
+    const rollMovement = useCallback(() => {
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        setMovementPoints(dice1 + dice2);
+    }, []);
 
-    const path = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+    // Capability: handleBoardHover
+    const handleBoardHover = useCallback((x, y) => {
+        if (movementPoints == null || movementPoints <= 0 || isMoving) {
+            setHoveredPath([]);
+            return;
+        }
+        
+        const currentHero = getCurrentHero();
+        if (!currentHero) return;
 
-    if (path.length > 0) {
-      // Prepend current hero position to path to show full path from start
-      setHoveredPath([{ x: currentHero.x, y: currentHero.y }, ...path]);
-    } else {
-      setHoveredPath([]);
-    }
-  }, [movementPoints, isMoving, getCurrentHero, calculatePath]);
+        const path = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+        
+        if (path && path.length > 0) {
+            setHoveredPath([{ x: currentHero.x, y: currentHero.y }, ...path]);
+        } else {
+            setHoveredPath([]);
+        }
+    }, [movementPoints, isMoving, getCurrentHero, calculatePath]);
 
-  // Capability: handleBoardClick
-  const handleBoardClick = useCallback((x, y) => {
-    if (isMoving || movementPoints <= 0) return;
+    // Capability: handleBoardClick
+    const handleBoardClick = useCallback((x, y) => {
+        if (isMoving || movementPoints == null || movementPoints <= 0) return;
+        
+        setIsMovingStarted(true);
+        const currentHero = getCurrentHero();
+        if (!currentHero) return;
 
-    const currentHero = getCurrentHero();
-    if (!currentHero) return;
+        let path = [...hoveredPath];
+        
+        // Robustness Check: if path is empty or destination doesn't match
+        if (path.length === 0 || path[path.length - 1]?.x !== x || path[path.length - 1]?.y !== y) {
+            const calculatedPath = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+            if (calculatedPath && calculatedPath.length > 0) {
+                path = [{ x: currentHero.x, y: currentHero.y }, ...calculatedPath];
+            }
+        }
 
-    let path = hoveredPath;
+        if (path.length > 1 && path[path.length - 1]?.x === x && path[path.length - 1]?.y === y) {
+            setIsMoving(true);
+            setActivePath([...path]);
+            setHoveredPath([]);
+        }
+    }, [isMoving, movementPoints, hoveredPath, getCurrentHero, calculatePath]);
 
-    // Robustness Check: IF path is empty OR last point of path is NOT (x, y)
-    if (path.length === 0 || path[path.length - 1].x !== x || path[path.length - 1].y !== y) {
-      const calculatedPath = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
-      if (calculatedPath.length > 0) {
-        path = [{ x: currentHero.x, y: currentHero.y }, ...calculatedPath];
-      } else {
-        // If calculated path is also invalid, do nothing
-        return;
-      }
-    }
+    // Capability: movementEffect
+    useEffect(() => {
+        if (activePath.length === 0) return;
 
-    if (path.length > 1 && path[path.length - 1].x === x && path[path.length - 1].y === y) {
-      setIsMoving(true);
-      setActivePath([...path]); // Copy to ensure new reference
-      setHoveredPath([]);
-    }
-  }, [isMoving, movementPoints, hoveredPath, getCurrentHero, calculatePath]);
+        if (activePath.length < 2) {
+            if (isMoving) {
+                setIsMoving(false);
+                setActivePath([]);
+            }
+            if (movementPoints != null && movementPoints <= 0) {
+                setTurnPhase(prev => ({ ...prev, HasMoved: true }));
+            }
+            return;
+        }
 
-  // Capability: movementEffect
-  useEffect(() => {
-    if (activePath.length < 2) {
-      if (isMoving) {
-        setIsMoving(false);
-        setActivePath([]);
-      }
-      return;
-    }
+        const timer = setTimeout(() => {
+            const nextPos = activePath[1];
+            const currentSession = sessionRef.current;
+            const updateSession = updateSessionRef.current;
+            
+            if (currentSession && updateSession) {
+                const updatedHeroes = currentSession.heroes.map(h => {
+                    if (h.turnOrder === currentSession.currentTurn) {
+                        return { ...h, x: nextPos.x, y: nextPos.y };
+                    }
+                    return h;
+                });
+                
+                updateSession({
+                    ...currentSession,
+                    heroes: updatedHeroes
+                });
+            }
 
-    const currentHero = getCurrentHero();
-    if (!currentHero) {
-      setIsMoving(false);
-      setActivePath([]);
-      return;
-    }
+            setMovementPoints(prev => (prev != null ? prev - 1 : 0));
+            setActivePath(prev => prev.slice(1));
+        }, 300);
 
-    const timer = setTimeout(() => {
-      const nextPos = activePath[1];
+        return () => clearTimeout(timer);
+    }, [activePath, isMoving, movementPoints]);
 
-      const updatedHeroes = gameSession.heroes.map(h =>
-        h.heroId === currentHero.heroId ? { ...h, x: nextPos.x, y: nextPos.y } : h
-      );
+    // Capability: handleMonsterClick
+    const handleMonsterClick = useCallback((monsterId) => {
+        const currentSession = sessionRef.current;
+        const updateSession = updateSessionRef.current;
+        if (!currentSession || !updateSession) return;
 
-      const newGameSession = { ...gameSession, heroes: updatedHeroes };
-      onUpdateSession(newGameSession);
+        const monster = currentSession.monsters?.find(m => m.id === monsterId);
+        const currentHero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
 
-      setMovementPoints(prev => Math.max(0, prev - 1));
-      setActivePath(prev => prev.slice(1)); // Remove the first element
-    }, 300);
+        if (monster && currentHero && canAttack && !isMoving) {
+            const combatResult = resolveCombat(currentHero, monster);
+            const newBody = Math.max(0, (monster.currentBody || 0) - (combatResult?.damageDealt || 0));
+            
+            let updatedMonsters = [...(currentSession.monsters || [])];
+            
+            if (newBody <= 0) {
+                updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
+            } else {
+                updatedMonsters = updatedMonsters.map(m => 
+                    m.id === monsterId ? { ...m, currentBody: newBody } : m
+                );
+            }
 
-    return () => clearTimeout(timer); // Cleanup on unmount or dependency change
-  }, [activePath, isMoving, gameSession, onUpdateSession, getCurrentHero]);
+            setTurnPhase(prev => {
+                const nextPhase = { ...prev, HasPerformedAction: true };
+                if (isMovingStarted) {
+                    nextPhase.HasMoved = true;
+                }
+                return nextPhase;
+            });
 
-  // Capability: handleMonsterClick
-  const handleMonsterClick = useCallback((monsterId) => {
-    const monster = gameSession.monsters.find(m => m.id === monsterId);
-    const currentHero = getCurrentHero();
+            updateSession({
+                ...currentSession,
+                monsters: updatedMonsters,
+                lastAttack: {
+                    hero: currentHero,
+                    monster: { ...monster, currentBody: newBody },
+                    combatResult
+                }
+            });
+        }
+    }, [canAttack, isMoving, isMovingStarted, resolveCombat]);
 
-    if (!monster || !currentHero || !canAttack || isMoving) {
-      return;
-    }
+    // Capability: markActionDone
+    const markActionDone = useCallback(() => {
+        setTurnPhase(prev => {
+            const nextPhase = { ...prev, HasPerformedAction: true };
+            if (isMovingStarted) {
+                nextPhase.HasMoved = true;
+            }
+            return nextPhase;
+        });
+    }, [isMovingStarted]);
 
-    const combatResult = resolveCombat(currentHero, monster);
-    const newBody = monster.currentBody - combatResult.damageDealt;
+    // Capability: endTurn
+    const endTurn = useCallback(() => {
+        if (isMoving) return;
+        
+        const currentSession = sessionRef.current;
+        const updateSession = updateSessionRef.current;
+        if (!currentSession || !updateSession) return;
 
-    let updatedMonsters;
-    if (newBody <= 0) {
-      updatedMonsters = gameSession.monsters.filter(m => m.id !== monsterId);
-    } else {
-      updatedMonsters = gameSession.monsters.map(m =>
-        m.id === monsterId ? { ...m, currentBody: newBody } : m
-      );
-    }
+        let nextTurn = (currentSession.currentTurn || 1) + 1;
+        const numHeroes = currentSession.heroes?.length || 1;
+        
+        if (nextTurn > numHeroes) {
+            nextTurn = 1;
+        }
 
-    const newGameSession = {
-      ...gameSession,
-      monsters: updatedMonsters,
-      lastAttack: { hero: currentHero, monster: monster, combatResult: combatResult }
+        setTurnPhase(TurnPhase({ HasMoved: false, HasPerformedAction: false, IsTurnFinished: false }));
+        setMovementPoints(null);
+        setIsMovingStarted(false);
+
+        updateSession({
+            ...currentSession,
+            currentTurn: nextTurn
+        });
+    }, [isMoving]);
+
+    return {
+        turnPhase,
+        movementPoints,
+        hoveredPath,
+        isMoving,
+        rollMovement,
+        handleBoardHover,
+        handleBoardClick,
+        handleMonsterClick,
+        markActionDone,
+        endTurn
     };
-
-    onUpdateSession(newGameSession);
-
-    setTurnPhase(prev => ({
-      ...prev,
-      hasPerformedAction: true,
-      // hasMoved is set to true when rollMovement is called.
-      // If the hero moved before attacking, prev.hasMoved will already be true.
-      // No need for additional checks here.
-    }));
-  }, [gameSession, getCurrentHero, canAttack, isMoving, resolveCombat, onUpdateSession]);
-
-  // Capability: markActionDone
-  const markActionDone = useCallback(() => {
-    setTurnPhase(prev => ({ ...prev, hasPerformedAction: true }));
-  }, []);
-
-  // Capability: endTurn
-  const endTurn = useCallback(() => {
-    if (isMoving) return;
-
-    const nextTurn = gameSession.currentTurn + 1;
-    const totalHeroes = gameSession.heroes.length;
-    const newCurrentTurn = nextTurn > totalHeroes ? 1 : nextTurn; // Reset to 1 or next hero
-
-    const newGameSession = {
-      ...gameSession,
-      currentTurn: newCurrentTurn,
-    };
-
-    onUpdateSession(newGameSession);
-
-    setTurnPhase({ hasMoved: false, hasPerformedAction: false, isTurnFinished: false }); // Reset all turn phases
-    setMovementPoints(0);
-    setHoveredPath([]);
-    setCanAttack(false);
-    // isMoving and activePath are handled by movementEffect when path finishes
-  }, [isMoving, gameSession, onUpdateSession]);
-
-  return {
-    turnPhase,
-    movementPoints,
-    hoveredPath,
-    isMoving,
-    hasActed: turnPhase.hasPerformedAction, // Expose hasPerformedAction as hasActed
-    rollMovement,
-    handleBoardHover,
-    handleBoardClick,
-    handleMonsterClick,
-    markActionDone,
-    endTurn,
-  };
 }

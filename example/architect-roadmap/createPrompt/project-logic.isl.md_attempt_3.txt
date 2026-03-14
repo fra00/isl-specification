@@ -1,0 +1,1426 @@
+--- ROLE: system ---
+
+You are an expert ISL Developer. You are part of a team building the project "Roadmap Manager".
+
+**YOUR TASK**:
+Write the content for the file: **project-logic.isl.md**
+
+**CONTEXT**:
+- **Role**: Business Logic
+- **Description**: Manages the lifecycle and business rules for Project entities. Orchestrates progress calculation based on linked Epics and derives state. Key Capabilities: createProject(data), getProject(id), getAllProjects(), updateProject(id, data), deleteProject(id).
+- **Dependencies**: ["domain.isl.md","indexed-db-service.isl.md","changelog-logic.isl.md","progress-calculation-logic.isl.md","epic-logic.isl.md","id-generation-logic.isl.md"]
+
+**DEPENDENCY INTERFACES (Read-Only)**:
+
+--- INTERFACE: domain.isl.md ---
+## Domain Concepts
+
+
+### Enum: ProjectStatus
+Defines the possible states for a `@ProjectEntity`.
+- `PLANNING`: The project is in the planning phase.
+- `ACTIVE`: The project is currently active and in progress.
+- `COMPLETED`: The project has been successfully completed.
+- `PAUSED`: The project's work is temporarily suspended.
+
+### Enum: EpicStatus
+Defines the possible states for an `@EpicEntity`.
+- `NOT_STARTED`: The epic has not yet begun.
+- `IN_PROGRESS`: The epic is currently underway.
+- `COMPLETED`: The epic has been completed.
+- `BLOCKED`: The epic is blocked and cannot proceed (manual override).
+
+### Enum: StoryStatus
+Defines the possible states for a `@StoryEntity`.
+- `NOT_STARTED`: The story has not yet begun.
+- `IN_PROGRESS`: The story is currently underway.
+- `COMPLETED`: The story has been completed.
+- `BLOCKED`: The story is blocked and cannot proceed (manual override).
+
+### Enum: Priority
+Defines the urgency or importance level for `@EpicEntity` and `@StoryEntity`.
+- `LOW`
+- `MEDIUM`
+- `HIGH`
+- `CRITICAL`
+
+### Enum: RiskLevel
+Defines the assessed risk level for an `@EpicEntity`.
+- `LOW`
+- `MEDIUM`
+- `HIGH`
+
+### Enum: StoryPoints
+Defines the standard Fibonacci sequence values for estimating `@StoryEntity` effort.
+- `ONE` (1)
+- `TWO` (2)
+- `THREE` (3)
+- `FIVE` (5)
+- `EIGHT` (8)
+- `THIRTEEN` (13)
+- `TWENTY_ONE` (21)
+
+### Enum: ChangelogEntityType
+Defines the types of entities that can be recorded in the `@ChangelogEntry`.
+- `PROJECT`
+- `EPIC`
+- `STORY`
+- `TEAM_MEMBER`
+- `CATEGORY`
+
+### Enum: ImportMode
+Defines the available strategies for importing data.
+- `REPLACE_ALL`: Clears existing data before importing new data.
+- `ADD_TO_EXISTING`: Adds new data to existing data, resolving conflicts by generating new IDs.
+
+### Type: ProjectEntity
+Represents a top-level project container.
+- `id`: `string` (Unique identifier for the project)
+- `name`: `string` (Name of the project)
+- `description`: `string` (Detailed description of the project)
+- `owner`: `string` (Name of the team member responsible for the project, references `@TeamMember.name`)
+- `plannedStartDate`: `string` (ISO 8601 date string, e.g., "YYYY-MM-DD")
+- `plannedEndDate`: `string` (ISO 8601 date string, e.g., "YYYY-MM-DD")
+- `status`: `@ProjectStatus` (Current status of the project)
+- `createdAt`: `string` (ISO 8601 datetime string, timestamp of creation)
+- `updatedAt`: `string` (ISO 8601 datetime string, timestamp of last update)
+
+### Type: EpicEntity
+Represents a major initiative or feature within a project.
+- `id`: `string` (Unique identifier for the epic)
+- `projectId`: `string` (ID of the parent project)
+- `code`: `string` (Auto-generated unique code, e.g., "EP-001")
+- `title`: `string` (Title of the epic)
+- `description`: `string` (Detailed description of the epic)
+- `priority`: `@Priority` (Importance level of the epic)
+- `quarter`: `string` (e.g., "Q1", "Q2", "Q3", "Q4")
+- `year`: `number` (Year of the quarter, e.g., 2023)
+- `plannedStartDate`: `string` (ISO 8601 date string)
+- `plannedEndDate`: `string` (ISO 8601 date string)
+- `category`: `string` (Free text tag or references `@Category.name`)
+- `owner`: `string` (Name of the team member responsible for the epic, references `@TeamMember.name`)
+- `riskLevel`: `@RiskLevel` (Assessed risk level for the epic)
+- `jiraRef`: `string` (Optional reference to a Jira Epic ID or URL)
+- `isBlocked`: `boolean` (Manual flag to indicate if the epic is blocked)
+- `createdAt`: `string` (ISO 8601 datetime string, timestamp of creation)
+- `updatedAt`: `string` (ISO 8601 datetime string, timestamp of last update)
+
+### Type: StoryEntity
+Represents a unit of work within an epic.
+- `id`: `string` (Unique identifier for the story)
+- `epicId`: `string` (ID of the parent epic)
+- `code`: `string` (Auto-generated unique code, e.g., "ST-001")
+- `title`: `string` (Title of the story)
+- `description`: `string` (Detailed description of the story)
+- `priority`: `@Priority` (Importance level of the story)
+- `storyPoints`: `@StoryPoints` (Estimated effort for the story)
+- `assignee`: `string` (Name of the team member assigned to the story, references `@TeamMember.name`)
+- `sprint`: `string` (Name or identifier of the sprint the story belongs to)
+- `plannedStartDate`: `string` (ISO 8601 date string)
+- `plannedEndDate`: `string` (ISO 8601 date string)
+- `jiraRef`: `string` (Optional reference to a Jira Story ID or URL)
+- `notes`: `string` (Additional notes for the story)
+- `externalLinks`: `string[]` (Array of external URLs relevant to the story)
+- `progress`: `number` (0-100, manually entered percentage of completion)
+- `isBlocked`: `boolean` (Manual flag to indicate if the story is blocked)
+- `createdAt`: `string` (ISO 8601 datetime string, timestamp of creation)
+- `updatedAt`: `string` (ISO 8601 datetime string, timestamp of last update)
+
+### Type: ChangelogEntry
+Records historical modifications to entities.
+- `id`: `string` (Unique identifier for the changelog entry)
+- `entityType`: `@ChangelogEntityType` (Type of entity that was modified)
+- `entityId`: `string` (ID of the modified entity)
+- `entityCode`: `string` (Code of the modified entity, e.g., "EP-001", "ST-001")
+- `field`: `string` (Name of the field that was modified)
+- `oldValue`: `string` (String representation of the field's value before modification)
+- `newValue`: `string` (String representation of the field's value after modification)
+- `timestamp`: `string` (ISO 8601 datetime string, timestamp of the modification)
+
+### Type: TeamMember
+Represents a member of the development team.
+- `id`: `string` (Unique identifier for the team member)
+- `name`: `string` (Full name or identifier of the team member)
+- `createdAt`: `string` (ISO 8601 datetime string, timestamp of creation)
+- `updatedAt`: `string` (ISO 8601 datetime string, timestamp of last update)
+
+### Type: Category
+Represents a predefined category or tag for epics.
+- `id`: `string` (Unique identifier for the category)
+- `name`: `string` (Name of the category, e.g., "Frontend", "Backend", "Infra")
+- `createdAt`: `string` (ISO 8601 datetime string, timestamp of creation)
+- `updatedAt`: `string` (ISO 8601 datetime string, timestamp of last update)
+
+### Type: ExportedData
+Represents the structure of the JSON export file.
+- `version`: `string` (Version of the export format, e.g., "1.0.0")
+- `timestamp`: `string` (ISO 8601 datetime string, timestamp of export)
+- `projects`: `@ProjectEntity[]`
+- `epics`: `@EpicEntity[]`
+- `stories`: `@StoryEntity[]`
+- `changelog`: `@ChangelogEntry[]`
+- `teamMembers`: `@TeamMember[]`
+- `categories`: `@Category[]`
+
+--- INTERFACE: indexed-db-service.isl.md ---
+## Component: IndexedDbService
+### Role: Backend
+**Signature**: `(dbName: string, dbVersion: number)`
+### Capabilities
+#### initDB
+**Contract**: Initializes the IndexedDB database, creating or upgrading object stores for all core entities. This operation ensures the database schema is ready for data persistence.
+- **Signature**: `()` -> `Promise<void>`
+- **Flow**:
+  1. Request to open the IndexedDB database with the specified name and version.
+  2. IF the database version is new or higher than the existing one, THEN:
+     1. FOR EACH entity type (`@ProjectEntity`, `@EpicEntity`, `@StoryEntity`, `@ChangelogEntry`, `@TeamMember`, `@Category`):
+        1. Create an object store with the entity type name as its key.
+        2. Configure the object store to use `id` as the key path.
+        3. Configure the object store to auto-increment IDs if `id` is not provided during addition.
+  3. Await the successful completion of the database opening and schema creation/upgrade.
+- **Side Effects**: Creates or upgrades the IndexedDB database and its object stores in the user's browser.
+- **✅ Acceptance Criteria**:
+  - The IndexedDB database is successfully opened or created.
+  - All required object stores (`projects`, `epics`, `stories`, `changelog`, `teamMembers`, `categories`) are present in the database.
+  - Each object store is configured to use `id` as its key path.
+- **🧪 Test Scenarios**:
+  - Verify `initDB` successfully creates a new database with all object stores when called for the first time.
+  - Verify `initDB` successfully upgrades the database schema (e.g., adding a new object store) when called with an incremented version number.
+  - Verify `initDB` does not alter the database schema when called with the same version number as an existing database.
+**Signature**: `()` -> `Promise<void>`
+- **Flow**:
+  1. Request to open the IndexedDB database with the specified name and version.
+  2. IF the database version is new or higher than the existing one, THEN:
+     1. FOR EACH entity type (`@ProjectEntity`, `@EpicEntity`, `@StoryEntity`, `@ChangelogEntry`, `@TeamMember`, `@Category`):
+        1. Create an object store with the entity type name as its key.
+        2. Configure the object store to use `id` as the key path.
+        3. Configure the object store to auto-increment IDs if `id` is not provided during addition.
+  3. Await the successful completion of the database opening and schema creation/upgrade.
+- **Side Effects**: Creates or upgrades the IndexedDB database and its object stores in the user's browser.
+- **✅ Acceptance Criteria**:
+  - The IndexedDB database is successfully opened or created.
+  - All required object stores (`projects`, `epics`, `stories`, `changelog`, `teamMembers`, `categories`) are present in the database.
+  - Each object store is configured to use `id` as its key path.
+- **🧪 Test Scenarios**:
+  - Verify `initDB` successfully creates a new database with all object stores when called for the first time.
+  - Verify `initDB` successfully upgrades the database schema (e.g., adding a new object store) when called with an incremented version number.
+  - Verify `initDB` does not alter the database schema when called with the same version number as an existing database.
+
+#### addEntity
+**Contract**: Adds a new entity of a specified type to its corresponding object store.
+- **Signature**: `(entityType: string, data: @ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category)` -> `Promise<string>` (Returns the ID of the newly added entity)
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Add the provided `data` to the object store.
+  4. Await the completion of the add operation.
+  5. Return the key (ID) generated or used for the added entity.
+- **Side Effects**: Persists the new entity data in the IndexedDB.
+- **🚨 Constraint**: The `data` object MUST contain an `id` property if it's not intended for IndexedDB to auto-generate one. If `id` is provided, it MUST be unique within its object store.
+- **✅ Acceptance Criteria**:
+  - A new entity is successfully stored in the correct object store.
+  - The ID of the added entity is returned.
+  - Attempting to add an entity with a duplicate `id` (if `id` is provided and not auto-incremented) results in an error.
+- **🧪 Test Scenarios**:
+  - Add a `@ProjectEntity` and verify its ID is returned and it can be retrieved.
+  - Add an `@EpicEntity` without providing an `id` and verify an auto-generated ID is returned.
+  - Attempt to add an entity with an `id` that already exists in the store and verify an error is handled.
+**Signature**: `(entityType: string, data: @ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category)` -> `Promise<string>` (Returns the ID of the newly added entity)
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Add the provided `data` to the object store.
+  4. Await the completion of the add operation.
+  5. Return the key (ID) generated or used for the added entity.
+- **Side Effects**: Persists the new entity data in the IndexedDB.
+- **🚨 Constraint**: The `data` object MUST contain an `id` property if it's not intended for IndexedDB to auto-generate one. If `id` is provided, it MUST be unique within its object store.
+- **✅ Acceptance Criteria**:
+  - A new entity is successfully stored in the correct object store.
+  - The ID of the added entity is returned.
+  - Attempting to add an entity with a duplicate `id` (if `id` is provided and not auto-incremented) results in an error.
+- **🧪 Test Scenarios**:
+  - Add a `@ProjectEntity` and verify its ID is returned and it can be retrieved.
+  - Add an `@EpicEntity` without providing an `id` and verify an auto-generated ID is returned.
+  - Attempt to add an entity with an `id` that already exists in the store and verify an error is handled.
+
+#### getEntities
+**Contract**: Retrieves all entities of a specified type from its corresponding object store.
+- **Signature**: `(entityType: string)` -> `Promise<(@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category)[]>`
+- **Flow**:
+  1. Create a read-only transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Request all objects from the object store.
+  4. Await the completion of the request.
+  5. Return the array of retrieved entities.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - An array containing all entities of the specified type is returned.
+  - If no entities exist for the type, an empty array is returned.
+- **🧪 Test Scenarios**:
+  - Retrieve all `@ProjectEntity` instances and verify the returned array matches the expected count and data.
+  - Retrieve entities from an empty object store and verify an empty array is returned.
+**Signature**: `(entityType: string)` -> `Promise<(@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category)[]>`
+- **Flow**:
+  1. Create a read-only transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Request all objects from the object store.
+  4. Await the completion of the request.
+  5. Return the array of retrieved entities.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - An array containing all entities of the specified type is returned.
+  - If no entities exist for the type, an empty array is returned.
+- **🧪 Test Scenarios**:
+  - Retrieve all `@ProjectEntity` instances and verify the returned array matches the expected count and data.
+  - Retrieve entities from an empty object store and verify an empty array is returned.
+
+#### getEntity
+**Contract**: Retrieves a single entity by its type and unique identifier.
+- **Signature**: `(entityType: string, id: string)` -> `Promise<@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category | undefined>`
+- **Flow**:
+  1. Create a read-only transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Request the object with the given `id` from the object store.
+  4. Await the completion of the request.
+  5. Return the retrieved entity, or `undefined` if not found.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - The entity matching the `id` is returned.
+  - If no entity matches the `id`, `undefined` is returned.
+- **🧪 Test Scenarios**:
+  - Retrieve an existing `@EpicEntity` by its `id` and verify its data.
+  - Attempt to retrieve a non-existent entity by `id` and verify `undefined` is returned.
+**Signature**: `(entityType: string, id: string)` -> `Promise<@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category | undefined>`
+- **Flow**:
+  1. Create a read-only transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Request the object with the given `id` from the object store.
+  4. Await the completion of the request.
+  5. Return the retrieved entity, or `undefined` if not found.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - The entity matching the `id` is returned.
+  - If no entity matches the `id`, `undefined` is returned.
+- **🧪 Test Scenarios**:
+  - Retrieve an existing `@EpicEntity` by its `id` and verify its data.
+  - Attempt to retrieve a non-existent entity by `id` and verify `undefined` is returned.
+
+#### updateEntity
+**Contract**: Updates an existing entity of a specified type with new data.
+- **Signature**: `(entityType: string, id: string, data: Partial<@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category>)` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Retrieve the existing entity using the provided `id`.
+  4. IF the entity is found, THEN:
+     1. Merge the `data` (partial update) with the existing entity's properties.
+     2. Put the updated entity back into the object store.
+     3. Await the completion of the put operation.
+  5. ELSE (entity not found), THEN:
+     1. Resolve the promise without action or indicate failure.
+- **Side Effects**: Modifies the existing entity data in the IndexedDB.
+- **✅ Acceptance Criteria**:
+  - An existing entity's properties are updated in the database.
+  - Attempting to update a non-existent entity does not result in an error and the database remains unchanged.
+- **🧪 Test Scenarios**:
+  - Update the `name` of an existing `@ProjectEntity` and verify the change upon retrieval.
+  - Attempt to update a non-existent `@StoryEntity` and verify no error occurs and no new entity is created.
+**Signature**: `(entityType: string, id: string, data: Partial<@ProjectEntity | @EpicEntity | @StoryEntity | @ChangelogEntry | @TeamMember | @Category>)` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Retrieve the existing entity using the provided `id`.
+  4. IF the entity is found, THEN:
+     1. Merge the `data` (partial update) with the existing entity's properties.
+     2. Put the updated entity back into the object store.
+     3. Await the completion of the put operation.
+  5. ELSE (entity not found), THEN:
+     1. Resolve the promise without action or indicate failure.
+- **Side Effects**: Modifies the existing entity data in the IndexedDB.
+- **✅ Acceptance Criteria**:
+  - An existing entity's properties are updated in the database.
+  - Attempting to update a non-existent entity does not result in an error and the database remains unchanged.
+- **🧪 Test Scenarios**:
+  - Update the `name` of an existing `@ProjectEntity` and verify the change upon retrieval.
+  - Attempt to update a non-existent `@StoryEntity` and verify no error occurs and no new entity is created.
+
+#### deleteEntity
+**Contract**: Deletes an entity of a specified type by its unique identifier.
+- **Signature**: `(entityType: string, id: string)` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Delete the object with the given `id` from the object store.
+  4. Await the completion of the delete operation.
+- **Side Effects**: Removes the entity data from the IndexedDB.
+- **✅ Acceptance Criteria**:
+  - The entity matching the `id` is removed from the database.
+  - Attempting to delete a non-existent entity does not result in an error.
+- **🧪 Test Scenarios**:
+  - Delete an existing `@Category` by its `id` and verify it can no longer be retrieved.
+  - Attempt to delete a non-existent entity by `id` and verify no error occurs.
+**Signature**: `(entityType: string, id: string)` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for the specified `entityType` object store.
+  2. Access the target object store.
+  3. Delete the object with the given `id` from the object store.
+  4. Await the completion of the delete operation.
+- **Side Effects**: Removes the entity data from the IndexedDB.
+- **✅ Acceptance Criteria**:
+  - The entity matching the `id` is removed from the database.
+  - Attempting to delete a non-existent entity does not result in an error.
+- **🧪 Test Scenarios**:
+  - Delete an existing `@Category` by its `id` and verify it can no longer be retrieved.
+  - Attempt to delete a non-existent entity by `id` and verify no error occurs.
+
+#### clearAllData
+**Contract**: Clears all data from all object stores within the database. This effectively resets the application's local data.
+- **Signature**: `()` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for all object stores (`projects`, `epics`, `stories`, `changelog`, `teamMembers`, `categories`).
+  2. FOR EACH object store in the transaction:
+     1. Request to clear all data from the current object store.
+     2. Await the completion of the clear operation for that store.
+  3. Await the completion of the entire transaction.
+- **Side Effects**: Empties all data from the IndexedDB database.
+- **✅ Acceptance Criteria**:
+  - All object stores in the database are empty after the operation.
+- **🧪 Test Scenarios**:
+  - Add multiple entities across different types.
+  - Call `clearAllData`.
+  - Verify that `getEntities` for any type returns an empty array.
+**Signature**: `()` -> `Promise<void>`
+- **Flow**:
+  1. Create a read-write transaction for all object stores (`projects`, `epics`, `stories`, `changelog`, `teamMembers`, `categories`).
+  2. FOR EACH object store in the transaction:
+     1. Request to clear all data from the current object store.
+     2. Await the completion of the clear operation for that store.
+  3. Await the completion of the entire transaction.
+- **Side Effects**: Empties all data from the IndexedDB database.
+- **✅ Acceptance Criteria**:
+  - All object stores in the database are empty after the operation.
+- **🧪 Test Scenarios**:
+  - Add multiple entities across different types.
+  - Call `clearAllData`.
+  - Verify that `getEntities` for any type returns an empty array.
+
+--- INTERFACE: changelog-logic.isl.md ---
+## Domain Concepts
+
+
+### Type: ChangelogFilters
+Defines the criteria for filtering `@ChangelogEntry` records.
+- `entityType`: `@ChangelogEntityType` (Optional, filters by the type of entity modified)
+- `entityId`: `string` (Optional, filters by the specific ID of the modified entity)
+- `field`: `string` (Optional, filters by the name of the field that was modified)
+- `startDate`: `string` (Optional, ISO 8601 date string, filters entries from this date onwards)
+- `endDate`: `string` (Optional, ISO 8601 date string, filters entries up to this date)
+
+## Component: ChangelogLogic
+### Role: Business Logic
+**Signature**: `(indexedDbService: IndexedDbService)`
+### Capabilities
+#### recordChange
+**Contract**: Creates a new changelog entry to record a modification to an entity's field. This capability is automatically triggered by other business logic components when an entity's state changes.
+- **Signature**: `(entityType: @ChangelogEntityType, entityId: string, entityCode: string, field: string, oldValue: string, newValue: string)` -> `Promise<void>`
+- **Flow**:
+  1. Generate a unique identifier for the new `@ChangelogEntry`.
+  2. Obtain the current timestamp in ISO 8601 format.
+  3. Construct a new `@ChangelogEntry` object using the provided parameters and the generated ID and timestamp.
+  4. Request `indexedDbService` to `addEntity` of type `changelog` with the constructed `@ChangelogEntry`.
+- **Side Effects**: A new `@ChangelogEntry` is persisted in the IndexedDB `changelog` object store.
+- **🚨 Constraint**: `oldValue` and `newValue` MUST be string representations of the field's value, suitable for storage and display. For complex objects or enums, their string equivalent (e.g., enum name, JSON string) should be used.
+- **✅ Acceptance Criteria**:
+  - A new changelog entry is successfully created and stored.
+  - The stored entry accurately reflects the `entityType`, `entityId`, `entityCode`, `field`, `oldValue`, `newValue`, and `timestamp`.
+- **🧪 Test Scenarios**:
+  - Record a change for a `@ProjectEntity`'s `name` field and verify the entry is retrievable.
+  - Record a change for an `@EpicEntity`'s `status` field (enum value) and verify string representation is stored.
+  - Verify that multiple changes to the same entity result in multiple distinct changelog entries.
+**Signature**: `(entityType: @ChangelogEntityType, entityId: string, entityCode: string, field: string, oldValue: string, newValue: string)` -> `Promise<void>`
+- **Flow**:
+  1. Generate a unique identifier for the new `@ChangelogEntry`.
+  2. Obtain the current timestamp in ISO 8601 format.
+  3. Construct a new `@ChangelogEntry` object using the provided parameters and the generated ID and timestamp.
+  4. Request `indexedDbService` to `addEntity` of type `changelog` with the constructed `@ChangelogEntry`.
+- **Side Effects**: A new `@ChangelogEntry` is persisted in the IndexedDB `changelog` object store.
+- **🚨 Constraint**: `oldValue` and `newValue` MUST be string representations of the field's value, suitable for storage and display. For complex objects or enums, their string equivalent (e.g., enum name, JSON string) should be used.
+- **✅ Acceptance Criteria**:
+  - A new changelog entry is successfully created and stored.
+  - The stored entry accurately reflects the `entityType`, `entityId`, `entityCode`, `field`, `oldValue`, `newValue`, and `timestamp`.
+- **🧪 Test Scenarios**:
+  - Record a change for a `@ProjectEntity`'s `name` field and verify the entry is retrievable.
+  - Record a change for an `@EpicEntity`'s `status` field (enum value) and verify string representation is stored.
+  - Verify that multiple changes to the same entity result in multiple distinct changelog entries.
+
+#### recordDeletion
+**Contract**: Creates a new changelog entry to record the deletion of an entity.
+- **Signature**: `(entityType: @ChangelogEntityType, entityId: string, entityCode: string)` -> `Promise<void>`
+- **Flow**:
+  1. Generate a unique identifier for the new `@ChangelogEntry`.
+  2. Obtain the current timestamp in ISO 8601 format.
+  3. Construct a new `@ChangelogEntry` object using the provided `entityType`, `entityId`, `entityCode`, the generated ID and timestamp, and specific values for `field` ("entity_status"), `oldValue` ("ACTIVE"), and `newValue` ("DELETED") to signify a deletion event.
+  4. Request `indexedDbService` to `addEntity` of type `changelog` with the constructed `@ChangelogEntry`.
+- **Side Effects**: A new `@ChangelogEntry` is persisted in the IndexedDB `changelog` object store.
+- **✅ Acceptance Criteria**:
+  - A new changelog entry is successfully created and stored, indicating an entity deletion.
+  - The stored entry accurately reflects the `entityType`, `entityId`, `entityCode`, and the deletion status.
+- **🧪 Test Scenarios**:
+  - Record a deletion for a `@ProjectEntity` and verify the entry is retrievable with `field: "entity_status"` and `newValue: "DELETED"`.
+  - Record a deletion for an `@EpicEntity` and verify the entry's details.
+  - Verify that recording a deletion does not interfere with existing change records.
+**Signature**: `(entityType: @ChangelogEntityType, entityId: string, entityCode: string)` -> `Promise<void>`
+- **Flow**:
+  1. Generate a unique identifier for the new `@ChangelogEntry`.
+  2. Obtain the current timestamp in ISO 8601 format.
+  3. Construct a new `@ChangelogEntry` object using the provided `entityType`, `entityId`, `entityCode`, the generated ID and timestamp, and specific values for `field` ("entity_status"), `oldValue` ("ACTIVE"), and `newValue` ("DELETED") to signify a deletion event.
+  4. Request `indexedDbService` to `addEntity` of type `changelog` with the constructed `@ChangelogEntry`.
+- **Side Effects**: A new `@ChangelogEntry` is persisted in the IndexedDB `changelog` object store.
+- **✅ Acceptance Criteria**:
+  - A new changelog entry is successfully created and stored, indicating an entity deletion.
+  - The stored entry accurately reflects the `entityType`, `entityId`, `entityCode`, and the deletion status.
+- **🧪 Test Scenarios**:
+  - Record a deletion for a `@ProjectEntity` and verify the entry is retrievable with `field: "entity_status"` and `newValue: "DELETED"`.
+  - Record a deletion for an `@EpicEntity` and verify the entry's details.
+  - Verify that recording a deletion does not interfere with existing change records.
+
+#### getChangelog
+**Contract**: Retrieves historical modification records, with optional filtering capabilities.
+- **Signature**: `(filters?: @ChangelogFilters)` -> `Promise<@ChangelogEntry[]>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntities` of type `changelog`.
+  2. IF `filters` are provided, THEN:
+     1. Filter the retrieved `@ChangelogEntry[]` based on `filters.entityType`.
+     2. Filter the remaining entries based on `filters.entityId`.
+     3. Filter the remaining entries based on `filters.field`.
+     4. Filter the remaining entries based on `filters.startDate` (inclusive).
+     5. Filter the remaining entries based on `filters.endDate` (inclusive).
+  3. Return the array of filtered (or all) `@ChangelogEntry` objects.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - All changelog entries are returned if no filters are specified.
+  - Entries are correctly filtered by `entityType`.
+  - Entries are correctly filtered by `entityId`.
+  - Entries are correctly filtered by `field`.
+  - Entries are correctly filtered by `startDate` and `endDate` (date range).
+  - An empty array is returned if no entries match the filters.
+- **🧪 Test Scenarios**:
+  - Retrieve all changelog entries and verify the count.
+  - Retrieve entries filtered by a specific `@ChangelogEntityType.PROJECT` and verify only project changes are returned.
+  - Retrieve entries filtered by a specific `entityId` and `field` (e.g., `epicId` and `status`).
+  - Retrieve entries within a specific date range (e.g., "2023-01-01" to "2023-01-31").
+  - Retrieve entries with a combination of all filter criteria.
+  - Retrieve entries from an empty changelog store or with filters that yield no results, verifying an empty array is returned.
+**Signature**: `(filters?: @ChangelogFilters)` -> `Promise<@ChangelogEntry[]>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntities` of type `changelog`.
+  2. IF `filters` are provided, THEN:
+     1. Filter the retrieved `@ChangelogEntry[]` based on `filters.entityType`.
+     2. Filter the remaining entries based on `filters.entityId`.
+     3. Filter the remaining entries based on `filters.field`.
+     4. Filter the remaining entries based on `filters.startDate` (inclusive).
+     5. Filter the remaining entries based on `filters.endDate` (inclusive).
+  3. Return the array of filtered (or all) `@ChangelogEntry` objects.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - All changelog entries are returned if no filters are specified.
+  - Entries are correctly filtered by `entityType`.
+  - Entries are correctly filtered by `entityId`.
+  - Entries are correctly filtered by `field`.
+  - Entries are correctly filtered by `startDate` and `endDate` (date range).
+  - An empty array is returned if no entries match the filters.
+- **🧪 Test Scenarios**:
+  - Retrieve all changelog entries and verify the count.
+  - Retrieve entries filtered by a specific `@ChangelogEntityType.PROJECT` and verify only project changes are returned.
+  - Retrieve entries filtered by a specific `entityId` and `field` (e.g., `epicId` and `status`).
+  - Retrieve entries within a specific date range (e.g., "2023-01-01" to "2023-01-31").
+  - Retrieve entries with a combination of all filter criteria.
+  - Retrieve entries from an empty changelog store or with filters that yield no results, verifying an empty array is returned.
+
+--- INTERFACE: progress-calculation-logic.isl.md ---
+
+
+--- INTERFACE: epic-logic.isl.md ---
+## Component: EpicLogic
+### Role: Business Logic
+**Signature**: `(indexedDbService: IndexedDbService, changelogLogic: ChangelogLogic, idGenerationLogic: IdGenerationLogic, progressCalculationLogic: ProgressCalculationLogic, storyLogic: StoryLogic)`
+### Capabilities
+#### createEpic
+**Contract**: Creates a new Epic entity, generates its unique ID and code, sets initial properties, and persists it in the database.
+- **Signature**: `(projectId: string, data: Omit<@EpicEntity, 'id' | 'projectId' | 'code' | 'createdAt' | 'updatedAt'>)` -> `Promise<@EpicEntity>`
+- **Flow**:
+  1. Obtain the current timestamp in ISO 8601 format.
+  2. Request `indexedDbService` to `getEntity` of type `projects` with `projectId` to validate its existence.
+  3. IF the project is not found, THEN throw an error indicating an invalid `projectId`.
+  4. Request `idGenerationLogic` to `generateUUID` for the epic's `id`.
+  5. Request `idGenerationLogic` to `generateEpicId` using the provided `projectId` for the epic's `code`.
+  6. Construct a new `@EpicEntity` object, merging the provided `data` with:
+     - `id`: the generated UUID.
+     - `projectId`: the provided `projectId`.
+     - `code`: the generated epic code.
+     - `isBlocked`: `false` (initial state).
+     - `createdAt`: the current timestamp.
+     - `updatedAt`: the current timestamp.
+  7. Set the initial `status` of the new epic to `@EpicStatus.NOT_STARTED`.
+  8. Request `indexedDbService` to `addEntity` of type `epics` with the newly constructed `@EpicEntity`.
+  9. Request `changelogLogic` to `recordChange` for the creation event, noting the `id`, `code`, `entityType` as `@ChangelogEntityType.EPIC`, `field` as "entity_status", `oldValue` as "CREATED", and `newValue` as `@EpicStatus.NOT_STARTED`.
+  10. Return the created `@EpicEntity`.
+- **Side Effects**: A new `@EpicEntity` is persisted in IndexedDB. A new `@ChangelogEntry` is recorded.
+- **🚨 Constraint**: The `projectId` MUST correspond to an existing `@ProjectEntity`.
+- **✅ Acceptance Criteria**:
+  - A new epic is successfully created with a unique ID and code.
+  - The epic's initial `isBlocked` is false and `status` is `NOT_STARTED`.
+  - `createdAt` and `updatedAt` timestamps are set.
+  - A changelog entry for the creation is recorded.
+  - The created epic object is returned.
+  - An error is thrown if the `projectId` is invalid.
+- **🧪 Test Scenarios**:
+  - Create an epic for an existing project and verify its properties and changelog entry.
+  - Attempt to create an epic with a non-existent `projectId` and verify an error is thrown.
+  - Verify that `isBlocked` is initialized to false and `status` to `NOT_STARTED`.
+**Signature**: `(projectId: string, data: Omit<@EpicEntity, 'id' | 'projectId' | 'code' | 'createdAt' | 'updatedAt'>)` -> `Promise<@EpicEntity>`
+- **Flow**:
+  1. Obtain the current timestamp in ISO 8601 format.
+  2. Request `indexedDbService` to `getEntity` of type `projects` with `projectId` to validate its existence.
+  3. IF the project is not found, THEN throw an error indicating an invalid `projectId`.
+  4. Request `idGenerationLogic` to `generateUUID` for the epic's `id`.
+  5. Request `idGenerationLogic` to `generateEpicId` using the provided `projectId` for the epic's `code`.
+  6. Construct a new `@EpicEntity` object, merging the provided `data` with:
+     - `id`: the generated UUID.
+     - `projectId`: the provided `projectId`.
+     - `code`: the generated epic code.
+     - `isBlocked`: `false` (initial state).
+     - `createdAt`: the current timestamp.
+     - `updatedAt`: the current timestamp.
+  7. Set the initial `status` of the new epic to `@EpicStatus.NOT_STARTED`.
+  8. Request `indexedDbService` to `addEntity` of type `epics` with the newly constructed `@EpicEntity`.
+  9. Request `changelogLogic` to `recordChange` for the creation event, noting the `id`, `code`, `entityType` as `@ChangelogEntityType.EPIC`, `field` as "entity_status", `oldValue` as "CREATED", and `newValue` as `@EpicStatus.NOT_STARTED`.
+  10. Return the created `@EpicEntity`.
+- **Side Effects**: A new `@EpicEntity` is persisted in IndexedDB. A new `@ChangelogEntry` is recorded.
+- **🚨 Constraint**: The `projectId` MUST correspond to an existing `@ProjectEntity`.
+- **✅ Acceptance Criteria**:
+  - A new epic is successfully created with a unique ID and code.
+  - The epic's initial `isBlocked` is false and `status` is `NOT_STARTED`.
+  - `createdAt` and `updatedAt` timestamps are set.
+  - A changelog entry for the creation is recorded.
+  - The created epic object is returned.
+  - An error is thrown if the `projectId` is invalid.
+- **🧪 Test Scenarios**:
+  - Create an epic for an existing project and verify its properties and changelog entry.
+  - Attempt to create an epic with a non-existent `projectId` and verify an error is thrown.
+  - Verify that `isBlocked` is initialized to false and `status` to `NOT_STARTED`.
+
+#### getEpic
+**Contract**: Retrieves a single Epic entity by its unique identifier.
+- **Signature**: `(id: string)` -> `Promise<@EpicEntity | undefined>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  2. IF the epic is found, THEN:
+     1. Request `storyLogic` to `getStoriesByEpic` using the epic's `id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and the epic's `isBlocked` flag.
+     4. Set the epic's `status` to the derived status.
+     5. Return the enriched `@EpicEntity`.
+  3. ELSE (epic not found), THEN:
+     1. Return `undefined`.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - The correct `@EpicEntity` is returned when a valid `id` is provided, with its `status` correctly derived.
+  - `undefined` is returned when no epic matches the `id`.
+- **🧪 Test Scenarios**:
+  - Retrieve an existing epic by its ID and verify its data and derived status.
+  - Attempt to retrieve a non-existent epic by ID and verify `undefined` is returned.
+  - Retrieve an epic with linked stories and verify its progress and status are correctly calculated.
+**Signature**: `(id: string)` -> `Promise<@EpicEntity | undefined>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  2. IF the epic is found, THEN:
+     1. Request `storyLogic` to `getStoriesByEpic` using the epic's `id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and the epic's `isBlocked` flag.
+     4. Set the epic's `status` to the derived status.
+     5. Return the enriched `@EpicEntity`.
+  3. ELSE (epic not found), THEN:
+     1. Return `undefined`.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - The correct `@EpicEntity` is returned when a valid `id` is provided, with its `status` correctly derived.
+  - `undefined` is returned when no epic matches the `id`.
+- **🧪 Test Scenarios**:
+  - Retrieve an existing epic by its ID and verify its data and derived status.
+  - Attempt to retrieve a non-existent epic by ID and verify `undefined` is returned.
+  - Retrieve an epic with linked stories and verify its progress and status are correctly calculated.
+
+#### getEpicsByProject
+**Contract**: Retrieves all Epic entities associated with a specific Project, calculating their progress and deriving their status.
+- **Signature**: `(projectId: string)` -> `Promise<@EpicEntity[]>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntities` of type `epics`.
+  2. Filter the retrieved `@EpicEntity[]` to include only those where `epic.projectId` matches the provided `projectId`.
+  3. FOR EACH filtered `epic`:
+     1. Request `storyLogic` to `getStoriesByEpic` using the `epic.id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and the `epic.isBlocked` flag.
+     4. Set the `epic.status` to the derived status.
+  4. Return the array of filtered and enriched `@EpicEntity` objects.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - An array of epics belonging to the specified project is returned.
+  - Each returned epic has its `status` correctly derived based on its linked stories and `isBlocked` flag.
+  - An empty array is returned if no epics are linked to the project or if the project does not exist.
+- **🧪 Test Scenarios**:
+  - Retrieve epics for a project with multiple linked epics and verify all are returned with correct derived statuses.
+  - Retrieve epics for a project with no linked epics and verify an empty array is returned.
+  - Retrieve epics for a non-existent project and verify an empty array is returned.
+**Signature**: `(projectId: string)` -> `Promise<@EpicEntity[]>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntities` of type `epics`.
+  2. Filter the retrieved `@EpicEntity[]` to include only those where `epic.projectId` matches the provided `projectId`.
+  3. FOR EACH filtered `epic`:
+     1. Request `storyLogic` to `getStoriesByEpic` using the `epic.id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and the `epic.isBlocked` flag.
+     4. Set the `epic.status` to the derived status.
+  4. Return the array of filtered and enriched `@EpicEntity` objects.
+- **Side Effects**: None.
+- **✅ Acceptance Criteria**:
+  - An array of epics belonging to the specified project is returned.
+  - Each returned epic has its `status` correctly derived based on its linked stories and `isBlocked` flag.
+  - An empty array is returned if no epics are linked to the project or if the project does not exist.
+- **🧪 Test Scenarios**:
+  - Retrieve epics for a project with multiple linked epics and verify all are returned with correct derived statuses.
+  - Retrieve epics for a project with no linked epics and verify an empty array is returned.
+  - Retrieve epics for a non-existent project and verify an empty array is returned.
+
+#### updateEpic
+**Contract**: Updates an existing Epic entity with new data, recording changes in the changelog.
+- **Signature**: `(id: string, data: Partial<Omit<@EpicEntity, 'id' | 'projectId' | 'code' | 'createdAt' | 'updatedAt'>>)` -> `Promise<@EpicEntity>`
+- **Flow**:
+  1. Obtain the current timestamp in ISO 8601 format.
+  2. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  3. IF the epic is not found, THEN throw an error indicating the epic does not exist.
+  4. Store the `originalEpic` object.
+  5. Create an `updatedEpic` object by merging `originalEpic` with `data`.
+  6. Set `updatedEpic.updatedAt` to the current timestamp.
+  7. FOR EACH `field` in `data`:
+     1. IF `data[field]` is different from `originalEpic[field]`, THEN:
+        1. Request `changelogLogic` to `recordChange` with `entityType` as `@ChangelogEntityType.EPIC`, `entityId` as `id`, `entityCode` as `originalEpic.code`, `field`, `oldValue` (string representation of `originalEpic[field]`), and `newValue` (string representation of `data[field]`).
+  8. IF `data.isBlocked` was provided AND `data.isBlocked` is different from `originalEpic.isBlocked`, THEN:
+     1. Request `storyLogic` to `getStoriesByEpic` using `updatedEpic.id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and `updatedEpic.isBlocked`.
+     4. IF the derived status is different from `originalEpic.status`, THEN:
+        1. Request `changelogLogic` to `recordChange` for the `status` field, using `originalEpic.status` and the derived status.
+     5. Set `updatedEpic.status` to the derived status.
+  9. Request `indexedDbService` to `updateEntity` of type `epics` with `id` and `updatedEpic`.
+  10. Return the `updatedEpic`.
+- **Side Effects**: The `@EpicEntity` in IndexedDB is modified. New `@ChangelogEntry` records are created for each changed field.
+- **🚨 Constraint**: The `id` MUST correspond to an existing `@EpicEntity`. `data` MUST NOT attempt to modify `id`, `projectId`, `code`, or `createdAt`.
+- **✅ Acceptance Criteria**:
+  - An existing epic's properties are updated in the database.
+  - `updatedAt` is updated to the current timestamp.
+  - A changelog entry is recorded for each modified field.
+  - The derived `status` is correctly updated if `isBlocked` changes.
+  - The updated epic object is returned.
+  - An error is thrown if the `id` is invalid.
+- **🧪 Test Scenarios**:
+  - Update an epic's `title` and `owner` and verify changes and changelog entries.
+  - Update `isBlocked` from `false` to `true` and verify `status` derivation and changelog.
+  - Attempt to update a non-existent epic and verify an error is thrown.
+  - Verify that `id`, `projectId`, `code`, `createdAt` cannot be changed via this capability.
+**Signature**: `(id: string, data: Partial<Omit<@EpicEntity, 'id' | 'projectId' | 'code' | 'createdAt' | 'updatedAt'>>)` -> `Promise<@EpicEntity>`
+- **Flow**:
+  1. Obtain the current timestamp in ISO 8601 format.
+  2. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  3. IF the epic is not found, THEN throw an error indicating the epic does not exist.
+  4. Store the `originalEpic` object.
+  5. Create an `updatedEpic` object by merging `originalEpic` with `data`.
+  6. Set `updatedEpic.updatedAt` to the current timestamp.
+  7. FOR EACH `field` in `data`:
+     1. IF `data[field]` is different from `originalEpic[field]`, THEN:
+        1. Request `changelogLogic` to `recordChange` with `entityType` as `@ChangelogEntityType.EPIC`, `entityId` as `id`, `entityCode` as `originalEpic.code`, `field`, `oldValue` (string representation of `originalEpic[field]`), and `newValue` (string representation of `data[field]`).
+  8. IF `data.isBlocked` was provided AND `data.isBlocked` is different from `originalEpic.isBlocked`, THEN:
+     1. Request `storyLogic` to `getStoriesByEpic` using `updatedEpic.id`.
+     2. Request `progressCalculationLogic` to `calculateEpicProgress` using the retrieved stories.
+     3. Request `progressCalculationLogic` to `deriveStatus` using the calculated progress and `updatedEpic.isBlocked`.
+     4. IF the derived status is different from `originalEpic.status`, THEN:
+        1. Request `changelogLogic` to `recordChange` for the `status` field, using `originalEpic.status` and the derived status.
+     5. Set `updatedEpic.status` to the derived status.
+  9. Request `indexedDbService` to `updateEntity` of type `epics` with `id` and `updatedEpic`.
+  10. Return the `updatedEpic`.
+- **Side Effects**: The `@EpicEntity` in IndexedDB is modified. New `@ChangelogEntry` records are created for each changed field.
+- **🚨 Constraint**: The `id` MUST correspond to an existing `@EpicEntity`. `data` MUST NOT attempt to modify `id`, `projectId`, `code`, or `createdAt`.
+- **✅ Acceptance Criteria**:
+  - An existing epic's properties are updated in the database.
+  - `updatedAt` is updated to the current timestamp.
+  - A changelog entry is recorded for each modified field.
+  - The derived `status` is correctly updated if `isBlocked` changes.
+  - The updated epic object is returned.
+  - An error is thrown if the `id` is invalid.
+- **🧪 Test Scenarios**:
+  - Update an epic's `title` and `owner` and verify changes and changelog entries.
+  - Update `isBlocked` from `false` to `true` and verify `status` derivation and changelog.
+  - Attempt to update a non-existent epic and verify an error is thrown.
+  - Verify that `id`, `projectId`, `code`, `createdAt` cannot be changed via this capability.
+
+#### deleteEpic
+**Contract**: Deletes an Epic entity and all its associated Stories from the database, recording deletions in the changelog.
+- **Signature**: `(id: string)` -> `Promise<void>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  2. IF the epic is not found, THEN resolve the promise without action.
+  3. Store the `epicCode` from the retrieved epic.
+  4. Request `storyLogic` to `getStoriesByEpic` using the provided `id`.
+  5. FOR EACH `story` in the retrieved stories:
+     1. Request `storyLogic` to `deleteStory` using `story.id`.
+  6. Request `changelogLogic` to `recordDeletion` with `entityType` as `@ChangelogEntityType.EPIC`, `entityId` as `id`, and `entityCode` as `epicCode`.
+  7. Request `indexedDbService` to `deleteEntity` of type `epics` with the provided `id`.
+- **Side Effects**: The `@EpicEntity` and all linked `@StoryEntity` instances are removed from IndexedDB. New `@ChangelogEntry` records for epic and story deletions are created.
+- **✅ Acceptance Criteria**:
+  - The specified epic is successfully removed from the database.
+  - All stories linked to the epic are also removed.
+  - A changelog entry indicating the epic's deletion is recorded.
+  - Changelog entries for each deleted story are recorded (handled by `storyLogic.deleteStory`).
+  - No error is thrown if attempting to delete a non-existent epic.
+- **🧪 Test Scenarios**:
+  - Delete an existing epic with linked stories and verify the epic, all stories, and their respective changelog entries are created.
+  - Attempt to delete an existing epic with no linked stories and verify the epic and its changelog entry are created.
+  - Attempt to delete a non-existent epic and verify no error occurs.
+**Signature**: `(id: string)` -> `Promise<void>`
+- **Flow**:
+  1. Request `indexedDbService` to `getEntity` of type `epics` with the provided `id`.
+  2. IF the epic is not found, THEN resolve the promise without action.
+  3. Store the `epicCode` from the retrieved epic.
+  4. Request `storyLogic` to `getStoriesByEpic` using the provided `id`.
+  5. FOR EACH `story` in the retrieved stories:
+     1. Request `storyLogic` to `deleteStory` using `story.id`.
+  6. Request `changelogLogic` to `recordDeletion` with `entityType` as `@ChangelogEntityType.EPIC`, `entityId` as `id`, and `entityCode` as `epicCode`.
+  7. Request `indexedDbService` to `deleteEntity` of type `epics` with the provided `id`.
+- **Side Effects**: The `@EpicEntity` and all linked `@StoryEntity` instances are removed from IndexedDB. New `@ChangelogEntry` records for epic and story deletions are created.
+- **✅ Acceptance Criteria**:
+  - The specified epic is successfully removed from the database.
+  - All stories linked to the epic are also removed.
+  - A changelog entry indicating the epic's deletion is recorded.
+  - Changelog entries for each deleted story are recorded (handled by `storyLogic.deleteStory`).
+  - No error is thrown if attempting to delete a non-existent epic.
+- **🧪 Test Scenarios**:
+  - Delete an existing epic with linked stories and verify the epic, all stories, and their respective changelog entries are created.
+  - Attempt to delete an existing epic with no linked stories and verify the epic and its changelog entry are created.
+  - Attempt to delete a non-existent epic and verify no error occurs.
+
+--- INTERFACE: id-generation-logic.isl.md ---
+## Component: IdGenerationLogic
+### Role: Business Logic
+**Description**: Handles the generation of unique, incremental identifiers for Epics and Stories within their respective parent entities, and universally unique identifiers for primary keys.
+### Capabilities
+#### generateEpicId
+**Contract**: Generates a unique, incremental code for a new `@EpicEntity` within a specified `@ProjectEntity`. The code follows the format "EP-XXX", where XXX is a zero-padded, incrementing number.
+- **Signature**: `(projectId: string)` -> `Promise<string>`
+- **Flow**:
+  1. Request all existing `@EpicEntity` instances from the `IndexedDbService`.
+  2. Filter the retrieved epics to identify those whose `projectId` matches the provided `projectId`.
+  3. Determine the highest numeric suffix from the `code` property of the filtered epics (e.g., if codes are "EP-001", "EP-005", the highest suffix is 5).
+  4. IF no epics are found for the `projectId`, THEN the next number is 1.
+  5. ELSE, the next number is the highest suffix incremented by 1.
+  6. Format the next number into a three-digit, zero-padded string (e.g., 1 becomes "001", 12 becomes "012").
+  7. Construct the final epic code in the format "EP-XXX".
+  8. Return the generated epic code.
+- **Side Effects**: None. This capability only reads data to determine the next ID.
+- **🚨 Constraint**: The `projectId` provided MUST correspond to an existing `@ProjectEntity`.
+- **✅ Acceptance Criteria**:
+  - The generated ID is a string in the format "EP-XXX".
+  - The numeric part of the ID is unique and incrementally higher than any existing epic code within the same `projectId`.
+  - If no epics exist for the given `projectId`, the first generated ID is "EP-001".
+- **🧪 Test Scenarios**:
+  - Generate an ID for a project with no existing epics; verify "EP-001" is returned.
+  - Generate an ID for a project with epics "EP-001" and "EP-003"; verify "EP-004" is returned.
+  - Generate an ID for a project with epics "EP-009" and "EP-010"; verify "EP-011" is returned.
+**Signature**: `(projectId: string)` -> `Promise<string>`
+- **Flow**:
+  1. Request all existing `@EpicEntity` instances from the `IndexedDbService`.
+  2. Filter the retrieved epics to identify those whose `projectId` matches the provided `projectId`.
+  3. Determine the highest numeric suffix from the `code` property of the filtered epics (e.g., if codes are "EP-001", "EP-005", the highest suffix is 5).
+  4. IF no epics are found for the `projectId`, THEN the next number is 1.
+  5. ELSE, the next number is the highest suffix incremented by 1.
+  6. Format the next number into a three-digit, zero-padded string (e.g., 1 becomes "001", 12 becomes "012").
+  7. Construct the final epic code in the format "EP-XXX".
+  8. Return the generated epic code.
+- **Side Effects**: None. This capability only reads data to determine the next ID.
+- **🚨 Constraint**: The `projectId` provided MUST correspond to an existing `@ProjectEntity`.
+- **✅ Acceptance Criteria**:
+  - The generated ID is a string in the format "EP-XXX".
+  - The numeric part of the ID is unique and incrementally higher than any existing epic code within the same `projectId`.
+  - If no epics exist for the given `projectId`, the first generated ID is "EP-001".
+- **🧪 Test Scenarios**:
+  - Generate an ID for a project with no existing epics; verify "EP-001" is returned.
+  - Generate an ID for a project with epics "EP-001" and "EP-003"; verify "EP-004" is returned.
+  - Generate an ID for a project with epics "EP-009" and "EP-010"; verify "EP-011" is returned.
+
+#### generateStoryId
+**Contract**: Generates a unique, incremental code for a new `@StoryEntity` within a specified `@EpicEntity`. The code follows the format "ST-XXX", where XXX is a zero-padded, incrementing number.
+- **Signature**: `(epicId: string)` -> `Promise<string>`
+- **Flow**:
+  1. Request all existing `@StoryEntity` instances from the `IndexedDbService`.
+  2. Filter the retrieved stories to identify those whose `epicId` matches the provided `epicId`.
+  3. Determine the highest numeric suffix from the `code` property of the filtered stories (e.g., if codes are "ST-001", "ST-004", the highest suffix is 4).
+  4. IF no stories are found for the `epicId`, THEN the next number is 1.
+  5. ELSE, the next number is the highest suffix incremented by 1.
+  6. Format the next number into a three-digit, zero-padded string (e.g., 1 becomes "001", 12 becomes "012").
+  7. Construct the final story code in the format "ST-XXX".
+  8. Return the generated story code.
+- **Side Effects**: None. This capability only reads data to determine the next ID.
+- **🚨 Constraint**: The `epicId` provided MUST correspond to an existing `@EpicEntity`.
+- **✅ Acceptance Criteria**:
+  - The generated ID is a string in the format "ST-XXX".
+  - The numeric part of the ID is unique and incrementally higher than any existing story code within the same `epicId`.
+  - If no stories exist for the given `epicId`, the first generated ID is "ST-001".
+- **🧪 Test Scenarios**:
+  - Generate an ID for an epic with no existing stories; verify "ST-001" is returned.
+  - Generate an ID for an epic with stories "ST-001" and "ST-002"; verify "ST-003" is returned.
+  - Generate an ID for an epic with stories "ST-009" and "ST-010"; verify "ST-011" is returned.
+**Signature**: `(epicId: string)` -> `Promise<string>`
+- **Flow**:
+  1. Request all existing `@StoryEntity` instances from the `IndexedDbService`.
+  2. Filter the retrieved stories to identify those whose `epicId` matches the provided `epicId`.
+  3. Determine the highest numeric suffix from the `code` property of the filtered stories (e.g., if codes are "ST-001", "ST-004", the highest suffix is 4).
+  4. IF no stories are found for the `epicId`, THEN the next number is 1.
+  5. ELSE, the next number is the highest suffix incremented by 1.
+  6. Format the next number into a three-digit, zero-padded string (e.g., 1 becomes "001", 12 becomes "012").
+  7. Construct the final story code in the format "ST-XXX".
+  8. Return the generated story code.
+- **Side Effects**: None. This capability only reads data to determine the next ID.
+- **🚨 Constraint**: The `epicId` provided MUST correspond to an existing `@EpicEntity`.
+- **✅ Acceptance Criteria**:
+  - The generated ID is a string in the format "ST-XXX".
+  - The numeric part of the ID is unique and incrementally higher than any existing story code within the same `epicId`.
+  - If no stories exist for the given `epicId`, the first generated ID is "ST-001".
+- **🧪 Test Scenarios**:
+  - Generate an ID for an epic with no existing stories; verify "ST-001" is returned.
+  - Generate an ID for an epic with stories "ST-001" and "ST-002"; verify "ST-003" is returned.
+  - Generate an ID for an epic with stories "ST-009" and "ST-010"; verify "ST-011" is returned.
+
+#### generateUUID
+**Contract**: Generates a universally unique identifier (UUID) string, suitable for use as a primary key for entities.
+- **Signature**: `()` -> `string`
+- **Flow**:
+  1. Generate a string that is universally unique.
+  2. Return the generated UUID string.
+- **Side Effects**: None.
+- **🚨 Constraint**: None.
+- **✅ Acceptance Criteria**:
+  - The generated string is a valid UUID format (e.g., `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`).
+  - The generated UUID is highly likely to be unique across all generated UUIDs.
+- **🧪 Test Scenarios**:
+  - Generate a UUID and verify its format matches the standard UUID v4 pattern.
+  - Generate multiple UUIDs and verify they are distinct.
+**Signature**: `()` -> `string`
+- **Flow**:
+  1. Generate a string that is universally unique.
+  2. Return the generated UUID string.
+- **Side Effects**: None.
+- **🚨 Constraint**: None.
+- **✅ Acceptance Criteria**:
+  - The generated string is a valid UUID format (e.g., `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`).
+  - The generated UUID is highly likely to be unique across all generated UUIDs.
+- **🧪 Test Scenarios**:
+  - Generate a UUID and verify its format matches the standard UUID v4 pattern.
+  - Generate multiple UUIDs and verify they are distinct.
+
+
+
+
+## Canonical Rules (NORMATIVE)
+
+### Rule 1: Semantic Markers
+Sections with emoji are **NORMATIVE** (must implement exactly):
+- ⚡ Capabilities/Methods
+- 🚨 Constraints
+- ✅ Acceptance Criteria
+- 🧪 Test Scenarios
+
+Sections without normative emoji are **INFORMATIVE** (guidance only):
+- 📐 Appearance/Interface
+- 📦 Content/Structure
+- 💡 Implementation Hints
+
+### Rule 4: ISL Boundary (Critical)
+ISL defines **intent and behavior**, NOT implementation.
+**MUST**:
+- Define observable behavior
+- Describe what system does
+- Express logic as intent/rules/outcomes
+- Remain implementation-agnostic
+**MUST NOT**:
+- Describe step-by-step algorithms
+- Be written as pseudocode
+- Act as Technical Design Document
+- Contain low-level control flow tied to syntax
+
+**Flow Syntax Constraints**:
+Flows MUST describe intent/operations using natural language, NOT implementation code or pseudocode.
+⛔ FORBIDDEN:
+- The word "Call" or "Invoke" targeting a specific method (e.g., "Call renderScore", "Invoke GameCanvas.render").
+- Pseudocode syntax (e.g., "execute(param)", "object.method()").
+✅ REQUIRED:
+- Use descriptive verbs describing the *intent* (e.g., "Display the score", "Calculate the total", "Update the state", "GameScreen updates content", "Component updates layout").
+- For component interactions, use: "Trigger", "Dispatch", "Request", or "Pass data to" (e.g. "Trigger GameEngine update", NOT "Call GameEngine.update").
+
+
+**Supported Control Structures**:
+- `IF...THEN...ELSE`
+- `FOR EACH...IN`
+- `WHILE condition`
+- `TRY...CATCH`
+- `BRANCH: [conditions]`
+
+### Rule 5: Role Separation
+- **Presentation**: MUST define visual appearance. MUST NOT implement business logic.
+- **Backend**: MUST define API contracts. MUST NOT define visual properties.
+
+### Rule 6: Content Semantics (Structural Composition)
+The `📦 Content` section defines the **Structural Composition** of the component.
+- **For Leaf Components**: Describes visual elements (buttons, text, inputs).
+- **For Container Components**: Lists the **Child Components** included in this view.
+  - **Usage**: Use this section to declare *what* is rendered (e.g., "Contains `Header` and `Footer`"), NOT the `Flow` section.
+  - **Layout**: Describe how children are arranged (e.g., "Sidebar on left, Grid on right").
+
+### Rule 7: Entry Point Autonomy
+The Root/Entry Point component (usually `Main`) MUST be **Autonomous**.
+- **Signature**: MUST be Void (no arguments), unless explicitly required by requirements.
+- It is responsible for instantiating dependencies (Composition Root), not receiving them.
+
+### Rule 8: Abstraction Level (Input & Events)
+ISL describes **Intent**, not Syntax.
+- **Input**: Describe physical actions or intents, NOT specific event properties.
+  - ✅ "On Physical Key 'Space' Press", "When User clicks Submit"
+  - ⛔ "IF event.key === ' '", "onClick(e)"
+- **Implementation Agnostic**: Do not mention specific browser/runtime APIs (e.g., `window.addEventListener`) unless wrapping them in a Capability.
+
+### Rule 9: Units & Precision
+All numeric values in Domain or Logic MUST specify **Units of Measurement**.
+- ✅ `speed: 300 (px/s)`, `timeout: 500 (ms)`, `angle: 90 (deg)`
+- ⛔ `speed: 5`, `timeout: 500`
+
+### Rule 10: Real-Time & Continuous Logic
+For systems involving time (Games, Simulations, Animations):
+- **Separation**: Distinguish between **Discrete Input** (Events) and **Continuous Logic** (Update Loop).
+- **Input**: Should typically update State Flags (e.g., `isMovingLeft = true`).
+- **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
+
+### Rule 11: References & Dependencies
+- **Declaration**: All external dependencies (Types, Components, Enums) MUST be declared at the top of the file, immediately after the metadata block, using the syntax: `> **Reference**: [Type] in [Path]`.
+- **Usage**: Inside the document body (Signatures, Flows, Properties), refer to these types using the `@` prefix (e.g., `@User`, `@Order`). DO NOT use the full reference syntax in the body.
+
+## Document Structure
+   - # Project: [Name]
+   - **Version**: [Version]
+   - **ISL Version**: [Version]
+   - **Implementation**: [Path]
+   - ---
+   - > **Reference**: [Type] in [Path]
+   - ## Domain Concepts (Optional IF exist must be exported and accessible for capabilities)
+   - ## Component: [Name]
+     - ### Role: [Presentation | Backend | Business Logic]
+     - **Signature**: [Input Props / Constructor Args]
+     - ### 📐 Appearance (Only for Presentation)
+     - ### 📦 Content (Only for Presentation)
+     - ### ⚡ Capabilities
+       - #### [capabilityName]
+         - **Contract**: [Description]
+         - **Signature**: Input/Output
+         - **Trigger**: [Event]
+         - **Flow** (if logic is complex)
+         - **Side Effects**
+         - **Cleanup**
+         - **💡 Implementation Hint**
+         - **🚨 Constraint**
+         - **✅ Acceptance Criteria**
+         - **🧪 Test Scenarios**
+     - ### 💡 Global Hints
+     - ### 🚨 Global Constraints
+     - ### ✅ Acceptance Criteria
+     - ### 🧪 Test Scenarios
+
+## RFC 2119 Keywords
+- **MUST**: Absolute requirement
+- **MUST NOT**: Absolute prohibition
+- **SHOULD**: Strong preference
+
+
+**INTEGRATION RULES**:
+1. You are aware of the full system plan (see below), but your focus is ONLY on **project-logic.isl.md**.
+2. If you need to refer to concepts in your dependencies, use the ISL reference syntax:
+   `> **Reference**: [Concept] in ./dependency-filename.isl.md`
+3. Do NOT generate code for other files.
+4. **MISSING DEPENDENCIES**:
+   If a required capability is missing in a dependency (visible in DEPENDENCY INTERFACES), do NOT hallucinate it.
+   Instead, output a request to update the dependency using this format:
+   #[DEPENDENCY_UPDATE_REQUEST]
+   {
+     "targetFilename": "filename.isl.md",
+     "description": "Add capability 'X' to handle Y."
+   }
+   #[DEPENDENCY_UPDATE_REQUEST-END]
+5. **MISSING DEPENDENCY FILE**:
+   If you need to access types or capabilities from a file that is NOT in your dependencies list (e.g. Domain Enums), request it:
+   #[MISSING_DEPENDENCY_FILE]
+   {
+     "filename": "domain.isl.md",
+     "reason": "Need access to GameStatusEnum"
+   }
+   #[MISSING_DEPENDENCY_FILE-END]
+
+**OUTPUT RULES**:
+- Do NOT output the Project Name or Metadata Header.
+- **MANDATORY**: You MUST start the file content with a list of references for ALL dependencies listed in your 'Dependencies' context:
+  > **Reference**: Concepts/Capabilities in `./domain.isl.md`
+  > **Reference**: Concepts/Capabilities in `./indexed-db-service.isl.md`
+  > **Reference**: Concepts/Capabilities in `./changelog-logic.isl.md`
+  > **Reference**: Concepts/Capabilities in `./progress-calculation-logic.isl.md`
+  > **Reference**: Concepts/Capabilities in `./epic-logic.isl.md`
+  > **Reference**: Concepts/Capabilities in `./id-generation-logic.isl.md`
+  (Adjust the description text as appropriate for the dependency role).
+- Return ONLY the markdown content for project-logic.isl.md.
+
+
+--- ROLE: user ---
+
+**ARCHITECT'S PLAN (Global Context)**:
+- **domain.isl.md** [Domain]
+  Description: Defines all core data structures, enumerations, and constants for the Roadmap Manager application. Key Concepts: ProjectEntity, EpicEntity, StoryEntity, ChangelogEntry, TeamMember, Category. Enums: ProjectStatus, EpicStatus, StoryStatus, Priority, RiskLevel, StoryPoints, ChangelogEntityType, ImportMode.
+  Dependencies: None
+
+- **indexed-db-service.isl.md** [Backend]
+  Description: Encapsulates all low-level interactions with IndexedDB for data persistence. Provides generic CRUD operations for all entities. Key Capabilities: initDB(), addEntity(type, data), getEntities(type), getEntity(type, id), updateEntity(type, id, data), deleteEntity(type, id), clearAllData().
+  Dependencies: domain.isl.md
+
+- **jira-integration-backend.isl.md** [Backend]
+  Description: Placeholder module for future integration with Jira APIs. Provides a defined interface with stubbed methods for fetching Jira-related data. Key Capabilities: getJiraEpic(id), getJiraStory(id).
+  Dependencies: domain.isl.md
+
+- **changelog-logic.isl.md** [Business Logic]
+  Description: Manages the creation and retrieval of historical modification records. Automatically logs changes to entities. Key Capabilities: recordChange(entityType, entityId, entityCode, field, oldValue, newValue), getChangelog(filters).
+  Dependencies: domain.isl.md, indexed-db-service.isl.md
+
+- **id-generation-logic.isl.md** [Business Logic]
+  Description: Handles the generation of unique, incremental identifiers for Epics and Stories within their respective parent entities. Key Capabilities: generateEpicId(projectId), generateStoryId(epicId).
+  Dependencies: domain.isl.md, indexed-db-service.isl.md
+
+- **progress-calculation-logic.isl.md** [Business Logic]
+  Description: Contains pure functions for calculating progress percentages and deriving status based on progress. Key Capabilities: calculateStoryProgress(story), deriveStatus(progress, isBlocked), calculateEpicProgress(stories), calculateProjectProgress(epics).
+  Dependencies: domain.isl.md
+
+- **story-logic.isl.md** [Business Logic]
+  Description: Manages the lifecycle and business rules for Story entities. Handles manual progress updates and state derivation. Key Capabilities: createStory(epicId, data), getStory(id), getStoriesByEpic(epicId), updateStory(id, data), deleteStory(id), updateStoryProgress(id, progress).
+  Dependencies: domain.isl.md, indexed-db-service.isl.md, changelog-logic.isl.md, id-generation-logic.isl.md, progress-calculation-logic.isl.md
+
+- **epic-logic.isl.md** [Business Logic]
+  Description: Manages the lifecycle and business rules for Epic entities. Orchestrates progress calculation based on linked Stories and derives state. Key Capabilities: createEpic(projectId, data), getEpic(id), getEpicsByProject(projectId), updateEpic(id, data), deleteEpic(id).
+  Dependencies: domain.isl.md, indexed-db-service.isl.md, changelog-logic.isl.md, id-generation-logic.isl.md, progress-calculation-logic.isl.md, story-logic.isl.md
+
+- **project-logic.isl.md** [Business Logic]
+  Description: Manages the lifecycle and business rules for Project entities. Orchestrates progress calculation based on linked Epics and derives state. Key Capabilities: createProject(data), getProject(id), getAllProjects(), updateProject(id, data), deleteProject(id).
+  Dependencies: domain.isl.md, indexed-db-service.isl.md, changelog-logic.isl.md, progress-calculation-logic.isl.md, epic-logic.isl.md, id-generation-logic.isl.md
+
+- **settings-logic.isl.md** [Business Logic]
+  Description: Manages application-wide settings such as team members and predefined categories. Provides functionality for resetting the entire database. Key Capabilities: addTeamMember(name), getTeamMembers(), updateTeamMember(id, name), deleteTeamMember(id), addCategory(name), getCategories(), updateCategory(id, name), deleteCategory(id), resetDatabase().
+  Dependencies: domain.isl.md, indexed-db-service.isl.md
+
+- **data-management-logic.isl.md** [Business Logic]
+  Description: Handles all data import and export operations (JSON, Excel). Includes schema validation for imports and conflict resolution. Key Capabilities: exportToJson(), importFromJson(file, mode), exportToExcel().
+  Dependencies: domain.isl.md, indexed-db-service.isl.md, project-logic.isl.md, epic-logic.isl.md, story-logic.isl.md, changelog-logic.isl.md, settings-logic.isl.md
+
+- **ui-components.isl.md** [Presentation]
+  Description: Contains reusable, generic UI components used across the application. Key Capabilities: ProgressBar(value, color), ProgressSlider(value, onChange, isDisabled), StatusBadge(status), PriorityBadge(priority), RiskBadge(risk), ConfirmationDialog(message, onConfirm), NotificationService().
+  Dependencies: domain.isl.md
+
+- **dashboard-presentation.isl.md** [Presentation]
+  Description: Renders the global dashboard view, displaying an overview of all projects with key metrics and filtering options. Key Capabilities: RenderDashboard(projects, globalKpis), FilterProjects(status, year), NavigateToProjectDetail(id).
+  Dependencies: domain.isl.md, project-logic.isl.md, ui-components.isl.md
+
+- **roadmap-timeline-presentation.isl.md** [Presentation]
+  Description: Renders the Gantt-like roadmap timeline view for a project, showing epics across quarters/sprints. Key Capabilities: RenderTimeline(epics, granularity), FilterTimeline(quarter, category, priority, owner, risk), ShowEpicDetail(epicId).
+  Dependencies: domain.isl.md, epic-logic.isl.md, ui-components.isl.md
+
+- **backlog-presentation.isl.md** [Presentation]
+  Description: Renders the interactive tree-table backlog view, allowing users to manage Epics and Stories. Key Capabilities: RenderBacklog(epics, stories), ExpandEpic(id), UpdateStoryProgress(storyId, progress), EditEntity(entityType, id), DeleteEntity(entityType, id), ToggleBlocked(entityType, id), AddStoryInline(epicId).
+  Dependencies: domain.isl.md, epic-logic.isl.md, story-logic.isl.md, ui-components.isl.md
+
+- **reports-presentation.isl.md** [Presentation]
+  Description: Renders the reports section, including progress trend charts, quarter summaries, and the changelog table. Key Capabilities: RenderProgressTrendChart(data), RenderQuarterSummary(data), RenderChangelogTable(entries, filters).
+  Dependencies: domain.isl.md, changelog-logic.isl.md, project-logic.isl.md, epic-logic.isl.md, ui-components.isl.md
+
+- **settings-presentation.isl.md** [Presentation]
+  Description: Renders the settings interface for managing team members, categories, and application-wide options like database reset. Key Capabilities: RenderTeamMembers(members), AddTeamMember(name), EditTeamMember(id, name), DeleteTeamMember(id), RenderCategories(categories), AddCategory(name), EditCategory(id, name), DeleteCategory(id), RenderResetOption(), ConfirmResetDatabase().
+  Dependencies: domain.isl.md, settings-logic.isl.md, ui-components.isl.md
+
+- **data-management-presentation.isl.md** [Presentation]
+  Description: Renders the user interface for exporting and importing application data (JSON, Excel). Key Capabilities: RenderExportOptions(), HandleExportJson(), HandleExportExcel(), RenderImportOptions(), HandleImportJson(file, mode), ShowImportPreview(data).
+  Dependencies: domain.isl.md, data-management-logic.isl.md, ui-components.isl.md
+
+- **main.isl.md** [Presentation]
+  Description: The root entry point of the Roadmap Manager application. Orchestrates the initialization of services, manages application routing, and renders the main layout and active view. Responsibilities: InitializeApplication(), SetupRouting(), RenderNavigation(), DisplayCurrentView(), HandleGlobalEvents().
+  Dependencies: dashboard-presentation.isl.md, roadmap-timeline-presentation.isl.md, backlog-presentation.isl.md, reports-presentation.isl.md, settings-presentation.isl.md, data-management-presentation.isl.md
+
+**ORIGINAL REQUIREMENTS**:
+"# Roadmap Manager — Prompt di Specifica
+
+## Contesto e Obiettivo
+
+Devi progettare e sviluppare una Web App chiamata **Roadmap Manager**.
+Si tratta di una Single Page Application (SPA) statica, senza alcun backend,
+pensata esclusivamente per uso interno di team lead e management di un team
+di sviluppo software.
+
+L'obiettivo principale è sostituire la gestione manuale delle roadmap
+attualmente svolta tramite fogli Excel, offrendo uno strumento strutturato,
+visivo e facilmente distribuibile: basta aprire il browser, nessuna
+installazione richiesta.
+
+Il software **non è un task manager operativo**: per quella funzione il team
+utilizza già Jira. Questo strumento serve a pianificare strategicamente,
+monitorare l'avanzamento delle iniziative e comunicare lo stato della roadmap
+internamente al team. Non è prevista alcuna autenticazione: l'applicazione è
+ad accesso libero e non gestisce ruoli o utenti.
+
+In futuro potrebbe essere necessario leggere dati da Jira tramite le sue API,
+ma nella versione attuale il software è completamente standalone. È opportuno
+tenere in considerazione questa eventualità nella struttura del codice,
+predisponendo un modulo di integrazione vuoto ma con interfaccia definita.
+
+---
+
+## Architettura
+
+L'applicazione è interamente client-side. Non esiste alcun server remoto.
+Tutti i dati vengono salvati localmente nel browser tramite **IndexedDB**,
+che garantisce sufficiente capacità e struttura per i volumi previsti.
+
+La persistenza dei dati avviene esclusivamente in locale. Per consentire
+la condivisione tra colleghi e il backup, l'applicazione supporta:
+
+- **Export in formato JSON**: dump completo di tutti i dati presenti nel database locale, scaricabile come file.
+- **Import da file JSON**: ripristino o fusione dei dati da un file precedentemente esportato, con validazione dello schema prima dell'import.
+- **Export in formato Excel**: generazione di un file con più fogli, uno per ogni entità principale, pensato per la reportistica.
+
+La build finale deve produrre una cartella statica distribuibile su qualsiasi
+web server o apribile direttamente da file system locale.
+
+---
+
+## Modello Dati
+
+Il sistema gestisce le seguenti entità principali.
+
+### Progetto
+
+Il progetto è il contenitore principale. Possono esistere più progetti
+contemporaneamente. Ogni progetto ha un nome, una descrizione, un owner
+responsabile, delle date di inizio e fine pianificate e uno stato generale
+che può essere: in pianificazione, attivo, completato o in pausa.
+
+Il progresso del progetto non viene inserito manualmente, ma viene calcolato
+automaticamente come media del progresso di tutte le Epiche collegate.
+
+### Epica
+
+Ogni progetto contiene una o più Epiche. L'Epica rappresenta una macro
+iniziativa o funzionalità rilevante. Ha un codice identificativo
+auto-generato (formato EP-001), un titolo, una descrizione, una priorità,
+un quarter di appartenenza con relativo anno, delle date di inizio e fine
+pianificate, una categoria o tag libero (es. Frontend, Backend, Infra),
+un owner, un livello di rischio e un campo testo libero per inserire
+il riferimento alla corrispondente Epica in Jira.
+
+Il progresso dell'Epica viene calcolato automaticamente come media aritmetica
+del progresso di tutte le Stories collegate. Lo stato viene derivato
+automaticamente dal progresso: non avviata, in corso, completata.
+È possibile impostare manualmente lo stato "bloccata", che sovrascrive
+lo stato derivato indipendentemente dalla percentuale.
+
+### Story
+
+Ogni Epica contiene una o più Stories. La Story rappresenta un'unità
+di lavoro pianificabile. Ha un codice auto-generato (formato ST-001),
+un titolo, una descrizione, una priorità, una stima in story points
+(valori fibonacci: 1, 2, 3, 5, 8, 13, 21), un assignee, un sprint
+di appartenenza, delle date di inizio e fine pianificate, un campo testo
+libero per il riferimento Jira, un campo note e la possibilità di
+aggiungere link esterni.
+
+Il progresso della Story è **l'unico campo inserito manualmente** dall'utente,
+tramite uno slider da 0 a 100. Lo stato viene derivato dal progresso con
+la stessa logica dell'Epica, con la possibilità di override manuale
+a "bloccata".
+
+
+### Storico Modifiche (Changelog)
+
+Ogni modifica a qualsiasi campo di qualsiasi entità genera automaticamente
+un record di log. Il log contiene: il tipo di entità modificata, il suo
+identificativo e codice, il nome del campo modificato, il valore precedente,
+il nuovo valore e il timestamp della modifica. Il changelog è append-only
+e non può essere cancellato.
+
+---
+
+## Regole di Business
+
+### Calcolo del progresso
+
+Il progresso di una Story viene inserito manualmente dall'utente (0–100).
+
+Il progresso di un'Epica viene calcolato come media aritmetica dei progressi
+di tutte le Stories collegate. Se un'Epica non ha Stories, il suo progresso
+è 0. Il calcolo avviene in tempo reale, senza salvare il valore nel database.
+
+Il progresso di un Progetto viene calcolato come media aritmetica dei
+progressi delle Epiche collegate, anch'essi calcolati runtime. L'aggiornamento
+si propaga a cascata verso l'alto ogni volta che viene modificata la
+percentuale di una Story.
+
+### Derivazione dello stato
+
+Lo stato di ogni entità viene derivato automaticamente dal progresso:
+a 0% lo stato è "non avviata", tra 1% e 99% è "in corso", a 100% è
+"completata". Il flag "bloccata" può essere impostato manualmente in
+qualsiasi momento e ha priorità sullo stato derivato.
+
+### Codici auto-generati
+
+Ogni Epica e ogni Story riceve al momento della creazione un codice
+identificativo univoco all'interno del progetto, nel formato EP-001
+per le Epiche e ST-001 per le Stories, con numero incrementale.
+
+---
+
+## Viste e Funzionalità
+
+### Dashboard Globale
+
+La dashboard mostra una panoramica di tutti i progetti presenti. Per ogni
+progetto viene visualizzata una progress bar con la percentuale
+di avanzamento, il numero totale di epiche, il numero di epiche in ritardo
+(con data di fine superata e progresso inferiore al 100%) e il numero di
+epiche bloccate. Un'intestazione con KPI globali mostra: progetti attivi,
+totale epiche, stories completate nella settimana corrente. È possibile
+filtrare per stato del progetto e anno. Cliccando su un progetto si accede
+al dettaglio di quest'ultimo.
+
+### Roadmap Timeline (Gantt)
+
+La vista principale del progetto. L'asse orizzontale è diviso per Quarter
+e Sprint. Ogni riga rappresenta un'Epica, visualizzata come barra colorata
+in base al proprio stato. Le barre mostrano la percentuale di avanzamento
+scritta al loro interno. Un bordo colorato sul lato sinistro della barra
+indica il livello di rischio dell'Epica (rosso, arancione, verde). Le
+Epiche bloccate sono visualizzate con bordo tratteggiato rosso. Passando
+il cursore su una barra compare un tooltip con titolo, owner, percentuale e
+numero di Stories. Cliccando su una barra si apre un pannello laterale con
+il dettaglio dell'Epica e la lista delle Stories collegate. Sono disponibili
+filtri per quarter, categoria, priorità, owner e rischio. È possibile
+alternare la granularità della vista tra quarter e sprint.
+
+### Backlog
+
+Vista tabellare ad albero: le Epiche sono espandibili per mostrare le Stories
+collegate. Per ogni Epica sono visibili: codice, titolo, quarter, priorità,
+rischio, owner, una mini progress bar, lo stato, il riferimento Jira e le
+azioni disponibili. Per ogni Story sono visibili: codice, titolo, assignee,
+sprint, story points, uno slider per la modifica diretta del progresso,
+lo stato, il riferimento Jira e le azioni disponibili. La modifica del
+progresso tramite slider aggiorna in tempo reale la percentuale dell'Epica
+parent. Le azioni disponibili sono: modifica in modale, eliminazione con
+conferma e toggle del flag bloccata. È possibile aggiungere rapidamente
+una Story direttamente inline sotto un'Epica. Tutte le colonne sono
+ordinabili e filtrabili.
+
+### Report e Storico
+
+La sezione report offre un grafico a linee che mostra il trend di avanzamento
+delle Epiche nel tempo, costruito a partire dai record del changelog.
+Mostra il riepilogo per Quarter con le Epiche suddivise per stato. La tabella del changelog è filtrabile per tipo di
+entità, campo modificato e intervallo di date.
+
+### Export e Import
+
+**Export Excel**: genera un file con cinque fogli distinti. Il primo foglio
+contiene il riepilogo del progetto con i KPI. Il secondo foglio elenca tutte
+le Epiche con tutti i campi e il progresso calcolato. Il terzo foglio elenca
+tutte le Stories con tutti i campi. Il quarto foglio elenca gli Sprint con le
+Stories assegnate. Il quinto foglio contiene lo storico delle modifiche.
+Le celle relative al progresso sono colorate condizionalmente: rosso per
+valori bassi, giallo per valori intermedi, verde per valori alti.
+
+**Export JSON**: produce un file contenente tutti i dati presenti nel
+database locale, con indicazione della versione del formato e del timestamp
+di esportazione. Il file è scaricabile con nome che include la data corrente.
+
+**Import JSON**: permette di caricare un file JSON precedentemente esportato.
+Prima di procedere viene validato lo schema del file. Viene mostrata
+un'anteprima con il numero di entità che verranno importate. L'utente può
+scegliere tra due modalità: "Sostituisci tutto", che svuota il database prima
+dell'import, oppure "Aggiungi a esistenti", che aggiunge i dati senza
+cancellare quelli presenti. In caso di conflitto di identificativi, vengono
+generati nuovi identificativi univoci automaticamente.
+
+### Impostazioni
+
+La sezione impostazioni permette di gestire la lista dei membri del team,
+usata nei campi assignee e owner. Permette inoltre di gestire le categorie
+predefinite disponibili per le Epiche. È presente un'opzione per il reset
+completo del database, protetta da doppia conferma. Vengono mostrate
+informazioni sull'applicazione: versione e spazio occupato in IndexedDB.
+
+---
+
+## Interfaccia Utente
+
+L'interfaccia deve essere pulita, professionale e ottimizzata per l'uso
+su desktop e tablet. Non è richiesta la compatibilità con dispositivi mobile.
+
+Ogni operazione di modifica deve fornire un feedback visivo immediato
+tramite notifica di successo o errore. I caricamenti devono essere
+accompagnati da indicatori di attesa. Le operazioni distruttive come
+eliminazione e reset devono sempre richiedere una conferma esplicita.
+
+I componenti condivisi chiave sono:
+
+- Una progress bar con colore automatico in base al valore percentuale.
+- Uno slider per l'input manuale del progresso delle Stories, disabilitato se la Story è bloccata.
+- Badge colorati per stato, priorità e rischio, coerenti in tutta l'applicazione.
+- Un dialog di conferma riutilizzabile per tutte le operazioni distruttive.
+
+---
+
+## Qualità del Codice
+
+Il codice deve rispettare i seguenti principi:
+
+- Separazione netta tra logica di business, accesso ai dati e presentazione.
+- Le funzioni di calcolo del progresso devono essere pure, senza effetti collaterali e testabili in isolamento.
+- Il layer di accesso a IndexedDB deve essere incapsulato in un modulo dedicato, non chiamato direttamente dai componenti di presentazione.
+- Il modulo di integrazione Jira deve essere predisposto come interfaccia vuota con metodi stub, documentata e pronta per implementazione futura.
+- Il formato di export/import JSON deve essere versionato, per consentire migrazioni future del formato senza perdita di dati.
+
+---
+
+## Requisiti Non Funzionali
+
+- L'applicazione deve funzionare completamente offline, senza alcuna chiamata di rete a runtime.
+- Il ricalcolo del progresso a cascata deve avvenire in meno di 100 millisecondi per Epiche con fino a 50 Stories.
+- L'export Excel deve completarsi in meno di 2 secondi per un progetto con 50 Epiche e 300 Stories.
+- La build deve produrre una cartella statica distribuibile su qualsiasi web server o apribile direttamente tramite file system locale.
+- Nessuna dipendenza con licenza non adatta all'uso commerciale.
+
+---
+
+## Deliverable Attesi
+
+1. Progetto configurato e avviabile con un singolo comando.
+2. Schema del database locale completo e tipizzato.
+3. Tutti i service layer implementati con la logica di business separata dalla presentazione.
+4. Tutti i componenti per ogni vista descritta.
+5. Suite di test per la logica di calcolo del progresso e per le funzionalità di import/export.
+6. File README con: istruzioni di setup locale, struttura del progetto, guida all'export/import JSON, note per il deploy statico e istruzioni per l'implementazione futura dell'integrazione Jira."
+

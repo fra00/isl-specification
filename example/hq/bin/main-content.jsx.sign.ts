@@ -1,1 +1,1 @@
-export default function MainContent(): React.Element;
+export default function MainContent(): React.ReactElement;

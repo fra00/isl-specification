@@ -7,86 +7,82 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from "./domain-core";
+import { PageNavigationEnum } from './domain-core';
 
-const MainMenu = ({ onChangePageView }) => {
+export default function MainMenu({ onChangePageView }) {
   const [hoveredImage, setHoveredImage] = useState(null);
 
-  // Event handlers wrapped in useCallback for stability
-  const handleMenuItemClick = useCallback((destination) => {
-    onChangePageView(destination);
+  const handleMenuClick = useCallback((destination) => {
+    if (onChangePageView) {
+      onChangePageView(destination);
+    }
   }, [onChangePageView]);
 
-  const handleMenuItemMouseEnter = useCallback((imageUrl) => {
-    setHoveredImage(imageUrl);
+  const handleMouseEnter = useCallback((imagePath) => {
+    setHoveredImage(imagePath);
   }, []);
 
-  const handleMenuItemMouseLeave = useCallback(() => {
+  const handleMouseLeave = useCallback(() => {
     setHoveredImage(null);
   }, []);
 
+  const menuItems = [
+    {
+      label: "Gioca",
+      destination: PageNavigationEnum.PLAY_GAME,
+      image: "/img/main-menu/nuova.jpg"
+    },
+    {
+      label: "Editor",
+      destination: PageNavigationEnum.EDITOR_GAME,
+      image: "/img/main-menu/editor.jpg"
+    }
+  ];
+
   return (
-    <div className="w-full h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Injecting keyframes for the animation directly into the DOM via a style tag.
-          This adheres to the "single file" rule for CSS, as per instructions.
-      */}
+    <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
+      {/* Custom Keyframes for Zoom Parallax */}
       <style>
         {`
-        @keyframes zoom-parallax {
-          0% {
-            transform: scale(1);
+          @keyframes zoom-parallax {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
           }
-          100% {
-            transform: scale(1.1);
+          .animate-zoom-parallax {
+            animation: zoom-parallax 50s ease-in-out infinite alternate;
           }
-        }
-        .animate-zoom-parallax {
-          animation: zoom-parallax 50s ease-in-out infinite alternate;
-        }
         `}
       </style>
 
-      {/* Background image container with animation */}
-      <div
-        className="absolute inset-0 bg-cover bg-center animate-zoom-parallax"
+      {/* Animated Background Layer */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center animate-zoom-parallax z-0"
         style={{ backgroundImage: 'url(/img/menusfondo.jpg)' }}
-      ></div>
+      />
 
-      {/* Content aligned to center, above the background */}
-      <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
-        {/* Menu Items */}
-        <button
-          className="text-white font-bold text-4xl cursor-pointer transition-all duration-300 ease-in-out
-                     filter blur-[5px] hover:filter-none focus:outline-none"
-          onClick={() => handleMenuItemClick(PageNavigationEnum.PLAY_GAME)}
-          onMouseEnter={() => handleMenuItemMouseEnter('/img/main-menu/nuova.jpg')}
-          onMouseLeave={handleMenuItemMouseLeave}
-        >
-          Gioca
-        </button>
-        <button
-          className="text-white font-bold text-4xl cursor-pointer transition-all duration-300 ease-in-out
-                     filter blur-[5px] hover:filter-none focus:outline-none"
-          onClick={() => handleMenuItemClick(PageNavigationEnum.EDITOR_GAME)}
-          onMouseEnter={() => handleMenuItemMouseEnter('/img/main-menu/editor.jpg')}
-          onMouseLeave={handleMenuItemMouseLeave}
-        >
-          Editor
-        </button>
-      </div>
-
-      {/* MouseOverImage riquadro */}
+      {/* MouseOverImage Layer */}
       {hoveredImage && (
-        <div className="absolute top-0 right-0 h-[30vh]">
-          <img
-            src={hoveredImage}
-            alt="Hovered menu item"
-            className="h-full w-auto object-contain" // w-auto to maintain aspect ratio
-          />
-        </div>
+        <img 
+          src={hoveredImage} 
+          alt="Menu Preview" 
+          className="absolute top-0 right-0 h-[30%] w-auto object-contain border-none z-10 transition-opacity duration-300"
+        />
       )}
+
+      {/* Content Layer */}
+      <div className="relative z-20 flex flex-col items-center gap-8">
+        {menuItems.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => handleMenuClick(item.destination)}
+            onMouseEnter={() => handleMouseEnter(item.image)}
+            onMouseLeave={handleMouseLeave}
+            className="bg-transparent font-bold text-5xl text-white blur-[4px] hover:blur-none transition-all duration-500 cursor-pointer border-none outline-none"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
-};
-
-export default MainMenu;
+}

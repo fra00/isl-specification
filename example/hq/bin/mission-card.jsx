@@ -8,69 +8,99 @@
 
 import React, { useCallback } from 'react';
 
-export default function MissionCard({ mission, index, status, onSelect }) {
-  const isLocked = status === 'LOCKED';
-
-  const handleInteraction = useCallback(() => {
-    if (!isLocked) {
+export default function MissionCard({ mission = {}, index = 0, status = 'LOCKED', onSelect }) {
+  const handleInteraction = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (status === 'LOCKED') {
+      return;
+    }
+    
+    if (onSelect != null) {
       onSelect(index);
     }
-  }, [isLocked, onSelect, index]);
+  }, [status, index, onSelect]);
 
-  const cardClasses = `
-    p-4 rounded-lg shadow-md flex flex-col items-center text-center transition-all duration-200
-    ${isLocked ? 'bg-gray-800 border-2 border-gray-600 text-gray-500 opacity-50 cursor-not-allowed' : ''}
-    ${status === 'AVAILABLE' ? 'bg-gray-800 border-2 border-yellow-500 text-yellow-400 hover:bg-yellow-900/20 cursor-pointer' : ''}
-    ${status === 'COMPLETED' ? 'bg-gray-800 border-2 border-green-500 text-green-400 hover:bg-green-900/20 cursor-pointer' : ''}
-  `;
+  const isLocked = status === 'LOCKED';
+  const isCompleted = status === 'COMPLETED';
+  const isAvailable = status === 'AVAILABLE';
 
-  const buttonClasses = `
-    mt-4 px-4 py-2 rounded-md font-bold
-    ${isLocked ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
-    ${status === 'AVAILABLE' ? 'bg-yellow-600 hover:bg-yellow-700 text-gray-900' : ''}
-    ${status === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
-  `;
+  let cardClasses = "relative p-5 rounded-xl shadow-md border-2 transition-all duration-300 flex flex-col gap-3 ";
+  let buttonClasses = "mt-2 w-full py-2 px-4 rounded-lg font-bold text-center transition-colors duration-200 ";
+  let icon = null;
+  let buttonText = "";
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'COMPLETED':
-        return '✅'; // Checkmark
-      case 'AVAILABLE':
-        return '▶️'; // Play
-      case 'LOCKED':
-        return '🔒'; // Lock
-      default:
-        return '';
-    }
-  };
+  if (isCompleted) {
+    cardClasses += "border-green-500 bg-green-50 cursor-pointer hover:bg-green-100 hover:shadow-lg";
+    buttonClasses += "bg-green-600 text-white hover:bg-green-700";
+    buttonText = "Replay";
+    icon = (
+      <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+      </svg>
+    );
+  } else if (isAvailable) {
+    cardClasses += "border-yellow-400 bg-yellow-50 cursor-pointer hover:bg-yellow-100 shadow-yellow-200/50 hover:shadow-xl";
+    buttonClasses += "bg-yellow-500 text-white hover:bg-yellow-600";
+    buttonText = "Start";
+    icon = (
+      <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M4 4l12 6-12 6z" />
+      </svg>
+    );
+  } else {
+    cardClasses += "border-gray-300 bg-gray-100 opacity-75 cursor-not-allowed";
+    buttonClasses += "bg-gray-300 text-gray-500 cursor-not-allowed";
+    buttonText = "Locked";
+    icon = (
+      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    );
+  }
 
-  const getButtonLabel = () => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'Replay';
-      case 'AVAILABLE':
-        return 'Start';
-      case 'LOCKED':
-        return 'Locked';
-      default:
-        return '';
-    }
-  };
+  const title = mission?.titolo || 'Unknown Mission';
+  const subtitle = `Mission ${mission?.ordine != null ? mission.ordine : (index + 1)}`;
 
   return (
-    <div className={cardClasses} onClick={handleInteraction}>
-      <div className="text-4xl mb-2">
-        {getStatusIcon()}
+    <div 
+      className={cardClasses}
+      onClick={handleInteraction}
+      role={isLocked ? "presentation" : "button"}
+      tabIndex={isLocked ? -1 : 0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleInteraction(e);
+        }
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            {subtitle}
+          </span>
+          <h3 className="text-xl font-bold text-gray-800 mt-1">
+            {title}
+          </h3>
+        </div>
+        <div className="flex-shrink-0 ml-4">
+          {icon}
+        </div>
       </div>
-      <h3 className="text-xl font-bold mb-1">
-        {mission?.titolo}
-      </h3>
-      <p className="text-sm">
-        Mission {mission?.ordine || (index + 1)}
-      </p>
-      <button className={buttonClasses} disabled={isLocked} onClick={handleInteraction}>
-        {getButtonLabel()}
-      </button>
+      
+      <div className="mt-auto pt-2">
+        <button 
+          className={buttonClasses}
+          disabled={isLocked}
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          {buttonText}
+        </button>
+      </div>
     </div>
   );
 }

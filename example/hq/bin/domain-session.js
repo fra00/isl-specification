@@ -7,84 +7,45 @@
  */
 
 import { MapDefinition } from "./domain-map";
-import { Hero, Monster } from "./domain-ruleset";
+import { Hero, Monster, TreasureCard } from "./domain-ruleset";
 
-export const HeroState = (data = {}) => {
-  const {
-    heroId = 0,
-    turnOrder = 0,
-    currentBody = 0,
-    currentMind = 0,
-    gold = 500,
-    inventory = [],
-    equipment = [],
-    x = 0,
-    y = 0,
-    hero = Hero(),
-  } = data;
+export const HeroState = (data = {}) => ({
+  heroId: data.heroId ?? 0,
+  turnOrder: data.turnOrder ?? 0,
+  currentBody: data.currentBody ?? 0,
+  currentMind: data.currentMind ?? 0,
+  gold: data.gold ?? 500,
+  inventory: Array.isArray(data.inventory) ? [...data.inventory] : [],
+  equipment: Array.isArray(data.equipment) ? [...data.equipment] : [],
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  hero: data.hero ? Hero(data.hero) : null
+});
 
-  return {
-    heroId,
-    turnOrder,
-    currentBody,
-    currentMind,
-    gold,
-    inventory: [...inventory],
-    equipment: [...equipment],
-    x,
-    y,
-    hero: Hero(hero),
-  };
-};
+export const MonsterState = (data = {}) => ({
+  id: data.id ?? 0,
+  monster: data.monster ? Monster(data.monster) : null,
+  x: data.x ?? 0,
+  y: data.y ?? 0,
+  currentBody: data.currentBody ?? 0,
+  currentMind: data.currentMind ?? 0
+});
 
-export const MonsterState = (data = {}) => {
-  const {
-    id = 0,
-    monster = Monster(),
-    x = 0,
-    y = 0,
-    currentBody = 0,
-    currentMind = 0,
-  } = data;
+export const GameSession = (data = {}) => ({
+  campaignName: data.campaignName ?? "",
+  currentMap: data.currentMap ? MapDefinition(data.currentMap) : null,
+  currentMissionIndex: data.currentMissionIndex ?? 0,
+  heroes: Array.isArray(data.heroes) ? data.heroes.map(h => HeroState(h)) : [],
+  monsters: Array.isArray(data.monsters) ? data.monsters.map(m => MonsterState(m)) : [],
+  spawnedLocations: Array.isArray(data.spawnedLocations) ? [...data.spawnedLocations] : [],
+  currentTurn: data.currentTurn ?? 1,
+  isHeroOrderConfirmed: data.isHeroOrderConfirmed ?? false,
+  lastAttack: data.lastAttack ? { ...data.lastAttack } : null,
+  treasureDeck: Array.isArray(data.treasureDeck) ? data.treasureDeck.map(t => TreasureCard(t)) : []
+});
 
-  return {
-    id,
-    monster: Monster(monster),
-    x,
-    y,
-    currentBody,
-        currentMind,
-  };
-};
-
-export const GameSession = (data = {}) => {
-  const {
-    campaignName = "",
-    currentMap = MapDefinition(),
-    currentMissionIndex = 0,
-    heroes = [],
-    monsters = [],
-    spawnedLocations = [],
-    currentTurn = 1,
-    isHeroOrderConfirmed = false,
-    lastAttack = null,
-  } = data;
-
-  return {
-    campaignName,
-    currentMap: MapDefinition(currentMap),
-    currentMissionIndex,
-    heroes: heroes.map((heroData) => HeroState(heroData)),
-    monsters: monsters.map((monsterData) => MonsterState(monsterData)),
-    spawnedLocations: [...spawnedLocations],
-    currentTurn,
-    isHeroOrderConfirmed,
-    lastAttack,
-  };
-};
-
-export const TurnPhase = {
-  HasMoved: "HasMoved",
-  HasPerformedAction: "HasPerformedAction",
-  IsTurnFinished: "IsTurnFinished",
-};
+export const TurnPhase = (data = {}) => ({
+  HasMoved: data.HasMoved ?? false,
+  HasPerformedAction: data.HasPerformedAction ?? false,
+  IsTurnFinished: data.IsTurnFinished ?? false
+});

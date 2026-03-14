@@ -82,7 +82,17 @@ For systems involving time (Games, Simulations, Animations):
 - **Input**: Should typically update State Flags (e.g., \`isMovingLeft = true\`).
 - **Update Loop**: Logic involving movement or physics MUST be described as a function of **Time** (DeltaTime), not just discrete steps.
 
+### Rule 11: References & Dependencies
+- **Declaration**: All external dependencies (Types, Components, Enums) MUST be declared at the top of the file, immediately after the metadata block, using the syntax: \`> **Reference**: [Type] in [Path]\`.
+- **Usage**: Inside the document body (Signatures, Flows, Properties), refer to these types using the \`@\` prefix (e.g., \`@User\`, \`@Order\`). DO NOT use the full reference syntax in the body.
+
 ## Document Structure
+   - # Project: [Name]
+   - **Version**: [Version]
+   - **ISL Version**: [Version]
+   - **Implementation**: [Path]
+   - ---
+   - > **Reference**: [Type] in [Path]
    - ## Domain Concepts (Optional IF exist must be exported and accessible for capabilities)
    - ## Component: [Name]
      - ### Role: [Presentation | Backend | Business Logic]

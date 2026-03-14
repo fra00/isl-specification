@@ -6,86 +6,73 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useDungeonMapQuery } from './dungeon-map-query';
 import { useDungeonMovementRules } from './dungeon-movement-rules';
 
-export function usePathfinding({ gameSession, visibilityMap }) {
-  // Internal State: hooksDungeonMapQuery
-  // The useDungeonMapQuery hook is called at the top level of usePathfinding.
-  // Its inputs (gameSession, visibilityMap) are props, making its return value stable
-  // across renders unless these props change.
-  const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
+export function usePathfinding(config = {}) {
+  const { gameSession = null, visibilityMap = null } = config;
 
-  // Internal State: hooksDungeonMovementRules
-  // The useDungeonMovementRules hook is called at the top level.
-  // Its input (mapQuery) is a stable object returned by another hook,
-  // ensuring its return value is also stable.
+  const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
   const movementRules = useDungeonMovementRules({ mapQuery });
 
-  /**
-   * Calculates the shortest path between two points on the grid using BFS, considering obstacles.
-   *
-   * @param {number} startX - The starting X coordinate.
-   * @param {number} startY - The starting Y coordinate.
-   * @param {number} targetX - The target X coordinate.
-   * @param {number} targetY - The target Y coordinate.
-   * @param {number} maxDepth - The maximum search depth for the path.
-   * @param {number} excludeEntityId - ID of the entity to exclude from collision checks.
-   * @returns {Array<{x: number, y: number}>} A list of coordinates representing the path, or an empty list if no path is found.
-   */
   const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-    // Pre-check: If the target destination is not valid, return an empty path immediately.
+    if (!movementRules?.isValidDestination) {
+      return [];
+    }
+
+    // Pre-check: if the destination is not valid, return an empty path immediately
     if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
       return [];
     }
 
-    // BFS Algorithm
     const queue = [{ x: startX, y: startY, path: [] }];
-    const visited = new Set();
-    visited.add(`${startX},${startY}`);
+    const visited = new Set([`${startX},${startY}`]);
+
+    const directions = [
+      { dx: 0, dy: -1 }, // Up
+      { dx: 0, dy: 1 },  // Down
+      { dx: -1, dy: 0 }, // Left
+      { dx: 1, dy: 0 }   // Right
+    ];
 
     while (queue.length > 0) {
       const current = queue.shift();
 
-      // If the current node is the target, we found the shortest path.
+      // If we reached the target, return the path taken to get here
       if (current.x === targetX && current.y === targetY) {
         return current.path;
       }
 
-      // If the path length exceeds maxDepth, stop exploring this branch.
+      // If we reached the maximum depth, do not explore neighbors
       if (current.path.length >= maxDepth) {
         continue;
       }
 
-      // Define possible neighbor movements (Up, Down, Left, Right)
-      const neighbors = [
-        { x: current.x, y: current.y - 1 }, // Up
-        { x: current.x, y: current.y + 1 }, // Down
-        { x: current.x - 1, y: current.y }, // Left
-        { x: current.x + 1, y: current.y }, // Right
-      ];
+      // Explore neighbors
+      for (let i = 0; i < directions.length; i++) {
+        const nx = current.x + directions[i].dx;
+        const ny = current.y + directions[i].dy;
+        const key = `${nx},${ny}`;
 
-      for (const neighbor of neighbors) {
-        const neighborKey = `${neighbor.x},${neighbor.y}`;
-
-        // Check if the neighbor has not been visited and is walkable.
-        if (
-          !visited.has(neighborKey) &&
-          movementRules.isWalkable(current.x, current.y, neighbor.x, neighbor.y, excludeEntityId)
-        ) {
-          visited.add(neighborKey);
-          const newPath = [...current.path, { x: neighbor.x, y: neighbor.y }];
-          queue.push({ x: neighbor.x, y: neighbor.y, path: newPath });
+        if (!visited.has(key)) {
+          if (movementRules.isWalkable(current.x, current.y, nx, ny, excludeEntityId)) {
+            visited.add(key);
+            queue.push({
+              x: nx,
+              y: ny,
+              path: [...current.path, { x: nx, y: ny }]
+            });
+          }
         }
       }
     }
 
-    // Return an empty path if no path is found after exhausting the queue.
+    // Return empty path if no path is found
     return [];
-  }, [movementRules]); // movementRules is a stable object from a hook, so it's safe to include in deps.
+  }, [movementRules]);
 
   return {
-    calculatePath,
+    calculatePath
   };
 }

@@ -9,65 +9,65 @@
 import React, { useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-/**
- * DungeonDescription component displays the current mission description and provides navigation options.
- * Role: Presentation
- */
-function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
-  // Ensure referential stability for the interaction handler
-  const handleInteraction = useCallback((actionType) => {
-    switch (actionType) {
-      case 'enterDungeon':
-        onChangePageView(PageNavigationEnum.DUNGEON);
-        break;
-      case 'shop':
-        onChangePageView(PageNavigationEnum.SHOP);
-        break;
-      case 'back':
-        onChangePageView(PageNavigationEnum.PLAY_GAME);
-        break;
-      default:
-        break;
+export default function DungeonDescription({
+  gameSession,
+  onChangePageView,
+  onUpdateSession
+}) {
+  const handleEnterDungeon = useCallback(() => {
+    if (onChangePageView) {
+      onChangePageView(PageNavigationEnum.DUNGEON);
     }
-  }, [onChangePageView]); // onChangePageView is a prop, assumed stable from parent
+  }, [onChangePageView]);
 
-  // Safely access the description text
-  const missionDescription = gameSession?.currentMap?.header?.descrizione || 'Nessuna descrizione disponibile.';
+  const handleShop = useCallback(() => {
+    if (onChangePageView) {
+      onChangePageView(PageNavigationEnum.SHOP);
+    }
+  }, [onChangePageView]);
+
+  const handleBack = useCallback(() => {
+    if (onChangePageView) {
+      onChangePageView(PageNavigationEnum.PLAY_GAME);
+    }
+  }, [onChangePageView]);
+
+  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-center mb-6 text-yellow-400">Mission Description</h1>
-
-        <div className="bg-gray-700 p-6 rounded-md mb-8 max-h-96 overflow-y-auto custom-scrollbar">
-          <p className="text-lg leading-relaxed text-gray-200 whitespace-pre-wrap">
-            {missionDescription}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 p-4 font-serif">
+      <div className="bg-stone-900 text-stone-300 p-8 rounded-lg shadow-2xl max-w-3xl w-full border-2 border-stone-700 flex flex-col max-h-[90vh]">
+        <h1 className="text-3xl font-bold mb-6 text-center text-amber-600 border-b border-stone-700 pb-4 uppercase tracking-widest">
+          Mission Description
+        </h1>
+        
+        <div className="overflow-y-auto flex-grow mb-8 pr-2">
+          <p className="text-lg leading-relaxed whitespace-pre-wrap">
+            {description}
           </p>
         </div>
 
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-row justify-center gap-4 mt-auto pt-6 border-t border-stone-700 flex-wrap">
           <button
-            onClick={() => handleInteraction('enterDungeon')}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md text-xl transition duration-300 ease-in-out"
+            onClick={handleBack}
+            className="px-6 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded font-semibold transition-colors border border-stone-600"
           >
-            Entra nel dungeon
+            Indietro
           </button>
           <button
-            onClick={() => handleInteraction('shop')}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md text-xl transition duration-300 ease-in-out"
+            onClick={handleShop}
+            className="px-6 py-2 bg-indigo-900 hover:bg-indigo-800 text-indigo-100 rounded font-semibold transition-colors border border-indigo-700"
           >
             Armeria
           </button>
           <button
-            onClick={() => handleInteraction('back')}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md text-xl transition duration-300 ease-in-out"
+            onClick={handleEnterDungeon}
+            className="px-8 py-2 bg-red-900 hover:bg-red-800 text-red-100 rounded font-bold transition-colors border border-red-700 shadow-md"
           >
-            Indietro
+            Entra nel dungeon
           </button>
         </div>
       </div>
     </div>
   );
 }
-
-export default DungeonDescription;

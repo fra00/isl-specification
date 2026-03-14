@@ -32,8 +32,9 @@ hooks for manage visibility for furniture
 - **Flow**:
   - IF `gameSession.currentMap` OR `boardVisibilityMap` is missing RETURN empty list.
   - get @MapCell from `gameSession.currentMap.grid` with coordinates x,y
+  - IF the visibility cell exists AND `fog` is false:
   - IF @MapCell.arnt.antroc is true AND @MapCell.arnt.inv is false THEN
-    - Add th rock image at coordinates x,y using the image `public/img/cell/pietra.jpg`
+    - Place an image of the rock at coordinates x,y using the image `../cell/pietra.jpg`. don't scale.
   - Iterate through `gameSession.currentMap.grid` @MapCell.
   - FOR each cell with `mobili.num` diverso da null :
     - Find the corresponding cell in `boardVisibilityMap` (matching x, y).

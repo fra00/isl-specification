@@ -6,190 +6,235 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-
-import DungeonBoard from './dungeon-board';
-import DungeonHeroOrder from './dungeon-hero-order';
-import { useTurnLogic } from './dungeon-use-turn-logic';
-import { useFogOfWar } from './dungeon-use-fog-of-war';
-import { useDungeonMonsters } from './dungeon-use-monsters';
-import CombatResultModal from './dungeon-combat-result-modal';
-import DungeonTurnControls from './dungeon-turn-controls';
-import { useSecretPassages } from './dungeon-use-secret-passages';
-import DungeonNotification from './dungeon-notification';
-
-import { GameSession, HeroState } from './domain-session';
-import { VisibilityMap } from './domain-map';
-// PageNavigationEnum is imported but not directly used in this component's logic or render,
-// it's part of the onChangePageView prop's signature, which is handled by the parent.
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import DungeonBoard from "./dungeon-board";
+import DungeonHeroOrder from "./dungeon-hero-order";
+import { useTurnLogic } from "./dungeon-use-turn-logic";
+import { useFogOfWar } from "./dungeon-use-fog-of-war";
+import { useDungeonMonsters } from "./dungeon-use-monsters";
+import CombatResultModal from "./dungeon-combat-result-modal";
+import DungeonTurnControls from "./dungeon-turn-controls";
+import { useSecretPassages } from "./dungeon-use-secret-passages";
+import { useTreasureSearch } from "./dungeon-use-treasure";
+import DungeonNotification from "./dungeon-notification";
+import TreasureCardModal from "./dungeon-treasure-card-modal";
+import DungeonInventoryModal from "./dungeon-inventory-modal";
 
 export default function Dungeon({ gameSession, onChangePageView, onUpdateSession }) {
-  const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
-  const [notificationMessage, setNotificationMessage] = useState(null);
-  const [isMissionDataLoaded, setIsMissionDataLoaded] = useState(false);
+    const [isMissionLoading, setIsMissionLoading] = useState(true);
+    const [isStaticDataLoaded, setIsStaticDataLoaded] = useState(false);
+    const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+    const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
+    const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
+    const [notificationMessage, setNotificationMessage] = useState(null);
 
-  const boardVisibilityMap = useFogOfWar({ gameSession, staticVisibilityMap: staticVisibilityMap || VisibilityMap() });
+    const hasLoadedMission = useRef(false);
 
-  const hooksTurnLogic = useTurnLogic({
-    gameSession,
-    visibilityMap: boardVisibilityMap,
-    onUpdateSession: useCallback((session) => onUpdateSession(session), [onUpdateSession]),
-  });
+    useEffect(() => {
+        let isMounted = true;
 
-  // useDungeonMonsters does not return anything, but its internal logic is triggered by props changes
-  useDungeonMonsters({
-    gameSession,
-    visibilityMap: boardVisibilityMap,
-    onUpdateSession: useCallback((session) => onUpdateSession(session), [onUpdateSession]),
-  });
+        const fetchHqData = async () => {
+            try {
+                setIsMissionLoading(true);
+                
+                const boardRes = await fetch('/jsonData/tabellone/default.json');
+                if (!boardRes.ok) throw new Error("Failed to load default.json: File not found");
+                const boardData = await boardRes.json();
 
-  const hooksSecretPassages = useSecretPassages({
-    gameSession,
-    visibilityMap: boardVisibilityMap,
-    onNotify: useCallback((message) => setNotificationMessage(message), []),
-    onActionDone: useCallback(() => hooksTurnLogic.markActionDone(), [hooksTurnLogic]),
-  });
+                const treasureRes = await fetch('/jsonData/treasure-card.json');
+                if (!treasureRes.ok) throw new Error("Failed to load treasure-card.json");
+                const treasureData = await treasureRes.json();
 
-  const areMonstersVisible = useMemo(() => {
-    if (!gameSession?.monsters || !boardVisibilityMap?.data) {
-      return false;
-    }
-    return gameSession.monsters.some(monster => {
-      const cell = boardVisibilityMap.data.find(c => c.x === monster.x && c.y === monster.y);
-      return cell && !cell.fog;
-    });
-  }, [gameSession?.monsters, boardVisibilityMap?.data]);
+                if (isMounted) {
+                    setStaticVisibilityMap(boardData);
+                    const shuffledDeck = [...treasureData].sort(() => Math.random() - 0.5);
+                    
+                    if (onUpdateSession && gameSession) {
+                        onUpdateSession({ ...gameSession, treasureDeck: shuffledDeck });
+                    }
+                    setIsStaticDataLoaded(true);
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                if (isMounted) {
+                    setIsMissionLoading(false);
+                }
+            }
+        };
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (isMissionDataLoaded || !gameSession?.currentMap?.eroi_start) return;
+        fetchHqData();
 
-      try {
-        const response = await fetch('/jsonData/tabellone/default.json');
-        if (!response.ok) {
-          throw new Error("Failed to load default.json: File not found");
+        return () => {
+            isMounted = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (isStaticDataLoaded && !hasLoadedMission.current) {
+            if (!gameSession?.currentMap) {
+                console.error("No mission loaded");
+                return;
+            }
+            
+            hasLoadedMission.current = true;
+            const loadedMap = gameSession.currentMap;
+            
+            const updatedHeroes = gameSession.heroes?.map(hero => {
+                const startPos = loadedMap.eroi_start?.find(start => start.id === hero.heroId);
+                if (startPos) {
+                    return { ...hero, x: startPos.x, y: startPos.y };
+                }
+                return hero;
+            }) || [];
+            
+            if (onUpdateSession) {
+                onUpdateSession({ ...gameSession, heroes: updatedHeroes });
+            }
         }
-        const data = await response.json();
-        const loadedStaticVisibilityMap = VisibilityMap(data);
-        setStaticVisibilityMap(loadedStaticVisibilityMap);
+    }, [isStaticDataLoaded, gameSession, onUpdateSession]);
 
-        let updatedGameSession = { ...gameSession };
-        const loadedMap = updatedGameSession.currentMap; // currentMap is expected to be present as per GameSession signature
-
-        const updatedHeroes = updatedGameSession.heroes.map(hero => {
-          const startPos = loadedMap.eroi_start.find(pos => pos.id === hero.hero.id);
-          if (startPos) {
-            return HeroState({ ...hero, x: startPos.x, y: startPos.y });
-          }
-          return hero;
-        });
-
-        updatedGameSession = GameSession({
-          ...updatedGameSession,
-          heroes: updatedHeroes,
-          currentMap: loadedMap,
-        });
-
-        onUpdateSession(updatedGameSession);
-        setIsMissionDataLoaded(true);
-
-      } catch (error) {
-        console.error("Error loading mission data:", error);
-        setNotificationMessage(`Error loading mission: ${error.message}`);
-      }
-    };
-
-    loadData();
-  }, [isMissionDataLoaded, gameSession, onUpdateSession]);
-
-  const handleConfirmHeroOrder = useCallback((orderedHeroIds) => {
-    const updatedHeroes = gameSession.heroes.map(hero => {
-      const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
-      return HeroState({ ...hero, turnOrder });
+    const boardVisibilityMap = useFogOfWar({ 
+        gameSession, 
+        staticVisibilityMap 
     });
 
-    const updatedSession = GameSession({
-      ...gameSession,
-      heroes: updatedHeroes,
-      isHeroOrderConfirmed: true,
+    const hooksTurnLogic = useTurnLogic({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onUpdateSession
     });
-    onUpdateSession(updatedSession);
-  }, [gameSession, onUpdateSession]);
 
-  const closeCombatResult = useCallback(() => {
-    const updatedSession = GameSession({
-      ...gameSession,
-      lastAttack: null,
+    useDungeonMonsters({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onUpdateSession
     });
-    onUpdateSession(updatedSession);
-  }, [gameSession, onUpdateSession]);
 
-  const handleCloseNotification = useCallback(() => {
-    setNotificationMessage(null);
-  }, []);
+    const handleTreasureCardDrawn = useCallback((card) => {
+        setDrawnTreasureCard(card);
+    }, []);
 
-  const currentHero = useMemo(() => {
-    if (!gameSession?.heroes || !gameSession?.isHeroOrderConfirmed) return null;
-    return gameSession.heroes.find(hero => hero.turnOrder === gameSession.currentTurn);
-  }, [gameSession?.heroes, gameSession?.currentTurn, gameSession?.isHeroOrderConfirmed]);
+    const hooksSecretPassages = useSecretPassages({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        onActionDone: hooksTurnLogic?.markActionDone
+    });
 
+    const hooksTreasure = useTreasureSearch({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        onActionDone: hooksTurnLogic?.markActionDone,
+        onUpdateSession,
+        onTreasureCardDrawn: handleTreasureCardDrawn
+    });
 
-  if (!isMissionDataLoaded || !staticVisibilityMap) {
+    const handleConfirmOrder = useCallback((orderedHeroIds) => {
+        if (!gameSession || !onUpdateSession) return;
+        
+        const updatedHeroes = gameSession.heroes?.map(hero => {
+            const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
+            return { ...hero, turnOrder };
+        }) || [];
+        
+        onUpdateSession({ ...gameSession, heroes: updatedHeroes, isHeroOrderConfirmed: true });
+    }, [gameSession, onUpdateSession]);
+
+    const closeCombatResult = useCallback(() => {
+        if (!gameSession || !onUpdateSession) return;
+        onUpdateSession({ ...gameSession, lastAttack: null });
+    }, [gameSession, onUpdateSession]);
+
+    const closeTreasureCardModal = useCallback(() => {
+        if (drawnTreasureCard && hooksTreasure?.applyTreasureEffect) {
+            hooksTreasure.applyTreasureEffect(drawnTreasureCard);
+        }
+        setDrawnTreasureCard(null);
+    }, [drawnTreasureCard, hooksTreasure]);
+
+    const openInventory = useCallback(() => setIsInventoryOpen(true), []);
+    const closeInventory = useCallback(() => setIsInventoryOpen(false), []);
+    const handleCloseNotification = useCallback(() => setNotificationMessage(null), []);
+
+    const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
+
+    if (isMissionLoading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-black text-white text-2xl">
+                Loading Mission...
+            </div>
+        );
+    }
+
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900 text-white text-2xl">
-        Loading Mission...
-      </div>
+        <div className="w-full h-full relative bg-black">
+            {!gameSession?.isHeroOrderConfirmed && gameSession?.heroes && (
+                <DungeonHeroOrder
+                    heroes={gameSession.heroes}
+                    onConfirmOrder={handleConfirmOrder}
+                />
+            )}
+
+            <DungeonBoard
+                gameSession={gameSession}
+                boardVisibilityMap={boardVisibilityMap}
+                onCellClick={hooksTurnLogic?.handleBoardClick}
+                onCellHover={hooksTurnLogic?.handleBoardHover}
+                onMonsterClick={hooksTurnLogic?.handleMonsterClick}
+                hoveredPath={hooksTurnLogic?.hoveredPath}
+                secretPassages={hooksSecretPassages?.foundPassages}
+                treasures={hooksTreasure?.foundTreasures}
+            />
+
+            {gameSession?.isHeroOrderConfirmed && (
+                <DungeonTurnControls
+                    currentHero={currentHero}
+                    movementPoints={hooksTurnLogic?.movementPoints}
+                    turnPhase={hooksTurnLogic?.turnPhase}
+                    isMoving={hooksTurnLogic?.isMoving}
+                    onRollMovement={hooksTurnLogic?.rollMovement}
+                    onEndTurn={hooksTurnLogic?.endTurn}
+                    onSearchPassages={hooksSecretPassages?.searchPassages}
+                    onSearchTreasure={hooksTreasure?.searchTreasure}
+                    onOpenInventory={openInventory}
+                />
+            )}
+
+            {gameSession?.lastAttack && (
+                <CombatResultModal
+                    isOpen={true}
+                    combatResult={gameSession.lastAttack.combatResult}
+                    attacker={gameSession.lastAttack.hero}
+                    defender={gameSession.lastAttack.monster}
+                    onClose={closeCombatResult}
+                />
+            )}
+
+            {notificationMessage && (
+                <DungeonNotification
+                    message={notificationMessage}
+                    onClose={handleCloseNotification}
+                />
+            )}
+
+            {drawnTreasureCard && (
+                <TreasureCardModal
+                    isOpen={true}
+                    card={drawnTreasureCard}
+                    onClose={closeTreasureCardModal}
+                />
+            )}
+
+            {isInventoryOpen && currentHero && (
+                <DungeonInventoryModal
+                    isOpen={true}
+                    hero={currentHero}
+                    onClose={closeInventory}
+                />
+            )}
+        </div>
     );
-  }
-
-  return (
-    <div className="relative w-full h-full overflow-hidden">
-      {!gameSession.isHeroOrderConfirmed && (
-        <DungeonHeroOrder
-          heroes={gameSession.heroes}
-          onConfirmOrder={handleConfirmHeroOrder}
-        />
-      )}
-
-      <DungeonBoard
-        gameSession={gameSession}
-        boardVisibilityMap={boardVisibilityMap}
-        onCellClick={hooksTurnLogic.handleBoardClick}
-        onCellHover={hooksTurnLogic.handleBoardHover}
-        onMonsterClick={hooksTurnLogic.handleMonsterClick}
-        hoveredPath={hooksTurnLogic.hoveredPath}
-        secretPassages={hooksSecretPassages.getFoundPassages()}
-      />
-
-      {gameSession.isHeroOrderConfirmed && (
-        <DungeonTurnControls
-          currentHero={currentHero}
-          movementPoints={hooksTurnLogic.movementPoints}
-          turnPhase={hooksTurnLogic.turnPhase}
-          isMoving={hooksTurnLogic.isMoving}
-          onRollMovement={hooksTurnLogic.rollMovement}
-          onEndTurn={hooksTurnLogic.endTurn}
-          onSearchPassages={hooksSecretPassages.searchPassages}
-          hasActed={hooksTurnLogic.hasActed && !areMonstersVisible}
-        />
-      )}
-
-      {gameSession.lastAttack && (
-        <CombatResultModal
-          isOpen={true}
-          onClose={closeCombatResult}
-          combatResult={gameSession.lastAttack.combatResult}
-          attacker={gameSession.lastAttack.hero}
-          defender={gameSession.lastAttack.monster}
-        />
-      )}
-
-      {notificationMessage && (
-        <DungeonNotification
-          message={notificationMessage}
-          onClose={handleCloseNotification}
-        />
-      )}
-    </div>
-  );
 }

@@ -89,7 +89,7 @@ if (require.main === module) {
     .find((arg) => arg.startsWith("--stack="))
     ?.split("=")[1];
   const modelArg = args
-    .find((arg) => arg.startsWith("--model="))
+    .find((arg) => arg.startsWith("--model=") || arg.startsWith("--v="))
     ?.split("=")[1];
   const urlArg = args.find((arg) => arg.startsWith("--url="))?.split("=")[1];
 

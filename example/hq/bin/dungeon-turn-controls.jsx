@@ -6,136 +6,183 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { HeroState, TurnPhase } from './domain-session';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function DungeonTurnControls({
-  currentHero = HeroState(), // Default to an empty HeroState to ensure properties exist
-  movementPoints = 0,
-  turnPhase = '', // Default to empty string, assuming an initial phase might be empty or undefined
-  onRollMovement = () => {},
-  onEndTurn = () => {},
-  onSearchPassages = () => {},
-  hasActed = false, // Default to false
+    currentHero = null,
+    movementPoints = 0,
+    turnPhase = null,
+    isMoving = false,
+    onRollMovement = () => {},
+    onEndTurn = () => {},
+    onSearchPassages = () => {},
+    onSearchTreasure = () => {},
+    onOpenInventory = () => {}
 }) {
-  const [position, setPosition] = useState({ x: 20, y: 20 });
-  const [isDragging, setIsDragging] = useState(false);
-  const offset = useRef({ x: 0, y: 0 });
-
-  // Capability: initialize - Loads last known position from storage on mount.
-  useEffect(() => {
-    try {
-      const storedPosition = localStorage.getItem("dungeonTurnControlsPosition");
-      if (storedPosition) {
-        const parsedPosition = JSON.parse(storedPosition);
-        if (typeof parsedPosition.x === 'number' && typeof parsedPosition.y === 'number') {
-          setPosition(parsedPosition);
+    // Lazy initialization for position from LocalStorage
+    const [position, setPosition] = useState(() => {
+        try {
+            const saved = localStorage.getItem("dungeonTurnControlsPosition");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+                    return parsed;
+                }
+            }
+            return { x: 20, y: 20 };
+        } catch (e) {
+            return { x: 20, y: 20 };
         }
-      }
-    } catch (error) {
-      // Fallback to default position if parsing fails or storage is invalid
-      console.error("Failed to parse dungeonTurnControlsPosition from localStorage:", error);
-      setPosition({ x: 20, y: 20 });
-    }
-  }, []);
-
-  // Capability: handleDragInteraction - Manages the drag-and-drop lifecycle.
-  const handleMouseDown = useCallback((e) => {
-    setIsDragging(true);
-    offset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
-  }, [position.x, position.y]);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
-    setPosition({
-      x: e.clientX - offset.current.x,
-      y: e.clientY - offset.current.y,
     });
-  }, [isDragging]);
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(position));
-  }, [position]);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragOffset = useRef({ x: 0, y: 0 });
+    const positionRef = useRef(position);
 
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    }
+    // Keep positionRef updated for the mouseup event to avoid stale closures
+    useEffect(() => {
+        positionRef.current = position;
+    }, [position]);
 
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+    const handleMouseDown = useCallback((e) => {
+        setIsDragging(true);
+        dragOffset.current = {
+            x: e.clientX - positionRef.current.x,
+            y: e.clientY - positionRef.current.y
+        };
+    }, []);
 
-  const heroClasse = currentHero?.hero?.classe || "Unknown";
+    useEffect(() => {
+        if (!isDragging) return;
 
-  const disableRollMovement = turnPhase === TurnPhase.HasMoved || turnPhase === TurnPhase.HasPerformedAction || turnPhase === TurnPhase.IsTurnFinished;
-  const disableActionButtons = turnPhase === TurnPhase.HasPerformedAction || turnPhase === TurnPhase.IsTurnFinished || hasActed;
+        const handleMouseMove = (e) => {
+            setPosition({
+                x: e.clientX - dragOffset.current.x,
+                y: e.clientY - dragOffset.current.y
+            });
+        };
 
-  return (
-    <div
-      className="fixed z-50 w-64 bg-gray-800 text-white rounded-lg shadow-xl p-4 flex flex-col gap-3"
-      style={{ top: position.y, left: position.x }}
-    >
-      <div
-        className={`text-lg font-bold text-center pb-2 border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        onMouseDown={handleMouseDown}
-      >
-        Turn Controls
-      </div>
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            try {
+                localStorage.setItem(
+                    "dungeonTurnControlsPosition", 
+                    JSON.stringify(positionRef.current)
+                );
+            } catch (err) {
+                console.error("Failed to save turn controls position", err);
+            }
+        };
 
-      <div className="flex flex-col gap-1 text-sm">
-        <span>Hero: <span className="font-semibold">{heroClasse}</span></span>
-        <span>Movement: <span className="font-semibold">{movementPoints}</span></span>
-      </div>
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
 
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={onRollMovement}
-          disabled={disableRollMovement}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
+
+    return (
+        <div 
+            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+            className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col border border-gray-700"
         >
-          Roll Movement
-        </button>
+            {/* Header / Drag Handle */}
+            <div 
+                onMouseDown={handleMouseDown}
+                className={`p-3 bg-gray-900 rounded-t-lg select-none flex items-center justify-between border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            >
+                <h3 className="font-bold text-white m-0 text-sm uppercase tracking-wider">Turn Controls</h3>
+                <div className="flex gap-1 opacity-50">
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                </div>
+            </div>
 
-        <button
-          onClick={onSearchPassages}
-          disabled={disableActionButtons}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Search Passages
-        </button>
+            {/* Body */}
+            <div className="p-4 flex flex-col gap-4">
+                
+                {/* Info Section */}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm bg-gray-900/50 p-3 rounded border border-gray-700">
+                    <div className="col-span-2 font-bold text-center text-lg text-yellow-400 border-b border-gray-600 pb-2 mb-2">
+                        {currentHero?.hero?.classe || "Unknown"}
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Move:</span>
+                        <span className="font-mono">{movementPoints}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Gold:</span>
+                        <span className="text-yellow-400 font-mono">{currentHero?.gold ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Health:</span>
+                        <span className="text-red-400 font-mono">{currentHero?.currentBody ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Mind:</span>
+                        <span className="text-blue-400 font-mono">{currentHero?.currentMind ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Attack:</span>
+                        <span className="font-mono">{currentHero?.hero?.attack ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-400">Defense:</span>
+                        <span className="font-mono">{currentHero?.hero?.defense ?? 0}</span>
+                    </div>
+                </div>
 
-        <button
-          disabled={disableActionButtons}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Search Treasure
-        </button>
+                {/* Inventory Section */}
+                <div>
+                    <button
+                        onClick={onOpenInventory}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        Inventory
+                    </button>
+                </div>
 
-        <button
-          disabled={disableActionButtons}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Search Trap
-        </button>
-
-        <button
-          onClick={onEndTurn}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          End Turn
-        </button>
-      </div>
-    </div>
-  );
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                    <button
+                        onClick={onRollMovement}
+                        disabled={turnPhase?.HasMoved || isMoving}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        Roll Movement
+                    </button>
+                    <button
+                        onClick={onSearchPassages}
+                        disabled={turnPhase?.HasPerformedAction}
+                        className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        Search Passages
+                    </button>
+                    <button
+                        onClick={onSearchTreasure}
+                        disabled={turnPhase?.HasPerformedAction}
+                        className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        Search Treasure
+                    </button>
+                    <button
+                        disabled={turnPhase?.HasPerformedAction}
+                        className="w-full py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        Search Trap
+                    </button>
+                    
+                    <button
+                        onClick={onEndTurn}
+                        className="w-full py-2 mt-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold transition-colors shadow-sm"
+                    >
+                        End Turn
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }

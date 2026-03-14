@@ -1,1 +1,1 @@
-export default function PageContent(): React.Element;
+export default function PageContent(): React.ReactElement;

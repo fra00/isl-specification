@@ -6,129 +6,129 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import { PageNavigationEnum } from "./domain-core";
 import { loadShopData, validatePurchase, executePurchase } from "./shop-logic";
 import HeroSummary from "./hero-summary";
 import ShopInventory from "./shop-inventory";
 
-const Armory = ({ gameSession, onUpdateSession, onChangePageView }) => {
+export default function Armory({ gameSession, onUpdateSession, onChangePageView }) {
   const [staticHeroes, setStaticHeroes] = useState([]);
   const [shopItems, setShopItems] = useState([]);
   const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Capability: initialize
   useEffect(() => {
-    const initShop = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await loadShopData();
-        setStaticHeroes(data.heroes);
-        setShopItems(data.items);
-        setSelectedHeroIndex(0); // Default to the first hero
-        setSelectedEquipmentId(null); // No item selected initially
-      } catch (err) {
-        console.error("Failed to load shop data:", err);
-        setError("Failed to load shop data.");
-      } finally {
-        setIsLoading(false);
-      }
+    let isMounted = true;
+
+    loadShopData()
+      .then((data) => {
+        if (isMounted) {
+          setStaticHeroes(data?.heroes || []);
+          setShopItems(data?.items || []);
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load shop data:", error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
     };
-    initShop();
   }, []);
 
-  const currentHeroState = useMemo(() => {
-    return gameSession?.heroes?.[selectedHeroIndex] || null;
-  }, [gameSession, selectedHeroIndex]);
-
-  const selectedItem = useMemo(() => {
-    return shopItems.find(item => item.id === selectedEquipmentId) || null;
-  }, [shopItems, selectedEquipmentId]);
-
-  // Derived state for purchase validation
-  const { allowed: canBuy, reason: buyReason } = useMemo(() => {
-    if (!currentHeroState || !selectedItem) {
-      return { allowed: false, reason: "Select a hero and an item" };
-    }
-    return validatePurchase(currentHeroState, selectedItem);
-  }, [currentHeroState, selectedItem]);
-
-  // Capability: selectHero
   const handleSelectHero = useCallback((index) => {
     setSelectedHeroIndex(index);
-    setSelectedEquipmentId(null); // Reset selected item when hero changes
+    setSelectedEquipmentId(null);
   }, []);
 
-  // Capability: selectItem
   const handleSelectItem = useCallback((itemId) => {
     setSelectedEquipmentId(itemId);
   }, []);
 
-  // Capability: buyItem
+  const currentHeroState = gameSession?.heroes?.[selectedHeroIndex] || null;
+  const selectedItem = shopItems.find((item) => item.id === selectedEquipmentId) || null;
+
   const handleBuyItem = useCallback(() => {
-    if (!currentHeroState || !selectedItem) {
-      return;
-    }
+    if (!currentHeroState || !selectedItem || !gameSession) return;
 
-    const { allowed } = validatePurchase(currentHeroState, selectedItem);
-
-    if (allowed) {
+    const validation = validatePurchase(currentHeroState, selectedItem);
+    if (validation.allowed) {
       const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
       onUpdateSession(updatedSession);
     }
-  }, [gameSession, currentHeroState, selectedItem, selectedHeroIndex, onUpdateSession]);
+  }, [currentHeroState, selectedItem, gameSession, selectedHeroIndex, onUpdateSession]);
 
-  // Capability: enterDungeon
   const handleEnterDungeon = useCallback(() => {
-    onChangePageView(PageNavigationEnum.DUNGEON);
+    if (onChangePageView) {
+      onChangePageView(PageNavigationEnum.DUNGEON);
+    }
   }, [onChangePageView]);
 
-  // Capability: exitShop
   const handleExitShop = useCallback(() => {
-    onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+    if (onChangePageView) {
+      onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+    }
   }, [onChangePageView]);
 
   if (isLoading) {
-    return <div className="text-white p-4">Loading shop...</div>;
+    return (
+      <div className="flex items-center justify-center w-full h-full min-h-screen bg-gray-900 text-white">
+        <p className="text-xl font-bold animate-pulse">Caricamento Armeria...</p>
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="text-red-500 p-4">Error: {error}</div>;
-  }
+  const itemsWithValidation = shopItems.map((item) => {
+    if (!currentHeroState) {
+      return { ...item, canBuy: false, buyReason: "Nessun eroe selezionato" };
+    }
+    const validation = validatePurchase(currentHeroState, item);
+    return {
+      ...item,
+      canBuy: validation.allowed,
+      buyReason: validation.reason,
+    };
+  });
 
-  if (!gameSession || !gameSession.heroes || gameSession.heroes.length === 0) {
-    return <div className="text-white p-4">No active game session or heroes found.</div>;
-  }
+  const selectedItemValidation =
+    currentHeroState && selectedItem
+      ? validatePurchase(currentHeroState, selectedItem)
+      : { allowed: false, reason: "" };
 
   return (
-    <div className="grid grid-cols-2 gap-4 p-4 h-screen bg-gray-800 text-white">
-      <div className="col-span-1">
-        <HeroSummary
-          heroes={gameSession.heroes}
-          staticHeroes={staticHeroes}
-          staticEquipment={shopItems}
-          selectedIndex={selectedHeroIndex}
-          onSelect={handleSelectHero}
-        />
-      </div>
-      <div className="col-span-1">
-        <ShopInventory
-          items={shopItems}
-          selectedItemId={selectedEquipmentId}
-          canBuy={canBuy}
-          buyReason={buyReason}
-          onSelect={handleSelectItem}
-          onBuy={handleBuyItem}
-          onEnterDungeon={handleEnterDungeon}
-          onExit={handleExitShop}
-        />
+    <div className="w-full h-full min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+        
+        <div className="flex flex-col bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+          <HeroSummary
+            heroes={gameSession?.heroes || []}
+            staticHeroes={staticHeroes}
+            equipments={shopItems}
+            selectedIndex={selectedHeroIndex}
+            onSelect={handleSelectHero}
+          />
+        </div>
+
+        <div className="flex flex-col bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+          <ShopInventory
+            items={itemsWithValidation}
+            selectedItemId={selectedEquipmentId}
+            canBuy={selectedItemValidation.allowed}
+            buyReason={selectedItemValidation.reason}
+            onSelect={handleSelectItem}
+            onBuy={handleBuyItem}
+            onEnterDungeon={handleEnterDungeon}
+            onExit={handleExitShop}
+          />
+        </div>
+
       </div>
     </div>
   );
-};
-
-export default Armory;
+}

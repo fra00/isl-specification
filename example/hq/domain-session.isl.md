@@ -52,11 +52,12 @@ Represents the current active session state.
 - `currentMap`: structure of the current map (@MapDefinition).
 - `currentMissionIndex`: Index of the current mission (Integer).
 - `heroes`: List of participating heroes (List of @HeroState).
-- `monsters`: List of active monsters (List of @MonsterState).
+- `monsters`: List of active monsters (List of @MonsterState) Default: [].
 - `spawnedLocations`: List of coordinates "x,y" where monsters have already spawned (List of String).
 - `currentTurn` :Num of the current turn (Integer) default: 1.
 - `isHeroOrderConfirmed`: Flag indicating if the turn order has been selected (Boolean) default: false.
-- `lastAttack`: Object containing details of the last attack for potential UI display (Object with hero, monster, combatResult).
+- `lastAttack`: Object containing details of the last attack for potential UI display (Object with hero, monster, combatResult) default:null.
+- `treasureDeck`: List of treasure cards available in the session (List of @TreasureCard).
 
 #### `TurnPhase`
 

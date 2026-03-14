@@ -1,1 +1,0 @@
-export default function PageContent(): React.Element;

@@ -8,12 +8,12 @@
 
 import React from 'react';
 
-function PlayGame() {
+export const PlayGame = () => {
   return (
-    <div className="p-4 text-2xl font-bold">
-      editor game
+    <div className="flex flex-col items-center justify-center w-full h-full p-6">
+      <h1 className="text-3xl font-bold text-gray-900">
+        editor game
+      </h1>
     </div>
   );
-}
-
-export default PlayGame;
+};

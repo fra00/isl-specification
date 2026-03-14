@@ -6,118 +6,64 @@
  * Edit the ISL file instead.
  */
 
-import { useMemo, useCallback } from 'react';
-import { GameSession, HeroState, MonsterState } from './domain-session';
-import { MapCell, MapDefinition, VisibilityCell, VisibilityMap } from './domain-map';
+import { useCallback, useMemo } from 'react';
 
-/**
- * Custom hook for querying dungeon map data and visibility information.
- * @param {object} props - The hook's configuration object.
- * @param {GameSession} props.gameSession - The current game session data.
- * @param {VisibilityMap | null | undefined} props.visibilityMap - The visibility map data, which can be null or undefined.
- */
-export function useDungeonMapQuery({ gameSession, visibilityMap }) {
-  const mapGrid = useMemo(() => gameSession?.currentMap?.grid || [], [gameSession]);
-  const mapDoors = useMemo(() => gameSession?.currentMap?.porte || [], [gameSession]);
+export const useDungeonMapQuery = ({ gameSession = null, visibilityMap = null } = {}) => {
+  // Capability: initialize
+  // Safely initializes internal structures, handling potential null visibilityMap and gameSession
+  const grid = useMemo(() => gameSession?.currentMap?.grid || [], [gameSession]);
+  const doors = useMemo(() => gameSession?.currentMap?.porte || [], [gameSession]);
   const visibilityData = useMemo(() => visibilityMap?.data || [], [visibilityMap]);
-  const heroes = useMemo(() => gameSession?.heroes || [], [gameSession]);
   const monsters = useMemo(() => gameSession?.monsters || [], [gameSession]);
+  const heroes = useMemo(() => gameSession?.heroes || [], [gameSession]);
 
-  /**
-   * Retrieves the MapCell data at the given coordinates.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {MapCell | null} The MapCell object or null if not found.
-   */
+  // Capability: getMapCell
   const getMapCell = useCallback((x, y) => {
-    return mapGrid.find(cell => cell.x === x && cell.y === y) || null;
-  }, [mapGrid]);
+    return grid.find((cell) => cell.x === x && cell.y === y) || null;
+  }, [grid]);
 
-  /**
-   * Retrieves the VisibilityCell data at the given coordinates.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {VisibilityCell | null} The VisibilityCell object or null if not found.
-   */
+  // Capability: getVisibilityCell
   const getVisibilityCell = useCallback((x, y) => {
-    return visibilityData.find(cell => cell.x === x && cell.y === y) || null;
+    return visibilityData.find((cell) => cell.x === x && cell.y === y) || null;
   }, [visibilityData]);
 
-  /**
-   * Checks if a door exists at the given coordinates.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {boolean} True if a door exists, false otherwise.
-   */
+  // Capability: isDoor
   const isDoor = useCallback((x, y) => {
-    return mapDoors.some(door => door.x === x && door.y === y);
-  }, [mapDoors]);
+    return doors.some((door) => door.x === x && door.y === y);
+  }, [doors]);
 
-  /**
-   * Checks if a secret passage exists at the given coordinates.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {boolean} True if a secret passage exists, false otherwise.
-   */
+  // Capability: isSecretPassage
   const isSecretPassage = useCallback((x, y) => {
     const cell = getMapCell(x, y);
-    return !!cell?.psgg?.ps;
+    return cell?.psgg?.ps != null;
   }, [getMapCell]);
 
-  /**
-   * Checks if the cell is blocked by furniture.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {boolean} True if blocked by furniture, false otherwise.
-   */
+  // Capability: isBlockedByFurniture
   const isBlockedByFurniture = useCallback((x, y) => {
     const cell = getMapCell(x, y);
-    return !!cell?.mobili?.num;
+    return cell?.mobili?.num != null;
   }, [getMapCell]);
 
-  /**
-   * Checks if the cell is occupied by a monster, excluding a specific entity.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @param {number} excludeEntityId - The ID of the monster to exclude from the check.
-   * @returns {boolean} True if occupied by a monster, false otherwise.
-   */
+  // Capability: isBlockedByMonster
   const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
-    const monster = monsters.find(
-      (m) => m.x === x && m.y === y && m.id !== excludeEntityId && m.currentBody > 0
-    );
-    return !!monster;
+    const monster = monsters.find((m) => m.x === x && m.y === y && m.id !== excludeEntityId);
+    // ISL specifies hp > 0, mapping to currentBody based on MonsterState signature
+    return monster != null && monster.currentBody > 0;
   }, [monsters]);
 
-  /**
-   * Checks if the cell is occupied by a hero, excluding a specific entity.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @param {number} excludeEntityId - The ID of the hero to exclude from the check.
-   * @returns {boolean} True if occupied by a hero, false otherwise.
-   */
+  // Capability: isOccupiedByHero
   const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
-    const hero = heroes.find(
-      (h) => h.x === x && h.y === y && h.heroId !== excludeEntityId && h.currentBody > 0
-    );
-    return !!hero;
+    const hero = heroes.find((h) => h.x === x && h.y === y && h.heroId !== excludeEntityId);
+    return hero != null;
   }, [heroes]);
 
-  /**
-   * Checks if the cell is blocked by rock.
-   * @param {number} x - The X coordinate.
-   * @param {number} y - The Y coordinate.
-   * @returns {boolean} True if blocked by rock, false otherwise.
-   */
+  // Capability: isBlockedByRock
   const isBlockedByRock = useCallback((x, y) => {
     const cell = getMapCell(x, y);
-    return !!cell?.arnt?.antroc;
+    return cell?.arnt?.antroc === true;
   }, [getMapCell]);
 
-  /**
-   * Returns the width and height of the map.
-   * @returns {{ width: number, height: number }} An object with width and height.
-   */
+  // Capability: getMapDimensions
   const getMapDimensions = useCallback(() => {
     return { width: 26, height: 19 };
   }, []);
@@ -131,6 +77,6 @@ export function useDungeonMapQuery({ gameSession, visibilityMap }) {
     isBlockedByMonster,
     isOccupiedByHero,
     isBlockedByRock,
-    getMapDimensions,
+    getMapDimensions
   };
-}
+};

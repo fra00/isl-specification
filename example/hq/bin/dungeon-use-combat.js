@@ -6,98 +6,96 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
-/**
- * Enum representing the face of a combat die.
- */
 export const CombatDiceResult = {
-  SKULL: 'SKULL',
-  WHITE_SHIELD: 'WHITE_SHIELD',
-  BLACK_SHIELD: 'BLACK_SHIELD',
+    SKULL: 'SKULL',
+    WHITE_SHIELD: 'WHITE_SHIELD',
+    BLACK_SHIELD: 'BLACK_SHIELD'
 };
 
-/**
- * Custom hook for handling combat logic.
- * Role: Business Logic
- */
-export function useCombatLogic() {
-  /**
-   * Simulates dice rolls and calculates damage for an attack between any two entities (Hero or Monster).
-   * @param {object} attacker - The attacking entity (@HeroState | @MonsterState).
-   * @param {object} defender - The defending entity (@HeroState | @MonsterState).
-   * @returns {object} CombatResult - Details of the combat interaction.
-   */
-  const resolveCombat = useCallback((attacker, defender) => {
-    // 1. Determine Dice Counts
-    let attackDiceCount = 0;
-    if (attacker && attacker.hero) {
-      attackDiceCount = attacker.hero.attacco;
-      // "Add bonuses from attacker.equipment" - Not implemented as no mechanism for equipment lookup is provided.
-    } else if (attacker && attacker.monster) {
-      attackDiceCount = attacker.monster.attacco;
-    }
+export const CombatResult = (data = {}) => ({
+    attackerDice: data.attackerDice || [],
+    defenderDice: data.defenderDice || [],
+    skulls: data.skulls || 0,
+    shields: data.shields || 0,
+    damageDealt: data.damageDealt || 0
+});
 
-    let defenseDiceCount = 0;
-    if (defender && defender.hero) {
-      defenseDiceCount = defender.hero.difesa;
-      // "Add bonuses from defender.equipment" - Not implemented as no mechanism for equipment lookup is provided.
-    } else if (defender && defender.monster) {
-      defenseDiceCount = defender.monster.difesa;
-    }
+export function useCombatLogic(config = {}) {
+    const resolveCombat = useCallback((attacker, defender) => {
+        // 1. Determine Dice Counts
+        let attackDiceCount = 0;
+        
+        if (attacker?.hero) {
+            attackDiceCount = attacker.hero.attacco || 0;
+            // Add bonuses from attacker.equipment (safely handling if populated with objects)
+            if (Array.isArray(attacker.equipment)) {
+                attackDiceCount += attacker.equipment.reduce((sum, eq) => sum + (eq?.dadatt || 0), 0);
+            }
+        } else if (attacker?.monster) {
+            attackDiceCount = attacker.monster.attacco || 0;
+        }
 
-    // Ensure dice counts are non-negative
-    attackDiceCount = Math.max(0, attackDiceCount);
-    defenseDiceCount = Math.max(0, defenseDiceCount);
+        let defenseDiceCount = 0;
+        
+        if (defender?.hero) {
+            defenseDiceCount = defender.hero.difesa || 0;
+            // Add bonuses from defender.equipment (safely handling if populated with objects)
+            if (Array.isArray(defender.equipment)) {
+                defenseDiceCount += defender.equipment.reduce((sum, eq) => sum + (eq?.daddif || 0) + (eq?.daddifex || 0), 0);
+            }
+        } else if (defender?.monster) {
+            defenseDiceCount = defender.monster.difesa || 0;
+        }
 
-    // 2. Roll Attack
-    const attackerDice = [];
-    let skulls = 0;
-    for (let i = 0; i < attackDiceCount; i++) {
-      const roll = Math.floor(Math.random() * 6) + 1; // Generate random integer 1-6
-      if (roll >= 1 && roll <= 3) { // 1, 2, 3
-        attackerDice.push(CombatDiceResult.SKULL);
-        skulls++;
-      } else if (roll >= 4 && roll <= 5) { // 4, 5
-        attackerDice.push(CombatDiceResult.WHITE_SHIELD);
-      } else if (roll === 6) { // 6
-        attackerDice.push(CombatDiceResult.BLACK_SHIELD);
-      }
-    }
+        // 2. Roll Attack
+        const attackerDice = [];
+        for (let i = 0; i < attackDiceCount; i++) {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            if (roll <= 3) {
+                attackerDice.push(CombatDiceResult.SKULL);
+            } else if (roll <= 5) {
+                attackerDice.push(CombatDiceResult.WHITE_SHIELD);
+            } else {
+                attackerDice.push(CombatDiceResult.BLACK_SHIELD);
+            }
+        }
+        
+        const skulls = attackerDice.filter(d => d === CombatDiceResult.SKULL).length;
 
-    // 3. Roll Defense
-    const defenderDice = [];
-    let shields = 0;
-    for (let i = 0; i < defenseDiceCount; i++) {
-      const roll = Math.floor(Math.random() * 6) + 1; // Generate random integer 1-6
-      if (roll >= 1 && roll <= 3) { // 1, 2, 3
-        defenderDice.push(CombatDiceResult.SKULL);
-      } else if (roll >= 4 && roll <= 5) { // 4, 5
-        defenderDice.push(CombatDiceResult.WHITE_SHIELD);
-      } else if (roll === 6) { // 6
-        defenderDice.push(CombatDiceResult.BLACK_SHIELD);
-      }
-    }
+        // 3. Roll Defense
+        const defenderDice = [];
+        for (let i = 0; i < defenseDiceCount; i++) {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            if (roll <= 3) {
+                defenderDice.push(CombatDiceResult.SKULL);
+            } else if (roll <= 5) {
+                defenderDice.push(CombatDiceResult.WHITE_SHIELD);
+            } else {
+                defenderDice.push(CombatDiceResult.BLACK_SHIELD);
+            }
+        }
 
-    // Calculate effective shields based on defender type
-    if (defender && defender.hero) {
-      shields = defenderDice.filter(die => die === CombatDiceResult.WHITE_SHIELD).length;
-    } else if (defender && defender.monster) {
-      shields = defenderDice.filter(die => die === CombatDiceResult.BLACK_SHIELD).length;
-    }
+        let shields = 0;
+        if (defender?.hero) {
+            shields = defenderDice.filter(d => d === CombatDiceResult.WHITE_SHIELD).length;
+        } else if (defender?.monster) {
+            shields = defenderDice.filter(d => d === CombatDiceResult.BLACK_SHIELD).length;
+        }
 
-    // 4. Calculate Outcome
-    const damageDealt = Math.max(0, skulls - shields);
+        // 4. Calculate Outcome
+        const damageDealt = Math.max(0, skulls - shields);
 
-    // 5. Return CombatResult
-    return {
-      attackerDice,
-      defenderDice,
-      skulls,
-      shields,
-      damageDealt,
-    };
-  }, []); // Empty dependency array to ensure referential stability of resolveCombat
+        // 5. Return
+        return CombatResult({
+            attackerDice,
+            defenderDice,
+            skulls,
+            shields,
+            damageDealt
+        });
+    }, []);
 
-  return { resolveCombat };
+    return { resolveCombat };
 }

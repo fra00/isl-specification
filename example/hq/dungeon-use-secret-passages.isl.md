@@ -10,6 +10,7 @@
 > **Reference**: @GameSession in `./domain-session.isl.md`
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
 > **Reference**: @MapCellPassage in `./domain-map.isl.md`
+> **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
 
 ## Component: useSecretPassages
 
@@ -27,25 +28,25 @@
 #### internalState
 
 - `foundPassages`: List of {x: Integer, y: Integer, img: String} (Stores discovered secret passages).
+- `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
 
 #### searchPassages
 
 - **Contract**: Scans visible area for secret passages.
 - **Trigger**: User clicks "Cerca Passaggi".
 - **Flow**:
+  - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
+  - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
   - Initialize `foundInThisSearch` as false.
-  - Iterate through `gameSession.currentMap.grid` (the map cells).
-  - FOR each cell:
-    - Check if cell has `psgg` (Secret Passage property).
-    - IF `cell.psgg.ps` > 0:
-      - Check visibility: Find corresponding cell in `visibilityMap` (at x, y).
-      - IF `visibilityMap` cell exists AND `fog` is false:
-        - Check if already found: IF (x, y) NOT in `foundPassages`:
-          - Determine Image:
-            - IF `cell.psgg.oriz` is true THEN `img` = "pso.jpg".
-            - ELSE `img` = "psv.jpg".
-          - Add {x, y, img} to `foundPassages`.
-          - Set `foundInThisSearch` to true.
+  - FOR each `cell` in `visibleCells`:
+    - Find corresponding `mapCell` in `gameSession.currentMap.grid` at `cell.x`, `cell.y`.
+    - IF `mapCell` exists AND `mapCell.psgg` exists AND `mapCell.psgg.ps` > 0:
+      - Check if already found: IF (`mapCell.x`, `mapCell.y`) NOT in `foundPassages`:
+        - Determine Image:
+          - IF `mapCell.psgg.oriz` is true THEN `img` = "pso.jpg".
+          - ELSE `img` = "psv.jpg".
+        - Add {x: mapCell.x, y: mapCell.y, img: img} to `foundPassages`.
+        - Set `foundInThisSearch` to true.
   - IF `foundInThisSearch` is true:
     - Trigger `onNotify("Hai trovato un passaggio segreto!")`.
     - Trigger `onActionDone()`.

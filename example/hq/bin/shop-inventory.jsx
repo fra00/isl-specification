@@ -6,80 +6,137 @@
  * Edit the ISL file instead.
  */
 
-import React, { useMemo } from 'react';
-import { Equipment } from './domain-ruleset';
+import React, { useCallback, useMemo } from 'react';
 
-const ShopInventory = ({
+export default function ShopInventory({
   items = [],
-  selectedItemId,
-  canBuy,
+  selectedItemId = null,
+  canBuy = false,
   buyReason = '',
   onSelect,
   onBuy,
   onEnterDungeon,
-  onExit,
-}) => {
+  onExit
+}) {
   const selectedItem = useMemo(() => {
-    return items.find(item => item.id === selectedItemId);
+    if (!items || !Array.isArray(items)) return null;
+    return items.find(item => item?.id === selectedItemId) || null;
   }, [items, selectedItemId]);
 
+  const handleSelect = useCallback((id) => {
+    if (typeof onSelect === 'function') {
+      onSelect(id);
+    }
+  }, [onSelect]);
+
+  const handleBuy = useCallback(() => {
+    if (canBuy && typeof onBuy === 'function') {
+      onBuy();
+    }
+  }, [canBuy, onBuy]);
+
+  const handleEnterDungeon = useCallback(() => {
+    if (typeof onEnterDungeon === 'function') {
+      onEnterDungeon();
+    }
+  }, [onEnterDungeon]);
+
+  const handleExit = useCallback(() => {
+    if (typeof onExit === 'function') {
+      onExit();
+    }
+  }, [onExit]);
+
   return (
-    <div className="flex flex-col h-full p-4 bg-gray-800 text-white">
-      {/* Item List */}
-      <div className="flex-grow overflow-y-auto mb-4 border border-gray-700 rounded p-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={`flex justify-between items-center p-2 mb-1 rounded cursor-pointer
-                        ${selectedItemId === item.id ? 'bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'}
-                        ${!canBuy && selectedItemId === item.id ? 'opacity-50' : ''}`}
-            onClick={() => onSelect(item.id)}
-          >
-            <span>{item.nome}</span>
-            <span>{item.prezzo} G</span>
-          </div>
-        ))}
+    <div className="flex flex-col w-full h-full bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+      
+      {/* List Section */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Inventario Negozio</h2>
+        <ul className="space-y-2">
+          {items && items.length > 0 ? (
+            items.map((item) => (
+              <li
+                key={item?.id}
+                onClick={() => handleSelect(item?.id)}
+                className={`flex justify-between items-center p-3 border rounded-md cursor-pointer transition-colors ${
+                  item?.id === selectedItemId
+                    ? 'bg-blue-100 border-blue-500 shadow-sm'
+                    : 'bg-white hover:bg-gray-100 border-gray-200'
+                }`}
+              >
+                <span className="font-semibold text-gray-700">{item?.nome || 'Oggetto Sconosciuto'}</span>
+                <span className="text-yellow-600 font-bold">{item?.prezzo || 0} Gold</span>
+              </li>
+            ))
+          ) : (
+            <li className="text-gray-500 text-center py-8 italic">
+              Nessun oggetto disponibile nel negozio.
+            </li>
+          )}
+        </ul>
       </div>
 
-      {/* Preview */}
-      <div className="mb-4 p-4 bg-gray-700 rounded flex justify-center items-center h-48">
+      {/* Preview Section */}
+      <div className="h-56 flex flex-col items-center justify-center bg-white border-t border-b border-gray-200 p-4 shadow-inner">
         {selectedItem ? (
-          <img
-            src={`/img/equip/${selectedItem.immagine}`}
-            alt={selectedItem.nome}
-            className="max-h-full max-w-full object-contain"
-          />
+          <>
+            {selectedItem.immagine ? (
+              <img
+                src={`/img/equip/${selectedItem.immagine}`}
+                alt={selectedItem.nome || 'Anteprima oggetto'}
+                className="max-h-32 object-contain mb-4 drop-shadow-md"
+              />
+            ) : (
+              <div className="h-32 w-32 bg-gray-200 flex items-center justify-center mb-4 rounded border border-gray-300">
+                <span className="text-gray-400 text-sm font-medium">Nessuna Immagine</span>
+              </div>
+            )}
+            <span className="font-bold text-lg text-gray-800 text-center">
+              {selectedItem.nome || 'Oggetto Sconosciuto'}
+            </span>
+          </>
         ) : (
-          <p className="text-gray-400">Seleziona un oggetto</p>
+          <div className="flex flex-col items-center text-gray-400">
+            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="italic">Seleziona un oggetto per visualizzare i dettagli</span>
+          </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-col space-y-2">
+      {/* Actions Section */}
+      <div className="flex flex-wrap justify-between items-center p-4 bg-gray-100 gap-4">
         <button
-          className={`px-4 py-2 rounded font-bold
-                      ${canBuy ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 cursor-not-allowed'}`}
-          onClick={onBuy}
+          onClick={handleBuy}
           disabled={!canBuy}
-          title={!canBuy ? buyReason : ''}
+          title={!canBuy ? buyReason : 'Acquista l\'oggetto selezionato'}
+          className={`px-6 py-3 rounded-md font-bold transition-all duration-200 ${
+            canBuy
+              ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg active:transform active:scale-95'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
           Acquista
         </button>
-        <button
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-bold"
-          onClick={onEnterDungeon}
-        >
-          Entra nel dungeon
-        </button>
-        <button
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded font-bold"
-          onClick={onExit}
-        >
-          Esci
-        </button>
+        
+        <div className="flex gap-3">
+          <button
+            onClick={handleEnterDungeon}
+            className="px-6 py-3 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 shadow-md hover:shadow-lg transition-all duration-200 active:transform active:scale-95"
+          >
+            Entra nel dungeon
+          </button>
+          <button
+            onClick={handleExit}
+            className="px-6 py-3 bg-gray-700 text-white font-bold rounded-md hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200 active:transform active:scale-95"
+          >
+            Esci
+          </button>
+        </div>
       </div>
+      
     </div>
   );
-};
-
-export default ShopInventory;
+}

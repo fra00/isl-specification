@@ -6,62 +6,67 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone }) {
-  const [foundPassages, setFoundPassages] = useState([]);
+    const [foundPassages, setFoundPassages] = useState([]);
+    const foundPassagesRef = useRef(foundPassages);
 
-  const searchPassages = useCallback(() => {
-    let foundInThisSearch = false;
-    const currentMapGrid = gameSession?.currentMap?.grid || [];
-    const visibilityData = visibilityMap?.data || [];
+    useEffect(() => {
+        foundPassagesRef.current = foundPassages;
+    }, [foundPassages]);
 
-    const newFoundPassages = [];
+    const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
-    currentMapGrid.forEach(cell => {
-      // Check if cell has psgg (Secret Passage property) and ps > 0
-      if (cell?.psgg?.ps > 0) {
-        // Find corresponding cell in visibilityMap
-        const visibilityMapCell = visibilityData.find(
-          vCell => vCell.x === cell.x && vCell.y === cell.y
-        );
-
-        // Check visibility: IF visibilityMap cell exists AND fog is false
-        if (visibilityMapCell && visibilityMapCell.fog === false) {
-          // Check if already found: IF (x, y) NOT in foundPassages (current state)
-          const isAlreadyFound = foundPassages.some(
-            p => p.x === cell.x && p.y === cell.y
-          );
-
-          if (!isAlreadyFound) {
-            // Determine Image
-            const img = cell.psgg.oriz ? "pso.jpg" : "psv.jpg";
-            newFoundPassages.push({ x: cell.x, y: cell.y, img });
-            foundInThisSearch = true;
-          }
+    const searchPassages = useCallback(() => {
+        if (!gameSession?.heroes || !gameSession?.currentMap?.grid) {
+            return;
         }
-      }
-    });
 
-    if (newFoundPassages.length > 0) {
-      setFoundPassages(prev => [...prev, ...newFoundPassages]);
-    }
+        const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
+        if (!currentHero) {
+            return;
+        }
 
-    if (foundInThisSearch) {
-      onNotify("Hai trovato un passaggio segreto!");
-    } else {
-      onNotify("Nessun passaggio segreto trovato.");
-    }
+        const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y);
+        let foundInThisSearch = false;
+        const newPassages = [];
 
-    onActionDone();
-  }, [gameSession, visibilityMap, onNotify, onActionDone, foundPassages]);
+        visibleCells.forEach(cell => {
+            const mapCell = gameSession.currentMap.grid.find(c => c.x === cell.x && c.y === cell.y);
+            
+            if (mapCell?.psgg != null && mapCell.psgg.ps != null && mapCell.psgg.ps > 0) {
+                const alreadyFound = foundPassagesRef.current.some(p => p.x === mapCell.x && p.y === mapCell.y) ||
+                                     newPassages.some(p => p.x === mapCell.x && p.y === mapCell.y);
 
-  const getFoundPassages = useCallback(() => {
-    return foundPassages;
-  }, [foundPassages]);
+                if (!alreadyFound) {
+                    const img = mapCell.psgg.oriz ? "pso.jpg" : "psv.jpg";
+                    newPassages.push({ x: mapCell.x, y: mapCell.y, img });
+                    foundInThisSearch = true;
+                }
+            }
+        });
 
-  return {
-    searchPassages,
-    getFoundPassages,
-  };
+        if (foundInThisSearch) {
+            setFoundPassages(prev => [...prev, ...newPassages]);
+            if (onNotify) {
+                onNotify("Hai trovato un passaggio segreto!");
+            }
+        } else {
+            if (onNotify) {
+                onNotify("Nessun passaggio segreto trovato.");
+            }
+        }
+        
+        if (onActionDone) {
+            onActionDone();
+        }
+
+    }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
+
+    return {
+        foundPassages,
+        searchPassages
+    };
 }

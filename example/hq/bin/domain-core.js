@@ -6,18 +6,15 @@
  * Edit the ISL file instead.
  */
 
-export const PageNavigationEnum = {
+export const PageNavigationEnum = Object.freeze({
   MAIN_MENU: 'MAIN_MENU',
   PLAY_GAME: 'PLAY_GAME',
   EDITOR_GAME: 'EDITOR_GAME',
   SHOP: 'SHOP',
   DUNGEON: 'DUNGEON',
-  DUNGEON_DESCRIPTION: 'DUNGEON_DESCRIPTION',
-};
+  DUNGEON_DESCRIPTION: 'DUNGEON_DESCRIPTION'
+});
 
-export const NavigationStatus = (data = {}) => {
-  const { currentPageView = PageNavigationEnum.MAIN_MENU } = data;
-  return {
-    currentPageView,
-  };
-};
+export const NavigationStatus = (data = {}) => ({
+  currentPageView: data?.currentPageView ?? PageNavigationEnum.MAIN_MENU
+});

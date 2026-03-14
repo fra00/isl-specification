@@ -6,50 +6,54 @@
  * Edit the ISL file instead.
  */
 
-import React, { useMemo } from 'react';
-import { GameSession } from './domain-session';
-import { MapCell, VisibilityMap } from './domain-map';
+import { useMemo } from 'react';
 
 export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
-  const visibleFurniture = useMemo(() => {
-    // IF gameSession.currentMap OR boardVisibilityMap is missing RETURN empty list.
-    if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
-      return [];
-    }
-
-    const visibleItems = [];
-    const mapGrid = gameSession.currentMap.grid;
-    const visibilityData = boardVisibilityMap.data;
-
-    // Create a quick lookup map for visibility cells for efficient access
-    const visibilityMapLookup = new Map();
-    for (const vCell of visibilityData) {
-      visibilityMapLookup.set(`${vCell.x},${vCell.y}`, vCell);
-    }
-
-    // Iterate through gameSession.currentMap.grid (each cell is a @MapCell).
-    for (const cell of mapGrid) {
-      // IF @MapCell.arnt.antroc is true AND @MapCell.arnt.inv is false THEN
-      // Add the rock image at coordinates x,y using the image `public/pietra.jpg`
-      if (cell.arnt?.antroc === true && cell.arnt?.inv === false) {
-        visibleItems.push({ x: cell.x, y: cell.y, img: 'public/pietra.jpg' });
-      }
-
-      // FOR each cell with `mobili.num` diverso da null :
-      if (cell.mobili?.num != null) {
-        // Find the corresponding cell in `boardVisibilityMap` (matching x, y).
-        const visibilityCell = visibilityMapLookup.get(`${cell.x},${cell.y}`);
-
-        // IF the visibility cell exists AND `fog` is false:
-        // Add the furniture item to the result list (including x, y, and image).
-        if (visibilityCell && visibilityCell.fog === false) {
-          visibleItems.push({ x: cell.x, y: cell.y, img: cell.mobili.img });
+    const visibleFurniture = useMemo(() => {
+        if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
+            return [];
         }
-      }
-    }
 
-    return visibleItems;
-  }, [gameSession?.currentMap?.grid, boardVisibilityMap?.data]); // Dependencies for useMemo to re-calculate when map or visibility changes
+        const result = [];
+        
+        // Create a lookup map for visibility to optimize performance
+        const visibilityLookup = new Map();
+        for (let i = 0; i < boardVisibilityMap.data.length; i++) {
+            const vCell = boardVisibilityMap.data[i];
+            if (vCell != null) {
+                visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
+            }
+        }
 
-  return { visibleFurniture };
+        for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
+            const cell = gameSession.currentMap.grid[i];
+            if (!cell) continue;
+
+            const vCell = visibilityLookup.get(`${cell.x},${cell.y}`);
+
+            if (vCell && vCell.fog === false) {
+                // Check for rock (antroc)
+                if (cell.arnt?.antroc === true && cell.arnt?.inv === false) {
+                    result.push({
+                        x: cell.x,
+                        y: cell.y,
+                        img: '../cell/pietra.jpg'
+                    });
+                }
+
+                // Check for furniture
+                if (cell.mobili?.num != null) {
+                    result.push({
+                        x: cell.x,
+                        y: cell.y,
+                        img: cell.mobili.img
+                    });
+                }
+            }
+        }
+
+        return result;
+    }, [gameSession?.currentMap, boardVisibilityMap]);
+
+    return { visibleFurniture };
 };

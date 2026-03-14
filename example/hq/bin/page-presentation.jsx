@@ -7,84 +7,85 @@
  */
 
 import React, { useState, useCallback } from 'react';
-
-// Imports from REAL IMPLEMENTATION CONTEXT
-import { PageNavigationEnum } from './domain-core';
+import { PageNavigationEnum, NavigationStatus } from './domain-core';
+import { GameSession } from './domain-session';
 import PlayGame from './play-game';
-import PlayGameEditor from './editor-game'; // Aliased to avoid conflict with PlayGame from './play-game'. The signature for './editor-game' is 'export default function PlayGame(): React.Element;'
+import { PlayGame as EditorGame } from './editor-game';
 import MainMenu from './main-menu';
 import Armory from './armory';
 import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
 export default function PageContent() {
-  const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);
+  const [navStatus, setNavStatus] = useState(() =>
+    NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU })
+  );
+  
   const [gameSession, setGameSession] = useState(null);
 
-  // Capability: changePageView
   const changePageView = useCallback((nextPageView) => {
-    setCurrentPageView(nextPageView);
+    setNavStatus(NavigationStatus({ currentPageView: nextPageView }));
   }, []);
 
-  // Capability: updateSession
   const updateSession = useCallback((session) => {
     setGameSession(session);
   }, []);
 
-  // Capability: startMission (Placeholder as per ISL)
   const startMission = useCallback((missionIndex) => {
-    // Log or handle mission start logic.
-    console.log(`Starting mission with index: ${missionIndex}`);
+    console.log(`Starting mission: ${missionIndex}`);
   }, []);
 
-  // Capability: showPageView (Render logic)
   const renderPageView = () => {
-    switch (currentPageView) {
+    switch (navStatus?.currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
+        
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
+        
       case PageNavigationEnum.EDITOR_GAME:
-        // Using the aliased component for editor-game, which is named PlayGame in its signature.
-        return <PlayGameEditor />;
+        return <EditorGame />;
+        
       case PageNavigationEnum.SHOP:
         return (
           <Armory
+            onChangePageView={changePageView}
             gameSession={gameSession}
             onUpdateSession={updateSession}
-            onChangePageView={changePageView}
           />
         );
+        
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
+        
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
+        
       default:
-        // Fallback to MainMenu if currentPageView is somehow invalid
         return <MainMenu onChangePageView={changePageView} />;
     }
   };
 
   return (
-    <div className="w-2/3 h-screen bg-black overflow-hidden">
+    <div className="w-full md:w-2/3 h-screen bg-black overflow-hidden mx-auto">
       {renderPageView()}
     </div>
   );

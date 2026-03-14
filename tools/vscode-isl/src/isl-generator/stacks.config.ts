@@ -57,6 +57,7 @@ export const STACKS: Record<string, StackConfig> = {
       "Domain Objects: MUST be instantiated using Domain Factory Functions (e.g. `Paddle()`). DO NOT create ad-hoc object literals that might miss properties.",
       "Hooks: Custom Hooks (useName). Exposed functions MUST be stable (use refs for state access) to prevent consumer re-renders.",
       "Consumption: Hook import → call hook to get function. NO direct import of functions from hooks",
+      'Avoid "React has detected a change in the order of Hooks called by [Component]. This will lead to bugs and errors if not fixed." ',
       "Business Logic: MUST use Named Exports for functions. DO NOT export a singleton object.",
       "Immutability: Always return new objects/arrays when updating state. Never mutate state in place.",
       "Visibility: All Capabilities in Business Logic/Domain MUST be exported. Presentation capabilities are internal to the component.",

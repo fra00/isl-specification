@@ -6,15 +6,13 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-import PageContent from './page-presentation';
+import React from "react";
+import PageContent from "./page-presentation";
 
-function MainContent() {
+export default function MainContent() {
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-black">
+    <main className="w-full h-screen flex items-center justify-center">
       <PageContent />
-    </div>
+    </main>
   );
 }
-
-export default MainContent;

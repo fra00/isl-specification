@@ -29,10 +29,9 @@ export class ISLBuilder {
       return;
     }
 
-    this.buildGraph();
-
     let buildOrder: string[];
     try {
+      this.buildGraph();
       buildOrder = this.getBuildOrder();
       console.log(
         `📋 Build Order: \n${buildOrder.map((f) => `   - ${path.basename(f)}`).join("\n")}`,
@@ -120,12 +119,18 @@ export class ISLBuilder {
       const content = fs.readFileSync(file, "utf-8");
       const dirName = path.dirname(file);
       const lines = content.split(/\r?\n/);
-      for (const line of lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         const match = line.match(refPattern);
         if (match) {
           const relPath = match[1] || match[2];
           if (relPath) {
             const dependencyPath = path.resolve(dirName, relPath);
+            if (!fs.existsSync(dependencyPath)) {
+              throw new Error(
+                `Broken reference in ${path.basename(file)} (line ${i + 1}): File not found at '${relPath}'`,
+              );
+            }
             if (this.allFiles.has(dependencyPath)) {
               this.dependents.get(dependencyPath)?.push(file);
               this.inDegree.set(file, (this.inDegree.get(file) || 0) + 1);

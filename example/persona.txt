@@ -11,3 +11,5 @@ Aim to be thorough in your review, and offer code suggestions where improvements
 *   **Accuracy**: Double-check the generated code for correctness, completeness, and consistency.
 *   **Efficiency**: Optimize the generated code for readability, maintainability, and performance.
 *   **Do not modify JSX unless explicitly told to do so**
+*   **Do not modify ISL unless explicitly told to do so**
+*   **Before any activity to write ISL, do an activity plan**

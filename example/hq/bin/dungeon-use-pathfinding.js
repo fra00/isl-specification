@@ -10,69 +10,64 @@ import { useCallback } from 'react';
 import { useDungeonMapQuery } from './dungeon-map-query';
 import { useDungeonMovementRules } from './dungeon-movement-rules';
 
-export function usePathfinding(config = {}) {
-  const { gameSession = null, visibilityMap = null } = config;
+export function usePathfinding({ gameSession, visibilityMap } = {}) {
+    const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
+    const movementRules = useDungeonMovementRules({ mapQuery });
 
-  const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
-  const movementRules = useDungeonMovementRules({ mapQuery });
-
-  const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-    if (!movementRules?.isValidDestination) {
-      return [];
-    }
-
-    // Pre-check: if the destination is not valid, return an empty path immediately
-    if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
-      return [];
-    }
-
-    const queue = [{ x: startX, y: startY, path: [] }];
-    const visited = new Set([`${startX},${startY}`]);
-
-    const directions = [
-      { dx: 0, dy: -1 }, // Up
-      { dx: 0, dy: 1 },  // Down
-      { dx: -1, dy: 0 }, // Left
-      { dx: 1, dy: 0 }   // Right
-    ];
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-
-      // If we reached the target, return the path taken to get here
-      if (current.x === targetX && current.y === targetY) {
-        return current.path;
-      }
-
-      // If we reached the maximum depth, do not explore neighbors
-      if (current.path.length >= maxDepth) {
-        continue;
-      }
-
-      // Explore neighbors
-      for (let i = 0; i < directions.length; i++) {
-        const nx = current.x + directions[i].dx;
-        const ny = current.y + directions[i].dy;
-        const key = `${nx},${ny}`;
-
-        if (!visited.has(key)) {
-          if (movementRules.isWalkable(current.x, current.y, nx, ny, excludeEntityId)) {
-            visited.add(key);
-            queue.push({
-              x: nx,
-              y: ny,
-              path: [...current.path, { x: nx, y: ny }]
-            });
-          }
+    const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
+        if (!movementRules?.isValidDestination || !movementRules?.isWalkable) {
+            return [];
         }
-      }
-    }
 
-    // Return empty path if no path is found
-    return [];
-  }, [movementRules]);
+        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
+            return [];
+        }
 
-  return {
-    calculatePath
-  };
+        const queue = [{ x: startX, y: startY, path: [] }];
+        const visited = new Set();
+        visited.add(`${startX},${startY}`);
+
+        const directions = [
+            { dx: 0, dy: -1 }, // Up
+            { dx: 0, dy: 1 },  // Down
+            { dx: -1, dy: 0 }, // Left
+            { dx: 1, dy: 0 }   // Right
+        ];
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+
+            if (current.x === targetX && current.y === targetY) {
+                return current.path;
+            }
+
+            if (current.path.length >= maxDepth) {
+                continue;
+            }
+
+            for (let i = 0; i < directions.length; i++) {
+                const dir = directions[i];
+                const neighborX = current.x + dir.dx;
+                const neighborY = current.y + dir.dy;
+                const neighborKey = `${neighborX},${neighborY}`;
+
+                if (!visited.has(neighborKey)) {
+                    if (movementRules.isWalkable(current.x, current.y, neighborX, neighborY, excludeEntityId)) {
+                        visited.add(neighborKey);
+                        queue.push({
+                            x: neighborX,
+                            y: neighborY,
+                            path: [...current.path, { x: neighborX, y: neighborY }]
+                        });
+                    }
+                }
+            }
+        }
+
+        return [];
+    }, [movementRules]);
+
+    return {
+        calculatePath
+    };
 }

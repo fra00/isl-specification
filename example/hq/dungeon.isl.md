@@ -23,6 +23,7 @@
 > **Reference**: @TreasureCard in `./domain-ruleset.isl.md`
 > **Reference**: @TreasureCardModal in `./dungeon-treasure-card-modal.isl.md`
 > **Reference**: @DungeonInventoryModal in `./dungeon-inventory-modal.isl.md`
+> **Reference**: @useTraps in `./dungeon-use-traps.isl.md`
 
 ## Component: Dungeon
 
@@ -40,8 +41,11 @@
 
 ### 📦 Content
 
-- **Dungeon Board**: Displays `DungeonBoard` with props.
-- **Loading State**: Displays "Loading Mission..." while fetching map data.
+- **Dungeon Board**: Displays `DungeonBoard` with props:
+  - `boardVisibilityMap`: `boardVisibilityMap`.
+  - `secretPassages`: `hooksSecretPassages.foundPassages`.
+  - `treasures`: `hooksTreasure.foundTreasures`.
+  - `triggeredTraps`: `hooksTraps.triggeredTraps`.
 - **Turn Controls**:
   - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true.
   - **Props**:
@@ -81,16 +85,15 @@
 
 #### internal state
 
-- `isMissionLoading`: Boolean (Tracks if mission data is being fetched. Default null).
 - `isStaticDataLoaded`: Boolean (Tracks if static data like visibility map is loaded. Default false).
 - `isInventoryOpen`: Boolean (Tracks if inventory modal is visible. Default false).
 - `staticVisibilityMap`: @VisibilityMap (The static visibility map loaded from the mission data, used as reference for calculations).
 - `boardVisibilityMap`: current visibility map derived from `hooksFogOfWar`.
-- `isMissionLoading`: Boolean (Tracks if mission data is being fetched. Default true).
 - `drawnTreasureCard`: @TreasureCard (The currently displayed treasure card, null if none).
 - `notificationMessage`: String (Current message to display to the user, null if none).
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
-- `hooksTurnLogic`:@useTurnLogic Manages turn phases, movement points, and pathfinding logic.
+- `hooksTraps`: @useTraps (Internal logic for managing map traps).
+- `hooksTurnLogic`:@useTurnLogic passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, and `hooksTraps`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, and `onUpdateSession`.
 - `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
 - `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `onUpdateSession`, and `handleTreasureCardDrawn`. It exposes `applyTreasureEffect`.
@@ -101,29 +104,19 @@
 - **Contract**: Fetches static data for the HQ.
 - **Trigger**: On Mount.
 - **Flow**:
-- Set `isMissionLoading` to true.
-- Fetch board data from `/jsonData/tabellone/default.json`.
-- IF response is not OK, throw Error "Failed to load default.json: File not found" and set `isMissionLoading` to false.
-- Parse response into `@VisibilityMap` and store in `staticVisibilityMap`.
-- Fetch treasure cards from `/jsonData/treasure-card.json`.
-- IF response is not OK, throw Error "Failed to load treasure-card.json" and set `isMissionLoading` to false.
-- Parse treasure cards, shuffle them to create `treasureDeck`.
-- Set `gameSession.treasureDeck` to the shuffled `treasureDeck`.
-- Set `isMissionLoading` to false.
-- Set `isStaticDataLoaded` to true.
-
-#### loadMissionData
-
-- **Contract**: Ensures mission map data is loaded.
-- **Trigger**: On `isStaticDataLoaded` changed and is true.
-- **Flow**:
-  - IF `gameSession.currentMap` is missing, throw Error "No mission loaded".
-  - Set `loadedMap` to `gameSession.currentMap`.
-  - **Update Hero Positions**:
-    - For each hero in `gameSession.heroes`, find matching start position in `gameSession.currentMap.eroi_start` (matching `id`).
-    - IF found, update hero's `x` and `y` coordinates.
-    - Trigger `onUpdateSession` with the updated session containing new hero positions, `loadedMap`, and `treasureDeck`.
-  - Set `isMissionLoading` to false.
+  - TRY:
+    - Fetch board data from `/jsonData/tabellone/default.json`.
+    - Fetch treasure cards from `/jsonData/treasure-card.json`.
+    - Parse and store board data in `staticVisibilityMap`.
+    - Parse and shuffle treasure cards.
+  - CATCH Error:
+    - Set `notificationMessage` to "Error loading static data: " + error.message.
+  - For each hero in `gameSession.heroes`:
+    - Find `startPos` in `gameSession.currentMap.eroi_start` by ID.
+    - IF found, update hero coordinates.
+    - Trigger `onUpdateSession` with
+      - updated heroes.
+      - `gameSession.treasureDeck` with shuffled cards via `onUpdateSession`.
 
 #### order turn selection
 

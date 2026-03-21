@@ -6,102 +6,92 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from 'react';
-import { MonsterState, GameSession } from './domain-session';
-import { Monster } from './domain-ruleset';
+import { useState, useEffect } from "react";
+import { GameSession, MonsterState } from "./domain-session";
+import { Monster } from "./domain-ruleset";
 
 export function useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession }) {
-    const [spawnedLocations, setSpawnedLocations] = useState([]);
-    const [monsterDefinitions, setMonsterDefinitions] = useState([]);
+  const [spawnedLocations, setSpawnedLocations] = useState(() => []);
+  const [monsterDefinitions, setMonsterDefinitions] = useState(() => []);
 
-    // initialize: Fetch monster definitions
-    useEffect(() => {
-        let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-        const fetchMonsters = async () => {
-            try {
-                const response = await fetch('/jsonData/monsters.json');
-                if (!response.ok) {
-                    throw new Error("Failed to load monsters.json: File not found");
-                }
-                
-                const data = await response.json();
-                
-                if (isMounted) {
-                    const parsedMonsters = (Array.isArray(data) ? data : []).map(m => Monster(m));
-                    setMonsterDefinitions(parsedMonsters);
-                }
-            } catch (error) {
-                console.error(error);
-                throw error;
-            }
-        };
-
-        fetchMonsters();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    // spawnMonsters: Check visibility and spawn monsters
-    useEffect(() => {
-        if (!visibilityMap || !visibilityMap.data) return;
-        if (!gameSession?.currentMap?.grid) return;
-        if (!monsterDefinitions || monsterDefinitions.length === 0) return;
-
-        const newMonsters = [];
-        const newSpawnedLocations = [];
-
-        visibilityMap.data.forEach(visCell => {
-            if (visCell.fog === false) {
-                const locKey = `${visCell.x},${visCell.y}`;
-                
-                if (!spawnedLocations.includes(locKey)) {
-                    const mapCell = gameSession.currentMap.grid.find(
-                        c => c.x === visCell.x && c.y === visCell.y
-                    );
-
-                    if (mapCell?.mostab?.mos === true) {
-                        const monsterDef = monsterDefinitions.find(
-                            m => m.id === mapCell.mostab.mosid
-                        );
-
-                        if (monsterDef) {
-                            const newMonsterState = MonsterState({
-                                id: Date.now() + Math.floor(Math.random() * 100000),
-                                monster: monsterDef,
-                                x: visCell.x,
-                                y: visCell.y,
-                                currentBody: monsterDef.corpo,
-                                currentMind: monsterDef.mente
-                            });
-                            
-                            newMonsters.push(newMonsterState);
-                            newSpawnedLocations.push(locKey);
-                        }
-                    }
-                }
-            }
-        });
-
-        if (newMonsters.length > 0) {
-            setSpawnedLocations(prev => [...prev, ...newSpawnedLocations]);
-
-            const updatedSession = GameSession({
-                ...gameSession,
-                monsters: [...(gameSession.monsters || []), ...newMonsters],
-                spawnedLocations: [...(gameSession.spawnedLocations || []), ...newSpawnedLocations]
-            });
-
-            if (typeof onUpdateSession === 'function') {
-                onUpdateSession(updatedSession);
-            }
+    const initialize = async () => {
+      try {
+        const response = await fetch("/jsonData/monsters.json");
+        if (!response.ok) {
+          throw new Error("Failed to load monsters.json: File not found");
         }
-    }, [visibilityMap, gameSession, monsterDefinitions, spawnedLocations, onUpdateSession]);
-
-    return {
-        spawnedLocations,
-        monsterDefinitions
+        
+        const data = await response.json();
+        
+        if (isMounted) {
+          const parsedMonsters = (Array.isArray(data) ? data : []).map(item => Monster(item));
+          setMonsterDefinitions(parsedMonsters);
+        }
+      } catch (error) {
+        console.error(error);
+        throw error;
+      }
     };
+
+    initialize();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!visibilityMap || !visibilityMap.data) return;
+    if (!gameSession || !gameSession.currentMap || !gameSession.currentMap.grid) return;
+    if (monsterDefinitions.length === 0) return;
+
+    const newMonsters = [];
+    const newSpawnedLocations = [];
+
+    visibilityMap.data.forEach(cell => {
+      const locKey = `${cell.x},${cell.y}`;
+      
+      if (cell.fog === false && !spawnedLocations.includes(locKey)) {
+        const mapCell = gameSession.currentMap.grid.find(c => c.x === cell.x && c.y === cell.y);
+        
+        if (mapCell?.mostab?.mos === true) {
+          const monsterDef = monsterDefinitions.find(m => m.id === mapCell.mostab.mosid);
+          
+          if (monsterDef) {
+            const newMonster = MonsterState({
+              id: Math.floor(Math.random() * 1000000000),
+              monster: monsterDef,
+              x: cell.x,
+              y: cell.y,
+              currentBody: monsterDef.corpo,
+              currentMind: monsterDef.mente
+            });
+            
+            newMonsters.push(newMonster);
+            newSpawnedLocations.push(locKey);
+          }
+        }
+      }
+    });
+
+    if (newMonsters.length > 0) {
+      setSpawnedLocations(prev => [...prev, ...newSpawnedLocations]);
+      
+      const updatedSession = GameSession({
+        ...gameSession,
+        monsters: [...(gameSession.monsters || []), ...newMonsters],
+        spawnedLocations: [...(gameSession.spawnedLocations || []), ...newSpawnedLocations]
+      });
+      
+      onUpdateSession(updatedSession);
+    }
+  }, [visibilityMap, gameSession, monsterDefinitions, spawnedLocations, onUpdateSession]);
+
+  return {
+    spawnedLocations,
+    monsterDefinitions
+  };
 }

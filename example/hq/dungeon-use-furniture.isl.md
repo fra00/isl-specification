@@ -27,17 +27,16 @@ hooks for manage visibility for furniture
 #### visibleFurniture
 
 - **Contract**: Returns a list of furniture items (@MapCellFurniture) that are currently visible to the player.
-- **Signature**: {visibleDoors = [{x:int, y:int, img:string}]}
+- **Signature**: () -> List<{x: Integer, y: Integer, img: String}>
 - **Trigger**: When `gameSession.currentMap` or `boardVisibilityMap` changes.
 - **Flow**:
   - IF `gameSession.currentMap` OR `boardVisibilityMap` is missing RETURN empty list.
-  - get @MapCell from `gameSession.currentMap.grid` with coordinates x,y
-  - IF the visibility cell exists AND `fog` is false:
-  - IF @MapCell.arnt.antroc is true AND @MapCell.arnt.inv is false THEN
-    - Place an image of the rock at coordinates x,y using the image `../cell/pietra.jpg`. don't scale.
-  - Iterate through `gameSession.currentMap.grid` @MapCell.
-  - FOR each cell with `mobili.num` diverso da null :
+  - Initialize `visibleFurniture` as an empty list.
+  - Iterate through each `mapCell` in `gameSession.currentMap.grid`:
     - Find the corresponding cell in `boardVisibilityMap` (matching x, y).
     - IF the visibility cell exists AND `fog` is false:
-      - Add the furniture item to the result list (including x, y, and image).
+      - IF `mapCell.arnt.antroc` is true AND `mapCell.arnt.inv` is false:
+        - Add `{ x: mapCell.x, y: mapCell.y, img: "../cell/pietra.jpg" }` to `visibleFurniture`.
+      - ELSE IF `mapCell.mobili.num` is NOT null:
+        - Add `{ x: mapCell.x, y: mapCell.y, img: mapCell.mobili.img }` to `visibleFurniture`.
 - **Return**: List of objects `{ x, y, img }`.

@@ -6,8 +6,8 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from 'react';
-import { useVisibilityCalc } from './dungeon-use-visibility-calc';
+import { useState, useEffect } from "react";
+import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 
 export function useFogOfWar({ gameSession, staticVisibilityMap }) {
     const [fogVisibilityMap, setFogVisibilityMap] = useState(() => {
@@ -20,20 +20,16 @@ export function useFogOfWar({ gameSession, staticVisibilityMap }) {
     });
 
     useEffect(() => {
-        if (!staticVisibilityMap) {
-            setFogVisibilityMap(null);
-        } else {
-            setFogVisibilityMap(JSON.parse(JSON.stringify(staticVisibilityMap)));
-        }
+        setFogVisibilityMap(
+            staticVisibilityMap ? JSON.parse(JSON.stringify(staticVisibilityMap)) : null
+        );
     }, [staticVisibilityMap]);
 
     useEffect(() => {
-        if (!gameSession?.heroes || gameSession.currentTurn == null) {
-            return;
-        }
+        if (!gameSession?.heroes || !staticVisibilityMap) return;
 
         const heroInTurn = gameSession.heroes.find(
-            (hero) => hero.turnOrder === gameSession.currentTurn
+            (h) => h.turnOrder === gameSession.currentTurn
         );
 
         if (heroInTurn) {
@@ -41,33 +37,31 @@ export function useFogOfWar({ gameSession, staticVisibilityMap }) {
 
             if (visibleCells && visibleCells.length > 0) {
                 setFogVisibilityMap((prevMap) => {
-                    if (!prevMap || !prevMap.data) {
-                        return prevMap;
-                    }
+                    if (!prevMap || !prevMap.data) return prevMap;
 
                     let hasChanges = false;
                     const newData = prevMap.data.map((cell) => {
                         const isVisible = visibleCells.some(
                             (vc) => vc.x === cell.x && vc.y === cell.y
                         );
-                        
+
                         if (isVisible && cell.fog !== false) {
                             hasChanges = true;
                             return { ...cell, fog: false };
                         }
-                        
                         return cell;
                     });
 
-                    if (hasChanges) {
-                        return { ...prevMap, data: newData };
-                    }
-                    
-                    return prevMap;
+                    return hasChanges ? { ...prevMap, data: newData } : prevMap;
                 });
             }
         }
-    }, [gameSession?.heroes, gameSession?.currentTurn, staticVisibilityMap, calculateVisibleCells]);
+    }, [
+        gameSession?.heroes,
+        gameSession?.currentTurn,
+        staticVisibilityMap,
+        calculateVisibleCells
+    ]);
 
     return fogVisibilityMap;
 }

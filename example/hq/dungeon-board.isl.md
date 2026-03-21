@@ -30,11 +30,12 @@
 - `hoveredPath`: List of {x, y} (Path to highlight).
 - `secretPassages`: List of {x: Integer, y: Integer, img: String} (List of discovered secret passages).
 - `treasures`: List of {x: Integer, y: Integer, img: String} (List of discovered treasures).
+- `triggeredTraps`: List of {x: Integer, y: Integer, tipo: Integer} (List of traps that have been activated).
 
 ### 🔍 Appearance
 
 - **Layout**: Relative container width 884px and height 646px of the board dimensions center content vertically and horizzontaly (no padding, no border, no margin).
-- **Board**: The board image `/img/tabellone/default.bmp` the size of image is width 884px and height 646px
+- **Board**: The board image `/img/tabellone/default.bmp` (884x646px) as the bottom background layer.
 - **Fog of war**: no border
 
 ### Role: Backend
@@ -42,10 +43,11 @@
 ### 📦 Content
 
 - **Board Image**: Displays `/img/tabellone/default.bmp`.
-- **Grid**: Container for grid cells.
+- **Grid**: Absolute Overlay container (top:0, left:0) covering the entire board.
   - **Visibility**: Use `boardVisibilityMap` prop (@VisibilityMap).
-  - **Cells**: Divs representing the grid squares (26x19 0-indexed) widht:34px,height:34px - area width 884px and height 646px .
-    - **Fog of War**: Black overlay 70% opacity, removed/transparent if cell at `x+1, y+1` in `boardVisibilityMap.data` has `fog` as false.
+  - **Cells**: Divs representing the grid squares (26x19 0-indexed) width:34px, height:34px.
+    - **Fog of War Layer**: Each cell MUST render a black background overlay (70% opacity) by default.
+    - **Unfogging Logic**: The black overlay MUST become fully transparent ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`.
     - **Path Highlight**: If cell {x,y} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
 - **Furniture**: Visual elements for map furniture.
   - **Data Source**: Derive `visibleFurniture` using `useDungeonFurniture(@GameSession, @VisibilityMap)`.
@@ -62,6 +64,9 @@
 - **Treasures**: Visual elements for discovered treasures.
   - **Data Source**: `treasures` prop.
   - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
+- **Activated Traps**: Visual elements for triggered traps.
+  - **Data Source**: `triggeredTraps` prop.
+  - **Render**: IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)

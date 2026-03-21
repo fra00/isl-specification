@@ -18611,7 +18611,7 @@
         "oriz": false
       },
       "trpl": {
-        "tipo": 0,
+        "tipo": 2,
         "rccadex": 0,
         "rccadey": 0
       },
@@ -18719,7 +18719,7 @@
         "oriz": false
       },
       "trpl": {
-        "tipo": 0,
+        "tipo": 1,
         "rccadex": 0,
         "rccadey": 0
       },

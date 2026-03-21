@@ -12,6 +12,7 @@
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
 > **Reference**: @usePathfinding in `./dungeon-use-pathfinding.isl.md`
 > **Reference**: @useCombatLogic in `./dungeon-use-combat.isl.md`
+> **Reference**: @useTraps in `./dungeon-use-traps.isl.md`
 
 ## Component: useTurnLogic
 
@@ -22,6 +23,8 @@
 - `gameSession`: @GameSession (Current session state).
 - `visibilityMap`: @VisibilityMap (The static board configuration).
 - `onUpdateSession`: (session: @GameSession) -> void (Callback to update session).
+- `onNotify`: (message: String) -> void (Callback to show notification).
+- `trapsLogic`: @useTraps (Hook instance for trap management).
 
 ### ⚡ Capabilities
 
@@ -108,6 +111,27 @@
   - Update hero position to `nextPos`.
   - Decrement `movementPoints` by 1.
   - Trigger `onUpdateSession`.
+  - **Trap Check**:
+    - Find `mapCell` at `nextPos` in grid.
+    - IF `mapCell.trpl` exists AND `trapsLogic.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)` is true:
+      - **Trigger Trap**:
+        - Apply Danni: `currentHero.currentBody -= 1` (or specific value based on type).
+        - Register Trigger: `trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo)`.
+        - IF `mapCell.trpl.tipo` == 3 (Roccia che cade):
+          - Find cell in `gameSession.currentMap.grid` at coordinates (`mapCell.trpl.rccadex`, `mapCell.trpl.rccadey`).
+          - Set `arnt.antroc` to true for that cell (permanently blocks the path).
+        - SWITCH `mapCell.trpl.tipo`:
+          - CASE 1: Trigger `onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.")`.
+          - CASE 2: Trigger `onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.")`.
+          - CASE 3: Trigger `onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce.")`.
+          - DEFAULT: Trigger `onNotify("TRAPPOLA! Hai interrotto il movimento.")`.
+        - Set `isMoving` to false.
+        - **End Turn Activity**:
+          - Set `turnPhase.hasMoved` to true.
+          - Set `turnPhase.hasPerformedAction` to true.
+        - Trigger `onUpdateSession`.
+        - End Movement: Set `activePath` to empty list.
+        - RETURN.
   - Set `activePath` to `activePath` starting from index 1.
 
 #### handleMonsterClick
@@ -146,7 +170,7 @@
   - IF `isMoving` is true RETURN.
   - Increment `gameSession.currentTurn`.
   - IF `currentTurn` > number of heroes, reset to 1 (and potentially trigger Monster turn in future).
-  - Reset all the prop in the object `turnPhase` to false.
+  - Reset all the prop in the object `turnPhase` (@TurnPhase) to false.
   - Reset `movementPoints` to null.
   - Set `isMovingStarted` to false.
   - Trigger `onUpdateSession`.

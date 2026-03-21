@@ -13,6 +13,7 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
     const [foundPassages, setFoundPassages] = useState([]);
     const foundPassagesRef = useRef(foundPassages);
 
+    // Keep ref in sync with state for stable callbacks
     useEffect(() => {
         foundPassagesRef.current = foundPassages;
     }, [foundPassages]);
@@ -20,7 +21,7 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
     const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
     const searchPassages = useCallback(() => {
-        if (!gameSession?.heroes || !gameSession?.currentMap?.grid) {
+        if (!gameSession || !gameSession.heroes || !gameSession.currentMap?.grid) {
             return;
         }
 
@@ -37,10 +38,10 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
             const mapCell = gameSession.currentMap.grid.find(c => c.x === cell.x && c.y === cell.y);
             
             if (mapCell?.psgg != null && mapCell.psgg.ps != null && mapCell.psgg.ps > 0) {
-                const alreadyFound = foundPassagesRef.current.some(p => p.x === mapCell.x && p.y === mapCell.y) ||
-                                     newPassages.some(p => p.x === mapCell.x && p.y === mapCell.y);
+                const isAlreadyFound = foundPassagesRef.current.some(p => p.x === mapCell.x && p.y === mapCell.y) ||
+                                       newPassages.some(p => p.x === mapCell.x && p.y === mapCell.y);
 
-                if (!alreadyFound) {
+                if (!isAlreadyFound) {
                     const img = mapCell.psgg.oriz ? "pso.jpg" : "psv.jpg";
                     newPassages.push({ x: mapCell.x, y: mapCell.y, img });
                     foundInThisSearch = true;
@@ -49,24 +50,31 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
         });
 
         if (foundInThisSearch) {
-            setFoundPassages(prev => [...prev, ...newPassages]);
-            if (onNotify) {
+            const updatedPassages = [...foundPassagesRef.current, ...newPassages];
+            foundPassagesRef.current = updatedPassages; // Update ref immediately for consistency
+            setFoundPassages(updatedPassages);
+            
+            if (typeof onNotify === 'function') {
                 onNotify("Hai trovato un passaggio segreto!");
             }
         } else {
-            if (onNotify) {
+            if (typeof onNotify === 'function') {
                 onNotify("Nessun passaggio segreto trovato.");
             }
         }
-        
-        if (onActionDone) {
+
+        if (typeof onActionDone === 'function') {
             onActionDone();
         }
-
     }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
+
+    const getFoundPassages = useCallback(() => {
+        return foundPassagesRef.current;
+    }, []);
 
     return {
         foundPassages,
-        searchPassages
+        searchPassages,
+        getFoundPassages
     };
 }

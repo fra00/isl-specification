@@ -8,64 +8,59 @@
 
 import { useCallback } from 'react';
 
-export function useDungeonMovementRules({ mapQuery } = {}) {
-  const isValidDestination = useCallback((x, y, excludeEntityId) => {
-    if (!mapQuery) return false;
+export function useDungeonMovementRules({ mapQuery }) {
+    const isValidDestination = useCallback((x, y, excludeEntityId) => {
+        if (!mapQuery) return false;
 
-    const cell = mapQuery.getMapCell(x, y);
-    if (!cell) return false;
+        const cell = mapQuery.getMapCell(x, y);
+        if (!cell) return false;
 
-    if (mapQuery.isBlockedByFurniture(x, y)) return false;
-    if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) return false;
-    if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) return false;
-    if (mapQuery.isBlockedByRock(x, y)) return false;
+        if (mapQuery.isBlockedByFurniture(x, y)) return false;
+        if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) return false;
+        if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) return false;
+        if (mapQuery.isBlockedByRock(x, y)) return false;
 
-    return true;
-  }, [mapQuery]);
-
-  const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
-    if (!mapQuery) return false;
-
-    const dimensions = mapQuery.getMapDimensions();
-    if (!dimensions) return false;
-
-    if (
-      targetX < 1 ||
-      targetX > dimensions.width ||
-      targetY < 1 ||
-      targetY > dimensions.height
-    ) {
-      return false;
-    }
-
-    if (mapQuery.isBlockedByFurniture(targetX, targetY)) return false;
-    if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) return false;
-    if (mapQuery.isBlockedByRock(targetX, targetY)) return false;
-
-    const sourceVisCell = mapQuery.getVisibilityCell(sourceX, sourceY);
-    const targetVisCell = mapQuery.getVisibilityCell(targetX, targetY);
-
-    const sourceValo = sourceVisCell?.valo;
-    const targetValo = targetVisCell?.valo;
-
-    if (sourceValo !== targetValo) {
-      const isSourceDoor = mapQuery.isDoor(sourceX, sourceY);
-      const isTargetDoor = mapQuery.isDoor(targetX, targetY);
-      const isSourceSecret = mapQuery.isSecretPassage(sourceX, sourceY);
-      const isTargetSecret = mapQuery.isSecretPassage(targetX, targetY);
-
-      if (isSourceDoor || isTargetDoor || isSourceSecret || isTargetSecret) {
         return true;
-      }
-      
-      return false;
-    }
+    }, [mapQuery]);
 
-    return true;
-  }, [mapQuery]);
+    const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
+        if (!mapQuery) return false;
 
-  return {
-    isValidDestination,
-    isWalkable
-  };
+        const dimensions = mapQuery.getMapDimensions();
+        if (!dimensions) return false;
+
+        if (targetX < 1 || targetX > dimensions.width || targetY < 1 || targetY > dimensions.height) {
+            return false;
+        }
+
+        if (mapQuery.isBlockedByFurniture(targetX, targetY)) return false;
+        if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) return false;
+        if (mapQuery.isBlockedByRock(targetX, targetY)) return false;
+
+        const sourceVisCell = mapQuery.getVisibilityCell(sourceX, sourceY);
+        const targetVisCell = mapQuery.getVisibilityCell(targetX, targetY);
+
+        const sourceValo = sourceVisCell?.valo;
+        const targetValo = targetVisCell?.valo;
+
+        if (sourceValo !== targetValo) {
+            const isSourceDoor = mapQuery.isDoor(sourceX, sourceY);
+            const isTargetDoor = mapQuery.isDoor(targetX, targetY);
+            const isSourceSecret = mapQuery.isSecretPassage(sourceX, sourceY);
+            const isTargetSecret = mapQuery.isSecretPassage(targetX, targetY);
+
+            if (isSourceDoor || isTargetDoor || isSourceSecret || isTargetSecret) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        return true;
+    }, [mapQuery]);
+
+    return {
+        isValidDestination,
+        isWalkable
+    };
 }

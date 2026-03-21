@@ -29,11 +29,8 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
     // Phase 1: Room Visibility
     if (startVisCell.valo !== "1") {
       visibilityMap.data.forEach((cell) => {
-        if (cell.valo === startVisCell.valo) {
-          // Avoid duplicating the starting cell
-          if (cell.x !== startX || cell.y !== startY) {
-            visibleCells.push({ x: cell.x, y: cell.y });
-          }
+        if (cell.valo === startVisCell.valo && (cell.x !== startX || cell.y !== startY)) {
+          visibleCells.push({ x: cell.x, y: cell.y });
         }
       });
       return visibleCells;
@@ -73,7 +70,7 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
           (cell) => cell.x === currentX && cell.y === currentY
         );
 
-        if (mapCell && mapCell.arnt?.antroc === true) {
+        if (mapCell?.arnt?.antroc === true) {
           visibleCells.push({ x: currentX, y: currentY });
           break;
         }
@@ -86,7 +83,5 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
     return visibleCells;
   }, [gameSession, visibilityMap]);
 
-  return {
-    calculateVisibleCells
-  };
+  return { calculateVisibleCells };
 }

@@ -8,7 +8,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { PageNavigationEnum, NavigationStatus } from './domain-core';
-import { GameSession } from './domain-session';
 import PlayGame from './play-game';
 import { PlayGame as EditorGame } from './editor-game';
 import MainMenu from './main-menu';
@@ -17,7 +16,8 @@ import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
 export default function PageContent() {
-  const [navStatus, setNavStatus] = useState(() =>
+  // FirstLoad capability: Synchronous lazy initialization to default page view
+  const [navStatus, setNavStatus] = useState(() => 
     NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU })
   );
   
@@ -32,20 +32,23 @@ export default function PageContent() {
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission: ${missionIndex}`);
+    console.log(`Starting mission with index: ${missionIndex}`);
+    // Additional mission start logic can be handled here
   }, []);
 
   const renderPageView = () => {
-    switch (navStatus?.currentPageView) {
+    const currentPage = navStatus?.currentPageView || PageNavigationEnum.MAIN_MENU;
+
+    switch (currentPage) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
         
       case PageNavigationEnum.PLAY_GAME:
         return (
-          <PlayGame
-            onChangePageView={changePageView}
-            gameSession={gameSession}
-            onUpdateSession={updateSession}
+          <PlayGame 
+            onChangePageView={changePageView} 
+            gameSession={gameSession} 
+            onUpdateSession={updateSession} 
           />
         );
         
@@ -54,28 +57,28 @@ export default function PageContent() {
         
       case PageNavigationEnum.SHOP:
         return (
-          <Armory
-            onChangePageView={changePageView}
-            gameSession={gameSession}
-            onUpdateSession={updateSession}
+          <Armory 
+            onChangePageView={changePageView} 
+            gameSession={gameSession} 
+            onUpdateSession={updateSession} 
           />
         );
         
       case PageNavigationEnum.DUNGEON:
         return (
-          <Dungeon
-            onChangePageView={changePageView}
-            gameSession={gameSession}
-            onUpdateSession={updateSession}
+          <Dungeon 
+            onChangePageView={changePageView} 
+            gameSession={gameSession} 
+            onUpdateSession={updateSession} 
           />
         );
         
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
-          <DungeonDescription
-            onChangePageView={changePageView}
-            gameSession={gameSession}
-            onUpdateSession={updateSession}
+          <DungeonDescription 
+            onChangePageView={changePageView} 
+            gameSession={gameSession} 
+            onUpdateSession={updateSession} 
           />
         );
         
@@ -85,7 +88,7 @@ export default function PageContent() {
   };
 
   return (
-    <div className="w-full md:w-2/3 h-screen bg-black overflow-hidden mx-auto">
+    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto flex flex-col">
       {renderPageView()}
     </div>
   );

@@ -15,26 +15,37 @@ export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
     }
 
     const result = [];
+    const doors = gameSession.currentMap.porte;
+    const visibilityData = boardVisibilityMap.data;
 
-    for (const door of gameSession.currentMap.porte) {
-      const x = parseInt(door.x, 10);
-      const y = parseInt(door.y, 10);
+    for (let i = 0; i < doors.length; i++) {
+      const door = doors[i];
+      const doorX = parseInt(door.x, 10);
+      const doorY = parseInt(door.y, 10);
 
-      const visibilityCell = boardVisibilityMap.data.find(
-        (cell) =>
-          (cell.x === x - 1 && cell.y === y - 1) ||
-          (cell.x === x && cell.y === y - 1) ||
-          (cell.x === x - 1 && cell.y === y)
-      );
+      const isVisible = visibilityData.some((cell) => {
+        const cellX = parseInt(cell.x, 10);
+        const cellY = parseInt(cell.y, 10);
 
-      if (visibilityCell && visibilityCell.fog === false) {
-        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
-        result.push({ x, y, img });
+        const matchesCoords =
+          (cellX === doorX - 1 && cellY === doorY - 1) ||
+          (cellX === doorX && cellY === doorY - 1) ||
+          (cellX === doorX - 1 && cellY === doorY);
+
+        return matchesCoords && cell.fog === false;
+      });
+
+      if (isVisible) {
+        result.push({
+          x: doorX,
+          y: doorY,
+          img: door.oriz ? 'portao.jpg' : 'portav.jpg',
+        });
       }
     }
 
     return result;
-  }, [gameSession?.currentMap?.porte, boardVisibilityMap?.data]);
+  }, [gameSession?.currentMap, boardVisibilityMap]);
 
   return { visibleDoors };
 };

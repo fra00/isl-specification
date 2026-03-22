@@ -6,43 +6,68 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import DungeonBoard from './dungeon-board';
-import DungeonHeroOrder from './dungeon-hero-order';
-import { useTurnLogic } from './dungeon-use-turn-logic';
-import { useFogOfWar } from './dungeon-use-fog-of-war';
-import { useDungeonMonsters } from './dungeon-use-monsters';
-import CombatResultModal from './dungeon-combat-result-modal';
-import DungeonTurnControls from './dungeon-turn-controls';
-import { useSecretPassages } from './dungeon-use-secret-passages';
-import { useTreasureSearch } from './dungeon-use-treasure';
-import DungeonNotification from './dungeon-notification';
-import TreasureCardModal from './dungeon-treasure-card-modal';
-import DungeonInventoryModal from './dungeon-inventory-modal';
-import { useTraps } from './dungeon-use-traps';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import DungeonBoard from "./dungeon-board";
+import DungeonHeroOrder from "./dungeon-hero-order";
+import { useTurnLogic } from "./dungeon-use-turn-logic";
+import { useFogOfWar } from "./dungeon-use-fog-of-war";
+import { useDungeonMonsters } from "./dungeon-use-monsters";
+import CombatResultModal from "./dungeon-combat-result-modal";
+import DungeonTurnControls from "./dungeon-turn-controls";
+import { useSecretPassages } from "./dungeon-use-secret-passages";
+import { useTreasureSearch } from "./dungeon-use-treasure";
+import DungeonNotification from "./dungeon-notification";
+import TreasureCardModal from "./dungeon-treasure-card-modal";
+import DungeonInventoryModal from "./dungeon-inventory-modal";
+import { useTraps } from "./dungeon-use-traps";
 
 export default function Dungeon(props) {
     const { gameSession, onUpdateSession } = props;
 
-    // Internal State
     const [isStaticDataLoaded, setIsStaticDataLoaded] = useState(false);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
     const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
     const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
     const [notificationMessage, setNotificationMessage] = useState(null);
 
-    // Callbacks for simple state updates
-    const handleCloseNotification = useCallback(() => setNotificationMessage(null), []);
-    const handleTreasureCardDrawn = useCallback((card) => setDrawnTreasureCard(card), []);
-    const openInventory = useCallback(() => setIsInventoryOpen(true), []);
-    const closeInventory = useCallback(() => setIsInventoryOpen(false), []);
+    const sessionRef = useRef(gameSession);
+    const updateSessionRef = useRef(onUpdateSession);
 
-    // Hooks Initialization
+    useEffect(() => {
+        sessionRef.current = gameSession;
+        updateSessionRef.current = onUpdateSession;
+    }, [gameSession, onUpdateSession]);
+
+    const handleCloseNotification = useCallback(() => {
+        setNotificationMessage(null);
+    }, []);
+
+    const handleTreasureCardDrawn = useCallback((card) => {
+        setDrawnTreasureCard(card);
+    }, []);
+
+    const closeCombatResult = useCallback(() => {
+        if (gameSession) {
+            onUpdateSession({
+                ...gameSession,
+                lastAttack: null
+            });
+        }
+    }, [gameSession, onUpdateSession]);
+
+    const openInventory = useCallback(() => {
+        setIsInventoryOpen(true);
+    }, []);
+
+    const closeInventory = useCallback(() => {
+        setIsInventoryOpen(false);
+    }, []);
+
     const hooksTraps = useTraps({});
-    
-    const boardVisibilityMap = useFogOfWar({ 
-        gameSession, 
-        staticVisibilityMap 
+
+    const boardVisibilityMap = useFogOfWar({
+        gameSession,
+        staticVisibilityMap
     });
 
     const hooksTurnLogic = useTurnLogic({
@@ -63,47 +88,35 @@ export default function Dungeon(props) {
         gameSession,
         visibilityMap: boardVisibilityMap,
         onNotify: setNotificationMessage,
-        onActionDone: hooksTurnLogic.markActionDone
+        onActionDone: hooksTurnLogic?.markActionDone
     });
 
     const hooksTreasure = useTreasureSearch({
         gameSession,
         visibilityMap: boardVisibilityMap,
         onNotify: setNotificationMessage,
-        onActionDone: hooksTurnLogic.markActionDone,
+        onActionDone: hooksTurnLogic?.markActionDone,
         onUpdateSession,
         onTreasureCardDrawn: handleTreasureCardDrawn
     });
 
-    // Derived State
-    const areMonstersVisible = useMemo(() => {
-        if (!gameSession?.monsters || !boardVisibilityMap?.data) return false;
-        return gameSession.monsters.some(monster => {
-            const cell = boardVisibilityMap.data.find(c => c.x === monster.x && c.y === monster.y);
-            return cell && cell.fog === false;
-        });
-    }, [gameSession?.monsters, boardVisibilityMap]);
+    const closeTreasureCardModal = useCallback(() => {
+        if (drawnTreasureCard && hooksTreasure?.applyTreasureEffect) {
+            hooksTreasure.applyTreasureEffect(drawnTreasureCard);
+        }
+        setDrawnTreasureCard(null);
+    }, [drawnTreasureCard, hooksTreasure]);
 
-    const currentHero = useMemo(() => {
-        return gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-    }, [gameSession?.heroes, gameSession?.currentTurn]);
-
-    // Capabilities
     useEffect(() => {
         let isMounted = true;
-
-        const fetchHqData = async () => {
+        const loadData = async () => {
             try {
-                const [boardRes, treasureRes] = await Promise.all([
-                    fetch('/jsonData/tabellone/default.json'),
-                    fetch('/jsonData/treasure-card.json')
-                ]);
-
-                if (!boardRes.ok || !treasureRes.ok) {
-                    throw new Error("Failed to load static data");
-                }
-
+                const boardRes = await fetch('/jsonData/tabellone/default.json');
+                if (!boardRes.ok) throw new Error("Failed to load board data");
                 const boardData = await boardRes.json();
+
+                const treasureRes = await fetch('/jsonData/treasure-card.json');
+                if (!treasureRes.ok) throw new Error("Failed to load treasure cards");
                 const treasureData = await treasureRes.json();
 
                 if (!isMounted) return;
@@ -112,25 +125,24 @@ export default function Dungeon(props) {
 
                 const shuffledTreasures = [...treasureData].sort(() => Math.random() - 0.5);
 
-                if (gameSession) {
-                    let updatedHeroes = gameSession.heroes || [];
-                    if (gameSession.currentMap?.eroi_start) {
-                        updatedHeroes = updatedHeroes.map(hero => {
-                            const startPos = gameSession.currentMap.eroi_start.find(s => s.id === hero.heroId);
-                            if (startPos) {
-                                return { ...hero, x: startPos.x, y: startPos.y };
-                            }
-                            return hero;
-                        });
-                    }
+                const currentSession = sessionRef.current;
+                const currentUpdate = updateSessionRef.current;
 
-                    onUpdateSession({
-                        ...gameSession,
+                if (currentSession && currentSession.heroes) {
+                    const updatedHeroes = currentSession.heroes.map(hero => {
+                        const startPos = currentSession.currentMap?.eroi_start?.find(s => s.id === hero.heroId);
+                        if (startPos) {
+                            return { ...hero, x: startPos.x, y: startPos.y };
+                        }
+                        return hero;
+                    });
+
+                    currentUpdate({
+                        ...currentSession,
                         heroes: updatedHeroes,
                         treasureDeck: shuffledTreasures
                     });
                 }
-
                 setIsStaticDataLoaded(true);
             } catch (error) {
                 if (isMounted) {
@@ -138,23 +150,16 @@ export default function Dungeon(props) {
                 }
             }
         };
-
-        fetchHqData();
-
-        return () => {
-            isMounted = false;
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run only on mount as per ISL
+        loadData();
+        return () => { isMounted = false; };
+    }, []);
 
     const handleConfirmOrder = useCallback((orderedHeroIds) => {
         if (!gameSession) return;
         const updatedHeroes = gameSession.heroes.map(hero => {
-            const index = orderedHeroIds.indexOf(hero.heroId);
-            const turnOrder = index !== -1 ? index + 1 : hero.turnOrder;
+            const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
             return { ...hero, turnOrder };
         });
-        
         onUpdateSession({
             ...gameSession,
             heroes: updatedHeroes,
@@ -162,65 +167,46 @@ export default function Dungeon(props) {
         });
     }, [gameSession, onUpdateSession]);
 
-    const closeCombatResult = useCallback(() => {
-        if (gameSession) {
-            onUpdateSession({
-                ...gameSession,
-                lastAttack: null
-            });
-        }
-    }, [gameSession, onUpdateSession]);
+    if (!gameSession) return null;
 
-    const closeTreasureCardModal = useCallback(() => {
-        if (drawnTreasureCard) {
-            hooksTreasure.applyTreasureEffect(drawnTreasureCard);
-        }
-        setDrawnTreasureCard(null);
-    }, [drawnTreasureCard, hooksTreasure]);
-
-    // Render Logic
-    if (!isStaticDataLoaded) {
-        return null; // Wait for static data to load
-    }
-
-    if (gameSession && !gameSession.isHeroOrderConfirmed) {
-        return (
-            <DungeonHeroOrder 
-                heroes={gameSession.heroes || []} 
-                onConfirmOrder={handleConfirmOrder} 
-            />
-        );
-    }
+    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
 
     return (
         <div className="w-full h-full relative">
-            <DungeonBoard
-                gameSession={gameSession}
-                boardVisibilityMap={boardVisibilityMap}
-                onCellClick={hooksTurnLogic.handleBoardClick}
-                onCellHover={hooksTurnLogic.handleBoardHover}
-                onMonsterClick={hooksTurnLogic.handleMonsterClick}
-                hoveredPath={hooksTurnLogic.hoveredPath}
-                secretPassages={hooksSecretPassages.foundPassages}
-                treasures={hooksTreasure.foundTreasures}
-                triggeredTraps={hooksTraps.triggeredTraps}
-            />
-
-            {gameSession?.isHeroOrderConfirmed && (
-                <DungeonTurnControls
-                    currentHero={currentHero}
-                    movementPoints={hooksTurnLogic.movementPoints}
-                    turnPhase={hooksTurnLogic.turnPhase}
-                    isMoving={hooksTurnLogic.isMoving}
-                    onRollMovement={hooksTurnLogic.rollMovement}
-                    onEndTurn={hooksTurnLogic.endTurn}
-                    onSearchPassages={hooksSecretPassages.searchPassages}
-                    onSearchTreasure={hooksTreasure.searchTreasure}
-                    onOpenInventory={openInventory}
+            {!gameSession.isHeroOrderConfirmed ? (
+                <DungeonHeroOrder
+                    heroes={gameSession.heroes || []}
+                    onConfirmOrder={handleConfirmOrder}
                 />
+            ) : (
+                <>
+                    <DungeonBoard
+                        gameSession={gameSession}
+                        boardVisibilityMap={boardVisibilityMap}
+                        onCellClick={hooksTurnLogic?.handleBoardClick || (() => {})}
+                        onCellHover={hooksTurnLogic?.handleBoardHover || (() => {})}
+                        onMonsterClick={hooksTurnLogic?.handleMonsterClick || (() => {})}
+                        hoveredPath={hooksTurnLogic?.hoveredPath}
+                        secretPassages={hooksSecretPassages?.foundPassages}
+                        treasures={hooksTreasure?.foundTreasures}
+                        triggeredTraps={hooksTraps?.triggeredTraps}
+                    />
+
+                    <DungeonTurnControls
+                        currentHero={currentHero}
+                        movementPoints={hooksTurnLogic?.movementPoints}
+                        turnPhase={hooksTurnLogic?.turnPhase}
+                        isMoving={hooksTurnLogic?.isMoving}
+                        onRollMovement={hooksTurnLogic?.rollMovement}
+                        onEndTurn={hooksTurnLogic?.endTurn}
+                        onSearchPassages={hooksSecretPassages?.searchPassages}
+                        onSearchTreasure={hooksTreasure?.searchTreasure}
+                        onOpenInventory={openInventory}
+                    />
+                </>
             )}
 
-            {gameSession?.lastAttack && (
+            {gameSession.lastAttack && (
                 <CombatResultModal
                     isOpen={true}
                     combatResult={gameSession.lastAttack.combatResult}

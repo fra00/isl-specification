@@ -114,24 +114,33 @@
   - **Trap Check**:
     - Find `mapCell` at `nextPos` in grid.
     - IF `mapCell.trpl` exists AND `trapsLogic.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)` is true:
-      - **Trigger Trap**:
-        - Apply Danni: `currentHero.currentBody -= 1` (or specific value based on type).
-        - Register Trigger: `trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo)`.
-        - IF `mapCell.trpl.tipo` == 3 (Roccia che cade):
-          - Find cell in `gameSession.currentMap.grid` at coordinates (`mapCell.trpl.rccadex`, `mapCell.trpl.rccadey`).
-          - Set `arnt.antroc` to true for that cell (permanently blocks the path).
-        - SWITCH `mapCell.trpl.tipo`:
-          - CASE 1: Trigger `onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.")`.
-          - CASE 2: Trigger `onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.")`.
-          - CASE 3: Trigger `onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce.")`.
-          - DEFAULT: Trigger `onNotify("TRAPPOLA! Hai interrotto il movimento.")`.
-        - Set `isMoving` to false.
-        - **End Turn Activity**:
-          - Set `turnPhase.hasMoved` to true.
-          - Set `turnPhase.hasPerformedAction` to true.
-        - Trigger `onUpdateSession`.
-        - End Movement: Set `activePath` to empty list.
-        - RETURN.
+      - Initialize `jumpSuccess` to false.
+      - **Try Abyss Jump Check**:
+        - IF `mapCell.trpl.tipo` == 1 AND `trapsLogic.isTrapVisible(nextPos.x, nextPos.y)` is true:
+          - Trigger `onNotify("Tenti di saltare l'abisso...")`.
+          - Generate random number `roll` between 1 and 6.
+          - IF `roll` > 1:
+            - Set `jumpSuccess` to true.
+            - Trigger `onNotify("Salto riuscito! L'eroe supera l'abisso.")`.
+      - IF `jumpSuccess` is false:
+        - **Trigger Trap**:
+          - Apply Danni: `currentHero.currentBody -= 1` (or specific value based on type).
+          - Register Trigger: `trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo)`.
+          - IF `mapCell.trpl.tipo` == 3 (Roccia che cade):
+            - Find cell in `gameSession.currentMap.grid` at coordinates (`mapCell.trpl.rccadex`, `mapCell.trpl.rccadey`).
+            - Set `arnt.antroc` to true for that cell (permanently blocks the path).
+          - SWITCH `mapCell.trpl.tipo`:
+            - CASE 1: Trigger `onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.")`.
+            - CASE 2: Trigger `onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.")`.
+            - CASE 3: Trigger `onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce.")`.
+            - DEFAULT: Trigger `onNotify("TRAPPOLA! Hai interrotto il movimento.")`.
+          - Set `isMoving` to false.
+          - **End Turn Activity**:
+            - Set `turnPhase.hasMoved` to true.
+            - Set `turnPhase.hasPerformedAction` to true.
+          - Trigger `onUpdateSession`.
+          - End Movement: Set `activePath` to empty list.
+          - RETURN.
   - Set `activePath` to `activePath` starting from index 1.
 
 #### handleMonsterClick

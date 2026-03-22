@@ -31,6 +31,14 @@
     - ELSE: RETURN true (Trap is active).
   - RETURN false.
 
+#### isTrapVisible
+
+- **Contract**: Checks if a trap at specific coordinates is already revealed/triggered .
+- **Signature**: `(x: Integer, y: Integer) -> Boolean`
+- **Flow**:
+  - Check if `{x, y}` is already in `triggeredTraps`.
+  - Return true if found, false otherwise.
+
 #### registerTriggeredTrap
 
 - **Contract**: Adds a trap to the triggered list.

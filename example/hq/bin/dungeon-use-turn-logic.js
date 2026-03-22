@@ -6,21 +6,13 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { TurnPhase } from './domain-session';
-import { usePathfinding } from './dungeon-use-pathfinding';
-import { useCombatLogic } from './dungeon-use-combat';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { TurnPhase } from "./domain-session";
+import { usePathfinding } from "./dungeon-use-pathfinding";
+import { useCombatLogic } from "./dungeon-use-combat";
 
-export function useTurnLogic(config) {
-    const {
-        gameSession,
-        visibilityMap,
-        onUpdateSession,
-        onNotify,
-        trapsLogic
-    } = config || {};
-
-    const [turnPhase, setTurnPhase] = useState(() => TurnPhase({ HasMoved: false, HasPerformedAction: false, IsTurnFinished: false }));
+export function useTurnLogic({ gameSession, visibilityMap, onUpdateSession, onNotify, trapsLogic }) {
+    const [turnPhase, setTurnPhase] = useState(() => TurnPhase());
     const [movementPoints, setMovementPoints] = useState(null);
     const [hoveredPath, setHoveredPath] = useState([]);
     const [canAttack, setCanAttack] = useState(false);
@@ -28,73 +20,92 @@ export function useTurnLogic(config) {
     const [isMovingStarted, setIsMovingStarted] = useState(false);
     const [activePath, setActivePath] = useState([]);
 
-    const combatLogic = useCombatLogic();
-    const hooksPathfinding = usePathfinding({ gameSession, visibilityMap });
+    const { calculatePath } = usePathfinding({ gameSession, visibilityMap });
+    const { resolveCombat } = useCombatLogic();
 
-    const gameSessionRef = useRef(gameSession);
+    // Use a ref to access the latest gameSession inside callbacks and effects without triggering re-renders
+    const sessionRef = useRef(gameSession);
     useEffect(() => {
-        gameSessionRef.current = gameSession;
+        sessionRef.current = gameSession;
     }, [gameSession]);
 
-    const trapsLogicRef = useRef(trapsLogic);
+    // Capability: updateCanAttack
     useEffect(() => {
-        trapsLogicRef.current = trapsLogic;
-    }, [trapsLogic]);
+        const currentSession = sessionRef.current;
+        if (!currentSession || !currentSession.monsters || !currentSession.heroes) {
+            setCanAttack(false);
+            return;
+        }
 
-    useEffect(() => {
-        if (!gameSession) return;
-        
-        let newCanAttack = false;
-        const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-        
-        if (currentHero && !turnPhase.HasPerformedAction) {
-            for (const monsterState of (gameSession.monsters || [])) {
-                const dx = Math.abs(monsterState.x - currentHero.x);
-                const dy = Math.abs(monsterState.y - currentHero.y);
-                if (dx + dy <= 1) {
-                    newCanAttack = true;
-                    break;
-                }
+        if (turnPhase.HasPerformedAction) {
+            setCanAttack(false);
+            return;
+        }
+
+        const currentHero = currentSession.heroes.find(h => h.turnOrder === currentSession.currentTurn);
+        if (!currentHero) {
+            setCanAttack(false);
+            return;
+        }
+
+        let attackable = false;
+        for (const monster of currentSession.monsters) {
+            const dx = Math.abs(monster.x - currentHero.x);
+            const dy = Math.abs(monster.y - currentHero.y);
+            // Manhattan distance <= 1 means adjacent (up, down, left, right)
+            if (dx + dy <= 1) {
+                attackable = true;
+                break;
             }
         }
-        setCanAttack(newCanAttack);
-    }, [gameSession, turnPhase.HasPerformedAction]);
 
+        setCanAttack(attackable);
+    }, [gameSession?.monsters, gameSession?.currentTurn, gameSession?.heroes, turnPhase.HasPerformedAction]);
+
+    // Capability: rollMovement
     const rollMovement = useCallback(() => {
         const die1 = Math.floor(Math.random() * 6) + 1;
         const die2 = Math.floor(Math.random() * 6) + 1;
         setMovementPoints(die1 + die2);
     }, []);
 
+    // Capability: handleBoardHover
     const handleBoardHover = useCallback((x, y) => {
-        if (movementPoints == null || movementPoints <= 0 || isMoving) {
+        if (movementPoints === null || movementPoints <= 0 || isMoving) {
             setHoveredPath([]);
             return;
         }
-        const currentSession = gameSessionRef.current;
-        const currentHero = currentSession?.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+
+        const currentSession = sessionRef.current;
+        if (!currentSession || !currentSession.heroes) return;
+
+        const currentHero = currentSession.heroes.find(h => h.turnOrder === currentSession.currentTurn);
         if (!currentHero) return;
 
-        const path = hooksPathfinding.calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+        const path = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+        
         if (path && path.length > 0) {
             setHoveredPath([{ x: currentHero.x, y: currentHero.y }, ...path]);
         } else {
             setHoveredPath([]);
         }
-    }, [movementPoints, isMoving, hooksPathfinding]);
+    }, [movementPoints, isMoving, calculatePath]);
 
+    // Capability: handleBoardClick
     const handleBoardClick = useCallback((x, y) => {
-        if (isMoving || movementPoints == null || movementPoints <= 0) return;
-        
+        if (isMoving || movementPoints === null || movementPoints <= 0) return;
+
+        const currentSession = sessionRef.current;
+        if (!currentSession || !currentSession.heroes) return;
+
         setIsMovingStarted(true);
-        const currentSession = gameSessionRef.current;
-        const currentHero = currentSession?.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+        const currentHero = currentSession.heroes.find(h => h.turnOrder === currentSession.currentTurn);
         if (!currentHero) return;
 
         let path = [...hoveredPath];
-        
+
         if (path.length === 0 || path[path.length - 1].x !== x || path[path.length - 1].y !== y) {
-            const calcPath = hooksPathfinding.calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
+            const calcPath = calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
             if (calcPath && calcPath.length > 0) {
                 path = [{ x: currentHero.x, y: currentHero.y }, ...calcPath];
             }
@@ -105,8 +116,9 @@ export function useTurnLogic(config) {
             setActivePath([...path]);
             setHoveredPath([]);
         }
-    }, [isMoving, movementPoints, hoveredPath, hooksPathfinding]);
+    }, [isMoving, movementPoints, hoveredPath, calculatePath]);
 
+    // Capability: movementEffect
     useEffect(() => {
         if (activePath.length < 2) {
             if (isMoving) {
@@ -120,138 +132,158 @@ export function useTurnLogic(config) {
         }
 
         const timer = setTimeout(() => {
+            const currentSession = sessionRef.current;
+            if (!currentSession || !currentSession.heroes) return;
+
             const nextPos = activePath[1];
-            const currentSession = gameSessionRef.current;
-            if (!currentSession) return;
+            const currentHero = currentSession.heroes.find(h => h.turnOrder === currentSession.currentTurn);
+            if (!currentHero) return;
 
-            const updatedSession = { ...currentSession };
-            updatedSession.heroes = [...(currentSession.heroes || [])];
-            const heroIndex = updatedSession.heroes.findIndex(h => h.turnOrder === currentSession.currentTurn);
-            
-            if (heroIndex !== -1) {
-                updatedSession.heroes[heroIndex] = {
-                    ...updatedSession.heroes[heroIndex],
-                    x: nextPos.x,
-                    y: nextPos.y
-                };
-            }
-            
-            setMovementPoints(prev => (prev != null ? prev - 1 : 0));
-            
-            const mapCell = currentSession.currentMap?.grid?.find(c => c.x === nextPos.x && c.y === nextPos.y);
-            const currentTrapsLogic = trapsLogicRef.current;
+            // Immutably update hero position
+            let updatedSession = {
+                ...currentSession,
+                heroes: currentSession.heroes.map(h =>
+                    h.heroId === currentHero.heroId ? { ...h, x: nextPos.x, y: nextPos.y } : h
+                )
+            };
 
-            if (mapCell?.trpl && currentTrapsLogic?.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)) {
-                if (heroIndex !== -1) {
-                    updatedSession.heroes[heroIndex].currentBody -= 1;
-                }
-                currentTrapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo);
-                
-                if (mapCell.trpl.tipo === 3) {
-                    updatedSession.currentMap = { ...currentSession.currentMap };
-                    updatedSession.currentMap.grid = [...currentSession.currentMap.grid];
-                    const rockCellIndex = updatedSession.currentMap.grid.findIndex(c => c.x === mapCell.trpl.rccadex && c.y === mapCell.trpl.rccadey);
-                    if (rockCellIndex !== -1) {
-                        updatedSession.currentMap.grid[rockCellIndex] = {
-                            ...updatedSession.currentMap.grid[rockCellIndex],
-                            arnt: { ...updatedSession.currentMap.grid[rockCellIndex].arnt, antroc: true }
-                        };
+            const newMovementPoints = movementPoints - 1;
+            setMovementPoints(newMovementPoints);
+
+            let trapTriggered = false;
+            const mapCell = updatedSession.currentMap?.grid?.find(c => c.x === nextPos.x && c.y === nextPos.y);
+
+            if (mapCell?.trpl && trapsLogic?.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)) {
+                let jumpSuccess = false;
+
+                if (mapCell.trpl.tipo === 1 && trapsLogic.isTrapVisible(nextPos.x, nextPos.y)) {
+                    onNotify("Tenti di saltare l'abisso...");
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    if (roll > 1) {
+                        jumpSuccess = true;
+                        onNotify("Salto riuscito! L'eroe supera l'abisso.");
                     }
                 }
-                
-                switch (mapCell.trpl.tipo) {
-                    case 1: onNotify?.("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce."); break;
-                    case 2: onNotify?.("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce."); break;
-                    case 3: onNotify?.("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce."); break;
-                    default: onNotify?.("TRAPPOLA! Hai interrotto il movimento."); break;
+
+                if (!jumpSuccess) {
+                    trapTriggered = true;
+                    
+                    // Apply damage
+                    updatedSession.heroes = updatedSession.heroes.map(h =>
+                        h.heroId === currentHero.heroId ? { ...h, currentBody: Math.max(0, h.currentBody - 1) } : h
+                    );
+                    
+                    trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo);
+
+                    if (mapCell.trpl.tipo === 3) {
+                        updatedSession.currentMap = {
+                            ...updatedSession.currentMap,
+                            grid: updatedSession.currentMap.grid.map(c =>
+                                (c.x === mapCell.trpl.rccadex && c.y === mapCell.trpl.rccadey)
+                                    ? { ...c, arnt: { ...c.arnt, antroc: true } }
+                                    : c
+                            )
+                        };
+                    }
+
+                    switch (mapCell.trpl.tipo) {
+                        case 1:
+                            onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.");
+                            break;
+                        case 2:
+                            onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.");
+                            break;
+                        case 3:
+                            onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce.");
+                            break;
+                        default:
+                            onNotify("TRAPPOLA! Hai interrotto il movimento.");
+                            break;
+                    }
+
+                    setIsMoving(false);
+                    setTurnPhase(prev => ({ ...prev, HasMoved: true, HasPerformedAction: true }));
+                    setActivePath([]);
                 }
-                
-                setIsMoving(false);
-                setTurnPhase(prev => ({ ...prev, HasMoved: true, HasPerformedAction: true }));
-                onUpdateSession?.(updatedSession);
-                setActivePath([]);
-                return;
             }
-            
-            onUpdateSession?.(updatedSession);
-            setActivePath(prev => prev.slice(1));
-            
+
+            onUpdateSession(updatedSession);
+
+            if (!trapTriggered) {
+                setActivePath(prev => prev.slice(1));
+            }
+
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [activePath, isMoving, movementPoints, onNotify, onUpdateSession]);
+    }, [activePath, isMoving, movementPoints, onUpdateSession, onNotify, trapsLogic]);
 
+    // Capability: handleMonsterClick
     const handleMonsterClick = useCallback((monsterId) => {
-        const currentSession = gameSessionRef.current;
-        if (!currentSession) return;
+        const currentSession = sessionRef.current;
+        if (!currentSession || !currentSession.monsters || !currentSession.heroes) return;
 
-        const monsterIndex = currentSession.monsters?.findIndex(m => m.id === monsterId);
-        const monster = monsterIndex !== undefined && monsterIndex !== -1 ? currentSession.monsters[monsterIndex] : null;
-        const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+        const monster = currentSession.monsters.find(m => m.id === monsterId);
+        const hero = currentSession.heroes.find(h => h.turnOrder === currentSession.currentTurn);
 
         if (monster && hero && canAttack && !isMoving) {
-            const combatResult = combatLogic.resolveCombat(hero, monster);
+            const combatResult = resolveCombat(hero, monster);
             const newBody = monster.currentBody - combatResult.damageDealt;
-            
-            const updatedSession = { ...currentSession };
-            updatedSession.monsters = [...(currentSession.monsters || [])];
-            
-            if (newBody <= 0) {
-                updatedSession.monsters.splice(monsterIndex, 1);
-            } else {
-                updatedSession.monsters[monsterIndex] = {
-                    ...monster,
-                    currentBody: newBody
-                };
-            }
-            
-            setTurnPhase(prev => {
-                const nextPhase = { ...prev, HasPerformedAction: true };
-                if (isMovingStarted) {
-                    nextPhase.HasMoved = true;
-                }
-                return nextPhase;
-            });
-            
-            updatedSession.lastAttack = {
-                hero,
-                monster,
-                combatResult
-            };
-            
-            onUpdateSession?.(updatedSession);
-        }
-    }, [canAttack, isMoving, isMovingStarted, combatLogic, onUpdateSession]);
 
-    const markActionDone = useCallback(() => {
-        setTurnPhase(prev => {
-            const nextPhase = { ...prev, HasPerformedAction: true };
-            if (isMovingStarted) {
-                nextPhase.HasMoved = true;
+            let updatedMonsters = [...currentSession.monsters];
+            if (newBody <= 0) {
+                updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
+            } else {
+                updatedMonsters = updatedMonsters.map(m => 
+                    m.id === monsterId ? { ...m, currentBody: newBody } : m
+                );
             }
-            return nextPhase;
-        });
+
+            setTurnPhase(prev => ({
+                ...prev,
+                HasPerformedAction: true,
+                HasMoved: isMovingStarted ? true : prev.HasMoved
+            }));
+
+            const updatedSession = {
+                ...currentSession,
+                monsters: updatedMonsters,
+                lastAttack: { hero, monster, combatResult }
+            };
+
+            onUpdateSession(updatedSession);
+        }
+    }, [canAttack, isMoving, isMovingStarted, resolveCombat, onUpdateSession]);
+
+    // Capability: markActionDone
+    const markActionDone = useCallback(() => {
+        setTurnPhase(prev => ({
+            ...prev,
+            HasPerformedAction: true,
+            HasMoved: isMovingStarted ? true : prev.HasMoved
+        }));
     }, [isMovingStarted]);
 
+    // Capability: endTurn
     const endTurn = useCallback(() => {
         if (isMoving) return;
-        
-        const currentSession = gameSessionRef.current;
-        if (!currentSession) return;
 
-        const updatedSession = { ...currentSession };
-        updatedSession.currentTurn += 1;
-        
-        const numHeroes = updatedSession.heroes?.length || 0;
-        if (updatedSession.currentTurn > numHeroes) {
-            updatedSession.currentTurn = 1;
+        const currentSession = sessionRef.current;
+        if (!currentSession || !currentSession.heroes) return;
+
+        let nextTurn = currentSession.currentTurn + 1;
+        if (nextTurn > currentSession.heroes.length) {
+            nextTurn = 1;
         }
-        
-        setTurnPhase(TurnPhase({ HasMoved: false, HasPerformedAction: false, IsTurnFinished: false }));
+
+        setTurnPhase(TurnPhase());
         setMovementPoints(null);
         setIsMovingStarted(false);
-        
-        onUpdateSession?.(updatedSession);
+
+        onUpdateSession({
+            ...currentSession,
+            currentTurn: nextTurn
+        });
     }, [isMoving, onUpdateSession]);
 
     return {

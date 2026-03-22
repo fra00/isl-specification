@@ -6,16 +6,10 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 export function useTraps(config = {}) {
     const [triggeredTraps, setTriggeredTraps] = useState([]);
-    
-    const triggeredTrapsRef = useRef(triggeredTraps);
-    
-    useEffect(() => {
-        triggeredTrapsRef.current = triggeredTraps;
-    }, [triggeredTraps]);
 
     const checkTrapActivation = useCallback((trap, x, y) => {
         if (!trap || trap.tipo == null) {
@@ -27,7 +21,7 @@ export function useTraps(config = {}) {
         }
 
         if (trap.tipo === 2 || trap.tipo === 3) {
-            const isTriggered = triggeredTrapsRef.current.some(t => t.x === x && t.y === y);
+            const isTriggered = triggeredTraps.some(t => t.x === x && t.y === y);
             if (isTriggered) {
                 return false;
             } else {
@@ -36,25 +30,30 @@ export function useTraps(config = {}) {
         }
 
         return false;
-    }, []);
+    }, [triggeredTraps]);
+
+    const isTrapVisible = useCallback((x, y) => {
+        return triggeredTraps.some(t => t.x === x && t.y === y);
+    }, [triggeredTraps]);
 
     const registerTriggeredTrap = useCallback((x, y, tipo) => {
-        setTriggeredTraps(prev => {
-            const isAlreadyPresent = prev.some(t => t.x === x && t.y === y);
-            if (!isAlreadyPresent) {
-                return [...prev, { x, y, tipo }];
+        setTriggeredTraps(prevTraps => {
+            const exists = prevTraps.some(t => t.x === x && t.y === y);
+            if (exists) {
+                return prevTraps;
             }
-            return prev;
+            return [...prevTraps, { x, y, tipo }];
         });
     }, []);
 
     const getTriggeredTraps = useCallback(() => {
-        return triggeredTrapsRef.current;
-    }, []);
+        return triggeredTraps;
+    }, [triggeredTraps]);
 
     return {
         triggeredTraps,
         checkTrapActivation,
+        isTrapVisible,
         registerTriggeredTrap,
         getTriggeredTraps
     };

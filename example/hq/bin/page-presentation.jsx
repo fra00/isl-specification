@@ -6,8 +6,9 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { PageNavigationEnum, NavigationStatus } from './domain-core';
+import { GameSession } from './domain-session';
 import PlayGame from './play-game';
 import { PlayGame as EditorGame } from './editor-game';
 import MainMenu from './main-menu';
@@ -16,12 +17,16 @@ import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
 export default function PageContent() {
-  // FirstLoad capability: Synchronous lazy initialization to default page view
   const [navStatus, setNavStatus] = useState(() => 
     NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU })
   );
-  
   const [gameSession, setGameSession] = useState(null);
+
+  useEffect(() => {
+    if (!navStatus?.currentPageView) {
+      setNavStatus(NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU }));
+    }
+  }, [navStatus?.currentPageView]);
 
   const changePageView = useCallback((nextPageView) => {
     setNavStatus(NavigationStatus({ currentPageView: nextPageView }));
@@ -32,17 +37,14 @@ export default function PageContent() {
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission with index: ${missionIndex}`);
-    // Additional mission start logic can be handled here
+    console.log(`Starting mission index: ${missionIndex}`);
   }, []);
 
   const renderPageView = () => {
-    const currentPage = navStatus?.currentPageView || PageNavigationEnum.MAIN_MENU;
-
-    switch (currentPage) {
+    switch (navStatus?.currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
-        
+      
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame 
@@ -51,10 +53,10 @@ export default function PageContent() {
             onUpdateSession={updateSession} 
           />
         );
-        
+      
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
-        
+      
       case PageNavigationEnum.SHOP:
         return (
           <Armory 
@@ -63,7 +65,7 @@ export default function PageContent() {
             onUpdateSession={updateSession} 
           />
         );
-        
+      
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon 
@@ -72,7 +74,7 @@ export default function PageContent() {
             onUpdateSession={updateSession} 
           />
         );
-        
+      
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription 
@@ -81,14 +83,14 @@ export default function PageContent() {
             onUpdateSession={updateSession} 
           />
         );
-        
+      
       default:
         return <MainMenu onChangePageView={changePageView} />;
     }
   };
 
   return (
-    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto flex flex-col">
+    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto">
       {renderPageView()}
     </div>
   );

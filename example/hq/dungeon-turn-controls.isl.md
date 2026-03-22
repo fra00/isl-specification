@@ -23,6 +23,7 @@
 - `onEndTurn`: () -> void (Callback to end the turn).
 - `onSearchPassages`: () -> void (Callback to search for secret passages).
 - `onSearchTreasure`: () -> void (Callback to search for treasure).
+- `onSearchTraps`: () -> void (Callback to search for traps).
 - `onOpenInventory`: () -> void (Callback to open inventory modal).
 
 ### 🔍 Appearance
@@ -66,6 +67,7 @@
   - **Search Trap**:
     - Disabled IF `turnPhase.hasPerformedAction` is true.
     - Style: Yellow/Orange button.
+    - OnClick: Trigger `onSearchTraps`.
   - **End Turn**:
     - Style: Red danger button.
     - OnClick: Trigger `onEndTurn`.

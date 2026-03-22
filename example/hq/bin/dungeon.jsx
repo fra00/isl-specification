@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import DungeonBoard from "./dungeon-board";
 import DungeonHeroOrder from "./dungeon-hero-order";
 import { useTurnLogic } from "./dungeon-use-turn-logic";
@@ -22,222 +22,252 @@ import DungeonInventoryModal from "./dungeon-inventory-modal";
 import { useTraps } from "./dungeon-use-traps";
 
 export default function Dungeon(props) {
-    const { gameSession, onUpdateSession } = props;
+  const { gameSession, onChangePageView, onUpdateSession } = props;
 
-    const [isStaticDataLoaded, setIsStaticDataLoaded] = useState(false);
-    const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-    const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
-    const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
-    const [notificationMessage, setNotificationMessage] = useState(null);
+  const [isStaticDataLoaded, setIsStaticDataLoaded] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [staticVisibilityMap, setStaticVisibilityMap] = useState(null);
+  const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
+  const [notificationMessage, setNotificationMessage] = useState(null);
 
-    const sessionRef = useRef(gameSession);
-    const updateSessionRef = useRef(onUpdateSession);
+  // Refs to avoid circular dependencies and unnecessary re-renders
+  const markActionDoneRef = useRef(null);
+  const applyTreasureEffectRef = useRef(null);
 
-    useEffect(() => {
-        sessionRef.current = gameSession;
-        updateSessionRef.current = onUpdateSession;
-    }, [gameSession, onUpdateSession]);
+  const handleActionDone = useCallback(() => {
+    if (markActionDoneRef.current) {
+      markActionDoneRef.current();
+    }
+  }, []);
 
-    const handleCloseNotification = useCallback(() => {
-        setNotificationMessage(null);
-    }, []);
+  const boardVisibilityMap = useFogOfWar({
+    gameSession,
+    staticVisibilityMap
+  });
 
-    const handleTreasureCardDrawn = useCallback((card) => {
-        setDrawnTreasureCard(card);
-    }, []);
+  const areMonstersVisible = useMemo(() => {
+    if (!gameSession?.monsters || !boardVisibilityMap?.data) return false;
+    return gameSession.monsters.some((m) => {
+      const cell = boardVisibilityMap.data.find((c) => c.x === m.x && c.y === m.y);
+      return cell && cell.fog === false;
+    });
+  }, [gameSession?.monsters, boardVisibilityMap]);
 
-    const closeCombatResult = useCallback(() => {
-        if (gameSession) {
-            onUpdateSession({
-                ...gameSession,
-                lastAttack: null
-            });
+  const hooksTraps = useTraps({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    areMonstersVisible,
+    onNotify: setNotificationMessage,
+    onActionDone: handleActionDone
+  });
+
+  const hooksTurnLogic = useTurnLogic({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onUpdateSession,
+    onNotify: setNotificationMessage,
+    trapsLogic: hooksTraps
+  });
+
+  // Update ref for handleActionDone
+  useEffect(() => {
+    markActionDoneRef.current = hooksTurnLogic.markActionDone;
+  }, [hooksTurnLogic.markActionDone]);
+
+  const hooksMonsters = useDungeonMonsters({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onUpdateSession
+  });
+
+  const hooksSecretPassages = useSecretPassages({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onNotify: setNotificationMessage,
+    onActionDone: handleActionDone
+  });
+
+  const handleTreasureCardDrawn = useCallback((card) => {
+    setDrawnTreasureCard(card);
+  }, []);
+
+  const hooksTreasure = useTreasureSearch({
+    gameSession,
+    visibilityMap: boardVisibilityMap,
+    onNotify: setNotificationMessage,
+    onActionDone: handleActionDone,
+    onUpdateSession,
+    onTreasureCardDrawn: handleTreasureCardDrawn
+  });
+
+  // Update ref for applyTreasureEffect
+  useEffect(() => {
+    applyTreasureEffectRef.current = hooksTreasure.applyTreasureEffect;
+  }, [hooksTreasure.applyTreasureEffect]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchHqData = async () => {
+      if (!gameSession || isStaticDataLoaded) return;
+      
+      try {
+        const [boardRes, treasureRes] = await Promise.all([
+          fetch("/jsonData/tabellone/default.json"),
+          fetch("/jsonData/treasure-card.json")
+        ]);
+
+        if (!boardRes.ok || !treasureRes.ok) {
+          throw new Error("Failed to fetch static data");
         }
-    }, [gameSession, onUpdateSession]);
 
-    const openInventory = useCallback(() => {
-        setIsInventoryOpen(true);
-    }, []);
+        const boardData = await boardRes.json();
+        const treasureData = await treasureRes.json();
 
-    const closeInventory = useCallback(() => {
-        setIsInventoryOpen(false);
-    }, []);
+        if (!isMounted) return;
 
-    const hooksTraps = useTraps({});
+        setStaticVisibilityMap(boardData);
 
-    const boardVisibilityMap = useFogOfWar({
-        gameSession,
-        staticVisibilityMap
-    });
+        const shuffledTreasures = [...treasureData].sort(() => Math.random() - 0.5);
 
-    const hooksTurnLogic = useTurnLogic({
-        gameSession,
-        visibilityMap: boardVisibilityMap,
-        onUpdateSession,
-        onNotify: setNotificationMessage,
-        trapsLogic: hooksTraps
-    });
-
-    const hooksMonsters = useDungeonMonsters({
-        gameSession,
-        visibilityMap: boardVisibilityMap,
-        onUpdateSession
-    });
-
-    const hooksSecretPassages = useSecretPassages({
-        gameSession,
-        visibilityMap: boardVisibilityMap,
-        onNotify: setNotificationMessage,
-        onActionDone: hooksTurnLogic?.markActionDone
-    });
-
-    const hooksTreasure = useTreasureSearch({
-        gameSession,
-        visibilityMap: boardVisibilityMap,
-        onNotify: setNotificationMessage,
-        onActionDone: hooksTurnLogic?.markActionDone,
-        onUpdateSession,
-        onTreasureCardDrawn: handleTreasureCardDrawn
-    });
-
-    const closeTreasureCardModal = useCallback(() => {
-        if (drawnTreasureCard && hooksTreasure?.applyTreasureEffect) {
-            hooksTreasure.applyTreasureEffect(drawnTreasureCard);
-        }
-        setDrawnTreasureCard(null);
-    }, [drawnTreasureCard, hooksTreasure]);
-
-    useEffect(() => {
-        let isMounted = true;
-        const loadData = async () => {
-            try {
-                const boardRes = await fetch('/jsonData/tabellone/default.json');
-                if (!boardRes.ok) throw new Error("Failed to load board data");
-                const boardData = await boardRes.json();
-
-                const treasureRes = await fetch('/jsonData/treasure-card.json');
-                if (!treasureRes.ok) throw new Error("Failed to load treasure cards");
-                const treasureData = await treasureRes.json();
-
-                if (!isMounted) return;
-
-                setStaticVisibilityMap(boardData);
-
-                const shuffledTreasures = [...treasureData].sort(() => Math.random() - 0.5);
-
-                const currentSession = sessionRef.current;
-                const currentUpdate = updateSessionRef.current;
-
-                if (currentSession && currentSession.heroes) {
-                    const updatedHeroes = currentSession.heroes.map(hero => {
-                        const startPos = currentSession.currentMap?.eroi_start?.find(s => s.id === hero.heroId);
-                        if (startPos) {
-                            return { ...hero, x: startPos.x, y: startPos.y };
-                        }
-                        return hero;
-                    });
-
-                    currentUpdate({
-                        ...currentSession,
-                        heroes: updatedHeroes,
-                        treasureDeck: shuffledTreasures
-                    });
-                }
-                setIsStaticDataLoaded(true);
-            } catch (error) {
-                if (isMounted) {
-                    setNotificationMessage("Error loading static data: " + error.message);
-                }
-            }
-        };
-        loadData();
-        return () => { isMounted = false; };
-    }, []);
-
-    const handleConfirmOrder = useCallback((orderedHeroIds) => {
-        if (!gameSession) return;
-        const updatedHeroes = gameSession.heroes.map(hero => {
-            const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
-            return { ...hero, turnOrder };
+        const updatedHeroes = (gameSession.heroes || []).map((hero) => {
+          const startPos = gameSession.currentMap?.eroi_start?.find(
+            (s) => s.id === hero.heroId
+          );
+          if (startPos) {
+            return { ...hero, x: startPos.x, y: startPos.y };
+          }
+          return hero;
         });
+
         onUpdateSession({
-            ...gameSession,
-            heroes: updatedHeroes,
-            isHeroOrderConfirmed: true
+          ...gameSession,
+          heroes: updatedHeroes,
+          treasureDeck: shuffledTreasures
         });
-    }, [gameSession, onUpdateSession]);
+        
+        setIsStaticDataLoaded(true);
+      } catch (error) {
+        if (isMounted) {
+          setNotificationMessage("Error loading static data: " + error.message);
+        }
+      }
+    };
 
-    if (!gameSession) return null;
+    fetchHqData();
 
-    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    return () => {
+      isMounted = false;
+    };
+  }, [gameSession, isStaticDataLoaded, onUpdateSession]);
 
-    return (
-        <div className="w-full h-full relative">
-            {!gameSession.isHeroOrderConfirmed ? (
-                <DungeonHeroOrder
-                    heroes={gameSession.heroes || []}
-                    onConfirmOrder={handleConfirmOrder}
-                />
-            ) : (
-                <>
-                    <DungeonBoard
-                        gameSession={gameSession}
-                        boardVisibilityMap={boardVisibilityMap}
-                        onCellClick={hooksTurnLogic?.handleBoardClick || (() => {})}
-                        onCellHover={hooksTurnLogic?.handleBoardHover || (() => {})}
-                        onMonsterClick={hooksTurnLogic?.handleMonsterClick || (() => {})}
-                        hoveredPath={hooksTurnLogic?.hoveredPath}
-                        secretPassages={hooksSecretPassages?.foundPassages}
-                        treasures={hooksTreasure?.foundTreasures}
-                        triggeredTraps={hooksTraps?.triggeredTraps}
-                    />
+  const handleConfirmOrder = useCallback((orderedHeroIds) => {
+    if (!gameSession) return;
+    
+    const updatedHeroes = gameSession.heroes.map((hero) => {
+      const turnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
+      return { ...hero, turnOrder };
+    });
+    
+    onUpdateSession({
+      ...gameSession,
+      heroes: updatedHeroes,
+      isHeroOrderConfirmed: true
+    });
+  }, [gameSession, onUpdateSession]);
 
-                    <DungeonTurnControls
-                        currentHero={currentHero}
-                        movementPoints={hooksTurnLogic?.movementPoints}
-                        turnPhase={hooksTurnLogic?.turnPhase}
-                        isMoving={hooksTurnLogic?.isMoving}
-                        onRollMovement={hooksTurnLogic?.rollMovement}
-                        onEndTurn={hooksTurnLogic?.endTurn}
-                        onSearchPassages={hooksSecretPassages?.searchPassages}
-                        onSearchTreasure={hooksTreasure?.searchTreasure}
-                        onOpenInventory={openInventory}
-                    />
-                </>
-            )}
+  const closeCombatResult = useCallback(() => {
+    if (!gameSession) return;
+    onUpdateSession({ ...gameSession, lastAttack: null });
+  }, [gameSession, onUpdateSession]);
 
-            {gameSession.lastAttack && (
-                <CombatResultModal
-                    isOpen={true}
-                    combatResult={gameSession.lastAttack.combatResult}
-                    attacker={gameSession.lastAttack.hero}
-                    defender={gameSession.lastAttack.monster}
-                    onClose={closeCombatResult}
-                />
-            )}
+  const closeTreasureCardModal = useCallback(() => {
+    if (drawnTreasureCard && applyTreasureEffectRef.current) {
+      applyTreasureEffectRef.current(drawnTreasureCard);
+    }
+    setDrawnTreasureCard(null);
+  }, [drawnTreasureCard]);
 
-            {notificationMessage && (
-                <DungeonNotification
-                    message={notificationMessage}
-                    onClose={handleCloseNotification}
-                />
-            )}
+  const openInventory = useCallback(() => setIsInventoryOpen(true), []);
+  const closeInventory = useCallback(() => setIsInventoryOpen(false), []);
+  const handleCloseNotification = useCallback(() => setNotificationMessage(null), []);
 
-            {drawnTreasureCard && (
-                <TreasureCardModal
-                    isOpen={true}
-                    card={drawnTreasureCard}
-                    onClose={closeTreasureCardModal}
-                />
-            )}
+  const currentHero = useMemo(() => {
+    return gameSession?.heroes?.find((h) => h.turnOrder === gameSession?.currentTurn);
+  }, [gameSession?.heroes, gameSession?.currentTurn]);
 
-            {isInventoryOpen && currentHero && (
-                <DungeonInventoryModal
-                    isOpen={true}
-                    hero={currentHero}
-                    onClose={closeInventory}
-                />
-            )}
-        </div>
-    );
+  if (!gameSession) return null;
+
+  return (
+    <div className="w-full h-full relative">
+      {isStaticDataLoaded && (
+        <DungeonBoard
+          gameSession={gameSession}
+          boardVisibilityMap={boardVisibilityMap}
+          onCellClick={hooksTurnLogic.handleBoardClick}
+          onCellHover={hooksTurnLogic.handleBoardHover}
+          onMonsterClick={hooksTurnLogic.handleMonsterClick}
+          hoveredPath={hooksTurnLogic.hoveredPath}
+          secretPassages={hooksSecretPassages.foundPassages}
+          treasures={hooksTreasure.foundTreasures}
+          triggeredTraps={hooksTraps.triggeredTraps}
+        />
+      )}
+
+      {!gameSession.isHeroOrderConfirmed && gameSession.heroes && (
+        <DungeonHeroOrder
+          heroes={gameSession.heroes}
+          onConfirmOrder={handleConfirmOrder}
+        />
+      )}
+
+      {gameSession.isHeroOrderConfirmed && currentHero && (
+        <DungeonTurnControls
+          currentHero={currentHero}
+          movementPoints={hooksTurnLogic.movementPoints}
+          turnPhase={hooksTurnLogic.turnPhase}
+          isMoving={hooksTurnLogic.isMoving}
+          onRollMovement={hooksTurnLogic.rollMovement}
+          onEndTurn={hooksTurnLogic.endTurn}
+          onSearchPassages={hooksSecretPassages.searchPassages}
+          onSearchTreasure={hooksTreasure.searchTreasure}
+          onSearchTraps={hooksTraps.searchTraps}
+          onOpenInventory={openInventory}
+        />
+      )}
+
+      {gameSession.lastAttack && (
+        <CombatResultModal
+          isOpen={true}
+          combatResult={gameSession.lastAttack.combatResult}
+          attacker={gameSession.lastAttack.hero}
+          defender={gameSession.lastAttack.monster}
+          onClose={closeCombatResult}
+        />
+      )}
+
+      {notificationMessage && (
+        <DungeonNotification
+          message={notificationMessage}
+          onClose={handleCloseNotification}
+        />
+      )}
+
+      {drawnTreasureCard && (
+        <TreasureCardModal
+          isOpen={true}
+          card={drawnTreasureCard}
+          onClose={closeTreasureCardModal}
+        />
+      )}
+
+      {isInventoryOpen && currentHero && (
+        <DungeonInventoryModal
+          isOpen={true}
+          hero={currentHero}
+          onClose={closeInventory}
+        />
+      )}
+    </div>
+  );
 }

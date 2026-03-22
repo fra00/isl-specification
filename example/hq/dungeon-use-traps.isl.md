@@ -8,16 +8,28 @@
 ---
 
 > **Reference**: @MapCellTrap in `./domain-map.isl.md`
+> **Reference**: @GameSession in `./domain-session.isl.md`
+> **Reference**: @VisibilityMap in `./domain-map.isl.md`
+> **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
 
 ## Component: useTraps
 
 ### Role: Business Logic
+
+**Signature**:
+
+- `gameSession`: @GameSession
+- `visibilityMap`: @VisibilityMap
+- `areMonstersVisible`: Boolean
+- `onNotify`: (message: String) -> void
+- `onActionDone`: () -> void
 
 ### ⚡ Capabilities
 
 #### internalState
 
 - `triggeredTraps`: List of {x: Integer, y: Integer, tipo: Integer} (Stores traps that have been activated).
+- `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
 
 #### checkTrapActivation
 
@@ -50,3 +62,26 @@
 
 - **Contract**: Returns the list of triggered traps for rendering.
 - **Return**: `triggeredTraps`.
+
+#### searchTraps
+
+- **Contract**: Scans the visible area for hidden traps.
+- **Trigger**: User clicks "Search Traps".
+- **Flow**:
+  - IF `areMonstersVisible` is true:
+    - Trigger `onNotify("Non puoi cercare trappole con mostri vicini!")`.
+    - RETURN.
+  - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
+  - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
+  - Initialize `trapsFound` as false.
+  - FOR each `cell` in `visibleCells`:
+    - Find corresponding `mapCell` in `gameSession.currentMap.grid` at `cell.x`, `cell.y`.
+    - IF `mapCell` exists AND `mapCell.trpl` exists and `map.Cell.trpl.tipo` > 0:
+      - Check if `{cell.x, cell.y}` is NOT in `triggeredTraps`:
+        - Add `{x: cell.x, y: cell.y, tipo: mapCell.trpl.tipo}` to `triggeredTraps`.
+        - Set `trapsFound` to true.
+  - IF `trapsFound` is true:
+    - Trigger `onNotify("Attenzione! Hai individuato delle trappole!")`.
+  - ELSE:
+    - Trigger `onNotify("Nessuna trappola trovata.")`.
+  - Trigger `onActionDone()`.

@@ -6,55 +6,102 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
+import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 
-export function useTraps(config = {}) {
-    const [triggeredTraps, setTriggeredTraps] = useState([]);
+export function useTraps({
+  gameSession,
+  visibilityMap,
+  areMonstersVisible,
+  onNotify,
+  onActionDone
+}) {
+  const [triggeredTraps, setTriggeredTraps] = useState([]);
+  const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
-    const checkTrapActivation = useCallback((trap, x, y) => {
-        if (!trap || trap.tipo == null) {
-            return false;
+  const checkTrapActivation = useCallback((trap, x, y) => {
+    if (!trap) return false;
+    if (trap.tipo === 1) return true;
+    if (trap.tipo === 2 || trap.tipo === 3) {
+      const isTriggered = triggeredTraps.some(t => t.x === x && t.y === y);
+      return !isTriggered;
+    }
+    return false;
+  }, [triggeredTraps]);
+
+  const isTrapVisible = useCallback((x, y) => {
+    return triggeredTraps.some(t => t.x === x && t.y === y);
+  }, [triggeredTraps]);
+
+  const registerTriggeredTrap = useCallback((x, y, tipo) => {
+    setTriggeredTraps(prev => {
+      if (prev.some(t => t.x === x && t.y === y)) return prev;
+      return [...prev, { x, y, tipo }];
+    });
+  }, []);
+
+  const getTriggeredTraps = useCallback(() => {
+    return triggeredTraps;
+  }, [triggeredTraps]);
+
+  const searchTraps = useCallback(() => {
+    if (areMonstersVisible) {
+      onNotify?.("Non puoi cercare trappole con mostri vicini!");
+      return;
+    }
+
+    const currentHero = gameSession?.heroes?.find(
+      h => h.turnOrder === gameSession?.currentTurn
+    );
+
+    if (!currentHero) return;
+
+    const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
+    let trapsFound = false;
+    const newTraps = [];
+
+    visibleCells.forEach(cell => {
+      const mapCell = gameSession?.currentMap?.grid?.find(
+        c => c.x === cell.x && c.y === cell.y
+      );
+
+      if (mapCell?.trpl && mapCell.trpl.tipo > 0) {
+        const isAlreadyTriggered = triggeredTraps.some(
+          t => t.x === cell.x && t.y === cell.y
+        );
+        const isAlreadyInNew = newTraps.some(
+          t => t.x === cell.x && t.y === cell.y
+        );
+
+        if (!isAlreadyTriggered && !isAlreadyInNew) {
+          newTraps.push({ x: cell.x, y: cell.y, tipo: mapCell.trpl.tipo });
+          trapsFound = true;
         }
+      }
+    });
 
-        if (trap.tipo === 1) {
-            return true;
-        }
+    if (trapsFound) {
+      setTriggeredTraps(prev => [...prev, ...newTraps]);
+      onNotify?.("Attenzione! Hai individuato delle trappole!");
+    } else {
+      onNotify?.("Nessuna trappola trovata.");
+    }
 
-        if (trap.tipo === 2 || trap.tipo === 3) {
-            const isTriggered = triggeredTraps.some(t => t.x === x && t.y === y);
-            if (isTriggered) {
-                return false;
-            } else {
-                return true;
-            }
-        }
+    onActionDone?.();
+  }, [
+    areMonstersVisible,
+    gameSession,
+    calculateVisibleCells,
+    triggeredTraps,
+    onNotify,
+    onActionDone
+  ]);
 
-        return false;
-    }, [triggeredTraps]);
-
-    const isTrapVisible = useCallback((x, y) => {
-        return triggeredTraps.some(t => t.x === x && t.y === y);
-    }, [triggeredTraps]);
-
-    const registerTriggeredTrap = useCallback((x, y, tipo) => {
-        setTriggeredTraps(prevTraps => {
-            const exists = prevTraps.some(t => t.x === x && t.y === y);
-            if (exists) {
-                return prevTraps;
-            }
-            return [...prevTraps, { x, y, tipo }];
-        });
-    }, []);
-
-    const getTriggeredTraps = useCallback(() => {
-        return triggeredTraps;
-    }, [triggeredTraps]);
-
-    return {
-        triggeredTraps,
-        checkTrapActivation,
-        isTrapVisible,
-        registerTriggeredTrap,
-        getTriggeredTraps
-    };
+  return {
+    checkTrapActivation,
+    isTrapVisible,
+    registerTriggeredTrap,
+    getTriggeredTraps,
+    searchTraps
+  };
 }

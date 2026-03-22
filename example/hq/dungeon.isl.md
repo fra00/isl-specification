@@ -57,6 +57,7 @@
     - `onEndTurn`: `hooksTurnLogic.endTurn`.
     - `onSearchPassages`: `hooksSecretPassages.searchPassages`.
     - `onSearchTreasure`: `hooksTreasure.searchTreasure`.
+    - `onSearchTraps`: `hooksTraps.searchTraps`.
     - `onOpenInventory`: Trigger `openInventory`.
 - **Combat Result**: Displays `CombatResultModal` if `gameSession.lastAttack` is not null.
   - **Props**:
@@ -92,7 +93,7 @@
 - `drawnTreasureCard`: @TreasureCard (The currently displayed treasure card, null if none).
 - `notificationMessage`: String (Current message to display to the user, null if none).
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
-- `hooksTraps`: @useTraps (Internal logic for managing map traps).
+- `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
 - `hooksTurnLogic`:@useTurnLogic passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, and `hooksTraps`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, and `onUpdateSession`.
 - `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.

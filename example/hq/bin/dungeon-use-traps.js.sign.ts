@@ -1,7 +1,1 @@
-export function useTraps(config?: any): {
-    triggeredTraps: Array<{ x: number; y: number; tipo: number }>;
-    checkTrapActivation: (trap: { tipo: number; rccadex: number; rccadey: number }, x: number, y: number) => boolean;
-    isTrapVisible: (x: number, y: number) => boolean;
-    registerTriggeredTrap: (x: number, y: number, tipo: number) => void;
-    getTriggeredTraps: () => Array<{ x: number; y: number; tipo: number }>;
-};
+export function useTraps(config: { gameSession: any; visibilityMap: any; areMonstersVisible: boolean; onNotify: (message: string) => void; onActionDone: () => void }): { checkTrapActivation: (trap: any, x: number, y: number) => boolean; isTrapVisible: (x: number, y: number) => boolean; registerTriggeredTrap: (x: number, y: number, tipo: number) => void; getTriggeredTraps: () => Array<{ x: number; y: number; tipo: number }>; searchTraps: () => void };

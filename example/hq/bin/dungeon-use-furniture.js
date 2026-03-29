@@ -6,37 +6,32 @@
  * Edit the ISL file instead.
  */
 
-import { useMemo } from "react";
+import { useCallback } from 'react';
 
-export function useDungeonFurniture({ gameSession = null, boardVisibilityMap = null } = {}) {
-  const visibleFurniture = useMemo(() => {
+export const useDungeonFurniture = ({ gameSession, boardVisibilityMap } = {}) => {
+  const visibleFurniture = useCallback(() => {
     if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
       return [];
     }
 
-    const result = [];
-    const visibilityData = boardVisibilityMap.data;
+    const visibleItems = [];
 
-    const visibilityLookup = new Map();
-    for (let i = 0; i < visibilityData.length; i++) {
-      const cell = visibilityData[i];
-      visibilityLookup.set(`${cell.x},${cell.y}`, cell);
-    }
+    for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
+      const mapCell = gameSession.currentMap.grid[i];
+      
+      const visibilityCell = boardVisibilityMap.data.find(
+        (cell) => cell.x === mapCell.x && cell.y === mapCell.y
+      );
 
-    const grid = gameSession.currentMap.grid;
-    for (let i = 0; i < grid.length; i++) {
-      const mapCell = grid[i];
-      const visCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
-
-      if (visCell && visCell.fog === false) {
+      if (visibilityCell && visibilityCell.fog === false) {
         if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
-          result.push({
+          visibleItems.push({
             x: mapCell.x,
             y: mapCell.y,
             img: "../cell/pietra.jpg"
           });
         } else if (mapCell.mobili?.num != null) {
-          result.push({
+          visibleItems.push({
             x: mapCell.x,
             y: mapCell.y,
             img: mapCell.mobili.img
@@ -45,10 +40,10 @@ export function useDungeonFurniture({ gameSession = null, boardVisibilityMap = n
       }
     }
 
-    return result;
-  }, [gameSession, boardVisibilityMap]);
+    return visibleItems;
+  }, [gameSession?.currentMap, boardVisibilityMap]);
 
   return {
     visibleFurniture
   };
-}
+};

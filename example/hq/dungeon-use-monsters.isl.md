@@ -16,20 +16,19 @@
 
 ### Role: Business Logic
 
-**Signature**: `useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession })`
+**Signature**:
+
+- `gameSession`: @GameSession
+- `visibilityMap`: @VisibilityMap
+- `onUpdateSession`: (session: @GameSession) -> void
+- `onNotify`: (message: String) -> void
+- `monsterDefinitions`: List<@Monster>
 
 ### ⚡ Capabilities
 
 #### internalState
 
 - `spawnedLocations`: List of "x,y" strings (Tracks which map cells have had monsters spawned to prevent duplicates).
-- `monsterDefinitions`: list of @Monster (Loaded from JSON on initialization for reference when spawning).
-
-#### initialize
-
-- Fetch board data from `/jsonData/monsters.json`.
-- IF response is not OK, throw Error "Failed to load monsters.json: File not found".
-- Parse response into list of @Monster and store in `monsterDefinitions`.
 
 #### spawnMonsters
 
@@ -45,9 +44,35 @@
       - IF map cell has `mostab.mos` == true:
       - Find `@Monster` definition in `monsterDefinitions` where `id` == `mostab.mosid` and store in `monster`.
       - IF found:
-        - Create `@MonsterState` (id: random/unique, monster: `monster`, x: x, y: y, currentBody: `monster.body` , currentMind: `monster.mind`).
+        - Create `@MonsterState` (id: random/unique, monster: `monster`, x: x, y: y, currentBody: `monster.corpo` , currentMind: `monster.mente`).
         - Add to `newMonsters`.
         - Add "x,y" to `newSpawnedLocations`.
   - IF `newMonsters` is not empty:
     - Create updated `@GameSession` with appended `monsters` and `spawnedLocations`.
     - Trigger `onUpdateSession`.
+
+#### spawnWanderingMonster
+
+- **Contract**: Spawns a wandering monster adjacent to the current hero.
+- **Signature**: `(heroX: Integer, heroY: Integer) -> @MonsterState | null`
+- **Flow**:
+  - Define `directions` as Up, Down, Left, Right.
+  - Initialize `spawnCell` as null.
+  - FOR EACH `dir` in `directions`:
+    - Let `targetX` = `heroX` + `dir.x`, `targetY` = `heroY` + `dir.y`.
+    - IF `targetX, targetY` is within bounds AND cell is walkable (not wall/rock) AND NOT occupied by any hero or monster:
+      - Set `spawnCell` to `{x: targetX, y: targetY}`.
+      - BREAK loop.
+  - IF `spawnCell` is null:
+    - Trigger `onNotify("Non c'è spazio per il mostro errante!")`.
+    - RETURN null.
+  - Pick a monster definition (Default ID 1 - Orco, or random from `monsterDefinitions`).
+  - Create `@MonsterState` -> `newMonster`:
+    - `id`: unique random integer.
+    - `monster`: selected definition.
+    - `x`: `spawnCell.x`, `y`: `spawnCell.y`.
+    - `currentBody`: `monster.corpo`.
+    - `currentMind`: `monster.mente`.
+  - Update `gameSession.monsters` by adding `newMonster`.
+  - Trigger `onUpdateSession`.
+  - RETURN `newMonster`.

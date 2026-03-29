@@ -51,15 +51,16 @@ Represents an equipment item definition.
 
 - `id`: Unique identifier (Integer).
 - `nome`: Name of the equipment (String).
-- `dadatt`: Attack dice count (Integer).
-- `daddif`: Defense dice count (Integer).
+- `dadatt`: Attack dice number (Integer).
+- `daddif`: Defense dice number (Integer).
 - `daddifex`: Extra defense dice (Integer).
-- `numdadicontr`: Number of counter dice (Integer).
+- `numdadicontr`: Attack dice counter when attacking specific monsters (Integer).
+- `targetMonster`: ID(s) of the monster(s) that trigger `numdadicontr` (Integer or String for multiple IDs).
 - `doppioatt`: Allows double attack (Boolean).
-- `mosdoppio`: Double movement value (Integer).
+- `mosdoppio`: ID of the monster(s) that trigger `doppioatt` (Integer).
 - `puntimente`: Mind points bonus (Integer).
 - `doppiamag`: Allows double magic usage (Boolean).
-- `movim`: Movement modifier (Integer).
+- `movim`: Movement number dice modifier (-1 remove one dice) (Integer).
 - `noogg`: Incompatible equipment ID (e.g. 11 for Shield) (Integer).
 - `diago`: Allows diagonal attacks (Boolean).
 - `tiro`: Allows ranged attacks (Boolean).
@@ -80,12 +81,27 @@ Represents a consumable item or special object definition.
 - `nome`: Name of the item (String).
 - `hp`: Health points modifier (Integer).
 - `mp`: Mind points modifier (Integer).
+- `targetType`: "Self" | "Monster" (Determines if the item is used on self or targeted at an enemy).
 - `movimento`: Movement modifier (Integer).
 - `attacco`: Attack modifier (Integer).
 - `difesa`: Defense modifier (Integer).
 - `natt`: Number of attacks modifier (Integer).
 - `acqua`: Indicates if the item is holy water (Boolean).
 - `danni`: Damage value (Integer).
+
+#### `Spell`
+
+Represents a magic spell definition.
+
+- `id`: Unique identifier (Integer).
+- `nome`: Name of the spell (String).
+- `elemento`: "Fuoco" | "Acqua" | "Aria" | "Terra".
+- `descrizione`: Text effect description (String).
+- `immagine`: Image filename for the card face (String).
+- `dorso`: Image filename for the card back (String).
+- `targetType`: "Self" | "Hero" | "Monster" | "Point" | "Door".
+- `effetto`: Internal logic key for the effect (String).
+- `valore`: Numeric value associated with the effect (Integer).
 
 #### `TreasureCard`
 

@@ -53,3 +53,17 @@
           - Add `{x: currentX, y: currentY}` to `visibleCells`.
           - CONTINUE Loop.
   - Return `visibleCells`.
+
+#### hasLineOfSight
+
+- **Contract**: Determines if there is an unobstructed straight line between two grid positions.
+- **Signature**: `(startX: Integer, startY: Integer, targetX: Integer, targetY: Integer) -> Boolean`
+- **Flow**:
+  - Trace a direct logical line between the start and target coordinates.
+  - For each cell intersected by this line:
+    - Check if the cell blocks Line of Sight:
+      - IF transition between cells crosses a wall (Area ID `valo` changes without an open door).
+      - IF cell contains Furniture.
+      - IF cell contains a Rock block (`antroc`).
+    - IF any obstruction is found, RETURN false.
+  - RETURN true.

@@ -1,0 +1,1 @@
+export default function DungeonSpellSelectionModal(props: { heroes?: any[]; allSpells?: any[]; onConfirmSelection?: (selection: any) => void }): React.ReactElement | null;

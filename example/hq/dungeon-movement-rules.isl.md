@@ -39,12 +39,21 @@
 - **Flow**:
   - **Bounds Check**: Return FALSE if target coordinates are less than 1 or greater than the map dimensions (using `mapQuery.getMapDimensions`).
   - **Static Obstacles**: Return FALSE if `mapQuery.isBlockedByFurniture(targetX, targetY)`.
-  - **Dynamic Obstacles**: Return FALSE if `mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)`.
+  - **Dynamic Obstacles**: 
+    - IF `mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)` is TRUE:
+      - Find the Hero in `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
+      - IF hero exists AND `hero.activeStatus` contains "FoggyMist":
+        - // Traversal allowed through monsters due to spell effect.
+      - ELSE: Return FALSE.
   - **Rock Obstacles**: Return FALSE if `mapQuery.isBlockedByRock(targetX, targetY)`.
   - **Room/Wall Logic**:
     - Get `sourceValo` from `mapQuery.getVisibilityCell(sourceX, sourceY)` (@VisibilityCell).
     - Get `targetValo` from `mapQuery.getVisibilityCell(targetX, targetY)` (@VisibilityCell).
     - **(Crossing Rooms)**: IF `sourceValo` != `targetValo`:
-      - Return TRUE IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)` OR `mapQuery.isSecretPassage(sourceX, sourceY)` OR `mapQuery.isSecretPassage(targetX, targetY)`.
-      - ELSE Return FALSE.
+      - IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)` OR `mapQuery.isSecretPassage(sourceX, sourceY)` OR `mapQuery.isSecretPassage(targetX, targetY)`:
+        - Return TRUE.
+      - Find the Hero in `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
+      - IF hero exists AND (`hero.activeStatus` contains "WallPass" OR `hero.activeStatus` contains "InvisiblePassage"):
+        - Return TRUE.
+      - Return FALSE.
   - Return TRUE.

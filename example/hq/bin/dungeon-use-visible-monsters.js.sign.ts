@@ -1,1 +1,1 @@
-export function useDungeonVisibleMonsters(config: { gameSession: any; boardVisibilityMap: any }): { visibleMonsters: Array<{ id: number; monster: { id: number; nome: string; movimento: number; attacco: number; difesa: number; corpo: number; mente: number; immagine: string; immalarge: string; nonmorto: boolean } | null; x: number; y: number; currentBody: number; currentMind: number }> };
+export function useDungeonVisibleMonsters(config: { gameSession: any; boardVisibilityMap: any }): { visibleMonsters: any[] };

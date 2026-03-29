@@ -97,6 +97,12 @@
 
 #### useEffect
 
+- **Guard Clause**:
+  - IF `combatResult` is null OR undefined:
+    - Render "No combat data available".
+    - Ensure `Close Button` remains functional to trigger `onClose`.
+    - RETURN.
+
 - **Trigger**: `isOpen` changes.
 - **Flow**:
   - IF `isOpen` is true:

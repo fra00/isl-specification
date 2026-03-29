@@ -26,22 +26,44 @@ export function useDungeonMovementRules({ mapQuery }) {
     const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
         if (!mapQuery) return false;
 
+        // Bounds Check
         const dimensions = mapQuery.getMapDimensions();
-        if (!dimensions) return false;
-
-        if (targetX < 1 || targetX > dimensions.width || targetY < 1 || targetY > dimensions.height) {
+        if (
+            targetX < 1 ||
+            targetY < 1 ||
+            targetX > (dimensions?.width || 0) ||
+            targetY > (dimensions?.height || 0)
+        ) {
             return false;
         }
 
-        if (mapQuery.isBlockedByFurniture(targetX, targetY)) return false;
-        if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) return false;
-        if (mapQuery.isBlockedByRock(targetX, targetY)) return false;
+        // Static Obstacles
+        if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
+            return false;
+        }
 
-        const sourceVisCell = mapQuery.getVisibilityCell(sourceX, sourceY);
-        const targetVisCell = mapQuery.getVisibilityCell(targetX, targetY);
+        // Dynamic Obstacles
+        if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
+            const heroes = mapQuery.gameSession?.heroes || [];
+            const hero = heroes.find(h => h?.id === excludeEntityId || h?.heroId === excludeEntityId);
+            
+            const hasFoggyMist = hero?.activeStatus?.includes("FoggyMist");
+            if (!hasFoggyMist) {
+                return false;
+            }
+        }
 
-        const sourceValo = sourceVisCell?.valo;
-        const targetValo = targetVisCell?.valo;
+        // Rock Obstacles
+        if (mapQuery.isBlockedByRock(targetX, targetY)) {
+            return false;
+        }
+
+        // Room/Wall Logic
+        const sourceCell = mapQuery.getVisibilityCell(sourceX, sourceY);
+        const targetCell = mapQuery.getVisibilityCell(targetX, targetY);
+        
+        const sourceValo = sourceCell?.valo;
+        const targetValo = targetCell?.valo;
 
         if (sourceValo !== targetValo) {
             const isSourceDoor = mapQuery.isDoor(sourceX, sourceY);
@@ -52,7 +74,17 @@ export function useDungeonMovementRules({ mapQuery }) {
             if (isSourceDoor || isTargetDoor || isSourceSecret || isTargetSecret) {
                 return true;
             }
+
+            const heroes = mapQuery.gameSession?.heroes || [];
+            const hero = heroes.find(h => h?.id === excludeEntityId || h?.heroId === excludeEntityId);
             
+            const hasWallPass = hero?.activeStatus?.includes("WallPass");
+            const hasInvisiblePassage = hero?.activeStatus?.includes("InvisiblePassage");
+
+            if (hero && (hasWallPass || hasInvisiblePassage)) {
+                return true;
+            }
+
             return false;
         }
 

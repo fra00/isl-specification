@@ -16,5 +16,5 @@ export const PageNavigationEnum = Object.freeze({
 });
 
 export const NavigationStatus = (data = {}) => ({
-  currentPageView: data?.currentPageView ?? PageNavigationEnum.MAIN_MENU
+  currentPageView: data?.currentPageView || PageNavigationEnum.MAIN_MENU
 });

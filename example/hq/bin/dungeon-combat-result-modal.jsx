@@ -6,8 +6,8 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from 'react';
-import { CombatDiceResult } from './dungeon-use-combat';
+import React, { useState, useEffect } from "react";
+import { CombatDiceResult } from "./dungeon-use-combat";
 
 export default function CombatResultModal({
   isOpen = false,
@@ -20,7 +20,7 @@ export default function CombatResultModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure the DOM is rendered before triggering CSS transitions
+      // Small delay to ensure the DOM is ready before triggering CSS transitions
       const timer = setTimeout(() => setAnimationActive(true), 50);
       return () => clearTimeout(timer);
     } else {
@@ -28,81 +28,110 @@ export default function CombatResultModal({
     }
   }, [isOpen]);
 
-  if (!isOpen || !combatResult || !attacker || !defender) {
-    return null;
+  if (!isOpen) return null;
+
+  if (!combatResult) {
+    return (
+      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+        <div className="bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col items-center">
+          <p className="text-white text-xl mb-4">No combat data available</p>
+          <button
+            onClick={onClose}
+            className="bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500 font-bold"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const getEntityImage = (entity) => {
-    if (entity?.hero?.portrait) return `/img/eroi/${entity.hero.portrait}`;
-    if (entity?.monster?.immalarge) return `/img/mostri/${entity.monster.immalarge}`;
-    return '';
+  const getPortraitUrl = (entity) => {
+    if (!entity) return "";
+    if (entity.hero && entity.hero.portrait) {
+      return `/img/eroi/${entity.hero.portrait}`;
+    }
+    if (entity.monster && entity.monster.immalarge) {
+      return `/img/mostri/${entity.monster.immalarge}`;
+    }
+    return "";
   };
 
-  const getDiceImage = (diceFace) => {
-    if (diceFace === CombatDiceResult.SKULL) return '/img/altro/teschio.jpg';
-    if (diceFace === CombatDiceResult.WHITE_SHIELD) return '/img/altro/scudo.jpg';
-    if (diceFace === CombatDiceResult.BLACK_SHIELD) return '/img/altro/scudo-nero.png';
-    return '';
+  const getDiceImage = (face) => {
+    switch (face) {
+      case CombatDiceResult.SKULL:
+        return "/img/altro/teschio.jpg";
+      case CombatDiceResult.WHITE_SHIELD:
+        return "/img/altro/scudo.jpg";
+      case CombatDiceResult.BLACK_SHIELD:
+        return "/img/altro/scudo-nero.png";
+      default:
+        return "";
+    }
   };
 
-  const isAttackerBarbarian = attacker?.hero?.classe?.toLowerCase().includes('barbar');
+  const attackerClass = attacker?.hero?.classe?.toLowerCase() || "";
+  const isBarbarian = attackerClass === "barbarian" || attackerClass === "barbaro";
 
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
       <div className="w-[800px] h-[500px] relative overflow-hidden rounded-xl shadow-2xl bg-gray-900">
         
-        {/* Right Panel (Defender) */}
+        {/* Right Panel (Defender) - Background */}
         <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0"></div>
 
-        {/* Left Panel (Attacker) */}
+        {/* Left Panel (Attacker) - Background */}
         <div
           className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10"
-          style={{ clipPath: 'polygon(0 0, 60% 0, 40% 100%, 0% 100%)' }}
+          style={{ clipPath: "polygon(0 0, 60% 0, 40% 100%, 0% 100%)" }}
         ></div>
 
         {/* Attacker Portrait (Left) */}
-        <div className={`absolute left-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-center ${isAttackerBarbarian ? '-ml-16' : ''}`}>
+        <div className="absolute left-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-start pl-8 pointer-events-none">
           <img
-            src={getEntityImage(attacker)}
+            src={getPortraitUrl(attacker)}
             alt="Attacker"
-            className="max-h-[90%] max-w-full object-contain drop-shadow-2xl"
+            className={`max-h-[90%] object-contain opacity-90 drop-shadow-2xl ${
+              isBarbarian ? "-ml-16" : ""
+            }`}
           />
         </div>
 
         {/* Defender Portrait (Right) */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-center">
+        <div className="absolute right-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-end pr-8 pointer-events-none">
           <img
-            src={getEntityImage(defender)}
+            src={getPortraitUrl(defender)}
             alt="Defender"
-            className="max-h-[90%] max-w-full object-contain drop-shadow-2xl"
+            className="max-h-[90%] object-contain opacity-90 drop-shadow-2xl"
           />
         </div>
 
         {/* Center Info */}
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 z-30 pointer-events-none">
           
           {/* VS Text */}
-          <div
-            className="absolute top-[20%] text-[4rem] font-bold italic text-white"
-            style={{ textShadow: '0 0 15px rgba(255, 215, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.8)' }}
-          >
+          <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-[4rem] font-bold italic text-white drop-shadow-[0_4px_8px_rgba(218,165,32,0.8)]">
             VS
           </div>
 
           {/* Dice Container */}
-          <div className="mt-24 flex flex-col items-center gap-6 bg-black/60 p-6 rounded-xl pointer-events-auto backdrop-blur-sm border border-gray-700">
+          <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-full flex flex-col items-center gap-6">
             
             {/* Attacker Dice Row */}
             <div className="flex flex-col items-center">
-              <span className="text-red-400 font-bold mb-2 uppercase tracking-wider">Attacker</span>
-              <div className="flex gap-3 min-h-[48px]">
-                {combatResult?.attackerDice?.map((dice, idx) => (
+              <span className="text-red-200 font-bold mb-2 drop-shadow-md bg-black/40 px-3 py-1 rounded">
+                Attacker
+              </span>
+              <div className="flex gap-2">
+                {combatResult.attackerDice?.map((dice, idx) => (
                   <img
                     key={`att-${idx}`}
                     src={getDiceImage(dice)}
                     alt="Attacker Dice"
-                    className={`w-12 h-12 rounded shadow-lg transition-all duration-500 ease-out ${
-                      animationActive ? 'translate-x-0 opacity-100' : '-translate-x-12 opacity-0'
+                    className={`w-12 h-12 rounded shadow-[0_0_10px_rgba(0,0,0,0.8)] transition-all duration-500 ease-out ${
+                      animationActive
+                        ? "translate-x-0 opacity-100"
+                        : "-translate-x-16 opacity-0"
                     }`}
                     style={{ transitionDelay: `${idx * 100}ms` }}
                   />
@@ -112,41 +141,45 @@ export default function CombatResultModal({
 
             {/* Defender Dice Row */}
             <div className="flex flex-col items-center">
-              <span className="text-blue-400 font-bold mb-2 uppercase tracking-wider">Defender</span>
-              <div className="flex gap-3 min-h-[48px]">
-                {combatResult?.defenderDice?.map((dice, idx) => (
+              <span className="text-blue-200 font-bold mb-2 drop-shadow-md bg-black/40 px-3 py-1 rounded">
+                Defender
+              </span>
+              <div className="flex gap-2">
+                {combatResult.defenderDice?.map((dice, idx) => (
                   <img
                     key={`def-${idx}`}
                     src={getDiceImage(dice)}
                     alt="Defender Dice"
-                    className={`w-12 h-12 rounded shadow-lg transition-all duration-500 ease-out ${
-                      animationActive ? 'translate-x-0 opacity-100' : 'translate-x-12 opacity-0'
+                    className={`w-12 h-12 rounded shadow-[0_0_10px_rgba(0,0,0,0.8)] transition-all duration-500 ease-out ${
+                      animationActive
+                        ? "translate-x-0 opacity-100"
+                        : "translate-x-16 opacity-0"
                     }`}
                     style={{ transitionDelay: `${idx * 100}ms` }}
                   />
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Result Text */}
+          {/* Result Text & Close Button */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
             <div
-              className={`text-3xl font-bold text-white mt-2 transition-opacity duration-700 delay-700 ${
-                animationActive ? 'opacity-100' : 'opacity-0'
+              className={`text-3xl font-bold text-white mb-4 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-700 ${
+                animationActive ? "opacity-100" : "opacity-0"
               }`}
+              style={{ transitionDelay: "800ms" }}
             >
-              Damage Dealt: <span className="text-red-500">{combatResult?.damageDealt || 0}</span>
+              Damage Dealt: {combatResult.damageDealt}
             </div>
-
-            {/* Close Button */}
             <button
               onClick={onClose}
-              className={`mt-2 bg-yellow-600 text-black px-8 py-2 rounded hover:bg-yellow-500 font-bold transition-all duration-700 delay-1000 ${
-                animationActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
+              className="bg-yellow-600 text-black px-10 py-2 rounded font-bold hover:bg-yellow-500 transition-colors shadow-lg border-2 border-yellow-700"
             >
               OK
             </button>
           </div>
+
         </div>
       </div>
     </div>

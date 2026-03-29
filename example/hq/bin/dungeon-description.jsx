@@ -9,11 +9,10 @@
 import React, { useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function DungeonDescription({
-  gameSession,
-  onChangePageView,
-  onUpdateSession
-}) {
+export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
+  // Safely access the description with a fallback
+  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
+
   const handleEnterDungeon = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.DUNGEON);
@@ -32,41 +31,43 @@ export default function DungeonDescription({
     }
   }, [onChangePageView]);
 
-  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 p-4 font-serif">
-      <div className="bg-stone-900 text-stone-300 p-8 rounded-lg shadow-2xl max-w-3xl w-full border-2 border-stone-700 flex flex-col max-h-[90vh]">
-        <h1 className="text-3xl font-bold mb-6 text-center text-amber-600 border-b border-stone-700 pb-4 uppercase tracking-widest">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-950 p-4 font-sans">
+      <div className="bg-stone-900 text-amber-100 p-8 rounded-xl shadow-2xl max-w-3xl w-full border-2 border-amber-900/50 flex flex-col max-h-[90vh]">
+        
+        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-center text-amber-500 border-b border-amber-900/50 pb-4 tracking-wide">
           Mission Description
         </h1>
         
-        <div className="overflow-y-auto flex-grow mb-8 pr-2">
-          <p className="text-lg leading-relaxed whitespace-pre-wrap">
+        <div className="text-lg md:text-xl leading-relaxed mb-8 overflow-y-auto pr-4 flex-grow">
+          <p className="whitespace-pre-wrap font-serif text-amber-50/90">
             {description}
           </p>
         </div>
 
-        <div className="flex flex-row justify-center gap-4 mt-auto pt-6 border-t border-stone-700 flex-wrap">
-          <button
-            onClick={handleBack}
-            className="px-6 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded font-semibold transition-colors border border-stone-600"
-          >
-            Indietro
-          </button>
-          <button
-            onClick={handleShop}
-            className="px-6 py-2 bg-indigo-900 hover:bg-indigo-800 text-indigo-100 rounded font-semibold transition-colors border border-indigo-700"
-          >
-            Armeria
-          </button>
+        <div className="flex flex-row justify-center gap-4 flex-wrap mt-auto pt-6 border-t border-amber-900/50">
           <button
             onClick={handleEnterDungeon}
-            className="px-8 py-2 bg-red-900 hover:bg-red-800 text-red-100 rounded font-bold transition-colors border border-red-700 shadow-md"
+            className="bg-amber-700 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded shadow-lg transition-colors border border-amber-500 w-full sm:w-auto"
           >
             Entra nel dungeon
           </button>
+          
+          <button
+            onClick={handleShop}
+            className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-8 rounded shadow-lg transition-colors border border-blue-700 w-full sm:w-auto"
+          >
+            Armeria
+          </button>
+          
+          <button
+            onClick={handleBack}
+            className="bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 px-8 rounded shadow-lg transition-colors border border-stone-500 w-full sm:w-auto"
+          >
+            Indietro
+          </button>
         </div>
+        
       </div>
     </div>
   );

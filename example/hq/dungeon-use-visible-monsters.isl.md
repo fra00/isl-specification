@@ -24,5 +24,7 @@
 - **Flow**:
   - IF `gameSession.monsters` OR `boardVisibilityMap` is missing, RETURN empty list.
   - Iterate through `gameSession.monsters`.
-  - Check if the monster's coordinates (x, y) correspond to a cell in `boardVisibilityMap` where `fog` is false.
+  - Find the VisibilityCell for the monster's (x, y).
+  - IF no cell exists or cell.fog is true, treat as not visible.
+  - ELSE, include in the returned list.
   - RETURN list of visible monsters.

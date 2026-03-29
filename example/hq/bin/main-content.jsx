@@ -6,8 +6,8 @@
  * Edit the ISL file instead.
  */
 
-import React from "react";
-import PageContent from "./page-presentation";
+import React from 'react';
+import PageContent from './page-presentation';
 
 export default function MainContent() {
   return (

@@ -6,92 +6,157 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from "react";
-import { GameSession, MonsterState } from "./domain-session";
-import { Monster } from "./domain-ruleset";
+import { useEffect, useCallback, useRef } from 'react';
+import { GameSession, MonsterState } from './domain-session';
 
-export function useDungeonMonsters({ gameSession, visibilityMap, onUpdateSession }) {
-  const [spawnedLocations, setSpawnedLocations] = useState(() => []);
-  const [monsterDefinitions, setMonsterDefinitions] = useState(() => []);
+export function useDungeonMonsters({
+  gameSession,
+  visibilityMap,
+  onUpdateSession,
+  onNotify,
+  monsterDefinitions
+}) {
+  // internalState: Tracks which map cells have had monsters spawned to prevent duplicates
+  const spawnedLocationsRef = useRef(gameSession?.spawnedLocations || []);
 
+  // Sync internal ref with session state to ensure consistency across renders
   useEffect(() => {
-    let isMounted = true;
+    if (gameSession?.spawnedLocations) {
+      spawnedLocationsRef.current = gameSession.spawnedLocations;
+    }
+  }, [gameSession?.spawnedLocations]);
 
-    const initialize = async () => {
-      try {
-        const response = await fetch("/jsonData/monsters.json");
-        if (!response.ok) {
-          throw new Error("Failed to load monsters.json: File not found");
-        }
-        
-        const data = await response.json();
-        
-        if (isMounted) {
-          const parsedMonsters = (Array.isArray(data) ? data : []).map(item => Monster(item));
-          setMonsterDefinitions(parsedMonsters);
-        }
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    };
-
-    initialize();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+  // Capability: spawnMonsters
   useEffect(() => {
-    if (!visibilityMap || !visibilityMap.data) return;
-    if (!gameSession || !gameSession.currentMap || !gameSession.currentMap.grid) return;
-    if (monsterDefinitions.length === 0) return;
+    if (!visibilityMap || !visibilityMap.data || !gameSession?.currentMap?.grid) {
+      return;
+    }
 
     const newMonsters = [];
     const newSpawnedLocations = [];
+    const currentSpawned = spawnedLocationsRef.current;
 
-    visibilityMap.data.forEach(cell => {
-      const locKey = `${cell.x},${cell.y}`;
+    visibilityMap.data.forEach((visCell) => {
+      const locKey = `${visCell.x},${visCell.y}`;
       
-      if (cell.fog === false && !spawnedLocations.includes(locKey)) {
-        const mapCell = gameSession.currentMap.grid.find(c => c.x === cell.x && c.y === cell.y);
-        
+      if (visCell.fog === false && !currentSpawned.includes(locKey)) {
+        const mapCell = gameSession.currentMap.grid.find(
+          (c) => c.x === visCell.x && c.y === visCell.y
+        );
+
         if (mapCell?.mostab?.mos === true) {
-          const monsterDef = monsterDefinitions.find(m => m.id === mapCell.mostab.mosid);
-          
+          const monsterDef = monsterDefinitions?.find(
+            (m) => m.id === mapCell.mostab.mosid
+          );
+
           if (monsterDef) {
             const newMonster = MonsterState({
-              id: Math.floor(Math.random() * 1000000000),
+              id: Math.floor(Math.random() * 1000000),
               monster: monsterDef,
-              x: cell.x,
-              y: cell.y,
-              currentBody: monsterDef.corpo,
-              currentMind: monsterDef.mente
+              x: visCell.x,
+              y: visCell.y,
+              currentBody: monsterDef.corpo || 0,
+              currentMind: monsterDef.mente || 0,
+              activeStatus: []
             });
             
             newMonsters.push(newMonster);
             newSpawnedLocations.push(locKey);
+            currentSpawned.push(locKey); // Update ref immediately for the current loop execution
           }
         }
       }
     });
 
     if (newMonsters.length > 0) {
-      setSpawnedLocations(prev => [...prev, ...newSpawnedLocations]);
-      
       const updatedSession = GameSession({
         ...gameSession,
         monsters: [...(gameSession.monsters || []), ...newMonsters],
         spawnedLocations: [...(gameSession.spawnedLocations || []), ...newSpawnedLocations]
       });
       
+      if (onUpdateSession) {
+        onUpdateSession(updatedSession);
+      }
+    }
+  }, [visibilityMap, gameSession, monsterDefinitions, onUpdateSession]);
+
+  // Capability: spawnWanderingMonster
+  const spawnWanderingMonster = useCallback((heroX, heroY) => {
+    const directions = [
+      { x: 0, y: -1 }, // Up
+      { x: 0, y: 1 },  // Down
+      { x: -1, y: 0 }, // Left
+      { x: 1, y: 0 }   // Right
+    ];
+
+    let spawnCell = null;
+
+    for (const dir of directions) {
+      const targetX = heroX + dir.x;
+      const targetY = heroY + dir.y;
+
+      const mapCell = gameSession?.currentMap?.grid?.find(
+        (c) => c.x === targetX && c.y === targetY
+      );
+
+      if (mapCell) {
+        const isWalkable = !mapCell.arnt?.antroc && !mapCell.arnt?.inv;
+        const isOccupiedByHero = gameSession?.heroes?.some(
+          (h) => h.x === targetX && h.y === targetY
+        );
+        const isOccupiedByMonster = gameSession?.monsters?.some(
+          (m) => m.x === targetX && m.y === targetY
+        );
+
+        if (isWalkable && !isOccupiedByHero && !isOccupiedByMonster) {
+          spawnCell = { x: targetX, y: targetY };
+          break;
+        }
+      }
+    }
+
+    if (!spawnCell) {
+      if (onNotify) {
+        onNotify("Non c'è spazio per il mostro errante!");
+      }
+      return null;
+    }
+
+    // Pick a monster definition (Default ID 1 - Orco, or random from monsterDefinitions)
+    let selectedDef = monsterDefinitions?.find((m) => m.id === 1);
+    if (!selectedDef && monsterDefinitions?.length > 0) {
+      const randomIndex = Math.floor(Math.random() * monsterDefinitions.length);
+      selectedDef = monsterDefinitions[randomIndex];
+    }
+
+    if (!selectedDef) {
+      return null;
+    }
+
+    const newMonster = MonsterState({
+      id: Math.floor(Math.random() * 1000000),
+      monster: selectedDef,
+      x: spawnCell.x,
+      y: spawnCell.y,
+      currentBody: selectedDef.corpo || 0,
+      currentMind: selectedDef.mente || 0,
+      activeStatus: []
+    });
+
+    const updatedSession = GameSession({
+      ...gameSession,
+      monsters: [...(gameSession?.monsters || []), newMonster]
+    });
+
+    if (onUpdateSession) {
       onUpdateSession(updatedSession);
     }
-  }, [visibilityMap, gameSession, monsterDefinitions, spawnedLocations, onUpdateSession]);
+
+    return newMonster;
+  }, [gameSession, monsterDefinitions, onNotify, onUpdateSession]);
 
   return {
-    spawnedLocations,
-    monsterDefinitions
+    spawnWanderingMonster
   };
 }

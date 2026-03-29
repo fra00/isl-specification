@@ -25,6 +25,7 @@
 - `onActionDone`: () -> void
 - `onUpdateSession`: (session: @GameSession) -> void
 - `onTreasureCardDrawn`: (card: @TreasureCard) -> void
+- `onWanderingMonster`: (x: Integer, y: Integer) -> void
 
 ### ⚡ Capabilities
 
@@ -62,7 +63,7 @@
               - Add `mapCell.tes.ogg` to `currentHero.inventory`.
               - Add "Hai trovato un oggetto!" to `notificationParts`.
             - IF `mapCell.tes.arma` > 0:
-              - Add `mapCell.tes.arma` to `currentHero.inventory`.
+              - Add `mapCell.tes.arma` to `currentHero.equipment`.
               - Add "Hai trovato un'arma!" to `notificationParts`.
             - IF `mapCell.tes.trp` > 0:
               - Add `-mapCell.tes.trp` to `currentHero.currentBody`.
@@ -109,5 +110,5 @@
         - Add `card.valore` to `currentHero.currentBody`.
         - Trigger `onNotify("Trappola! Subisci danni.")`.
       - CASE "mostro_errante":
-        - Trigger `onNotify("Mostro Errante! (TODO)")`.
+        - Trigger `onWanderingMonster(currentHero.x, currentHero.y)`.
     - Trigger `onUpdateSession` with updated `gameSession`.

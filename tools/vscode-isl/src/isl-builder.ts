@@ -103,6 +103,16 @@ export class ISLBuilder {
     for (const entry of entries) {
       const fullPath = path.resolve(dir, entry.name);
       if (entry.isDirectory()) {
+        // Escludi cartelle di sistema
+        if (
+          entry.name === "node_modules" ||
+          entry.name === "build" ||
+          entry.name === "bin" ||
+          entry.name === "logic-test" ||
+          entry.name.startsWith(".")
+        ) {
+          continue; // Salta questa directory
+        }
         this.scanDirectory(fullPath);
       } else if (entry.isFile() && entry.name.endsWith(".isl.md")) {
         this.allFiles.add(fullPath);

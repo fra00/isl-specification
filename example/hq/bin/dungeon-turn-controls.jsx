@@ -6,153 +6,207 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function DungeonTurnControls({
-  currentHero,
-  movementPoints = 0,
-  turnPhase,
+  currentHero = null,
+  movementPoints = null,
+  turnPhase = { HasMoved: false, HasPerformedAction: false, IsTurnFinished: false },
+  canOpenDoor = false,
+  isTargeting = false,
   isMoving = false,
-  onRollMovement,
-  onEndTurn,
-  onSearchPassages,
-  onSearchTreasure,
-  onSearchTraps,
-  onOpenInventory
+  onRollMovement = () => {},
+  onEndTurn = () => {},
+  onSearchPassages = () => {},
+  onSearchTreasure = () => {},
+  onSearchTraps = () => {},
+  onOpenMagic = () => {},
+  onOpenInventory = () => {},
+  onCancelTargeting = () => {},
+  onOpenDoor = () => {}
 }) {
-  const [position, setPosition] = useState(() => {
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem("dungeonTurnControlsPosition");
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedPosition = localStorage.getItem("dungeonTurnControlsPosition");
+      if (savedPosition) {
+        const parsed = JSON.parse(savedPosition);
         if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
-          return parsed;
+          setPosition(parsed);
         }
       }
-    } catch (e) {
-      console.error("Failed to parse dungeonTurnControlsPosition", e);
+    } catch (error) {
+      setPosition({ x: 20, y: 20 });
     }
-    return { x: 20, y: 20 };
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const positionRef = useRef(position);
-
-  useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
+  }, []);
 
   const handleMouseDown = useCallback((e) => {
-    setIsDragging(true);
-    dragOffset.current = {
-      x: e.clientX - positionRef.current.x,
-      y: e.clientY - positionRef.current.y
+    dragRef.current.isDragging = true;
+    dragRef.current.offsetX = e.clientX - position.x;
+    dragRef.current.offsetY = e.clientY - position.y;
+
+    const handleMouseMove = (moveEvent) => {
+      if (!dragRef.current.isDragging) return;
+      setPosition({
+        x: moveEvent.clientX - dragRef.current.offsetX,
+        y: moveEvent.clientY - dragRef.current.offsetY
+      });
     };
-  }, []);
 
-  const handleMouseMove = useCallback((e) => {
-    setPosition({
-      x: e.clientX - dragOffset.current.x,
-      y: e.clientY - dragOffset.current.y
-    });
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    try {
-      localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
-    } catch (e) {
-      console.error("Failed to save dungeonTurnControlsPosition", e);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    } else {
+    const handleMouseUp = (upEvent) => {
+      dragRef.current.isDragging = false;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      
+      const finalX = upEvent.clientX - dragRef.current.offsetX;
+      const finalY = upEvent.clientY - dragRef.current.offsetY;
+      
+      try {
+        localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify({ x: finalX, y: finalY }));
+      } catch (error) {
+        // Silently handle localStorage errors
+      }
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  const hasMoved = turnPhase?.HasMoved || turnPhase?.hasMoved;
-  const hasPerformedAction = turnPhase?.HasPerformedAction || turnPhase?.hasPerformedAction;
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [position.x, position.y]);
+
+  if (!currentHero) {
+    return null;
+  }
+
+  const heroClass = currentHero?.hero?.classe || "Unknown";
+  const gold = currentHero?.gold ?? 0;
+  const health = currentHero?.currentBody ?? 0;
+  const intelligence = currentHero?.currentMind ?? 0;
+  const attack = currentHero?.hero?.attacco ?? 0;
+  const defense = currentHero?.hero?.difesa ?? 0;
+  const availableSpells = currentHero?.availableSpells ?? [];
+
+  const isRollMovementDisabled = turnPhase?.HasMoved || movementPoints !== null;
+  const isActionDisabled = turnPhase?.HasPerformedAction;
+  const isMagicDisabled = turnPhase?.HasPerformedAction || availableSpells.length === 0;
 
   return (
-    <div
-      className="fixed bg-gray-800 text-white rounded-lg shadow-xl w-[250px] z-50 select-none flex flex-col"
-      style={{ left: position.x, top: position.y }}
+    <div 
+      className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col overflow-hidden"
+      style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
-      <div
-        className={`p-3 bg-gray-900 rounded-t-lg font-bold text-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      {/* Header */}
+      <div 
+        className="bg-gray-900 p-3 cursor-grab active:cursor-grabbing select-none font-bold text-center border-b border-gray-700"
         onMouseDown={handleMouseDown}
       >
         Turn Controls
       </div>
-      
+
       <div className="p-4 flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="col-span-2 font-semibold text-center mb-2 text-lg text-blue-300">
-            {currentHero?.hero?.classe || "Unknown"}
+        {/* Info Section */}
+        <div className="flex flex-col gap-1 text-sm bg-gray-700 p-3 rounded">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Class:</span>
+            <span className="font-semibold">{heroClass}</span>
           </div>
-          <div>Move: {movementPoints ?? 0}</div>
-          <div>Gold: {currentHero?.gold ?? 0}</div>
-          <div>Health: {currentHero?.currentBody ?? 0}</div>
-          <div>Mind: {currentHero?.currentMind ?? 0}</div>
-          <div>Attack: {currentHero?.hero?.attacco ?? 0}</div>
-          <div>Defense: {currentHero?.hero?.difesa ?? 0}</div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Movement:</span>
+            <span className="font-semibold">{movementPoints !== null ? movementPoints : '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Gold:</span>
+            <span className="font-semibold text-yellow-400">{gold}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Health:</span>
+            <span className="font-semibold text-red-400">{health}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Mind:</span>
+            <span className="font-semibold text-blue-400">{intelligence}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Attack:</span>
+            <span className="font-semibold">{attack}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Defense:</span>
+            <span className="font-semibold">{defense}</span>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-gray-600 pt-3">
-          <button
-            onClick={onOpenInventory}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-medium transition-colors"
-          >
-            Inventory
-          </button>
-        </div>
+        {/* Inventory Section */}
+        <button 
+          onClick={onOpenInventory}
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+        >
+          Inventory
+        </button>
 
-        <div className="flex flex-col gap-2 border-t border-gray-600 pt-3">
-          <button
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
+          <button 
             onClick={onRollMovement}
-            disabled={hasMoved || isMoving}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded font-medium transition-colors"
+            disabled={isRollMovementDisabled}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
           >
             Roll Movement
           </button>
-          <button
+
+          <button 
             onClick={onSearchPassages}
-            disabled={hasPerformedAction}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded font-medium transition-colors"
+            disabled={isActionDisabled}
+            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
           >
             Search Passages
           </button>
-          <button
+
+          <button 
             onClick={onSearchTreasure}
-            disabled={hasPerformedAction}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded font-medium transition-colors"
+            disabled={isActionDisabled}
+            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
           >
             Search Treasure
           </button>
-          <button
+
+          <button 
             onClick={onSearchTraps}
-            disabled={hasPerformedAction}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded font-medium transition-colors"
+            disabled={isActionDisabled}
+            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
           >
             Search Traps
           </button>
-        </div>
 
-        <div className="border-t border-gray-600 pt-3">
-          <button
+          <button 
+            onClick={onOpenMagic}
+            disabled={isMagicDisabled}
+            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+          >
+            Magic
+          </button>
+
+          {isTargeting && (
+            <button 
+              onClick={onCancelTargeting}
+              className="w-full py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
+            >
+              Cancel Targeting
+            </button>
+          )}
+
+          {canOpenDoor && (
+            <button 
+              onClick={onOpenDoor}
+              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+            >
+              Open Door
+            </button>
+          )}
+
+          <button 
             onClick={onEndTurn}
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded font-bold transition-colors"
+            className="w-full py-2 mt-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
           >
             End Turn
           </button>

@@ -12,131 +12,153 @@ export default function ShopInventory({
   items = [],
   selectedItemId = null,
   canBuy = false,
-  buyReason = '',
-  onSelect,
-  onBuy,
-  onEnterDungeon,
-  onExit
+  buyReason = "",
+  onSelect = () => {},
+  onBuy = () => {},
+  onEnterDungeon = () => {},
+  onExit = () => {}
 }) {
   const selectedItem = useMemo(() => {
-    if (!items || !Array.isArray(items)) return null;
     return items.find(item => item?.id === selectedItemId) || null;
   }, [items, selectedItemId]);
 
   const handleSelect = useCallback((id) => {
-    if (typeof onSelect === 'function') {
+    if (id != null) {
       onSelect(id);
     }
   }, [onSelect]);
 
   const handleBuy = useCallback(() => {
-    if (canBuy && typeof onBuy === 'function') {
+    if (canBuy) {
       onBuy();
     }
   }, [canBuy, onBuy]);
 
   const handleEnterDungeon = useCallback(() => {
-    if (typeof onEnterDungeon === 'function') {
-      onEnterDungeon();
-    }
+    onEnterDungeon();
   }, [onEnterDungeon]);
 
   const handleExit = useCallback(() => {
-    if (typeof onExit === 'function') {
-      onExit();
-    }
+    onExit();
   }, [onExit]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
-      
-      {/* List Section */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Inventario Negozio</h2>
-        <ul className="space-y-2">
-          {items && items.length > 0 ? (
-            items.map((item) => (
+    <div className="flex flex-col h-full w-full p-6 bg-slate-900 text-slate-100 font-sans">
+      <h2 className="text-2xl font-bold mb-6 text-center text-amber-500 tracking-wider">
+        Armeria
+      </h2>
+
+      <div className="flex flex-col md:flex-row flex-1 gap-6 overflow-hidden min-h-[400px]">
+        {/* Item List */}
+        <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+          <div className="p-3 bg-slate-950 border-b border-slate-700 text-sm font-semibold text-slate-400 uppercase tracking-wider">
+            Oggetti Disponibili
+          </div>
+          <ul className="flex-1 overflow-y-auto p-2 space-y-2">
+            {items.map(item => (
               <li
                 key={item?.id}
                 onClick={() => handleSelect(item?.id)}
-                className={`flex justify-between items-center p-3 border rounded-md cursor-pointer transition-colors ${
+                className={`p-4 cursor-pointer rounded-md flex justify-between items-center transition-all duration-200 border ${
                   item?.id === selectedItemId
-                    ? 'bg-blue-100 border-blue-500 shadow-sm'
-                    : 'bg-white hover:bg-gray-100 border-gray-200'
+                    ? 'bg-amber-900/40 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                    : 'bg-slate-800 border-transparent hover:bg-slate-700 hover:border-slate-600'
                 }`}
               >
-                <span className="font-semibold text-gray-700">{item?.nome || 'Oggetto Sconosciuto'}</span>
-                <span className="text-yellow-600 font-bold">{item?.prezzo || 0} Gold</span>
+                <span className="font-medium text-lg">{item?.nome}</span>
+                <span className="text-amber-400 font-bold bg-slate-900 px-3 py-1 rounded-full text-sm">
+                  {item?.prezzo} Monete
+                </span>
               </li>
-            ))
-          ) : (
-            <li className="text-gray-500 text-center py-8 italic">
-              Nessun oggetto disponibile nel negozio.
-            </li>
-          )}
-        </ul>
-      </div>
+            ))}
+            {items.length === 0 && (
+              <li className="p-4 text-center text-slate-500 italic">
+                Nessun oggetto disponibile.
+              </li>
+            )}
+          </ul>
+        </div>
 
-      {/* Preview Section */}
-      <div className="h-56 flex flex-col items-center justify-center bg-white border-t border-b border-gray-200 p-4 shadow-inner">
-        {selectedItem ? (
-          <>
-            {selectedItem.immagine ? (
-              <img
-                src={`/img/equip/${selectedItem.immagine}`}
-                alt={selectedItem.nome || 'Anteprima oggetto'}
-                className="max-h-32 object-contain mb-4 drop-shadow-md"
-              />
+        {/* Preview Panel */}
+        <div className="w-full md:w-1/3 flex flex-col bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+          <div className="p-3 bg-slate-950 border-b border-slate-700 text-sm font-semibold text-slate-400 uppercase tracking-wider">
+            Dettagli
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            {selectedItem ? (
+              <>
+                {selectedItem.immagine ? (
+                  <div className="w-48 h-48 mb-6 flex items-center justify-center bg-slate-900 rounded-lg border border-slate-700 p-2 shadow-inner">
+                    <img
+                      src={`/img/equip/${selectedItem.immagine}`}
+                      alt={selectedItem.nome}
+                      className="max-w-full max-h-full object-contain drop-shadow-md"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-48 h-48 mb-6 flex items-center justify-center bg-slate-900 rounded-lg border border-slate-700 text-slate-600">
+                    Nessuna Immagine
+                  </div>
+                )}
+                <h3 className="text-2xl font-bold text-amber-500 mb-2">
+                  {selectedItem.nome}
+                </h3>
+                <p className="text-xl text-amber-400 font-semibold mb-4">
+                  {selectedItem.prezzo} Monete
+                </p>
+              </>
             ) : (
-              <div className="h-32 w-32 bg-gray-200 flex items-center justify-center mb-4 rounded border border-gray-300">
-                <span className="text-gray-400 text-sm font-medium">Nessuna Immagine</span>
+              <div className="text-slate-500 flex flex-col items-center">
+                <svg className="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <p>Seleziona un oggetto dall'elenco per visualizzarne i dettagli.</p>
               </div>
             )}
-            <span className="font-bold text-lg text-gray-800 text-center">
-              {selectedItem.nome || 'Oggetto Sconosciuto'}
-            </span>
-          </>
-        ) : (
-          <div className="flex flex-col items-center text-gray-400">
-            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="italic">Seleziona un oggetto per visualizzare i dettagli</span>
           </div>
-        )}
-      </div>
-
-      {/* Actions Section */}
-      <div className="flex flex-wrap justify-between items-center p-4 bg-gray-100 gap-4">
-        <button
-          onClick={handleBuy}
-          disabled={!canBuy}
-          title={!canBuy ? buyReason : 'Acquista l\'oggetto selezionato'}
-          className={`px-6 py-3 rounded-md font-bold transition-all duration-200 ${
-            canBuy
-              ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg active:transform active:scale-95'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          Acquista
-        </button>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={handleEnterDungeon}
-            className="px-6 py-3 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 shadow-md hover:shadow-lg transition-all duration-200 active:transform active:scale-95"
-          >
-            Entra nel dungeon
-          </button>
-          <button
-            onClick={handleExit}
-            className="px-6 py-3 bg-gray-700 text-white font-bold rounded-md hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200 active:transform active:scale-95"
-          >
-            Esci
-          </button>
         </div>
       </div>
-      
+
+      {/* Actions */}
+      <div className="mt-8 flex flex-wrap gap-4 justify-center md:justify-end items-center border-t border-slate-800 pt-6">
+        <div className="relative group flex items-center">
+          <button
+            onClick={handleBuy}
+            disabled={!canBuy || !selectedItem}
+            className={`px-8 py-3 rounded-md font-bold text-lg transition-all duration-200 ${
+              canBuy && selectedItem
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(5,150,105,0.4)]'
+                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+            }`}
+          >
+            Acquista
+          </button>
+          
+          {/* Tooltip for Buy Reason */}
+          {!canBuy && buyReason && selectedItem && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block w-max max-w-xs bg-red-950 border border-red-800 text-red-200 text-sm p-3 rounded shadow-xl z-10 text-center">
+              {buyReason}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-800"></div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1"></div>
+
+        <button
+          onClick={handleEnterDungeon}
+          className="px-6 py-3 bg-red-700 hover:bg-red-600 text-white rounded-md font-bold transition-colors shadow-lg"
+        >
+          Entra nel dungeon
+        </button>
+        
+        <button
+          onClick={handleExit}
+          className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-md font-bold transition-colors"
+        >
+          Esci
+        </button>
+      </div>
     </div>
   );
 }

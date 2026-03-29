@@ -8,60 +8,93 @@
 
 import { useCallback } from 'react';
 
-export function useDungeonMapQuery({ gameSession = null, visibilityMap = null }) {
-    // initialize: Safely handled via default parameters and optional chaining in all methods.
+export function useDungeonMapQuery({ gameSession, visibilityMap }) {
+    // Capability: initialize
+    // Safely initializes internal structures, handling potential null visibilityMap.
+    const initialize = useCallback(() => {
+        const isVisibilityMapValid = visibilityMap != null && Array.isArray(visibilityMap.data);
+        const isGameSessionValid = gameSession != null && gameSession.currentMap != null;
+        
+        return {
+            isReady: isGameSessionValid,
+            hasVisibility: isVisibilityMapValid
+        };
+    }, [gameSession, visibilityMap]);
 
+    // Capability: getMapCell
     const getMapCell = useCallback((x, y) => {
         if (!gameSession?.currentMap?.grid) return null;
-        return gameSession.currentMap.grid.find(cell => cell.x === x && cell.y === y) || null;
-    }, [gameSession]);
+        return gameSession.currentMap.grid.find((cell) => cell.x === x && cell.y === y) ?? null;
+    }, [gameSession?.currentMap?.grid]);
 
+    // Capability: getVisibilityCell
     const getVisibilityCell = useCallback((x, y) => {
         if (!visibilityMap?.data) return null;
-        return visibilityMap.data.find(cell => cell.x === x && cell.y === y) || null;
-    }, [visibilityMap]);
+        return visibilityMap.data.find((cell) => cell.x === x && cell.y === y) ?? null;
+    }, [visibilityMap?.data]);
 
+    // Capability: isDoor
     const isDoor = useCallback((x, y) => {
         if (!gameSession?.currentMap?.porte) return false;
-        return gameSession.currentMap.porte.some(door => door.x === x && door.y === y);
-    }, [gameSession]);
+        return gameSession.currentMap.porte.some((door) => door.x === x && door.y === y);
+    }, [gameSession?.currentMap?.porte]);
 
+    // Capability: isSecretPassage
     const isSecretPassage = useCallback((x, y) => {
         const cell = getMapCell(x, y);
         return cell?.psgg?.ps != null;
     }, [getMapCell]);
 
+    // Capability: isBlockedByFurniture
     const isBlockedByFurniture = useCallback((x, y) => {
         const cell = getMapCell(x, y);
         return cell?.mobili?.num != null;
     }, [getMapCell]);
 
+    // Capability: isBlockedByMonster
     const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
         if (!gameSession?.monsters) return false;
+        
+        // 1. get the monster from the @GameSession.monsters list with coordinates x and y and id different from excludeEntityId.
         const monster = gameSession.monsters.find(
-            m => m.x === x && m.y === y && m.id !== excludeEntityId
+            (m) => m.x === x && m.y === y && m.id !== excludeEntityId
         );
-        return !!(monster && monster.currentBody > 0);
-    }, [gameSession]);
+        
+        // 2. if monster exist and monster.hp > 0 return TRUE else FALSE.
+        // Note: Using currentBody as per MonsterState signature
+        if (monster != null && monster.currentBody > 0) {
+            return true;
+        }
+        return false;
+    }, [gameSession?.monsters]);
 
+    // Capability: isOccupiedByHero
     const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
         if (!gameSession?.heroes) return false;
-        const hero = gameSession.heroes.find(
-            h => h.x === x && h.y === y && h.heroId !== excludeEntityId
+        return gameSession.heroes.some(
+            (h) => h.x === x && h.y === y && h.heroId !== excludeEntityId
         );
-        return !!hero;
-    }, [gameSession]);
+    }, [gameSession?.heroes]);
 
+    // Capability: isBlockedByRock
     const isBlockedByRock = useCallback((x, y) => {
+        // 1. get the cell from getMapCell (@MapCell) with coordinates x and y.
         const cell = getMapCell(x, y);
-        return cell?.arnt?.antroc === true;
+        
+        // 2. if cell exist and cell.arnt.antroc is true return TRUE else FALSE.
+        if (cell != null && cell.arnt?.antroc === true) {
+            return true;
+        }
+        return false;
     }, [getMapCell]);
 
+    // Capability: getMapDimensions
     const getMapDimensions = useCallback(() => {
         return { width: 26, height: 19 };
     }, []);
 
     return {
+        initialize,
         getMapCell,
         getVisibilityCell,
         isDoor,

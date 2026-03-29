@@ -8,44 +8,63 @@
 
 import { useMemo } from 'react';
 
-export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
+export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
   const visibleDoors = useMemo(() => {
-    if (!gameSession?.currentMap?.porte || !boardVisibilityMap?.data) {
+    if (!gameSession?.currentMap || !boardVisibilityMap) {
       return [];
     }
 
+    const porte = gameSession.currentMap.porte || [];
+    const openedDoors = gameSession.openedDoors || [];
+    const visibilityData = boardVisibilityMap.data || [];
     const result = [];
-    const doors = gameSession.currentMap.porte;
-    const visibilityData = boardVisibilityMap.data;
 
-    for (let i = 0; i < doors.length; i++) {
-      const door = doors[i];
-      const doorX = parseInt(door.x, 10);
-      const doorY = parseInt(door.y, 10);
+    for (let i = 0; i < porte.length; i++) {
+      const door = porte[i];
+      const x = parseInt(door.x, 10);
+      const y = parseInt(door.y, 10);
+      const doorCoordKey = `${x},${y}`;
+      let isVisible = false;
 
-      const isVisible = visibilityData.some((cell) => {
-        const cellX = parseInt(cell.x, 10);
-        const cellY = parseInt(cell.y, 10);
+      // Check Persisted Visibility
+      if (openedDoors.includes(doorCoordKey)) {
+        isVisible = true;
+      }
 
-        const matchesCoords =
-          (cellX === doorX - 1 && cellY === doorY - 1) ||
-          (cellX === doorX && cellY === doorY - 1) ||
-          (cellX === doorX - 1 && cellY === doorY);
+      // Check Dynamic Visibility (Fog of War)
+      if (!isVisible) {
+        const cellsToCheck = [{ x, y }];
+        
+        if (door.oriz) {
+          cellsToCheck.push({ x, y: y - 1 });
+          cellsToCheck.push({ x, y: y + 1 });
+        } else {
+          cellsToCheck.push({ x: x - 1, y });
+          cellsToCheck.push({ x: x + 1, y });
+        }
 
-        return matchesCoords && cell.fog === false;
-      });
+        for (let j = 0; j < cellsToCheck.length; j++) {
+          const coord = cellsToCheck[j];
+          const visCell = visibilityData.find(
+            (cell) => cell.x === coord.x && cell.y === coord.y
+          );
+          
+          if (visCell && visCell.fog === false) {
+            isVisible = true;
+            break;
+          }
+        }
+      }
 
+      // Add to Render List
       if (isVisible) {
-        result.push({
-          x: doorX,
-          y: doorY,
-          img: door.oriz ? 'portao.jpg' : 'portav.jpg',
-        });
+        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+        result.push({ x, y, img });
       }
     }
 
     return result;
-  }, [gameSession?.currentMap, boardVisibilityMap]);
+  }, [gameSession, boardVisibilityMap]);
 
   return { visibleDoors };
-};
+}

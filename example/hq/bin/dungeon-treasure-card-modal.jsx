@@ -6,39 +6,52 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
-export default function TreasureCardModal({ 
-  isOpen = false, 
-  card = null, 
-  onClose = () => {} 
-}) {
-  const handleClose = useCallback((e) => {
-    if (e) {
-      e.stopPropagation();
+export default function TreasureCardModal({ isOpen = false, card = null, onClose = () => {} }) {
+    const [modalState, setModalState] = useState('closed');
+
+    useEffect(() => {
+        if (isOpen) {
+            setModalState('open');
+        } else {
+            setModalState('closed');
+        }
+    }, [isOpen]);
+
+    const handleClose = useCallback((e) => {
+        if (e && typeof e.stopPropagation === 'function') {
+            e.stopPropagation();
+        }
+        
+        if (modalState !== 'closing') {
+            setModalState('closing');
+            onClose();
+        }
+    }, [modalState, onClose]);
+
+    const handleImageError = useCallback((e) => {
+        e.target.src = '/img/placeholder.png';
+    }, []);
+
+    if (!isOpen || !card) {
+        return null;
     }
-    onClose();
-  }, [onClose]);
 
-  if (!isOpen || !card) {
-    return null;
-  }
-
-  return (
-    <div 
-      className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
-      onClick={handleClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      {card?.immagine && (
-        <img 
-          src={`/img/cartetesoro/${card.immagine}`}
-          alt={card?.effetto || 'Treasure Card'}
-          className="max-w-full max-h-[90vh] object-contain cursor-pointer"
-          onClick={handleClose}
-        />
-      )}
-    </div>
-  );
+    return (
+        <div 
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80"
+            onClick={handleClose}
+        >
+            <div className="relative flex items-center justify-center">
+                <img 
+                    src={`/img/cartetesoro/${card.immagine}`} 
+                    alt={card.effetto || 'Treasure Card'} 
+                    onError={handleImageError}
+                    onClick={handleClose}
+                    className="max-w-full max-h-[90vh] object-contain cursor-pointer"
+                />
+            </div>
+        </div>
+    );
 }

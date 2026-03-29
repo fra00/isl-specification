@@ -49,6 +49,15 @@
       - Set `fog` to `false`.
   - Return the processed `fogVisibilityMap`.
 
+#### revealFromPoint
+
+- **Contract**: Manually removes fog from a specific coordinate's visible area.
+- **Signature**: `(x: Integer, y: Integer)`
+- **Flow**:
+  - Call `visibilityCalc.calculateVisibleCells(x, y)` to get `visibleCells`.
+  - Iterate through `visibleCells`:
+    - Find corresponding cell in `fogVisibilityMap` and set `fog` to `false`.
+
 **🚨 Constraint**:
 
 - When fog is removed from a cell, it should remain permanently visible for the rest of the session. This means that once a cell's `fog` is set to `false`, it should never revert back to `true` even if all heroes move away from it.

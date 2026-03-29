@@ -22,6 +22,11 @@
 - `selectedIndex`: Integer (Index of the currently selected hero).
 - `onSelect`: (index: Integer) -> void (Callback when a hero is selected).
 
+### 🛡️ Guards
+
+- IF heroes.length == 0 THEN RETURN 'No Heroes Available'
+- IF selectedIndex >= heroes.length THEN SET selectedIndex = 0
+
 ### 🔍 Appearance
 
 - **Layout**: Vertical column layout.

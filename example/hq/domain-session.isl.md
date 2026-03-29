@@ -29,6 +29,10 @@ Represents the dynamic state of a hero (@Hero) during a campaign (persistence).
 - `gold`: Accumulated gold (Integer) default: 500.
 - `inventory`: List of IDs of possessed items (@Item) (List of Integer).
 - `equipment`: List of IDs of owned equipment (@Equipment) (List of Integer).
+- `equipped`: List of IDs of currently equipped equipment (@Equipment) (List of Integer).
+- `availableSpells`: List of IDs of spells (@Spell) (List of Integer).
+- `activeStatus`: List of active effects (e.g., "Courage", "RockSkin", "Invisible") (List of String).
+- `isEscaped`: Boolean indicating if the hero has left the map through an exit (Default: false).
 - `x`: Current X position on the map grid (Integer).
 - `y`: Current Y position on the map grid (Integer).
 - `hero`: Instance of hero definition (@Hero)
@@ -43,6 +47,7 @@ Represents the dynamic state of a monster (@Monster) during a session.
 - `y`: Current Y position on the map grid (Integer).
 - `currentBody`: Current Body Points (Integer).
 - `currentMind`: Current Mind Points (Integer).
+- `activeStatus`: List of active effects (e.g., "Sleep", "Tempest", "Entangled") (List of String).
 
 #### `GameSession`
 
@@ -53,6 +58,7 @@ Represents the current active session state.
 - `currentMissionIndex`: Index of the current mission (Integer).
 - `heroes`: List of participating heroes (List of @HeroState).
 - `monsters`: List of active monsters (List of @MonsterState) Default: [].
+- `openedDoors`: List of coordinates "x,y" of doors that have been opened (List of String) Default: [].
 - `spawnedLocations`: List of coordinates "x,y" where monsters have already spawned (List of String).
 - `currentTurn` :Num of the current turn (Integer) default: 1.
 - `isHeroOrderConfirmed`: Flag indicating if the turn order has been selected (Boolean) default: false.

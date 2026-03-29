@@ -19,7 +19,6 @@
 - `card`: @TreasureCard (The card to display).
 - `onClose`: () -> void (Callback to close the modal).
 
-
 ### 🔍 Appearance
 
 - **Overlay**: Fixed full-screen container with semi-transparent backdrop (bg-black/80), z-index 60.
@@ -28,9 +27,12 @@
 
 ### 📦 Content
 
+**Guard**: IF card IS NULL, render 'EmptyState' or return null to prevent runtime crash.
+
 - **Card Image**:
   - Source: `/img/cartetesoro/` + `card.immagine`.
   - Alt: `card.effetto`.
+  - OnError: Display placeholder image '/img/placeholder.png'.
   - Click on image or overlay triggers `onClose`.
 
 ### ⚡ Capabilities
@@ -40,4 +42,4 @@
 - **Contract**: Closes the modal.
 - **Trigger**: Click on overlay or image.
 - **Flow**:
-  - Trigger `onClose`.
+  - IF modalState IS NOT 'closing' THEN set modalState to 'closing' AND trigger onClose.

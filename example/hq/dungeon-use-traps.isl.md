@@ -28,7 +28,7 @@
 
 #### internalState
 
-- `triggeredTraps`: List of {x: Integer, y: Integer, tipo: Integer} (Stores traps that have been activated).
+- `triggeredTraps`: List of {x: Integer, y: Integer, tipo: Integer, status: String} (Stores traps. Status: 'DETECTED', 'TRIGGERED', 'DISARMED').
 - `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
 
 #### checkTrapActivation
@@ -39,8 +39,10 @@
   - IF `trap.tipo` == 1 (Abisso): RETURN true (Always active).
   - IF `trap.tipo` IN [2, 3]:
     - Check if `{x, y}` is already in `triggeredTraps`.
-    - IF found: RETURN false (Trap already spent/inactive).
-    - ELSE: RETURN true (Trap is active).
+    - IF found:
+      - IF `found.status` == 'TRIGGERED' OR `found.status` == 'DISARMED': RETURN false (Trap spent/inactive).
+      - IF `found.status` == 'DETECTED': RETURN true (Trap visible but active).
+    - RETURN true (Trap is active).
   - RETURN false.
 
 #### isTrapVisible
@@ -56,7 +58,33 @@
 - **Contract**: Adds a trap to the triggered list.
 - **Signature**: `(x: Integer, y: Integer, tipo: Integer)`
 - **Flow**:
-  - Add `{x, y, tipo}` to `triggeredTraps` (if not already present).
+  - Check if `{x, y}` is in `triggeredTraps`.
+  - IF found:
+    - Set `found.status` to 'TRIGGERED'.
+  - ELSE:
+    - Add `{x, y, tipo, status: 'TRIGGERED'}` to `triggeredTraps`.
+
+#### attemptDisarmTrap
+
+- **Contract**: Attempts to disarm a known trap.
+- **Signature**: `(x: Integer, y: Integer, canDisarm: Boolean, onFail: () -> void)`
+- **Flow**:
+  - Find trap at `{x, y}` in `triggeredTraps`.
+  - IF NOT found OR `trap.status` != 'DETECTED':
+    - Trigger `onNotify("Non c'è una trappola disarmabile qui.")`.
+    - RETURN.
+  - IF `canDisarm` is false:
+    - Trigger `onNotify("Non hai gli strumenti per disarmare questa trappola.")`.
+    - RETURN.
+  - Generate random number `roll` between 1 and 6.
+  - IF `roll` < 6:
+    - Set `trap.status` to 'DISARMED'.
+    - Trigger `onNotify("Trappola disarmata con successo!")`.
+  - ELSE:
+    - Set `trap.status` to 'TRIGGERED'.
+    - Trigger `onNotify("Hai fatto scattare la trappola!")`.
+    - Trigger `onFail()`.
+  - Trigger `onActionDone()`.
 
 #### getTriggeredTraps
 
@@ -78,7 +106,7 @@
     - Find corresponding `mapCell` in `gameSession.currentMap.grid` at `cell.x`, `cell.y`.
     - IF `mapCell` exists AND `mapCell.trpl` exists and `map.Cell.trpl.tipo` > 0:
       - Check if `{cell.x, cell.y}` is NOT in `triggeredTraps`:
-        - Add `{x: cell.x, y: cell.y, tipo: mapCell.trpl.tipo}` to `triggeredTraps`.
+        - Add `{x: cell.x, y: cell.y, tipo: mapCell.trpl.tipo, status: 'DETECTED'}` to `triggeredTraps`.
         - Set `trapsFound` to true.
   - IF `trapsFound` is true:
     - Trigger `onNotify("Attenzione! Hai individuato delle trappole!")`.

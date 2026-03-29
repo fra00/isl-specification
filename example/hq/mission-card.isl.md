@@ -42,6 +42,7 @@
 - **Contract**: Validates click and triggers selection.
 - **Trigger**: User clicks the card or the action button.
 - **Flow**:
+  - IF mission IS NULL THEN RETURN.
   - IF `status` is 'LOCKED':
     - Do nothing (or prevent default).
   - ELSE:

@@ -8,44 +8,92 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
-import { Campaign, MapDefinition } from './domain-map';
-import { Hero } from './domain-ruleset';
-import { GameSession, HeroState } from './domain-session';
+import { useCampaignManager } from './dungeon-use-campaign-manager';
+import { HeroState, GameSession } from './domain-session';
 
 export default function PlayGame({ gameSession, onChangePageView, onUpdateSession }) {
   const [campaign, setCampaign] = useState(null);
   const [statsHeroes, setStatsHeroes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const campaignManager = useCampaignManager({});
 
   useEffect(() => {
     let isMounted = true;
 
     const initSession = async () => {
       try {
-        setLoading(true);
-        const [campaignRes, heroesRes] = await Promise.all([
+        const [campaignRes, heroesRes, equipmentRes] = await Promise.all([
           fetch('/jsonData/campagne.json'),
-          fetch('/jsonData/heroes.json')
+          fetch('/jsonData/heroes.json'),
+          fetch('/jsonData/equipment.json')
         ]);
-
-        if (!campaignRes.ok || !heroesRes.ok) {
-          throw new Error('Failed to fetch game data');
-        }
 
         const campaignData = await campaignRes.json();
         const heroesData = await heroesRes.json();
+        const equipmentData = await equipmentRes.json();
 
-        if (isMounted) {
-          setCampaign(Campaign(campaignData));
-          setStatsHeroes(heroesData.map(h => Hero(h)));
-          setLoading(false);
+        if (!isMounted) return;
+
+        // Deep clean function to ignore any data where x or y is 0 (as per strict 1-indexed grid rules)
+        const cleanData = (obj) => {
+          if (Array.isArray(obj)) {
+            return obj
+              .filter(item => item?.x !== 0 && item?.y !== 0)
+              .map(cleanData);
+          } else if (obj !== null && typeof obj === 'object') {
+            const newObj = {};
+            for (const key in obj) {
+              newObj[key] = cleanData(obj[key]);
+            }
+            return newObj;
+          }
+          return obj;
+        };
+
+        const cleanedCampaign = cleanData(campaignData);
+        setCampaign(cleanedCampaign);
+        setStatsHeroes(heroesData);
+
+        const savedData = campaignManager.loadCampaign();
+        
+        if (savedData != null) {
+          setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
+        } else {
+          const defaultHeroes = heroesData.map((hero, index) => {
+            let initialEquipment = [];
+            if (hero.classe === "Barbaro") initialEquipment = [13];
+            else if (hero.classe === "Nano") initialEquipment = [2];
+            else if (hero.classe === "Elfo") initialEquipment = [12];
+            else if (hero.classe === "Mago") initialEquipment = [4];
+
+            return HeroState({
+              heroId: hero.id,
+              turnOrder: index + 1,
+              currentBody: hero.corpo,
+              currentMind: hero.mente,
+              gold: 0,
+              inventory: [],
+              equipment: initialEquipment,
+              equipped: initialEquipment,
+              availableSpells: [],
+              activeStatus: [],
+              isEscaped: false,
+              x: 0,
+              y: 0,
+              hero: hero
+            });
+          });
+          
+          campaignManager.saveCampaign(defaultHeroes, 0);
+          setMaxUnlockedMissionIndex(0);
         }
-      } catch (err) {
+      } catch (error) {
+        console.error("Error initializing session:", error);
+      } finally {
         if (isMounted) {
-          console.error('Error initializing session:', err);
-          setError(err.message || 'An error occurred while loading data');
-          setLoading(false);
+          setIsLoading(false);
         }
       }
     };
@@ -55,144 +103,120 @@ export default function PlayGame({ gameSession, onChangePageView, onUpdateSessio
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [campaignManager]);
 
   const selectMission = useCallback(async (index) => {
-    const maxAccessibleIndex = gameSession?.currentMissionIndex ?? 0;
+    const savedData = campaignManager.loadCampaign();
+    const maxAccessibleIndex = maxUnlockedMissionIndex;
 
-    if (index <= maxAccessibleIndex && campaign) {
+    if (index <= maxAccessibleIndex && savedData != null && campaign != null) {
       try {
-        const mission = campaign.missioni[index];
-        const mapRes = await fetch(`/jsonData/map/${mission.file}`);
-        
-        if (!mapRes.ok) {
-          throw new Error(`Failed to fetch map: ${mission.file}`);
-        }
-        
-        const mapData = await mapRes.json();
+        const missionFile = campaign.missioni[index].file;
+        const mapRes = await fetch(`/jsonData/map/${missionFile}`);
+        let mapData = await mapRes.json();
 
-        // Ignore data with x or y equals to 0. The data aren't zero based.
-        if (mapData.grid) {
-          mapData.grid = mapData.grid.filter(cell => cell.x !== 0 && cell.y !== 0);
-        }
-        if (mapData.eroi_start) {
-          mapData.eroi_start = mapData.eroi_start.filter(hero => hero.x !== 0 && hero.y !== 0);
-        }
-        if (mapData.porte) {
-          mapData.porte = mapData.porte.filter(door => door.x !== 0 && door.y !== 0);
-        }
-        if (mapData.scripts) {
-          mapData.scripts = mapData.scripts.filter(script => script.x !== 0 && script.y !== 0);
-        }
-
-        const parsedMap = MapDefinition(mapData);
-
-        const heroesList = statsHeroes.map((heroDef, idx) => HeroState({
-          heroId: heroDef.id,
-          turnOrder: idx + 1,
-          currentBody: heroDef.corpo,
-          currentMind: heroDef.mente,
-          gold: 500,
-          inventory: [],
-          equipment: [],
-          x: 0,
-          y: 0,
-          hero: heroDef
-        }));
+        // Ensure grid coordinates strictly follow the 1-indexed rule by filtering out 0s
+        if (mapData.grid) mapData.grid = mapData.grid.filter(c => c.x !== 0 && c.y !== 0);
+        if (mapData.eroi_start) mapData.eroi_start = mapData.eroi_start.filter(c => c.x !== 0 && c.y !== 0);
+        if (mapData.porte) mapData.porte = mapData.porte.filter(c => c.x !== 0 && c.y !== 0);
+        if (mapData.scripts) mapData.scripts = mapData.scripts.filter(c => c.x !== 0 && c.y !== 0);
 
         const updatedSession = GameSession({
-          ...(gameSession || {}),
           campaignName: campaign.nome_campagna,
-          currentMap: parsedMap,
+          currentMap: mapData,
           currentMissionIndex: index,
-          heroes: gameSession?.heroes?.length ? gameSession.heroes : heroesList
+          heroes: savedData.heroes,
+          monsters: [],
+          openedDoors: [],
+          spawnedLocations: [],
+          currentTurn: 1,
+          isHeroOrderConfirmed: false,
+          lastAttack: null,
+          treasureDeck: []
         });
 
         onUpdateSession(updatedSession);
         onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-      } catch (err) {
-        console.error('Error loading mission map:', err);
+      } catch (error) {
+        console.error("Failed to load mission map:", error);
       }
     }
-  }, [campaign, gameSession, statsHeroes, onUpdateSession, onChangePageView]);
+  }, [campaign, maxUnlockedMissionIndex, campaignManager, onUpdateSession, onChangePageView]);
 
   const goBack = useCallback(() => {
     onChangePageView(PageNavigationEnum.MAIN_MENU);
   }, [onChangePageView]);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center w-full h-full min-h-screen bg-gray-900 text-white">
-        <p className="text-2xl animate-pulse">Loading campaign...</p>
+      <div className="flex items-center justify-center w-full min-h-screen bg-gray-900 text-yellow-500 text-2xl font-bold">
+        Loading Campaign...
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="flex flex-col justify-center items-center w-full h-full min-h-screen bg-gray-900 text-red-500">
-        <p className="text-2xl mb-4">Error: {error}</p>
-        <button 
-          onClick={goBack}
-          className="px-6 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
-        >
-          Back to Menu
-        </button>
-      </div>
-    );
-  }
-
-  if (!campaign) return null;
-
-  const maxAccessibleIndex = gameSession?.currentMissionIndex ?? 0;
 
   return (
-    <div className="flex flex-col items-center w-full h-full min-h-screen p-8 bg-gray-900 text-white">
-      <h1 className="text-4xl font-bold mb-10 text-yellow-500 tracking-wider drop-shadow-md">
-        {campaign.nome_campagna}
+    <div className="flex flex-col items-center w-full min-h-screen p-8 bg-gray-900 text-white font-sans">
+      <h1 className="text-4xl font-bold mb-10 text-yellow-500 tracking-wider text-center">
+        {campaign?.nome_campagna || "HeroQuest Campaign"}
       </h1>
       
-      <div className="flex flex-col gap-4 w-full max-w-2xl">
-        {campaign.missioni?.map((mission, index) => {
-          const isCompleted = index < maxAccessibleIndex;
-          const isAvailable = index === maxAccessibleIndex;
-          const isLocked = index > maxAccessibleIndex;
+      <div className="flex flex-col gap-6 w-full max-w-3xl">
+        {campaign?.missioni?.map((mission, index) => {
+          const isUnlocked = index <= maxUnlockedMissionIndex;
+          const isCompleted = index < maxUnlockedMissionIndex;
+          
+          let statusColor = "text-gray-500";
+          let borderColor = "border-gray-700";
+          let bgColor = "bg-gray-800";
+          let statusText = "Locked";
 
-          let buttonStyles = "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed";
           if (isCompleted) {
-            buttonStyles = "bg-green-900 border-green-600 hover:bg-green-800 text-green-100 cursor-pointer shadow-lg";
-          } else if (isAvailable) {
-            buttonStyles = "bg-blue-900 border-blue-500 hover:bg-blue-800 text-blue-100 cursor-pointer shadow-lg transform hover:scale-105 transition-transform";
+            statusColor = "text-green-400";
+            borderColor = "border-green-600";
+            bgColor = "bg-gray-800";
+            statusText = "Completed";
+          } else if (isUnlocked) {
+            statusColor = "text-yellow-400";
+            borderColor = "border-yellow-500";
+            bgColor = "bg-gray-700";
+            statusText = "Available";
           }
 
           return (
-            <button
-              key={index}
-              onClick={() => !isLocked && selectMission(index)}
-              disabled={isLocked}
-              className={`p-5 rounded-xl flex items-center justify-between border-2 transition-all duration-200 ${buttonStyles}`}
+            <div 
+              key={mission.ordine || index}
+              className={`p-6 border-2 rounded-xl flex justify-between items-center transition-all duration-300 ${borderColor} ${bgColor} ${isUnlocked ? 'hover:scale-[1.02] shadow-lg cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+              onClick={() => isUnlocked && selectMission(index)}
             >
-              <div className="flex items-center gap-4">
-                <span className="text-2xl font-bold opacity-50">
-                  {(index + 1).toString().padStart(2, '0')}
+              <div className="flex flex-col">
+                <span className={`text-sm font-bold uppercase tracking-widest mb-1 ${statusColor}`}>
+                  {statusText}
                 </span>
-                <span className="text-xl font-semibold tracking-wide">
-                  {mission.titolo}
-                </span>
+                <h2 className="text-2xl font-bold text-gray-100">
+                  {mission.ordine}. {mission.titolo}
+                </h2>
               </div>
-              <div className="flex items-center">
-                {isCompleted && <span className="text-green-400 text-xl" title="Completed">✓</span>}
-                {isAvailable && <span className="text-blue-400 text-xl animate-bounce" title="Next Mission">▶</span>}
-                {isLocked && <span className="text-gray-600 text-xl" title="Locked">🔒</span>}
-              </div>
-            </button>
+              
+              {isUnlocked && (
+                <button 
+                  className="px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg shadow-md transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectMission(index);
+                  }}
+                >
+                  {isCompleted ? "Replay" : "Start"}
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
 
       <button 
         onClick={goBack}
-        className="mt-12 px-8 py-3 bg-red-900 border border-red-700 hover:bg-red-800 text-white font-bold rounded-lg transition-colors shadow-md"
+        className="mt-12 px-8 py-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition-colors"
       >
         Back to Menu
       </button>

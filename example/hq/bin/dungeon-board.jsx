@@ -20,267 +20,237 @@ export default function DungeonBoard({
   hoveredPath = [],
   secretPassages = [],
   treasures = [],
-  triggeredTraps = []
+  triggeredTraps = [],
+  targetingSpell = null,
+  visibilityCalc
 }) {
+  const [hoveredCell, setHoveredCell] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [hoveredCellData, setHoveredCellData] = useState(null);
   const [hoveredMonster, setHoveredMonster] = useState(null);
 
-  // Initialize
   useEffect(() => {
     if (boardVisibilityMap) {
       setIsLoaded(true);
     }
   }, [boardVisibilityMap]);
 
-  // Data Sources
   const { visibleFurniture } = useDungeonFurniture({ gameSession, boardVisibilityMap });
   const { visibleDoors } = useDungeonDoors({ gameSession, boardVisibilityMap });
   const { visibleMonsters } = useDungeonVisibleMonsters({ gameSession, boardVisibilityMap });
 
-  // Visibility Lookup for O(1) access
-  const visibilityLookup = useMemo(() => {
-    const lookup = {};
-    if (boardVisibilityMap?.data) {
-      boardVisibilityMap.data.forEach(cell => {
-        lookup[`${cell.x},${cell.y}`] = cell;
-      });
-    }
-    return lookup;
-  }, [boardVisibilityMap]);
+  const furnitureList = useMemo(() => (visibleFurniture ? visibleFurniture() : []), [visibleFurniture]);
+  const doorsList = visibleDoors || [];
+  const monstersList = visibleMonsters || [];
 
-  // Handlers
   const handleCellClick = useCallback((x, y) => {
-    onCellClick?.(x + 1, y + 1);
+    if (onCellClick) onCellClick(x + 1, y + 1);
   }, [onCellClick]);
 
   const handleCellHover = useCallback((x, y) => {
-    const cellX = x + 1;
-    const cellY = y + 1;
-    onCellHover?.(cellX, cellY);
-    
-    const visData = visibilityLookup[`${cellX},${cellY}`];
-    setHoveredCellData({
-      x: cellX,
-      y: cellY,
-      vis1: visData?.vis1 || '',
-      vis2: visData?.vis2 || '',
-      valo: visData?.valo || '',
-      fog: visData?.fog ?? true
-    });
-  }, [onCellHover, visibilityLookup]);
+    setHoveredCell({ x, y });
+    if (onCellHover) onCellHover(x + 1, y + 1);
+  }, [onCellHover]);
 
-  const handleMonsterHover = useCallback((monster) => {
-    setHoveredMonster(monster);
+  const handleMouseLeaveBoard = useCallback(() => {
+    setHoveredCell(null);
   }, []);
 
-  // Grid Generation
-  const gridCells = useMemo(() => {
+  const renderCells = () => {
     const cells = [];
     for (let y = 0; y < 19; y++) {
       for (let x = 0; x < 26; x++) {
         const cellX = x + 1;
         const cellY = y + 1;
-        const visData = visibilityLookup[`${cellX},${cellY}`];
-        const isFogged = visData?.fog ?? true;
-        const isHoveredPath = hoveredPath?.some(p => p.x === cellX && p.y === cellY);
+        const visCell = boardVisibilityMap?.data?.find((c) => c.x === cellX && c.y === cellY);
+        const isFogged = visCell ? visCell.fog !== false : true;
+        const isPath = hoveredPath?.some((p) => p.x === cellX && p.y === cellY);
+
+        let cursorClass = targetingSpell ? 'cursor-crosshair' : 'cursor-pointer';
+        let highlightClass = '';
+
+        if (isPath) {
+          highlightClass = 'bg-green-500/50';
+        }
+
+        if (targetingSpell) {
+          const hasMonster = gameSession?.monsters?.some((m) => m.x === cellX && m.y === cellY);
+          const hasDoor = gameSession?.currentMap?.porte?.some((d) => d.x === cellX && d.y === cellY);
+
+          if (targetingSpell.effetto === 'Genio' && (hasMonster || hasDoor)) {
+            highlightClass = 'bg-blue-500/30 animate-pulse border-2 border-blue-500';
+          } else if (hoveredCell?.x === x && hoveredCell?.y === y) {
+            highlightClass = 'bg-blue-400/50';
+          }
+        }
 
         cells.push(
           <div
-            key={`${x}-${y}`}
-            className="absolute"
-            style={{
-              left: x * 34,
-              top: y * 34,
-              width: 34,
-              height: 34,
-              backgroundColor: isFogged ? 'rgba(0, 0, 0, 0.7)' : (isHoveredPath ? 'rgba(34, 197, 94, 0.5)' : 'transparent'),
-              pointerEvents: 'auto'
-            }}
+            key={`cell-${x}-${y}`}
+            className={`absolute w-[34px] h-[34px] ${cursorClass}`}
+            style={{ left: x * 34, top: y * 34 }}
             onClick={() => handleCellClick(x, y)}
             onMouseEnter={() => handleCellHover(x, y)}
-          />
+          >
+            {isFogged && <div className="absolute inset-0 bg-black/70 z-30 pointer-events-none" />}
+            {!isFogged && highlightClass && <div className={`absolute inset-0 ${highlightClass} z-20 pointer-events-none`} />}
+          </div>
         );
       }
     }
     return cells;
-  }, [visibilityLookup, hoveredPath, handleCellClick, handleCellHover]);
+  };
 
-  if (!isLoaded) {
+  const renderTracer = () => {
+    if (!targetingSpell || !hoveredCell) return null;
+    const activeHero = gameSession?.heroes?.find((h) => h.turnOrder === gameSession?.currentTurn);
+    if (!activeHero) return null;
+
+    const startX = (activeHero.x - 1) * 34 + 17;
+    const startY = (activeHero.y - 1) * 34 + 17;
+    const endX = hoveredCell.x * 34 + 17;
+    const endY = hoveredCell.y * 34 + 17;
+
+    let lineColor = 'stroke-blue-500';
+    if (targetingSpell.effetto !== 'Genio') {
+      const hasLOS = visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1);
+      if (hasLOS === false) {
+        lineColor = 'stroke-red-500';
+      }
+    }
+
     return (
-      <div className="flex items-center justify-center w-[884px] h-[646px] bg-black text-white">
-        Loading Board...
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-50">
+        <line
+          x1={startX}
+          y1={startY}
+          x2={endX}
+          y2={endY}
+          className={`${lineColor} stroke-2 animate-pulse`}
+          strokeDasharray="4"
+          style={{ filter: 'drop-shadow(0 0 4px rgba(59, 130, 246, 0.8))' }}
+        />
+      </svg>
+    );
+  };
+
+  const renderDebugPanel = () => {
+    if (!hoveredCell) return null;
+    const cellX = hoveredCell.x + 1;
+    const cellY = hoveredCell.y + 1;
+    const visCell = boardVisibilityMap?.data?.find((c) => c.x === cellX && c.y === cellY);
+
+    return (
+      <div className="fixed right-0 top-1/4 w-[250px] bg-black/80 text-white p-4 text-sm z-50 rounded-l-lg border border-gray-600 shadow-lg">
+        <h3 className="font-bold mb-2 border-b border-gray-500 pb-1">Debug Info</h3>
+        <p>X: {cellX}, Y: {cellY}</p>
+        <p>Vis1: {visCell?.vis1 || 'N/A'}</p>
+        <p>Vis2: {visCell?.vis2 || 'N/A'}</p>
+        <p>Valo: {visCell?.valo || 'N/A'}</p>
+        <p>Fog: {visCell?.fog ? 'true' : 'false'}</p>
+        <p>Current Turn: {gameSession?.currentTurn}</p>
       </div>
     );
-  }
+  };
+
+  const renderMonsterTooltip = () => {
+    if (!hoveredMonster) return null;
+    return (
+      <div className="fixed right-0 top-1/2 w-[250px] bg-black/90 text-white p-4 text-sm z-50 rounded-l-lg border border-red-900 shadow-lg">
+        <h3 className="font-bold text-red-500 mb-2">{hoveredMonster.monster?.nome}</h3>
+        <p>Body: {hoveredMonster.currentBody} / {hoveredMonster.monster?.corpo}</p>
+        <p>Mind: {hoveredMonster.currentMind} / {hoveredMonster.monster?.mente}</p>
+        {!targetingSpell && <p className="text-yellow-400 mt-2 font-bold">⚔️ Attackable</p>}
+      </div>
+    );
+  };
 
   return (
-    <div className="relative flex items-center justify-center w-full h-full">
-      {/* Board Container */}
-      <div className="relative w-[884px] h-[646px] bg-black overflow-hidden">
-        
-        {/* Background Image */}
-        <img 
-          src="/img/tabellone/default.bmp" 
-          alt="Game Board" 
-          className="absolute top-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
-        />
+    <div className="relative w-[884px] h-[646px] mx-auto my-auto select-none">
+      <img src="/img/tabellone/default.bmp" className="absolute inset-0 w-full h-full object-cover z-0" alt="Game Board" />
 
-        {/* Grid & Fog of War */}
-        <div className="absolute top-0 left-0 w-full h-full z-10">
-          {gridCells}
-        </div>
+      <div className="absolute top-0 left-0 w-full h-full z-10" onMouseLeave={handleMouseLeaveBoard}>
+        {renderCells()}
 
-        {/* Furniture */}
-        {visibleFurniture?.map((furniture, idx) => (
-          <img
-            key={`furn-${idx}`}
-            src={`/img/mobili/${furniture.img}`}
-            alt="Furniture"
-            className="absolute z-20 pointer-events-none"
-            style={{
-              left: (furniture.x - 1) * 34,
-              top: (furniture.y - 1) * 34
-            }}
-          />
+        {furnitureList.map((f, i) => (
+          <img key={`furn-${i}`} src={`/img/mobili/${f.img}`} className="absolute w-[34px] h-[34px] pointer-events-none" style={{ left: (f.x - 1) * 34, top: (f.y - 1) * 34 }} alt="Furniture" />
         ))}
 
-        {/* Doors */}
-        {visibleDoors?.map((door, idx) => (
-          <img
-            key={`door-${idx}`}
-            src={`/img/cell/${door.img}`}
-            alt="Door"
-            className="absolute z-20 pointer-events-none"
-            style={{
-              left: (door.x - 1) * 34,
-              top: (door.y - 1) * 34
-            }}
-          />
+        {doorsList.map((d, i) => (
+          <img key={`door-${i}`} src={`/img/cell/${d.img}`} className="absolute w-[34px] h-[34px] pointer-events-none" style={{ left: (d.x - 1) * 34, top: (d.y - 1) * 34 }} alt="Door" />
         ))}
 
-        {/* Secret Passages */}
-        {secretPassages?.map((passage, idx) => (
-          <img
-            key={`passage-${idx}`}
-            src={`/img/cell/${passage.img}`}
-            alt="Secret Passage"
-            className="absolute z-20 pointer-events-none"
-            style={{
-              left: (passage.x - 1) * 34,
-              top: (passage.y - 1) * 34
-            }}
-          />
+        {secretPassages.map((sp, i) => (
+          <img key={`sp-${i}`} src={`/img/cell/${sp.img}`} className="absolute w-[34px] h-[34px] pointer-events-none" style={{ left: (sp.x - 1) * 34, top: (sp.y - 1) * 34 }} alt="Secret Passage" />
         ))}
 
-        {/* Treasures */}
-        {treasures?.map((treasure, idx) => (
-          <img
-            key={`treasure-${idx}`}
-            src={`/img/cell/${treasure.img}`}
-            alt="Treasure"
-            className="absolute z-20 pointer-events-none"
-            style={{
-              left: (treasure.x - 1) * 34,
-              top: (treasure.y - 1) * 34
-            }}
-          />
+        {treasures.map((tr, i) => (
+          <img key={`tr-${i}`} src={`/img/cell/${tr.img}`} className="absolute w-[34px] h-[34px] pointer-events-none" style={{ left: (tr.x - 1) * 34, top: (tr.y - 1) * 34 }} alt="Treasure" />
         ))}
 
-        {/* Traps */}
-        {triggeredTraps?.map((trap, idx) => {
-          if (trap.tipo === 1) {
-            return (
-              <img
-                key={`trap-${idx}`}
-                src="/img/cell/abisso.jpg"
-                alt="Trap"
-                className="absolute z-20 pointer-events-none"
-                style={{
-                  left: (trap.x - 1) * 34,
-                  top: (trap.y - 1) * 34
-                }}
-              />
-            );
+        {triggeredTraps.map((tp, i) => {
+          if (tp.tipo === 1) {
+            return <img key={`tp-${i}`} src="/img/cell/abisso.jpg" className="absolute w-[34px] h-[34px] pointer-events-none" style={{ left: (tp.x - 1) * 34, top: (tp.y - 1) * 34 }} alt="Trap" />;
           }
           return null;
         })}
 
-        {/* Monsters */}
-        {visibleMonsters?.map((monsterState) => (
-          <div
-            key={`monster-${monsterState.id}`}
-            className="absolute z-30 cursor-crosshair"
-            style={{
-              left: (monsterState.x - 1) * 34,
-              top: (monsterState.y - 1) * 34,
-              width: 34,
-              height: 34
-            }}
-            onClick={() => onMonsterClick?.(monsterState.id)}
-            onMouseEnter={() => handleMonsterHover(monsterState)}
-            onMouseLeave={() => handleMonsterHover(null)}
-          >
-            <img 
-              src={`/img/mostri/${monsterState.monster?.immagine}`} 
-              alt={monsterState.monster?.nome || 'Monster'} 
-              className="max-w-[34px] pointer-events-none"
-            />
-          </div>
-        ))}
+        {monstersList.map((m, i) => {
+          const isSleep = m.activeStatus?.includes('Sleep');
+          const isTempest = m.activeStatus?.includes('Tempest');
+          const isEntangled = m.activeStatus?.includes('Entangled');
+          const cursorClass = targetingSpell ? 'cursor-crosshair' : 'cursor-pointer';
 
-        {/* Heroes */}
-        {gameSession?.heroes?.map((heroState) => {
-          const isCurrentTurn = gameSession.currentTurn === heroState.turnOrder;
           return (
             <div
-              key={`hero-${heroState.heroId}`}
-              className={`absolute z-40 ${isCurrentTurn ? 'ring-2 ring-yellow-400' : ''}`}
-              style={{
-                left: (heroState.x - 1) * 34,
-                top: (heroState.y - 1) * 34,
-                width: 34,
-                height: 34,
-                transition: 'top 0.3s linear, left 0.3s linear'
+              key={`mon-${m.id || i}`}
+              className={`absolute w-[34px] h-[34px] flex items-center justify-center ${cursorClass} z-20`}
+              style={{ left: (m.x - 1) * 34, top: (m.y - 1) * 34 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onMonsterClick) onMonsterClick(m.id);
               }}
+              onMouseEnter={() => setHoveredMonster(m)}
+              onMouseLeave={() => setHoveredMonster(null)}
             >
-              <img 
-                src={`/img/eroi/${heroState.hero?.miniature}`} 
-                alt={heroState.hero?.classe || 'Hero'} 
-                className="max-w-[34px] pointer-events-none"
-              />
+              {isSleep && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_blue] animate-pulse" />}
+              {isTempest && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_gray] animate-pulse" />}
+              <img src={`/img/mostri/${m.monster?.immagine}`} className="max-w-[34px] max-h-[34px] relative z-10 pointer-events-none" alt="Monster" />
+              {isSleep && <span className="absolute -top-2 -right-2 text-xs text-blue-300 z-20 font-bold drop-shadow-md">Zzz</span>}
+              {isEntangled && (
+                <div className="absolute inset-0 z-20 opacity-70 flex items-center justify-center pointer-events-none">
+                  <div className="w-full h-full border-2 border-green-500 rounded-full bg-green-500/30" />
+                </div>
+              )}
             </div>
           );
         })}
-      </div>
 
-      {/* Debug Panel */}
-      <div className="fixed right-0 top-0 w-[250px] h-full bg-gray-900/95 text-white p-4 z-50 overflow-y-auto text-sm shadow-lg">
-        <h3 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2">Debug Panel</h3>
-        <div className="space-y-2">
-          <p><span className="font-semibold text-gray-400">Mouse X:</span> {hoveredCellData?.x ?? '-'}</p>
-          <p><span className="font-semibold text-gray-400">Mouse Y:</span> {hoveredCellData?.y ?? '-'}</p>
-          <p><span className="font-semibold text-gray-400">Vis1:</span> {hoveredCellData?.vis1 ?? '-'}</p>
-          <p><span className="font-semibold text-gray-400">Vis2:</span> {hoveredCellData?.vis2 ?? '-'}</p>
-          <p><span className="font-semibold text-gray-400">Viso/Valo:</span> {hoveredCellData?.valo ?? '-'}</p>
-          <p><span className="font-semibold text-gray-400">Fog:</span> {hoveredCellData?.fog !== undefined ? (hoveredCellData.fog ? 'true' : 'false') : '-'}</p>
-          <p><span className="font-semibold text-gray-400">Current Turn:</span> {gameSession?.currentTurn ?? '-'}</p>
-        </div>
+        {gameSession?.heroes?.map((h, i) => {
+          const isCurrentTurn = gameSession.currentTurn === h.turnOrder;
+          const isFoggyMist = h.activeStatus?.includes('FoggyMist');
+          const isRockSkin = h.activeStatus?.includes('RockSkin');
+          const isCourage = h.activeStatus?.includes('Courage');
+          const cursorClass = targetingSpell && targetingSpell.targetType === 'Hero' ? 'cursor-crosshair' : 'cursor-default';
 
-        {/* Monster Tooltip / Details */}
-        {hoveredMonster && (
-          <div className="mt-6 p-3 bg-red-900/50 border border-red-700 rounded shadow-inner">
-            <h4 className="font-bold text-red-400 mb-2">Target: {hoveredMonster.monster?.nome}</h4>
-            <p><span className="text-gray-300">Body:</span> {hoveredMonster.currentBody} / {hoveredMonster.monster?.corpo}</p>
-            <p><span className="text-gray-300">Mind:</span> {hoveredMonster.currentMind} / {hoveredMonster.monster?.mente}</p>
-            <p><span className="text-gray-300">Attack:</span> {hoveredMonster.monster?.attacco}</p>
-            <p><span className="text-gray-300">Defense:</span> {hoveredMonster.monster?.difesa}</p>
-            <div className="mt-3 text-yellow-400 font-bold animate-pulse flex items-center gap-2">
-              <span>⚔️</span> Attackable
+          return (
+            <div
+              key={`hero-${h.heroId || i}`}
+              className={`absolute w-[34px] h-[34px] flex items-center justify-center transition-all duration-300 ease-linear ${cursorClass} z-20 ${isCurrentTurn ? 'ring-2 ring-yellow-400 ring-offset-1' : ''} ${isFoggyMist ? 'opacity-50' : ''}`}
+              style={{ left: (h.x - 1) * 34, top: (h.y - 1) * 34 }}
+            >
+              {isFoggyMist && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_white] animate-pulse" />}
+              {isRockSkin && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_gray] animate-pulse" />}
+              {isCourage && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_red] animate-pulse" />}
+              <img src={`/img/eroi/${h.hero?.miniature}`} className="max-w-[34px] max-h-[34px] relative z-10 pointer-events-none" alt="Hero" />
             </div>
-          </div>
-        )}
+          );
+        })}
+
+        {renderTracer()}
       </div>
+
+      {renderDebugPanel()}
+      {renderMonsterTooltip()}
     </div>
   );
 }

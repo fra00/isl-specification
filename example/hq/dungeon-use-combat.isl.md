@@ -41,23 +41,13 @@ Structure containing the details of a combat interaction.
 #### resolveCombat
 
 - **Contract**: Simulates dice rolls and calculates damage for an attack between any two entities (Hero or Monster).
-- **Signature**: `(attacker: @HeroState | @MonsterState, defender: @HeroState | @MonsterState) -> @CombatResult`
+- **Signature**: `(attackDiceCount: Integer, defenseDiceCount: Integer, defenderIsHero: Boolean) -> @CombatResult`
 - **Flow**:
-  - **1. Determine Dice Counts**:
-    - `attackDiceCount` = 0.
-    - IF `attacker` is Hero (has `hero` property):
-      - `attackDiceCount` = `attacker.hero.attacco`.
-      - Add bonuses from `attacker.equipment` (e.g., weapons).
-    - ELSE IF `attacker` is Monster (has `monster` property):
-      - `attackDiceCount` = `attacker.monster.attacco`.
-    - `defenseDiceCount` = 0.
-    - IF `defender` is Hero (has `hero` property):
-      - `defenseDiceCount` = `defender.hero.difesa`.
-      - Add bonuses from `defender.equipment` (e.g., armor).
-    - ELSE IF `defender` is Monster (has `monster` property):
-      - `defenseDiceCount` = `defender.monster.difesa`.
+  - **Guard**:
+    - IF attackDiceCount < 0 THEN attackDiceCount = 0
+    - IF defenseDiceCount < 0 THEN defenseDiceCount = 0
 
-  - **2. Roll Attack**:
+  - **1. Roll Attack**:
     - Initialize `attackerDice` list.
     - Repeat `attackDiceCount` times:
       - Generate random integer 1-6.
@@ -65,8 +55,7 @@ Structure containing the details of a combat interaction.
       - IF 4,5: Add `WHITE_SHIELD`.
       - IF 6: Add `BLACK_SHIELD`.
     - `skulls` = Count of `SKULL` in `attackerDice`.
-
-  - **3. Roll Defense**:
+  - **2. Roll Defense**:
     - Initialize `defenderDice` list.
     - Repeat `defenseDiceCount` times:
       - Generate random integer 1-6.
@@ -74,13 +63,11 @@ Structure containing the details of a combat interaction.
       - IF 4,5: Add `WHITE_SHIELD`.
       - IF 6: Add `BLACK_SHIELD`.
     - `shields` = 0.
-    - IF `defender` is Hero: `shields` = Count of `WHITE_SHIELD` in `defenderDice`.
-    - IF `defender` is Monster: `shields` = Count of `BLACK_SHIELD` in `defenderDice`.
-
-  - **4. Calculate Outcome**:
+    - IF `defenderIsHero` is true: `shields` = Count of `WHITE_SHIELD` in `defenderDice`.
+    - ELSE: `shields` = Count of `BLACK_SHIELD` in `defenderDice`.
+  - **3. Calculate Outcome**:
     - `damageDealt` = Max(0, `skulls` - `shields`).
-
-  - **5. Return**:
+  - **4. Return**:
     - Create and return `@CombatResult` with `attackerDice`, `defenderDice`, `skulls`, `shields`, `damageDealt`.
 
 - **Return**:`{ resolveCombat }`

@@ -7,6 +7,6 @@ export const PageNavigationEnum: {
   readonly DUNGEON_DESCRIPTION: string;
 };
 
-export const NavigationStatus: (data?: { currentPageView?: string }) => { 
-  currentPageView: string 
+export const NavigationStatus: (data?: { currentPageView?: string }) => {
+  currentPageView: string;
 };

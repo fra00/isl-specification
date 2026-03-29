@@ -9,14 +9,14 @@ Short description
 
 ---
 
-## Component: PlayGame
+## Component: EditorGame
 
-Area di gioco
+Editor per la creazione e modifica delle mappe di gioco.
 
-### Role: Backend
-
-### 🔍 Appearance
+### Role: Presentation
 
 ### 📦 Content
 
-- visualizza Titolo statico con scritto "editor game"
+- Show text Editor Game
+
+### ⚡ Capabilities

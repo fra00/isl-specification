@@ -20,6 +20,7 @@
 
 - `gameSession`: @GameSession (Current session state).
 - `visibilityMap`: @VisibilityMap (The static board configuration loaded from JSON).
+- `foundPassages`: List of {x: Integer, y: Integer} (Discovered secret passages from useSecretPassages).
 
 ### ⚡ Capabilities
 
@@ -33,13 +34,17 @@
 - **Signature**: `(startX: Integer, startY: Integer, targetX: Integer, targetY: Integer, maxDepth: Integer, excludeEntityId: Integer) -> List<{x, y}>`
 - **Flow**:
   - Initialize `mapQuery` using `hooksDungeonMapQuery`.
-  - Initialize `movementRules` using `hooksDungeonMovementRules(mapQuery)`.
+  - Initialize `movementRules` using `hooksDungeonMovementRules` providing `mapQuery` and `foundPassages`.
   - **Pre-check**: IF `movementRules.isValidDestination(targetX, targetY, excludeEntityId)` is FALSE, Return empty path.
   - **BFS Algorithm**:
     - Initialize `queue` with start node `{x: startX, y: startY, path: []}`.
     - Initialize `visited` set with start coordinates.
     - WHILE `queue` is not empty:
       - Dequeue `current` node.
+      - **Passage Validation**: A cell containing a Passage is walkable if:
+        - It is a standard Door.
+        - It is a Secret Passage present in the `foundPassages` list.
+        - Note: This logic is applied by `movementRules.isWalkable`.
       - IF `current` is target, Return `current.path`.
       - IF `current.path.length` >= `maxDepth`, Continue.
       - FOR EACH neighbor (Up, Down, Left, Right):

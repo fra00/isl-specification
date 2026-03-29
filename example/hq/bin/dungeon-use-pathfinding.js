@@ -10,22 +10,25 @@ import { useCallback } from 'react';
 import { useDungeonMapQuery } from './dungeon-map-query';
 import { useDungeonMovementRules } from './dungeon-movement-rules';
 
-export function usePathfinding({ gameSession, visibilityMap } = {}) {
+export function usePathfinding(config) {
+    const { 
+        gameSession = null, 
+        visibilityMap = null, 
+        foundPassages = [] 
+    } = config || {};
+
     const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
-    const movementRules = useDungeonMovementRules({ mapQuery });
+    
+    // The ISL specifies providing foundPassages here, so we include it in the config object
+    const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
 
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (!movementRules?.isValidDestination || !movementRules?.isWalkable) {
-            return [];
-        }
-
-        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
+        if (!movementRules?.isValidDestination?.(targetX, targetY, excludeEntityId)) {
             return [];
         }
 
         const queue = [{ x: startX, y: startY, path: [] }];
-        const visited = new Set();
-        visited.add(`${startX},${startY}`);
+        const visited = new Set([`${startX},${startY}`]);
 
         const directions = [
             { dx: 0, dy: -1 }, // Up
@@ -45,14 +48,21 @@ export function usePathfinding({ gameSession, visibilityMap } = {}) {
                 continue;
             }
 
-            for (let i = 0; i < directions.length; i++) {
-                const dir = directions[i];
+            for (const dir of directions) {
                 const neighborX = current.x + dir.dx;
                 const neighborY = current.y + dir.dy;
                 const neighborKey = `${neighborX},${neighborY}`;
 
                 if (!visited.has(neighborKey)) {
-                    if (movementRules.isWalkable(current.x, current.y, neighborX, neighborY, excludeEntityId)) {
+                    const isWalkable = movementRules?.isWalkable?.(
+                        current.x, 
+                        current.y, 
+                        neighborX, 
+                        neighborY, 
+                        excludeEntityId
+                    );
+
+                    if (isWalkable) {
                         visited.add(neighborKey);
                         queue.push({
                             x: neighborX,

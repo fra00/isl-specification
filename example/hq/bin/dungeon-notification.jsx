@@ -10,27 +10,19 @@ import { useEffect } from "react";
 
 export default function DungeonNotification({ message, duration = 3000, onClose }) {
   useEffect(() => {
-    if (!message) {
-      return;
-    }
+    if (!message) return;
 
     const timer = setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
+      onClose?.();
     }, duration);
 
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [message, duration, onClose]);
 
-  if (!message) {
-    return null;
-  }
+  if (!message) return null;
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-lg p-4 rounded-lg shadow-lg animate-fade-in-out">
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out">
       {message}
     </div>
   );

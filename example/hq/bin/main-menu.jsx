@@ -9,75 +9,74 @@
 import React, { useState, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function MainMenu({ onChangePageView }) {
+export default function MainMenu({ onChangePageView = () => {} }) {
   const [hoveredImage, setHoveredImage] = useState(null);
 
-  const handleMenuClick = useCallback((destination) => {
-    if (onChangePageView) {
+  const menuItems = [
+    {
+      id: 'play',
+      label: 'Gioca',
+      destination: PageNavigationEnum.PLAY_GAME,
+      image: '/img/main-menu/nuova.jpg'
+    },
+    {
+      id: 'editor',
+      label: 'Editor',
+      destination: PageNavigationEnum.EDITOR_GAME,
+      image: '/img/main-menu/editor.jpg'
+    }
+  ];
+
+  const handleClick = useCallback((destination) => {
+    if (typeof onChangePageView === 'function') {
       onChangePageView(destination);
     }
   }, [onChangePageView]);
 
-  const handleMouseEnter = useCallback((imagePath) => {
-    setHoveredImage(imagePath);
+  const handleMouseEnter = useCallback((image) => {
+    setHoveredImage(image);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     setHoveredImage(null);
   }, []);
 
-  const menuItems = [
-    {
-      label: "Gioca",
-      destination: PageNavigationEnum.PLAY_GAME,
-      image: "/img/main-menu/nuova.jpg"
-    },
-    {
-      label: "Editor",
-      destination: PageNavigationEnum.EDITOR_GAME,
-      image: "/img/main-menu/editor.jpg"
-    }
-  ];
-
   return (
     <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
-      {/* Custom Keyframes for Zoom Parallax */}
-      <style>
-        {`
-          @keyframes zoom-parallax {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
-          }
-          .animate-zoom-parallax {
-            animation: zoom-parallax 50s ease-in-out infinite alternate;
-          }
-        `}
-      </style>
+      {/* CSS per l'animazione zoom-parallax continua */}
+      <style>{`
+        @keyframes zoomParallax {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.1); }
+        }
+        .animate-zoom-parallax {
+          animation: zoomParallax 50s ease-in-out infinite alternate;
+        }
+      `}</style>
 
-      {/* Animated Background Layer */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center animate-zoom-parallax z-0"
-        style={{ backgroundImage: 'url(/img/menusfondo.jpg)' }}
+      {/* Background Image con animazione */}
+      <div
+        className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax z-0"
       />
 
-      {/* MouseOverImage Layer */}
+      {/* MouseOverImage - Riquadro per visualizzazione immagine */}
       {hoveredImage && (
-        <img 
-          src={hoveredImage} 
-          alt="Menu Preview" 
-          className="absolute top-0 right-0 h-[30%] w-auto object-contain border-none z-10 transition-opacity duration-300"
+        <img
+          src={hoveredImage}
+          alt="Menu Preview"
+          className="absolute top-0 right-0 h-[30%] w-auto border-none object-contain z-20 pointer-events-none shadow-2xl"
         />
       )}
 
-      {/* Content Layer */}
-      <div className="relative z-20 flex flex-col items-center gap-8">
+      {/* Contenuto Voci di Menu */}
+      <div className="relative z-10 flex flex-col items-center gap-8">
         {menuItems.map((item) => (
           <button
-            key={item.label}
-            onClick={() => handleMenuClick(item.destination)}
+            key={item.id}
+            onClick={() => handleClick(item.destination)}
             onMouseEnter={() => handleMouseEnter(item.image)}
             onMouseLeave={handleMouseLeave}
-            className="bg-transparent font-bold text-5xl text-white blur-[4px] hover:blur-none transition-all duration-500 cursor-pointer border-none outline-none"
+            className="bg-transparent font-bold text-white text-6xl tracking-widest blur-[4px] hover:blur-none transition-all duration-500 ease-in-out cursor-pointer border-none outline-none"
           >
             {item.label}
           </button>

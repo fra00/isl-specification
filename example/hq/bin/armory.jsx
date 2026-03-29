@@ -6,18 +6,18 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import { loadShopData, validatePurchase, executePurchase } from "./shop-logic";
-import HeroSummary from "./hero-summary";
-import ShopInventory from "./shop-inventory";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import { loadShopData, validatePurchase, executePurchase } from './shop-logic';
+import HeroSummary from './hero-summary';
+import ShopInventory from './shop-inventory';
 
 export default function Armory({ gameSession, onUpdateSession, onChangePageView }) {
   const [staticHeroes, setStaticHeroes] = useState([]);
   const [shopItems, setShopItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -27,6 +27,7 @@ export default function Armory({ gameSession, onUpdateSession, onChangePageView 
         if (isMounted) {
           setStaticHeroes(data?.heroes || []);
           setShopItems(data?.items || []);
+          setSelectedHeroIndex(0);
           setIsLoading(false);
         }
       })
@@ -51,18 +52,50 @@ export default function Armory({ gameSession, onUpdateSession, onChangePageView 
     setSelectedEquipmentId(itemId);
   }, []);
 
-  const currentHeroState = gameSession?.heroes?.[selectedHeroIndex] || null;
-  const selectedItem = shopItems.find((item) => item.id === selectedEquipmentId) || null;
+  const itemsWithValidation = useMemo(() => {
+    const currentHero = gameSession?.heroes?.[selectedHeroIndex];
+    if (!currentHero) return shopItems;
+
+    return shopItems.map((item) => {
+      const validation = validatePurchase(currentHero, item);
+      return {
+        ...item,
+        disabled: !validation.allowed,
+        disableReason: validation.reason
+      };
+    });
+  }, [shopItems, gameSession, selectedHeroIndex]);
+
+  const { canBuy, buyReason } = useMemo(() => {
+    if (selectedEquipmentId == null) {
+      return { canBuy: false, buyReason: "Nessun oggetto selezionato" };
+    }
+    
+    const selectedItem = itemsWithValidation.find((i) => i.id === selectedEquipmentId);
+    if (!selectedItem) {
+      return { canBuy: false, buyReason: "Oggetto non trovato" };
+    }
+
+    return { 
+      canBuy: !selectedItem.disabled, 
+      buyReason: selectedItem.disableReason || "" 
+    };
+  }, [selectedEquipmentId, itemsWithValidation]);
 
   const handleBuyItem = useCallback(() => {
-    if (!currentHeroState || !selectedItem || !gameSession) return;
+    if (!gameSession || !gameSession.heroes) return;
+    
+    const currentHero = gameSession.heroes[selectedHeroIndex];
+    const selectedItem = shopItems.find((item) => item.id === selectedEquipmentId);
 
-    const validation = validatePurchase(currentHeroState, selectedItem);
-    if (validation.allowed) {
-      const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
-      onUpdateSession(updatedSession);
+    if (currentHero && selectedItem) {
+      const validation = validatePurchase(currentHero, selectedItem);
+      if (validation.allowed) {
+        const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
+        onUpdateSession(updatedSession);
+      }
     }
-  }, [currentHeroState, selectedItem, gameSession, selectedHeroIndex, onUpdateSession]);
+  }, [gameSession, selectedHeroIndex, selectedEquipmentId, shopItems, onUpdateSession]);
 
   const handleEnterDungeon = useCallback(() => {
     if (onChangePageView) {
@@ -78,56 +111,34 @@ export default function Armory({ gameSession, onUpdateSession, onChangePageView 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center w-full h-full min-h-screen bg-gray-900 text-white">
-        <p className="text-xl font-bold animate-pulse">Caricamento Armeria...</p>
+      <div className="flex items-center justify-center w-full h-full p-8 text-white">
+        <span>Caricamento armeria...</span>
       </div>
     );
   }
 
-  const itemsWithValidation = shopItems.map((item) => {
-    if (!currentHeroState) {
-      return { ...item, canBuy: false, buyReason: "Nessun eroe selezionato" };
-    }
-    const validation = validatePurchase(currentHeroState, item);
-    return {
-      ...item,
-      canBuy: validation.allowed,
-      buyReason: validation.reason,
-    };
-  });
-
-  const selectedItemValidation =
-    currentHeroState && selectedItem
-      ? validatePurchase(currentHeroState, selectedItem)
-      : { allowed: false, reason: "" };
-
   return (
-    <div className="w-full h-full min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-        
-        <div className="flex flex-col bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
-          <HeroSummary
-            heroes={gameSession?.heroes || []}
-            staticHeroes={staticHeroes}
-            equipments={shopItems}
-            selectedIndex={selectedHeroIndex}
-            onSelect={handleSelectHero}
-          />
-        </div>
-
-        <div className="flex flex-col bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
-          <ShopInventory
-            items={itemsWithValidation}
-            selectedItemId={selectedEquipmentId}
-            canBuy={selectedItemValidation.allowed}
-            buyReason={selectedItemValidation.reason}
-            onSelect={handleSelectItem}
-            onBuy={handleBuyItem}
-            onEnterDungeon={handleEnterDungeon}
-            onExit={handleExitShop}
-          />
-        </div>
-
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 h-full w-full bg-slate-900">
+      <div className="col-span-1 flex flex-col overflow-hidden bg-slate-800 rounded-lg shadow-lg">
+        <HeroSummary
+          heroes={gameSession?.heroes || []}
+          staticHeroes={staticHeroes}
+          staticEquipment={shopItems}
+          selectedIndex={selectedHeroIndex}
+          onSelect={handleSelectHero}
+        />
+      </div>
+      <div className="col-span-1 flex flex-col overflow-hidden bg-slate-800 rounded-lg shadow-lg">
+        <ShopInventory
+          items={itemsWithValidation}
+          selectedItemId={selectedEquipmentId}
+          canBuy={canBuy}
+          buyReason={buyReason}
+          onSelect={handleSelectItem}
+          onBuy={handleBuyItem}
+          onEnterDungeon={handleEnterDungeon}
+          onExit={handleExitShop}
+        />
       </div>
     </div>
   );

@@ -6,62 +6,79 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 
 export function useFogOfWar({ gameSession, staticVisibilityMap }) {
-    const [fogVisibilityMap, setFogVisibilityMap] = useState(() => {
-        return staticVisibilityMap ? JSON.parse(JSON.stringify(staticVisibilityMap)) : null;
-    });
+    const [fogVisibilityMap, setFogVisibilityMap] = useState(null);
 
-    const { calculateVisibleCells } = useVisibilityCalc({
-        gameSession,
-        visibilityMap: staticVisibilityMap
+    const visibilityCalc = useVisibilityCalc({ 
+        gameSession, 
+        visibilityMap: staticVisibilityMap 
     });
 
     useEffect(() => {
-        setFogVisibilityMap(
-            staticVisibilityMap ? JSON.parse(JSON.stringify(staticVisibilityMap)) : null
-        );
+        if (!staticVisibilityMap) {
+            setFogVisibilityMap(null);
+        } else {
+            setFogVisibilityMap(JSON.parse(JSON.stringify(staticVisibilityMap)));
+        }
     }, [staticVisibilityMap]);
 
     useEffect(() => {
-        if (!gameSession?.heroes || !staticVisibilityMap) return;
+        if (!gameSession?.heroes || !visibilityCalc) return;
 
-        const heroInTurn = gameSession.heroes.find(
-            (h) => h.turnOrder === gameSession.currentTurn
-        );
-
+        const heroInTurn = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
+        
         if (heroInTurn) {
-            const visibleCells = calculateVisibleCells(heroInTurn.x, heroInTurn.y);
-
+            const visibleCells = visibilityCalc.calculateVisibleCells(heroInTurn.x, heroInTurn.y);
+            
             if (visibleCells && visibleCells.length > 0) {
-                setFogVisibilityMap((prevMap) => {
+                setFogVisibilityMap(prevMap => {
                     if (!prevMap || !prevMap.data) return prevMap;
-
+                    
                     let hasChanges = false;
-                    const newData = prevMap.data.map((cell) => {
-                        const isVisible = visibleCells.some(
-                            (vc) => vc.x === cell.x && vc.y === cell.y
-                        );
-
+                    const newData = prevMap.data.map(cell => {
+                        const isVisible = visibleCells.some(vc => vc.x === cell.x && vc.y === cell.y);
                         if (isVisible && cell.fog !== false) {
                             hasChanges = true;
                             return { ...cell, fog: false };
                         }
                         return cell;
                     });
-
+                    
                     return hasChanges ? { ...prevMap, data: newData } : prevMap;
                 });
             }
         }
-    }, [
-        gameSession?.heroes,
-        gameSession?.currentTurn,
-        staticVisibilityMap,
-        calculateVisibleCells
-    ]);
+    }, [gameSession?.heroes, gameSession?.currentTurn, visibilityCalc]);
 
-    return fogVisibilityMap;
+    const revealFromPoint = useCallback((x, y) => {
+        if (!visibilityCalc) return;
+        
+        const visibleCells = visibilityCalc.calculateVisibleCells(x, y);
+        
+        if (visibleCells && visibleCells.length > 0) {
+            setFogVisibilityMap(prevMap => {
+                if (!prevMap || !prevMap.data) return prevMap;
+                
+                let hasChanges = false;
+                const newData = prevMap.data.map(cell => {
+                    const isVisible = visibleCells.some(vc => vc.x === cell.x && vc.y === cell.y);
+                    if (isVisible && cell.fog !== false) {
+                        hasChanges = true;
+                        return { ...cell, fog: false };
+                    }
+                    return cell;
+                });
+                
+                return hasChanges ? { ...prevMap, data: newData } : prevMap;
+            });
+        }
+    }, [visibilityCalc]);
+
+    return {
+        fogVisibilityMap,
+        revealFromPoint
+    };
 }

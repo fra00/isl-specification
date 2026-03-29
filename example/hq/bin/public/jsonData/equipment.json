@@ -414,6 +414,7 @@
     "daddif": 0,
     "daddifex": 0,
     "numdadicontr": 4,
+    "targetMonster": "4,5,6",
     "doppioatt": false,
     "mosdoppio": -1,
     "puntimente": 0,

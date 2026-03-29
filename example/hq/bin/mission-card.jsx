@@ -8,98 +8,134 @@
 
 import React, { useCallback } from 'react';
 
-export default function MissionCard({ mission = {}, index = 0, status = 'LOCKED', onSelect }) {
-    const handleInteraction = useCallback(() => {
+export default function MissionCard({ 
+    mission = null, 
+    index = 0, 
+    status = 'LOCKED', 
+    onSelect = () => {} 
+}) {
+    const handleInteraction = useCallback((e) => {
+        if (e) {
+            e.preventDefault();
+        }
+        
+        if (!mission) {
+            return;
+        }
+        
         if (status === 'LOCKED') {
             return;
         }
-        if (typeof onSelect === 'function') {
-            onSelect(index);
-        }
-    }, [status, index, onSelect]);
+        
+        onSelect(index);
+    }, [mission, status, index, onSelect]);
 
-    const isLocked = status === 'LOCKED';
-    const isCompleted = status === 'COMPLETED';
-    const isAvailable = status === 'AVAILABLE';
-
-    let cardClasses = "p-5 rounded-xl shadow-md border-2 transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden ";
-    let icon = null;
-    let buttonLabel = "";
-    let buttonClasses = "mt-5 px-6 py-2 rounded-lg font-bold text-white transition-colors w-full ";
-    let titleClasses = "text-xl font-bold mt-3 ";
-    let subtitleClasses = "text-sm mt-1 font-medium ";
-
-    if (isCompleted) {
-        cardClasses += "border-green-500 bg-green-50 cursor-pointer hover:bg-green-100 hover:shadow-lg";
-        buttonClasses += "bg-green-600 hover:bg-green-700 shadow-sm";
-        titleClasses += "text-green-800";
-        subtitleClasses += "text-green-600";
-        buttonLabel = "Replay";
-        icon = (
-            <div className="p-3 bg-green-100 rounded-full">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
-        );
-    } else if (isAvailable) {
-        cardClasses += "border-yellow-400 bg-yellow-50 cursor-pointer hover:bg-yellow-100 shadow-lg transform hover:-translate-y-1";
-        buttonClasses += "bg-yellow-500 hover:bg-yellow-600 shadow-sm";
-        titleClasses += "text-yellow-800";
-        subtitleClasses += "text-yellow-600";
-        buttonLabel = "Start";
-        icon = (
-            <div className="p-3 bg-yellow-100 rounded-full">
-                <svg className="w-8 h-8 text-yellow-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-        );
-    } else {
-        cardClasses += "border-gray-300 bg-gray-100 opacity-60 cursor-not-allowed";
-        buttonClasses += "bg-gray-400 cursor-not-allowed";
-        titleClasses += "text-gray-600";
-        subtitleClasses += "text-gray-500";
-        buttonLabel = "Locked";
-        icon = (
-            <div className="p-3 bg-gray-200 rounded-full">
-                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-        );
+    if (!mission) {
+        return null;
     }
 
-    const displayOrder = mission?.ordine != null ? mission.ordine : index + 1;
-    const subtitle = `Mission ${displayOrder}`;
-    const title = mission?.titolo || "Unknown Mission";
+    const getThemeClasses = () => {
+        switch (status) {
+            case 'COMPLETED':
+                return 'border-green-500 bg-green-50 text-green-900 shadow-green-100';
+            case 'AVAILABLE':
+                return 'border-yellow-400 bg-yellow-50 text-yellow-900 shadow-yellow-100 cursor-pointer hover:shadow-lg hover:-translate-y-1';
+            case 'LOCKED':
+            default:
+                return 'border-gray-200 bg-gray-50 text-gray-500 opacity-60 cursor-not-allowed';
+        }
+    };
+
+    const getIcon = () => {
+        switch (status) {
+            case 'COMPLETED':
+                return (
+                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                );
+            case 'AVAILABLE':
+                return (
+                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
+                        <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
+            case 'LOCKED':
+            default:
+                return (
+                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-500">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                );
+        }
+    };
+
+    const getButtonLabel = () => {
+        switch (status) {
+            case 'COMPLETED': return 'Replay';
+            case 'AVAILABLE': return 'Start';
+            case 'LOCKED':
+            default: return 'Locked';
+        }
+    };
+
+    const getButtonClasses = () => {
+        switch (status) {
+            case 'COMPLETED':
+                return 'bg-green-600 hover:bg-green-700 text-white shadow-sm';
+            case 'AVAILABLE':
+                return 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-sm';
+            case 'LOCKED':
+            default:
+                return 'bg-gray-200 text-gray-400 cursor-not-allowed';
+        }
+    };
+
+    const subtitle = `Mission ${mission.ordine != null ? mission.ordine : (index + 1)}`;
 
     return (
         <div 
-            className={cardClasses} 
-            onClick={handleInteraction} 
-            role="button" 
-            tabIndex={isLocked ? -1 : 0}
-            aria-disabled={isLocked}
+            className={`flex flex-col p-5 rounded-xl shadow-md border-2 transition-all duration-300 ${getThemeClasses()}`}
+            onClick={handleInteraction}
+            role={status === 'LOCKED' ? 'presentation' : 'button'}
+            tabIndex={status === 'LOCKED' ? -1 : 0}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    handleInteraction(e);
+                }
+            }}
         >
-            {icon}
-            <h3 className={titleClasses}>
-                {title}
-            </h3>
-            <p className={subtitleClasses}>
-                {subtitle}
-            </p>
-            <button 
-                className={buttonClasses}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleInteraction();
-                }}
-                disabled={isLocked}
-            >
-                {buttonLabel}
-            </button>
+            <div className="flex items-start gap-4 mb-4">
+                {getIcon()}
+                <div className="flex-1 min-w-0 pt-1">
+                    <h3 className="text-lg font-bold leading-tight truncate" title={mission.titolo || 'Unknown Mission'}>
+                        {mission.titolo || 'Unknown Mission'}
+                    </h3>
+                    <p className="text-sm font-medium opacity-75 mt-1">
+                        {subtitle}
+                    </p>
+                </div>
+            </div>
+            
+            <div className="mt-auto pt-2">
+                <button 
+                    className={`w-full py-2.5 px-4 rounded-lg font-bold tracking-wide transition-colors duration-200 ${getButtonClasses()}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleInteraction(e);
+                    }}
+                    disabled={status === 'LOCKED'}
+                    aria-label={`${getButtonLabel()} ${mission.titolo || 'Mission'}`}
+                >
+                    {getButtonLabel()}
+                </button>
+            </div>
         </div>
     );
 }

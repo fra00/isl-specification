@@ -6,30 +6,27 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { PageNavigationEnum, NavigationStatus } from './domain-core';
-import { GameSession } from './domain-session';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
 import PlayGame from './play-game';
-import { PlayGame as EditorGame } from './editor-game';
+import EditorGame from './editor-game';
 import MainMenu from './main-menu';
 import Armory from './armory';
 import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
 export default function PageContent() {
-  const [navStatus, setNavStatus] = useState(() => 
-    NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU })
-  );
+  const [currentPageView, setCurrentPageView] = useState("");
   const [gameSession, setGameSession] = useState(null);
 
   useEffect(() => {
-    if (!navStatus?.currentPageView) {
-      setNavStatus(NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU }));
+    if (!currentPageView) {
+      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
     }
-  }, [navStatus?.currentPageView]);
+  }, [currentPageView]);
 
   const changePageView = useCallback((nextPageView) => {
-    setNavStatus(NavigationStatus({ currentPageView: nextPageView }));
+    setCurrentPageView(nextPageView);
   }, []);
 
   const updateSession = useCallback((session) => {
@@ -37,61 +34,57 @@ export default function PageContent() {
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission index: ${missionIndex}`);
+    console.log("Starting mission:", missionIndex);
   }, []);
 
   const renderPageView = () => {
-    switch (navStatus?.currentPageView) {
+    switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
-      
       case PageNavigationEnum.PLAY_GAME:
         return (
-          <PlayGame 
-            onChangePageView={changePageView} 
-            gameSession={gameSession} 
-            onUpdateSession={updateSession} 
+          <PlayGame
+            onChangePageView={changePageView}
+            gameSession={gameSession}
+            onUpdateSession={updateSession}
           />
         );
-      
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
-      
       case PageNavigationEnum.SHOP:
         return (
-          <Armory 
-            onChangePageView={changePageView} 
-            gameSession={gameSession} 
-            onUpdateSession={updateSession} 
+          <Armory
+            onChangePageView={changePageView}
+            gameSession={gameSession}
+            onUpdateSession={updateSession}
           />
         );
-      
       case PageNavigationEnum.DUNGEON:
         return (
-          <Dungeon 
-            onChangePageView={changePageView} 
-            gameSession={gameSession} 
-            onUpdateSession={updateSession} 
+          <Dungeon
+            onChangePageView={changePageView}
+            gameSession={gameSession}
+            onUpdateSession={updateSession}
           />
         );
-      
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
-          <DungeonDescription 
-            onChangePageView={changePageView} 
-            gameSession={gameSession} 
-            onUpdateSession={updateSession} 
+          <DungeonDescription
+            onChangePageView={changePageView}
+            gameSession={gameSession}
+            onUpdateSession={updateSession}
           />
         );
-      
       default:
-        return <MainMenu onChangePageView={changePageView} />;
+        return null;
     }
   };
 
   return (
-    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto">
-      {renderPageView()}
+    <div className="w-full h-screen bg-black overflow-hidden flex justify-center">
+      <div className="w-full md:w-2/3 h-full">
+        {renderPageView()}
+      </div>
     </div>
   );
 }

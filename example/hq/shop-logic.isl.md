@@ -44,8 +44,9 @@
 - **Flow**:
   - Clone the `session` object to avoid mutation.
   - Retrieve the `HeroState` at `heroIndex`.
-  - Create a new `HeroState` with:
+  - Create a new `HeroState` by spreading all current properties and updating:
     - `gold` = `currentGold` - `item.prezzo`.
-    - `equipment` = `currentEquipment` + `item.id`.
+    - `equipment` = `currentEquipment` + `item.id` (Added to backpack).
+  - 💡 **Note**: Do NOT update `equipped` list. In HeroQuest, items must be manually equipped from the inventory later.
   - Update the `session.heroes` list with the new `HeroState`.
   - Return the updated `session`.

@@ -18,13 +18,17 @@
 - `currentHero`: @HeroState (The hero currently taking their turn).
 - `movementPoints`: Integer (Current movement points available).
 - `turnPhase`: @TurnPhase (info about the current activity of the turn).
+- `canOpenDoor`: Boolean (Whether an adjacent door can be opened).
+- `isTargeting`: Boolean (Whether a spell targeting mode is active).
 - `isMoving`: Boolean (Whether the hero is currently animating movement).
 - `onRollMovement`: () -> void (Callback to roll for movement).
 - `onEndTurn`: () -> void (Callback to end the turn).
 - `onSearchPassages`: () -> void (Callback to search for secret passages).
 - `onSearchTreasure`: () -> void (Callback to search for treasure).
 - `onSearchTraps`: () -> void (Callback to search for traps).
+- `onOpenMagic`: () -> void (Callback to open magic selection).
 - `onOpenInventory`: () -> void (Callback to open inventory modal).
+- `onCancelTargeting`: () -> void (Callback to cancel spell targeting).
 
 ### 🔍 Appearance
 
@@ -53,21 +57,33 @@
     - OnClick: Trigger `onOpenInventory`.
 - **Action Buttons**:
   - **Roll Movement**:
-    - Diabled IF `turnPhase.hasMoved` is true.
+    - Disabled IF `turnPhase.HasMoved` is true OR `movementPoints` is NOT null.
     - Style: Blue primary button.
     - OnClick: Trigger `onRollMovement`.
   - **Search Passages**:
-    - Disabled IF `turnPhase.hasPerformedAction` is true.
+    - Disabled IF `turnPhase.HasPerformedAction` is true.
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchPassages`.
   - **Search Treasure**:
-    - Disabled IF `turnPhase.hasPerformedAction` is true.
+    - Disabled IF `turnPhase.HasPerformedAction` is true.
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchTreasure`.
   - **Search Trap**:
-    - Disabled IF `turnPhase.hasPerformedAction` is true.
+    - Disabled IF `turnPhase.HasPerformedAction` is true.
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchTraps`.
+  - **Magic**:
+    - Disabled IF `turnPhase.HasPerformedAction` is true OR `currentHero.availableSpells` is empty.
+    - Style: Purple/Indigo button.
+    - OnClick: Trigger `onOpenMagic`.
+  - **Cancel Targeting**:
+    - Visible IF `isTargeting` is true.
+    - Style: Gray/Neutral secondary button.
+    - OnClick: Trigger `onCancelTargeting`.
+  - **Open Door**:
+    - Visible IF `canOpenDoor` is true.
+    - Style: Green success button.
+    - OnClick: Trigger `onOpenDoor`.
   - **End Turn**:
     - Style: Red danger button.
     - OnClick: Trigger `onEndTurn`.

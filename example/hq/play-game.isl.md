@@ -11,9 +11,11 @@
 > **Reference**: Campaign, Mission in `./domain-map.isl.md`
 > **Reference**: MapDefinition in `./domain-map.isl.md`
 > **Reference**: Hero in `./domain-ruleset.isl.md`
+> **Reference**: Equipment in `./domain-ruleset.isl.md`
 > **Reference**: GameSession in `./domain-session.isl.md`
 > **Reference**: HeroState in `./domain-session.isl.md`
 > **Reference**: DungeonDescription in `./dungeon-description.isl.md`
+> **Reference**: @useCampaignManager in `./dungeon-use-campaign-manager.isl.md`
 
 ## Component: PlayGame
 
@@ -41,7 +43,7 @@
 - **Mission List**: Iterates over `missioni`.
   - **Mission Item**:
     - Title: `titolo`.
-    - Status Indicator: (e.g., Checkmark for completed, Lock icon for locked).
+    - Status Indicator: Determine based on `index` vs `maxUnlockedMissionIndex`.
 - **Dungeon Description**: Visible only when a mission is selected.
   - **Props**:
     - `description`: `currentMap.header.descrizione`.
@@ -53,7 +55,9 @@
 
 - `statsHeroes`
 - `campaign`
+- `maxUnlockedMissionIndex`: Integer (Highest mission index accessible).
 - `gameSession`
+- `campaignManager`: @useCampaignManager
 
 #### initSession
 
@@ -62,34 +66,49 @@
 - **Flow**:
   - Fetch data from `/jsonData/campagne.json`.
   - Parse response into @Campaign structure.
-  - Ignore data with x or y equals to 0. The data aren't zero based.
+  - Ignore any data where x or y is 0. 💡 Note: This is MANDATORY as grid coordinates are strictly 1-indexed (1 to 26).
   - Store in local state `campaign`.
   - Handle fetch errors (e.g., log to console).
   - Fetch data from `/jsonData/heroes.json`.
   - Parse response into List<@Hero> structure
   - Store in local state `statsHeroes`.
+  - Fetch data from `/jsonData/equipment.json`.
+  - Parse response into List<@Equipment> (`equipmentList`).
+  - **Campaign Check**:
+    - Let `savedData` = `campaignManager.loadCampaign()`.
+    - IF `savedData` is NOT null:
+      - Set `maxUnlockedMissionIndex` to `savedData.nextMissionIndex`.
+    - ELSE (Create Default Campaign):
+      - Create `defaultHeroes` list by mapping `statsHeroes` to `HeroState`:
+        - `heroId`: `Hero.id`.
+        - `currentBody`: `Hero.corpo`.
+        - `currentMind`: `Hero.mente`.
+        - `gold`: 0.
+        - `inventory`: [].
+        - Let `initialEquipment` = List of IDs found in `equipmentList` matching:
+          - IF `Hero.classe` == "Barbaro": ID = 13 for "Spadone".
+          - IF `Hero.classe` == "Nano": ID = 2 for "Ascia".
+          - IF `Hero.classe` == "Elfo": ID = 12 for "Spadino".
+          - IF `Hero.classe` == "Mago": ID = 4 for "Bastone".
+        - `equipment`: `initialEquipment`.
+        - `equipped`: `initialEquipment`.
+      - Call `campaignManager.saveCampaign(defaultHeroes, 0)`.
+      - Set `maxUnlockedMissionIndex` to 0.
 
 #### selectMission
 
 - **Contract**: Loads the selected mission map, updates the session
 - **Signature**: `(index: Integer)`
 - **Flow**:
+  - Let `savedData` = `campaignManager.loadCampaign()`.
   - Determine `maxAccessibleIndex`:
-    - IF `gameSession` is present THEN `gameSession.currentMissionIndex`.
-    - ELSE `0` (Start from the first mission).
-  - IF `index` <= `maxAccessibleIndex` THEN:
+    - `maxUnlockedMissionIndex` (initialized in `initSession`).
+  - IF `index` <= `maxAccessibleIndex` AND `savedData` is NOT null THEN:
     - Identify the mission file from `campaign.missioni[index].file`.
     - Fetch map data from `/jsonData/map/[filename]` (extension is included in the filename).
     - Parse into @MapDefinition.
     - Create or Update @GameSession:
-      - Create `heroes` list by mapping `statsHeroes` to `HeroState`:
-        - `heroId`: `Hero.id`
-        - `currentBody`: `Hero.corpo`
-        - `currentMind`: `Hero.mente`
-        - `gold`: 500
-        - `inventory`: []
-        - `equipment`: []
-        - `hero`: current `heroes` stats
+      - Set `heroes` to `savedData.heroes`.
       - Set `currentMap` to the loaded map.
       - Set `currentMissionIndex` to `index`.
     - Trigger `onUpdateSession(updatedSession)`.

@@ -10,176 +10,170 @@ import { useState, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useTreasureSearch({
-  gameSession,
-  visibilityMap,
-  onNotify,
-  onActionDone,
-  onUpdateSession,
-  onTreasureCardDrawn
+    gameSession,
+    visibilityMap,
+    onNotify,
+    onActionDone,
+    onUpdateSession,
+    onTreasureCardDrawn,
+    onWanderingMonster
 }) {
-  const [foundTreasures, setFoundTreasures] = useState([]);
-  const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
+    const [foundTreasures, setFoundTreasures] = useState([]);
 
-  const searchTreasure = useCallback(() => {
-    if (!gameSession) return;
+    const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
-    if (gameSession.monsters && gameSession.monsters.length > 0) {
-      if (onNotify) onNotify("Non puoi cercare tesori con mostri vicini!");
-      return;
-    }
+    const searchTreasure = useCallback(() => {
+        if (!gameSession) return;
 
-    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-    if (!currentHero) return;
-
-    const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
-    let treasureFound = false;
-
-    for (const cell of visibleCells) {
-      const mapCell = gameSession.currentMap?.grid?.find(c => c.x === cell.x && c.y === cell.y);
-      
-      if (mapCell && mapCell.tes) {
-        const { mon = 0, ogg = 0, arma = 0, trp = 0 } = mapCell.tes;
-        
-        if (mon !== 0 || ogg !== 0 || arma !== 0 || trp !== 0) {
-          const alreadyFound = foundTreasures.some(t => t.x === mapCell.x && t.y === mapCell.y);
-          
-          if (!alreadyFound) {
-            treasureFound = true;
-            setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
-
-            const heroToUpdate = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-            
-            if (heroToUpdate) {
-              const notificationParts = [];
-              
-              const updatedHeroes = gameSession.heroes.map(h => {
-                if (h.turnOrder === gameSession.currentTurn) {
-                  const newHero = { ...h, inventory: [...(h.inventory || [])] };
-                  
-                  if (mon > 0) {
-                    newHero.gold = (newHero.gold || 0) + mon;
-                    notificationParts.push(`Hai trovato ${mon} monete d'oro!`);
-                  }
-                  if (ogg > 0) {
-                    newHero.inventory.push(ogg);
-                    notificationParts.push("Hai trovato un oggetto!");
-                  }
-                  if (arma > 0) {
-                    newHero.inventory.push(arma);
-                    notificationParts.push("Hai trovato un'arma!");
-                  }
-                  if (trp > 0) {
-                    newHero.currentBody = (newHero.currentBody || 0) - trp;
-                    notificationParts.push(`È una trappola! Subisci ${trp} danni.`);
-                  }
-                  
-                  return newHero;
-                }
-                return h;
-              });
-
-              if (onNotify && notificationParts.length > 0) {
-                onNotify(notificationParts.join('\n'));
-              }
-
-              const updatedGrid = gameSession.currentMap.grid.map(c => {
-                if (c.x === mapCell.x && c.y === mapCell.y) {
-                  return { ...c, tes: { mon: 0, ogg: 0, arma: 0, trp: 0 } };
-                }
-                return c;
-              });
-
-              const updatedSession = {
-                ...gameSession,
-                heroes: updatedHeroes,
-                currentMap: {
-                  ...gameSession.currentMap,
-                  grid: updatedGrid
-                }
-              };
-
-              if (onUpdateSession) onUpdateSession(updatedSession);
-            }
-            break;
-          }
+        if (gameSession.monsters && gameSession.monsters.length > 0) {
+            if (onNotify) onNotify("Non puoi cercare tesori con mostri vicini!");
+            return;
         }
-      }
-    }
 
-    if (!treasureFound) {
-      if (gameSession.treasureDeck && gameSession.treasureDeck.length > 0) {
-        const drawnCard = gameSession.treasureDeck[0];
-        const updatedDeck = gameSession.treasureDeck.slice(1);
-        
-        const updatedSession = {
-          ...gameSession,
-          treasureDeck: updatedDeck
+        const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+        if (!currentHero) return;
+
+        const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y) || [];
+        let treasureFound = false;
+
+        for (const cell of visibleCells) {
+            const mapCellIndex = gameSession.currentMap?.grid?.findIndex(c => c.x === cell.x && c.y === cell.y);
+            
+            if (mapCellIndex != null && mapCellIndex >= 0) {
+                const mapCell = gameSession.currentMap.grid[mapCellIndex];
+                const tes = mapCell?.tes;
+
+                if (tes && (tes.mon !== 0 || tes.ogg !== 0 || tes.arma !== 0 || tes.trp !== 0)) {
+                    const alreadyFound = foundTreasures.some(t => t.x === mapCell.x && t.y === mapCell.y);
+                    
+                    if (!alreadyFound) {
+                        treasureFound = true;
+
+                        setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
+
+                        const newSession = {
+                            ...gameSession,
+                            heroes: gameSession.heroes.map(h =>
+                                h.turnOrder === gameSession.currentTurn
+                                    ? {
+                                        ...h,
+                                        inventory: [...(h.inventory || [])],
+                                        equipment: [...(h.equipment || [])]
+                                    }
+                                    : h
+                            ),
+                            currentMap: {
+                                ...gameSession.currentMap,
+                                grid: [...gameSession.currentMap.grid]
+                            }
+                        };
+
+                        const newHero = newSession.heroes.find(h => h.turnOrder === newSession.currentTurn);
+                        const notificationParts = [];
+
+                        if (tes.mon > 0) {
+                            newHero.gold = (newHero.gold || 0) + tes.mon;
+                            notificationParts.push(`Hai trovato ${tes.mon} monete d'oro!`);
+                        }
+                        if (tes.ogg > 0) {
+                            newHero.inventory.push(tes.ogg);
+                            notificationParts.push("Hai trovato un oggetto!");
+                        }
+                        if (tes.arma > 0) {
+                            newHero.equipment.push(tes.arma);
+                            notificationParts.push("Hai trovato un'arma!");
+                        }
+                        if (tes.trp > 0) {
+                            newHero.currentBody = (newHero.currentBody || 0) - tes.trp;
+                            notificationParts.push(`È una trappola! Subisci ${tes.trp} danni.`);
+                        }
+
+                        if (onNotify && notificationParts.length > 0) {
+                            onNotify(notificationParts.join('\n'));
+                        }
+
+                        newSession.currentMap.grid[mapCellIndex] = {
+                            ...mapCell,
+                            tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }
+                        };
+
+                        if (onUpdateSession) onUpdateSession(newSession);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!treasureFound) {
+            if (gameSession.treasureDeck && gameSession.treasureDeck.length > 0) {
+                const newDeck = [...gameSession.treasureDeck];
+                const drawnCard = newDeck.shift();
+
+                if (onTreasureCardDrawn) onTreasureCardDrawn(drawnCard);
+
+                const newSession = {
+                    ...gameSession,
+                    treasureDeck: newDeck
+                };
+                
+                if (onUpdateSession) onUpdateSession(newSession);
+            } else {
+                if (onNotify) onNotify("Nessuna carta tesoro rimasta.");
+            }
+        }
+
+        if (onActionDone) onActionDone();
+
+    }, [gameSession, visibilityCalc, foundTreasures, onNotify, onUpdateSession, onTreasureCardDrawn, onActionDone]);
+
+    const applyTreasureEffect = useCallback((card) => {
+        if (!gameSession || !card) return;
+
+        const currentHeroIndex = gameSession.heroes?.findIndex(h => h.turnOrder === gameSession.currentTurn);
+        if (currentHeroIndex == null || currentHeroIndex < 0) return;
+
+        const newSession = {
+            ...gameSession,
+            heroes: gameSession.heroes.map((h, idx) =>
+                idx === currentHeroIndex
+                    ? { ...h, inventory: [...(h.inventory || [])] }
+                    : h
+            )
         };
 
-        if (onTreasureCardDrawn) onTreasureCardDrawn(drawnCard);
-        if (onUpdateSession) onUpdateSession(updatedSession);
-      } else {
-        if (onNotify) onNotify("Nessuna carta tesoro rimasta.");
-      }
-    }
+        const newHero = newSession.heroes[currentHeroIndex];
 
-    if (onActionDone) onActionDone();
-  }, [gameSession, calculateVisibleCells, foundTreasures, onNotify, onUpdateSession, onTreasureCardDrawn, onActionDone]);
-
-  const applyTreasureEffect = useCallback((card) => {
-    if (!gameSession || !card) return;
-
-    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-    if (currentHero) {
-      const updatedHeroes = gameSession.heroes.map(h => {
-        if (h.turnOrder === gameSession.currentTurn) {
-          const newHero = { ...h, inventory: [...(h.inventory || [])] };
-          
-          switch (card.azione) {
+        switch (card.azione) {
             case "aggiungi_oro":
-              newHero.gold = (newHero.gold || 0) + (card.valore || 0);
-              if (onNotify) onNotify(`Hai trovato ${card.valore} monete d'oro!`);
-              break;
+                newHero.gold = (newHero.gold || 0) + (card.valore || 0);
+                if (onNotify) onNotify(`Hai trovato ${card.valore} monete d'oro!`);
+                break;
             case "aggiungi_oggetto":
-              newHero.inventory.push(card.valore);
-              if (onNotify) onNotify(`Hai trovato un oggetto: ${card.valore}`);
-              break;
+                newHero.inventory.push(card.valore);
+                if (onNotify) onNotify(`Hai trovato un oggetto: ${card.valore}`);
+                break;
             case "modifica_hp":
-              newHero.currentBody = (newHero.currentBody || 0) + (card.valore || 0);
-              if (onNotify) onNotify("Punti Corpo modificati!");
-              break;
+                newHero.currentBody = (newHero.currentBody || 0) + (card.valore || 0);
+                if (onNotify) onNotify("Punti Corpo modificati!");
+                break;
             case "trappola_e_fine":
-              newHero.currentBody = (newHero.currentBody || 0) + (card.valore || 0);
-              if (onNotify) onNotify("Trappola! Subisci danni.");
-              break;
+                newHero.currentBody = (newHero.currentBody || 0) + (card.valore || 0);
+                if (onNotify) onNotify("Trappola! Subisci danni.");
+                break;
             case "mostro_errante":
-              if (onNotify) onNotify("Mostro Errante! (TODO)");
-              break;
+                if (onWanderingMonster) onWanderingMonster(newHero.x, newHero.y);
+                break;
             default:
-              break;
-          }
-          return newHero;
+                break;
         }
-        return h;
-      });
 
-      const updatedSession = {
-        ...gameSession,
-        heroes: updatedHeroes
-      };
+        if (onUpdateSession) onUpdateSession(newSession);
 
-      if (onUpdateSession) onUpdateSession(updatedSession);
-    }
-  }, [gameSession, onNotify, onUpdateSession]);
+    }, [gameSession, onNotify, onUpdateSession, onWanderingMonster]);
 
-  const getFoundTreasures = useCallback(() => {
-    return foundTreasures;
-  }, [foundTreasures]);
-
-  return {
-    foundTreasures,
-    searchTreasure,
-    getFoundTreasures,
-    applyTreasureEffect
-  };
+    return {
+        foundTreasures,
+        searchTreasure,
+        applyTreasureEffect
+    };
 }

@@ -7,26 +7,29 @@
  */
 
 import { useCallback } from 'react';
-import { GameSession, HeroState, MonsterState } from './domain-session';
 
 export function useItemLogic({ staticItems = [], onUpdateSession, onNotify }) {
   const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
     if (!gameSession || !gameSession.heroes) return;
 
-    const heroIndex = gameSession.heroes.findIndex(h => h.heroId === heroId);
-    const itemDef = staticItems.find(i => i.id === itemId);
-
-    if (heroIndex === -1 || !itemDef) return;
-
+    // Find hero
+    const heroIndex = gameSession.heroes.findIndex((h) => h.heroId === heroId);
+    if (heroIndex === -1) return;
     const hero = gameSession.heroes[heroIndex];
-    const inventoryIndex = hero.inventory?.indexOf(itemId);
 
+    // Find item definition
+    const itemDef = staticItems.find((i) => i.id === itemId);
+    if (!itemDef) return;
+
+    // Check inventory
+    const inventoryIndex = hero.inventory?.indexOf(itemId);
     if (inventoryIndex == null || inventoryIndex === -1) return;
 
-    // Clone entities for immutability
-    let updatedHero = { ...hero };
-    let updatedMonsters = [...(gameSession.monsters || [])];
-    let updatedInventory = [...(hero.inventory || [])];
+    // Immutability: clone the session and the specific hero
+    const updatedSession = { ...gameSession };
+    updatedSession.heroes = [...gameSession.heroes];
+    const updatedHero = { ...hero };
+    updatedHero.inventory = [...(hero.inventory || [])];
 
     // Apply Effects
     if (itemDef.hp != null && itemDef.hp !== 0) {
@@ -45,13 +48,15 @@ export function useItemLogic({ staticItems = [], onUpdateSession, onNotify }) {
 
     // Handle Special Items
     if (itemDef.acqua) {
-      if (targetMonsterId != null) {
-        const monsterIndex = updatedMonsters.findIndex(m => m.id === targetMonsterId);
-        if (monsterIndex !== -1) {
-          const targetMonster = updatedMonsters[monsterIndex];
+      if (targetMonsterId !== null) {
+        const monsterIndex = updatedSession.monsters?.findIndex((m) => m.id === targetMonsterId);
+        if (monsterIndex != null && monsterIndex !== -1) {
+          const targetMonster = updatedSession.monsters[monsterIndex];
           
           if (targetMonster.monster?.nonmorto) {
-            let updatedMonster = { ...targetMonster };
+            const updatedMonsters = [...(updatedSession.monsters || [])];
+            const updatedMonster = { ...targetMonster };
+            
             const damage = itemDef.danni || 0;
             updatedMonster.currentBody -= damage;
             
@@ -62,8 +67,9 @@ export function useItemLogic({ staticItems = [], onUpdateSession, onNotify }) {
             if (updatedMonster.currentBody <= 0) {
               updatedMonsters.splice(monsterIndex, 1);
             } else {
-              updatedMonsters[monsterIndex] = MonsterState(updatedMonster);
+              updatedMonsters[monsterIndex] = updatedMonster;
             }
+            updatedSession.monsters = updatedMonsters;
           } else {
             if (onNotify) {
               onNotify("L'Acqua Santa non ha effetto su questa creatura.");
@@ -78,28 +84,18 @@ export function useItemLogic({ staticItems = [], onUpdateSession, onNotify }) {
     }
 
     // Inventory Management
-    updatedInventory.splice(inventoryIndex, 1);
-    updatedHero.inventory = updatedInventory;
+    updatedHero.inventory.splice(inventoryIndex, 1);
+    updatedSession.heroes[heroIndex] = updatedHero;
 
     // Feedback
     if (onNotify) {
       onNotify("Hai usato " + itemDef.nome + "!");
     }
 
-    // Update Session
-    const updatedHeroes = [...gameSession.heroes];
-    updatedHeroes[heroIndex] = HeroState(updatedHero);
-
-    const updatedSession = GameSession({
-      ...gameSession,
-      heroes: updatedHeroes,
-      monsters: updatedMonsters
-    });
-
+    // Update
     if (onUpdateSession) {
       onUpdateSession(updatedSession);
     }
-
   }, [staticItems, onUpdateSession, onNotify]);
 
   return { useItem };

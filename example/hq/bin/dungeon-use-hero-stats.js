@@ -6,160 +6,152 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback } from 'react';
 
-export function useHeroStats({ staticEquipment = [] } = {}) {
-    const equipmentRef = useRef(staticEquipment);
+export const useHeroStats = ({ staticEquipment = [] }) => {
+  const calculateStats = useCallback((heroState) => {
+    if (!heroState || !heroState.hero) return null;
 
-    useEffect(() => {
-        equipmentRef.current = staticEquipment;
-    }, [staticEquipment]);
-
-    const calculateStats = useCallback((heroState) => {
-        const defaultStats = {
-            attacco: 0,
-            difesa: 0,
-            movimento: 0,
-            mente: 0,
-            corpo: 0,
-            canAttackDiagonal: false,
-            canAttackRanged: false,
-            canDisarmTraps: false,
-            hasDoubleAttack: false
-        };
-
-        if (!heroState || !heroState.hero) {
-            return defaultStats;
-        }
-
-        const hero = heroState.hero;
-        const stats = {
-            attacco: hero.attacco || 0,
-            difesa: hero.difesa || 0,
-            movimento: hero.movimento || 0,
-            mente: hero.mente || 0,
-            corpo: hero.corpo || 0,
-            canAttackDiagonal: false,
-            canAttackRanged: false,
-            canDisarmTraps: false,
-            hasDoubleAttack: false
-        };
-
-        const equippedIds = heroState.equipped || [];
-        const equippedItems = equipmentRef.current.filter(item => equippedIds.includes(item.id));
-
-        equippedItems.forEach(item => {
-            if (item.dadatt != null && item.dadatt > 0) {
-                stats.attacco = item.dadatt;
-            }
-            if (item.daddif != null && item.daddif > 0) {
-                stats.difesa += item.daddif;
-            }
-            if (item.daddifex != null && item.daddifex > 0) {
-                stats.difesa += item.daddifex;
-            }
-            if (item.movim != null) {
-                stats.movimento += item.movim;
-            }
-            if (item.puntimente != null) {
-                stats.mente += item.puntimente;
-            }
-            if (item.diago) {
-                stats.canAttackDiagonal = true;
-            }
-            if (item.tiro || item.tirounavo) {
-                stats.canAttackRanged = true;
-            }
-            if (item.disinnesc) {
-                stats.canDisarmTraps = true;
-            }
-            if (item.doppioatt) {
-                stats.hasDoubleAttack = true;
-            }
-        });
-
-        const activeStatus = heroState.activeStatus || [];
-        if (activeStatus.includes("RockSkin")) {
-            stats.difesa += 1;
-        }
-        if (activeStatus.includes("Courage")) {
-            stats.attacco += 2;
-        }
-
-        return stats;
-    }, []);
-
-    const calculateAttackDice = useCallback((heroState, monster) => {
-        if (!heroState || !monster) return 0;
-
-        const baseStats = calculateStats(heroState);
-        let dice = baseStats.attacco;
-
-        const equippedIds = heroState.equipped || [];
-        const equippedItems = equipmentRef.current.filter(item => equippedIds.includes(item.id));
-
-        equippedItems.forEach(item => {
-            if (item.numdadicontr != null && item.numdadicontr > 0 && item.targetMonster != null) {
-                let isTarget = false;
-                
-                if (typeof item.targetMonster === 'number' && item.targetMonster === monster.id) {
-                    isTarget = true;
-                } else if (typeof item.targetMonster === 'string') {
-                    const targets = item.targetMonster.split(',');
-                    if (targets.includes(String(monster.id))) {
-                        isTarget = true;
-                    }
-                }
-
-                if (isTarget) {
-                    dice = item.numdadicontr;
-                }
-            }
-        });
-
-        return dice;
-    }, [calculateStats]);
-
-    const canAttackTwice = useCallback((heroState, monster) => {
-        if (!heroState || !monster) return false;
-
-        const equippedIds = heroState.equipped || [];
-        const equippedItems = equipmentRef.current.filter(item => equippedIds.includes(item.id));
-
-        for (const item of equippedItems) {
-            if (item.doppioatt) {
-                if (item.mosdoppio != null && item.mosdoppio > 0) {
-                    if (item.mosdoppio === monster.id) {
-                        return true;
-                    }
-                } else {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }, []);
-
-    const getConsumableWeaponId = useCallback((heroState) => {
-        if (!heroState) return null;
-
-        const equippedIds = heroState.equipped || [];
-        const equippedItems = equipmentRef.current.filter(item => equippedIds.includes(item.id));
-
-        for (const item of equippedItems) {
-            if (item.tirounavo) {
-                return item.id;
-            }
-        }
-
-        return null;
-    }, []);
-
-    return {
-        calculateStats,
-        calculateAttackDice,
-        canAttackTwice,
-        getConsumableWeaponId
+    const hero = heroState.hero;
+    const stats = {
+      attacco: hero.attacco || 0,
+      difesa: hero.difesa || 0,
+      movimento: hero.movimento || 0,
+      mente: hero.mente || 0,
+      corpo: hero.corpo || 0,
+      canAttackDiagonal: false,
+      canAttackRanged: false,
+      canDisarmTraps: false,
+      hasDoubleAttack: false
     };
-}
+
+    const equippedIds = heroState.equipped || [];
+    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+
+    equippedItems.forEach(item => {
+      if (item.dadatt != null && item.dadatt > 0) {
+        stats.attacco = item.dadatt;
+      }
+      
+      if (item.daddif != null && item.daddif > 0) {
+        stats.difesa += item.daddif;
+      }
+      
+      if (item.daddifex != null && item.daddifex > 0) {
+        stats.difesa += item.daddifex;
+      }
+      
+      if (item.movim != null) {
+        stats.movimento += item.movim;
+      }
+      
+      if (item.puntimente != null) {
+        stats.mente += item.puntimente;
+      }
+      
+      if (item.diago) {
+        stats.canAttackDiagonal = true;
+      }
+      
+      if (item.tiro || item.tirounavo) {
+        stats.canAttackRanged = true;
+      }
+      
+      if (item.disinnesc) {
+        stats.canDisarmTraps = true;
+      }
+      
+      if (item.doppioatt) {
+        stats.hasDoubleAttack = true;
+      }
+    });
+
+    const activeStatus = heroState.activeStatus || [];
+    if (activeStatus.includes("RockSkin")) {
+      stats.difesa += 1;
+    }
+    if (activeStatus.includes("Courage")) {
+      stats.attacco += 2;
+    }
+
+    return stats;
+  }, [staticEquipment]);
+
+  const calculateAttackDice = useCallback((heroState, monster) => {
+    if (!heroState || !monster) return 0;
+
+    const baseStats = calculateStats(heroState);
+    if (!baseStats) return 0;
+
+    let dice = baseStats.attacco;
+
+    const equippedIds = heroState.equipped || [];
+    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+
+    equippedItems.forEach(item => {
+      if (item.numdadicontr != null && item.numdadicontr > 0 && item.targetMonster != null) {
+        let isTarget = false;
+        
+        if (typeof item.targetMonster === 'number' && item.targetMonster === monster.id) {
+          isTarget = true;
+        } else if (typeof item.targetMonster === 'string') {
+          const targets = item.targetMonster.split(',');
+          if (targets.includes(String(monster.id))) {
+            isTarget = true;
+          }
+        }
+
+        if (isTarget) {
+          dice = item.numdadicontr;
+        }
+      }
+    });
+
+    return dice;
+  }, [calculateStats, staticEquipment]);
+
+  const canAttackTwice = useCallback((heroState, monster) => {
+    if (!heroState || !monster) return false;
+
+    const equippedIds = heroState.equipped || [];
+    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+
+    for (let i = 0; i < equippedItems.length; i++) {
+      const item = equippedItems[i];
+      if (item.doppioatt) {
+        if (item.mosdoppio != null && item.mosdoppio > 0) {
+          if (item.mosdoppio === monster.id) {
+            return true;
+          }
+        } else {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }, [staticEquipment]);
+
+  const getConsumableWeaponId = useCallback((heroState) => {
+    if (!heroState) return null;
+
+    const equippedIds = heroState.equipped || [];
+    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+
+    for (let i = 0; i < equippedItems.length; i++) {
+      const item = equippedItems[i];
+      if (item.tirounavo) {
+        return item.id;
+      }
+    }
+
+    return null;
+  }, [staticEquipment]);
+
+  return {
+    calculateStats,
+    calculateAttackDice,
+    canAttackTwice,
+    getConsumableWeaponId
+  };
+};

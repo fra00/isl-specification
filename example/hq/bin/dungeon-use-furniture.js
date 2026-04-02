@@ -6,24 +6,30 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useMemo } from "react";
 
-export const useDungeonFurniture = ({ gameSession, boardVisibilityMap } = {}) => {
-  const visibleFurniture = useCallback(() => {
+export function useDungeonFurniture({ gameSession, boardVisibilityMap } = {}) {
+  const visibleFurniture = useMemo(() => {
     if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
       return [];
     }
 
     const visibleItems = [];
 
-    for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
-      const mapCell = gameSession.currentMap.grid[i];
-      
-      const visibilityCell = boardVisibilityMap.data.find(
-        (cell) => cell.x === mapCell.x && cell.y === mapCell.y
-      );
+    // Create a lookup map for faster visibility cell retrieval (O(1) access)
+    const visibilityLookup = new Map();
+    for (const cell of boardVisibilityMap.data) {
+      if (cell != null) {
+        visibilityLookup.set(`${cell.x},${cell.y}`, cell);
+      }
+    }
 
-      if (visibilityCell && visibilityCell.fog === false) {
+    for (const mapCell of gameSession.currentMap.grid) {
+      if (!mapCell) continue;
+
+      const visCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+
+      if (visCell && visCell.fog === false) {
         if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
           visibleItems.push({
             x: mapCell.x,
@@ -34,7 +40,7 @@ export const useDungeonFurniture = ({ gameSession, boardVisibilityMap } = {}) =>
           visibleItems.push({
             x: mapCell.x,
             y: mapCell.y,
-            img: mapCell.mobili.img
+            img: mapCell.mobili?.img
           });
         }
       }
@@ -46,4 +52,4 @@ export const useDungeonFurniture = ({ gameSession, boardVisibilityMap } = {}) =>
   return {
     visibleFurniture
   };
-};
+}

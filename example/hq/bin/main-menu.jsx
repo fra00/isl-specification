@@ -10,40 +10,46 @@ import React, { useState, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
 export default function MainMenu({ onChangePageView = () => {} }) {
-  const [hoveredImage, setHoveredImage] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [hoverImage, setHoverImage] = useState(null);
 
   const menuItems = [
     {
-      id: 'play',
       label: 'Gioca',
       destination: PageNavigationEnum.PLAY_GAME,
-      image: '/img/main-menu/nuova.jpg'
+      hoverImg: '/img/main-menu/nuova.jpg',
     },
     {
-      id: 'editor',
       label: 'Editor',
       destination: PageNavigationEnum.EDITOR_GAME,
-      image: '/img/main-menu/editor.jpg'
-    }
+      hoverImg: '/img/main-menu/editor.jpg',
+    },
   ];
 
-  const handleClick = useCallback((destination) => {
-    if (typeof onChangePageView === 'function') {
-      onChangePageView(destination);
-    }
-  }, [onChangePageView]);
+  const clickMenuItems = useCallback(
+    (destination) => {
+      if (!isProcessing) {
+        setIsProcessing(true);
+        try {
+          onChangePageView(destination);
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    },
+    [isProcessing, onChangePageView]
+  );
 
-  const handleMouseEnter = useCallback((image) => {
-    setHoveredImage(image);
+  const mouseOverMenuItems = useCallback((imgUrl) => {
+    setHoverImage(imgUrl);
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
-    setHoveredImage(null);
+  const mouseLeaveMenuItems = useCallback(() => {
+    setHoverImage(null);
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
-      {/* CSS per l'animazione zoom-parallax continua */}
+    <div className="relative w-full h-screen overflow-hidden bg-black flex items-center justify-center">
       <style>{`
         @keyframes zoomParallax {
           0% { transform: scale(1); }
@@ -54,29 +60,28 @@ export default function MainMenu({ onChangePageView = () => {} }) {
         }
       `}</style>
 
-      {/* Background Image con animazione */}
-      <div
-        className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax z-0"
-      />
+      {/* Background Layer */}
+      <div className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax" />
 
-      {/* MouseOverImage - Riquadro per visualizzazione immagine */}
-      {hoveredImage && (
+      {/* MouseOverImage Layer */}
+      {hoverImage && (
         <img
-          src={hoveredImage}
+          src={hoverImage}
           alt="Menu Preview"
-          className="absolute top-0 right-0 h-[30%] w-auto border-none object-contain z-20 pointer-events-none shadow-2xl"
+          className="absolute top-0 right-0 h-[30%] w-auto object-contain border-none z-20 pointer-events-none"
         />
       )}
 
-      {/* Contenuto Voci di Menu */}
-      <div className="relative z-10 flex flex-col items-center gap-8">
+      {/* Content Layer */}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-8">
         {menuItems.map((item) => (
           <button
-            key={item.id}
-            onClick={() => handleClick(item.destination)}
-            onMouseEnter={() => handleMouseEnter(item.image)}
-            onMouseLeave={handleMouseLeave}
-            className="bg-transparent font-bold text-white text-6xl tracking-widest blur-[4px] hover:blur-none transition-all duration-500 ease-in-out cursor-pointer border-none outline-none"
+            key={item.destination}
+            onClick={() => clickMenuItems(item.destination)}
+            onMouseEnter={() => mouseOverMenuItems(item.hoverImg)}
+            onMouseLeave={mouseLeaveMenuItems}
+            disabled={isProcessing}
+            className="bg-transparent font-bold text-5xl text-white blur-[4px] hover:blur-none transition-all duration-500 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {item.label}
           </button>

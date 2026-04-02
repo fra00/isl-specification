@@ -44,7 +44,7 @@
 #### initialize
 
 - **Flow**:
-  - Identify Wizard in `heroes` -> Set as `currentHeroPicking`.
+  - Identify Wizard in `heroes`. IF found, set as `currentHeroPicking`. ELSE, set `currentHeroPicking` to null and display 'Nessun mago disponibile'.
   - Set `pickedElements` to empty.
 
 #### selectElement

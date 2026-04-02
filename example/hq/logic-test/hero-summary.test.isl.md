@@ -1,43 +1,58 @@
 <!-- LOGIC TEST SCENARIOS FOR: hero-summary.isl.md -->
 
-This test suite focuses on the **HeroSummary** component, ensuring that the presentation layer correctly maps the `GameDomainSession` data to the UI and handles user interactions deterministically.
+This document outlines the logical test scenarios for the `HeroSummary` component, focusing on domain integrity, state mapping, and flow continuity.
 
-## Scenario: Hero Selection Propagation
-- **Given**: A `GameSession` with 3 `HeroState` objects and their corresponding `Hero` definitions. `selectedIndex` is currently 0.
-- **When**: The user clicks on the hero at index 2 in the selector.
+## Scenario: Component Initialization with Empty Session
+- **Given**: `heroes` list is empty (`[]`), `staticHeroes` is populated.
+- **When**: The component mounts.
 - **Assert (Expected Outcomes)**:
-    - The `onSelect` callback must be invoked exactly once with the argument `2`.
-    - The component must not mutate the `selectedIndex` internally (it remains a controlled component).
-    - The flow must ensure the UI re-renders to reflect the new selection state provided by the parent.
+    - The component renders the fallback message: "No Heroes Available".
+    - No `onSelect` callbacks are triggered.
+    - No portrait or stat containers are rendered.
 
-## Scenario: Data Mapping Integrity (Gold and Portrait)
-- **Given**: A `HeroState` where `heroId` is 1, `gold` is 750, and the corresponding `Hero` definition has `portrait` set to "barbarian.png".
-- **When**: The `HeroSummary` component renders the selected hero.
+## Scenario: Default Selection Index Out of Bounds
+- **Given**: `heroes` has 2 entries, `selectedIndex` is passed as 5 (invalid).
+- **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-    - The Gold display must render the string "Gold: 750".
-    - The Portrait image source must resolve to `/img/eroi/barbarian.png`.
-    - If the `portrait` string is empty or null, the component must fallback to a default placeholder image (Structural Integrity).
+    - The component applies the guard rule: `selectedIndex` is internally treated as 0.
+    - The UI displays data for the hero at index 0.
+    - The selector highlights the first hero in the list.
 
-## Scenario: Inventory and Equipment Resolution
-- **Given**: A `HeroState` with `inventory` containing `[101, 102]` and `equipment` containing `[50]`. The `staticHeroes` list contains the corresponding `Equipment` definitions where ID 101 is "Healing Potion", 102 is "Tool Kit", and 50 is "Broadsword".
-- **When**: The component renders the Inventory/Equipment list.
+## Scenario: Hero Data Mapping Integrity
+- **Given**: A `HeroState` exists with `heroId: 1` and `gold: 750`. `staticHeroes` contains a hero with `id: 1` and `portrait: "barbarian.png"`.
+- **When**: The component renders the hero at index 0.
 - **Assert (Expected Outcomes)**:
-    - The list must display the names "Healing Potion", "Tool Kit", and "Broadsword".
-    - If an ID in the inventory does not exist in the static definitions, the component must handle the missing reference gracefully (e.g., display "Unknown Item" or omit) rather than throwing a runtime error.
-    - The order of items must match the order provided in the `HeroState` lists.
+    - The portrait image source is correctly resolved to `/img/eroi/barbarian.png`.
+    - The gold display string is exactly "Gold: 750".
+    - The hero name is retrieved from the `staticHero` definition matching the `heroId`.
 
-## Scenario: Empty State Handling
-- **Given**: A `GameSession` where the `heroes` list is empty (e.g., session initialization or game over).
-- **When**: The `HeroSummary` component is mounted.
+## Scenario: Equipment List Resolution
+- **Given**: `HeroState.equipment` contains `[101, 102]`. `Equipment` definitions exist for IDs 101 ("Broadsword") and 102 ("Shield").
+- **When**: The component renders the inventory section.
 - **Assert (Expected Outcomes)**:
-    - The component must not crash when accessing `heroes[selectedIndex]`.
-    - The selector must render an empty state or a "No Heroes Available" message.
-    - The `onSelect` callback must not be triggered during the initial render.
+    - The component performs a lookup in the static equipment list for each ID.
+    - The UI displays "Broadsword" and "Shield" as text labels.
+    - If an ID in `equipment` does not exist in the static list, the component handles the null/undefined reference gracefully without crashing (e.g., skips or renders "Unknown Item").
 
-## Scenario: Deterministic Selection Reset
-- **Given**: A `HeroSummary` component displaying data for a hero that is subsequently removed from the `GameSession` (e.g., hero death or session reset).
-- **When**: The `heroes` prop is updated to a shorter list, making the current `selectedIndex` out of bounds.
+## Scenario: Selection Trigger and Callback Flow
+- **Given**: `heroes` has 3 entries, `selectedIndex` is 0.
+- **When**: User clicks on the second hero (index 1) in the selector.
 - **Assert (Expected Outcomes)**:
-    - The component must handle the index out-of-bounds error by defaulting to index 0 or null.
-    - The flow must ensure the component does not attempt to access properties of an undefined hero object.
-    - The system must release any "active" selection flags to prevent stale data display.
+    - The `onSelect` callback is invoked with the argument `1`.
+    - The component ensures the flow is deterministic: the UI updates to reflect the state of the hero at index 1 upon the next render cycle.
+    - The `selectedIndex` state is updated to 1.
+
+## Scenario: Deterministic State Sync (Adversarial)
+- **Given**: `heroes` list is updated externally (e.g., a hero dies or is removed from the session), causing `heroes.length` to decrease from 3 to 1 while `selectedIndex` was 2.
+- **When**: The component receives the new props.
+- **Assert (Expected Outcomes)**:
+    - The guard rule `selectedIndex >= heroes.length` triggers.
+    - The component resets `selectedIndex` to 0.
+    - The component avoids a "logical dead-end" (index out of bounds error) and ensures the UI remains in a valid, renderable state.
+
+## Scenario: Equipment/Inventory Data Consistency
+- **Given**: `HeroState` has `equipment` (owned) and `equipped` (currently active) lists.
+- **When**: The component renders the inventory.
+- **Assert (Expected Outcomes)**:
+    - The component displays all items found in the `equipment` list.
+    - The component logic ensures that the "Equipment List" only displays items that exist in the static ruleset, preventing the display of corrupted or non-existent item IDs.

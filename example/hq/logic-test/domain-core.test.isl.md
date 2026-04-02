@@ -4,46 +4,51 @@
 
 ## Role: Domain (Structural Integrity)
 
-This test suite focuses on the `GameDomainCore` domain definitions, ensuring that the `NavigationStatus` state machine remains consistent and that `PageNavigationEnum` covers all required business states without ambiguity.
+This test suite focuses on the `NavigationStatus` domain model to ensure that the `PageNavigationEnum` maintains strict state boundaries and that the `GameDomainCore` cannot enter an undefined or corrupted navigation state.
 
 ---
 
-## Scenario: Initialize Navigation State
-- **Given**: The system is booting for the first time.
-- **When**: The `NavigationStatus` is instantiated.
+## Scenario: Initialize Default Navigation State
+- **Given**: The `GameDomainCore` component is instantiated for the first time.
+- **When**: The `NavigationStatus` is queried for its initial `currentPageView`.
 - **Assert (Expected Outcomes)**:
-    - `currentPageView` must be initialized to `MAIN_MENU` (Default).
-    - The state must not be `null` or `undefined`.
-    - The `currentPageView` must strictly match one of the values defined in `PageNavigationEnum`.
+    - `currentPageView` must be strictly equal to `PageNavigationEnum.MAIN_MENU`.
+    - The state must not be null or undefined.
 
-## Scenario: Validate Enum Exhaustiveness
-- **Given**: The `PageNavigationEnum` definition.
-- **When**: A navigation transition logic is implemented.
+## Scenario: Validate Enum Boundary Constraints
+- **Given**: A `NavigationStatus` object exists.
+- **When**: An attempt is made to set `currentPageView` to an arbitrary string value (e.g., "INVALID_PAGE") or an integer outside the defined enum scope.
 - **Assert (Expected Outcomes)**:
-    - All six defined enum values (`MAIN_MENU`, `PLAY_GAME`, `EDITOR_GAME`, `SHOP`, `DUNGEON`, `DUNGEON_DESCRIPTION`) must be reachable states.
-    - No "hidden" or "undefined" states can be assigned to `currentPageView`.
-    - Any attempt to assign an invalid string/value to `currentPageView` must be rejected by the domain validator.
+    - The system must reject the assignment (Type Guard violation).
+    - The `currentPageView` must remain unchanged from its previous valid state.
+    - No partial state corruption occurs.
 
-## Scenario: Deterministic State Transition
-- **Given**: The system is currently in `MAIN_MENU`.
-- **When**: A navigation request is triggered to transition to `DUNGEON`.
+## Scenario: Deterministic State Transition (Success Path)
+- **Given**: `currentPageView` is currently `MAIN_MENU`.
+- **When**: A navigation trigger is executed to transition to `PLAY_GAME`.
 - **Assert (Expected Outcomes)**:
-    - The `currentPageView` must transition from `MAIN_MENU` to `DUNGEON`.
-    - The system must not enter an intermediate or "loading" state that lacks a defined `PageNavigationEnum` value.
-    - The transition must be atomic; the state cannot be partially updated (e.g., cannot have a valid view but invalid navigation context).
+    - `currentPageView` transitions to `PLAY_GAME`.
+    - The transition must be atomic; the system cannot exist in a state where the view is "transitioning" or "null" between the two valid enum states.
 
-## Scenario: Adversarial State Injection
-- **Given**: The `NavigationStatus` object is exposed to the application layer.
-- **When**: An attempt is made to set `currentPageView` to an unsupported value (e.g., "BATTLE_ARENA" or an empty string).
+## Scenario: Handling Invalid Transition Requests (Adversarial)
+- **Given**: The current state is `DUNGEON`.
+- **When**: An external process attempts to force a transition to an undefined state or a restricted state (e.g., bypassing the `DUNGEON_DESCRIPTION` flow).
 - **Assert (Expected Outcomes)**:
-    - The domain layer must throw a validation error or reject the state update.
-    - The `currentPageView` must remain in its previous valid state (e.g., `MAIN_MENU`).
-    - The system must guarantee that the `NavigationStatus` never enters an undefined or corrupted state.
+    - The `GameDomainCore` must maintain the current valid state (`DUNGEON`).
+    - The system must log a domain violation error.
+    - The flow must not enter a "dead-end" state where navigation becomes unresponsive.
 
-## Scenario: Guaranteed Completion of Navigation Flow
-- **Given**: A multi-step navigation process (e.g., `MAIN_MENU` -> `DUNGEON_DESCRIPTION` -> `DUNGEON`).
-- **When**: The navigation process is interrupted by an external event or error.
+## Scenario: Guaranteed Completion of Navigation Reset
+- **Given**: The system is in any valid `PageNavigationEnum` state.
+- **When**: A "Reset" or "Return to Menu" command is triggered.
 - **Assert (Expected Outcomes)**:
-    - The system must ensure a deterministic final state.
-    - If the transition fails, the system must either revert to the previous valid `currentPageView` or transition to a safe fallback state (e.g., `MAIN_MENU`).
-    - The system must release any blocking flags (e.g., `isNavigating`) to prevent a logical dead-end where the UI is locked in a transition state.
+    - The flow must guarantee a transition to `MAIN_MENU`.
+    - Any "isProcessing" or "isNavigating" flags (if implemented in the underlying state machine) must be reset to `false` regardless of whether the transition was triggered by user input or a system error.
+    - The system must never be left in a blocked state where navigation is locked.
+
+## Scenario: State Persistence Integrity
+- **Given**: The `NavigationStatus` is updated to `SHOP`.
+- **When**: The component undergoes a re-render or state synchronization cycle.
+- **Assert (Expected Outcomes)**:
+    - The `currentPageView` value must be preserved exactly as `SHOP`.
+    - No implicit casting or default-reset to `MAIN_MENU` should occur during the lifecycle update.

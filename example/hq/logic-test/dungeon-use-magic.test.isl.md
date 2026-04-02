@@ -1,57 +1,63 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-magic.isl.md -->
 
-## Scenario: Cast Spell - Successful Damage (Palla di Fuoco)
-- **Given**: A `GameSession` with a Hero (turn 1) and a Monster (ID: 101, Body: 2). The Hero has "Palla di Fuoco" in `availableSpells`.
-- **When**: `castSpell` is called with `spellId` (Palla di Fuoco) and `targetMonsterId` (101).
+## Scenario: Cast Spell - Successful Damage Application
+- **Given**: A `GameSession` with a hero (ID: 1) whose turn it is, and a monster (ID: 101, Body: 2) in range. The hero has the "Palla di Fuoco" spell (ID: 50) in `availableSpells`.
+- **When**: `castSpell(50, null, 101, null, null)` is triggered.
 - **Assert (Expected Outcomes)**:
     - `targetMonster.currentBody` is reduced by 2 (Result: 0).
     - Monster 101 is removed from `gameSession.monsters`.
-    - "Palla di Fuoco" is removed from `currentHero.availableSpells`.
-    - `onNotify` is triggered with damage message.
-    - `onActionDone` is called.
+    - Spell ID 50 is removed from `currentHero.availableSpells`.
+    - `onNotify` is called with success message.
+    - `onUpdateSession` and `onActionDone` are triggered.
 
 ## Scenario: Cast Spell - Mental Resistance (Sonno)
-- **Given**: A `GameSession` with a Monster (ID: 202, Mind: 3).
-- **When**: `castSpell` is called with `spellId` (Sonno) and `targetMonsterId` (202).
-- **Assert (Expected Outcomes)**:
-    - If die roll (1d6) results in 6, `targetMonster.activeStatus` does NOT contain "Sleep".
-    - `onNotify` confirms resistance.
-    - Spell is still consumed from `currentHero.availableSpells` (Rule: Spell is spent regardless of success/resistance).
-    - `onActionDone` is called.
-
-## Scenario: Cast Spell - Genie Door Interaction
-- **Given**: A `GameSession` where `mapInteractionLogic.isFrontOfDoor` returns a valid door at (5,5).
-- **When**: `castSpell` is called with `spellId` (Genie) and `targetX`=5, `targetY`=5.
-- **Assert (Expected Outcomes)**:
-    - `mapInteractionLogic.openPassage` is triggered for the door at (5,5).
-    - `gameSession.openedDoors` contains "5,5".
-    - `fogOfWarLogic.revealFromPoint` is executed for the destination.
-    - `onNotify` confirms door opening.
-    - `onActionDone` is called.
-
-## Scenario: Cast Spell - Undead Immunity (Sonno)
-- **Given**: A `GameSession` with a Monster (ID: 303, `nonmorto`: true).
-- **When**: `castSpell` is called with `spellId` (Sonno) and `targetMonsterId` (303).
+- **Given**: A monster (ID: 102) with 2 Mind points. Hero casts "Sonno" (ID: 51).
+- **When**: `castSpell(51, null, 102, null, null)` is triggered, and the random roll for Mind resistance results in a 6.
 - **Assert (Expected Outcomes)**:
     - `targetMonster.activeStatus` does NOT contain "Sleep".
+    - `onNotify` reports that the monster resisted the spell.
+    - Spell ID 51 is removed from `currentHero.availableSpells` (Spell consumed regardless of resistance).
+    - `onActionDone` is triggered.
+
+## Scenario: Cast Spell - Invalid Target (Acqua Guaritrice)
+- **Given**: Hero attempts to cast "Acqua Guaritrice" (ID: 52) on a monster (ID: 103).
+- **When**: `castSpell(52, null, 103, null, null)` is triggered.
+- **Assert (Expected Outcomes)**:
+    - `wasCastSuccessful` remains false.
+    - `onNotify` reports "Bersaglio non valido".
+    - Spell ID 52 remains in `currentHero.availableSpells`.
+    - `onActionDone` is triggered to prevent logical dead-end.
+
+## Scenario: Cast Spell - Genie Door Opening
+- **Given**: A hero is adjacent to a closed door at (5, 5). Hero casts "Genie" (ID: 53).
+- **When**: `castSpell(53, null, null, 5, 5)` is triggered.
+- **Assert (Expected Outcomes)**:
+    - `mapInteractionLogic.isFrontOfDoor(5, 5)` returns valid passage.
+    - `mapInteractionLogic.openPassage` is called.
+    - `gameSession.openedDoors` contains "5,5".
+    - Spell ID 53 is removed from `currentHero.availableSpells`.
+    - `onActionDone` is triggered.
+
+## Scenario: Cast Spell - Deterministic Cleanup (Expired Effects)
+- **Given**: A hero has "RockSkin" in `activeStatus`.
+- **When**: `removeExpiredEffects(heroId: 1, null, "RockSkin")` is called.
+- **Assert (Expected Outcomes)**:
+    - "RockSkin" is removed from `hero.activeStatus`.
+    - `onUpdateSession` is triggered to persist the state change.
+    - System state remains consistent; no orphaned status effects remain.
+
+## Scenario: Cast Spell - Undead Immunity (Sonno)
+- **Given**: A monster with `nonmorto: true`. Hero attempts to cast "Sonno".
+- **When**: `castSpell` logic executes the immunity check.
+- **Assert (Expected Outcomes)**:
     - `onNotify` reports "I non-morti non possono dormire!".
-    - Spell is NOT removed from `availableSpells` (Logic implies failed cast due to invalid target type).
-    - `onActionDone` is NOT called.
+    - Spell is NOT removed from `availableSpells` (or logic handles as failed cast).
+    - `onActionDone` is triggered to release the turn flow.
 
-## Scenario: Cast Spell - Healing Clamp
-- **Given**: A Hero with `currentBody` = 5 and `hero.corpo` (max) = 6.
-- **When**: `castSpell` is called with `spellId` (Acqua Guaritrice, value: 4) and `targetHeroId`.
+## Scenario: Cast Spell - Deterministic Completion (Failure Handling)
+- **Given**: `castSpell` is invoked with a non-existent `spellId`.
+- **When**: The lookup for `spell` returns null.
 - **Assert (Expected Outcomes)**:
-    - `targetHero.currentBody` is set to 6 (clamped to max), not 9.
-    - `onNotify` confirms healing.
-    - Spell is removed from `availableSpells`.
-    - `onActionDone` is called.
-
-## Scenario: Deterministic Completion - Spell Consumption
-- **Given**: A Hero with 1 spell in `availableSpells`.
-- **When**: `castSpell` is triggered and completes (regardless of whether the target was hit or missed, provided the target was valid).
-- **Assert (Expected Outcomes)**:
-    - `availableSpells` list size is decremented.
-    - `onUpdateSession` is called with the new state.
-    - `onActionDone` is guaranteed to be called, ensuring the UI/Flow state resets from "casting" to "idle".
-    - System never hangs in a "processing" state if the spell logic encounters an invalid target.
+    - The function returns immediately without modifying `gameSession`.
+    - `onActionDone` is triggered to ensure the UI/Flow does not hang in a "processing" state.
+    - System state remains unchanged.

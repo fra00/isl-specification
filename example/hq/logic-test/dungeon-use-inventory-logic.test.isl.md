@@ -1,56 +1,51 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-inventory-logic.isl.md -->
 
-## Scenario: Equip Item - Successful Compatibility
-- **Given**: A Barbarian hero (ID: 1) with an empty `equipped` list. An `Equipment` item (ID: 50) exists with `solopsg: false` and `nopsg: false`.
-- **When**: `toggleEquipItem(1, 50, gameSession)` is called.
+## Scenario: Prevent Incompatible Class Equipment (solopsg)
+- **Given**: A `GameSession` containing a Barbarian hero (ID 1) and a "Dwarf-Only" Axe (ID 50) where `solopsg` is true and `solopsgid` is 2 (Dwarf).
+- **When**: The user attempts to `toggleEquipItem` for the Barbarian with the Dwarf-Only Axe.
 - **Assert (Expected Outcomes)**:
-    - `hero.equipped` contains `50`.
-    - `onUpdateSession` is triggered with the updated session.
-    - No notification of incompatibility is sent.
-
-## Scenario: Equip Item - Class Restriction (solopsg)
-- **Given**: A Barbarian hero (ID: 1). An `Equipment` item (ID: 20) exists with `solopsg: true` and `solopsgid: 2` (Dwarf).
-- **When**: `toggleEquipItem(1, 20, gameSession)` is called.
-- **Assert (Expected Outcomes)**:
-    - `hero.equipped` does NOT contain `20`.
     - `onNotify` is triggered with "La tua classe non può equipaggiare questo oggetto.".
-    - `onUpdateSession` is NOT triggered (or session remains unchanged).
+    - The Axe ID (50) is NOT added to the Barbarian's `equipped` list.
+    - `onUpdateSession` is NOT called (or called with an unchanged session).
 
-## Scenario: Equip Item - Class Restriction (nopsg)
-- **Given**: A Wizard hero (ID: 3). An `Equipment` item (ID: 30) exists with `nopsg: true` and `nopsgid: 3` (Wizard).
-- **When**: `toggleEquipItem(3, 30, gameSession)` is called.
+## Scenario: Prevent Forbidden Class Equipment (nopsg)
+- **Given**: A `GameSession` containing a Wizard hero (ID 3) and a Plate Armor (ID 60) where `nopsg` is true and `nopsgid` is 3 (Wizard).
+- **When**: The user attempts to `toggleEquipItem` for the Wizard with the Plate Armor.
 - **Assert (Expected Outcomes)**:
-    - `hero.equipped` does NOT contain `30`.
     - `onNotify` is triggered with "La tua classe non può equipaggiare questo oggetto.".
+    - The Plate Armor ID (60) is NOT added to the Wizard's `equipped` list.
 
-## Scenario: Equip Item - Mutual Exclusivity (noogg)
-- **Given**: A hero (ID: 1) currently has a Shield (ID: 11) in `equipped`. A Two-Handed Sword (ID: 40) exists with `noogg: 11`.
-- **When**: `toggleEquipItem(1, 40, gameSession)` is called.
+## Scenario: Automatic Unequip of Incompatible Item (noogg)
+- **Given**: A `GameSession` where a hero has a Shield (ID 11) currently in `equipped`. A Two-Handed Sword (ID 99) exists with `noogg: 11`.
+- **When**: The user calls `toggleEquipItem` for the hero with the Two-Handed Sword (ID 99).
 - **Assert (Expected Outcomes)**:
-    - `hero.equipped` contains `40`.
-    - `hero.equipped` does NOT contain `11`.
-    - `onNotify` is triggered with "Hai rimosso [Shield Name] perché incompatibile.".
-    - `onUpdateSession` is triggered with the updated session.
+    - The Shield (ID 11) is removed from the hero's `equipped` list.
+    - The Two-Handed Sword (ID 99) is added to the hero's `equipped` list.
+    - `onNotify` is triggered confirming the removal of the Shield.
+    - `onUpdateSession` is called with the updated `GameSession`.
 
-## Scenario: Unequip Item - Manual Toggle
-- **Given**: A hero (ID: 1) has a Longsword (ID: 5) in `equipped`.
-- **When**: `toggleEquipItem(1, 5, gameSession)` is called.
+## Scenario: Mutual Incompatibility (Weapon vs Shield)
+- **Given**: A `GameSession` where a hero has a Two-Handed Sword (ID 99) currently in `equipped`. The user attempts to equip a Shield (ID 11).
+- **When**: The user calls `toggleEquipItem` for the hero with the Shield (ID 11).
 - **Assert (Expected Outcomes)**:
-    - `hero.equipped` does NOT contain `5`.
-    - `onUpdateSession` is triggered.
+    - The logic iterates through `equipped` items, identifies the Two-Handed Sword (ID 99) as having `noogg: 11` (or the Shield having `noogg` matching the sword).
+    - The Two-Handed Sword (ID 99) is removed from `equipped`.
+    - The Shield (ID 11) is added to `equipped`.
+    - `onUpdateSession` reflects the state where only the Shield is equipped.
 
-## Scenario: Equip Item - Reverse Mutual Exclusivity
-- **Given**: A hero (ID: 1) has a Two-Handed Sword (ID: 40) in `equipped`. A Shield (ID: 11) exists.
-- **When**: `toggleEquipItem(1, 11, gameSession)` is called.
+## Scenario: Deterministic Handling of Missing Items
+- **Given**: A `GameSession` with a valid hero.
+- **When**: The user calls `toggleEquipItem` with an `itemId` that does not exist in the `staticEquipment` registry.
 - **Assert (Expected Outcomes)**:
-    - `hero.equipped` contains `11`.
-    - `hero.equipped` does NOT contain `40` (because the sword has `noogg: 11`, the logic must scan existing items for the `noogg` constraint).
-    - `onNotify` is triggered with "Hai rimosso [Two-Handed Sword Name] perché incompatibile.".
+    - `onNotify` is triggered with "Oggetto non trovato.".
+    - The flow terminates immediately.
+    - No changes are made to the `hero.equipped` list.
+    - `onUpdateSession` is not triggered, ensuring the system state remains consistent and valid.
 
-## Scenario: Deterministic State Integrity
-- **Given**: A `GameSession` with multiple heroes and complex inventory states.
-- **When**: `toggleEquipItem` is triggered with an invalid `itemId` or `heroId`.
+## Scenario: Toggle Unequip Existing Item
+- **Given**: A `GameSession` where a hero already has a Longsword (ID 5) in their `equipped` list.
+- **When**: The user calls `toggleEquipItem` for the hero with the Longsword (ID 5).
 - **Assert (Expected Outcomes)**:
-    - The system must handle the lookup failure gracefully (e.g., return or notify).
-    - The `gameSession` must remain in a valid state (no partial updates or corrupted lists).
-    - `onUpdateSession` must not be called if the validation fails, ensuring the UI does not sync an invalid state.
+    - The Longsword (ID 5) is removed from the `equipped` list.
+    - `onUpdateSession` is called with the updated session.
+    - No incompatibility checks are triggered (as this is an unequip action).

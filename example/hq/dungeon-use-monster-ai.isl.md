@@ -29,11 +29,17 @@
 
 ### ⚡ Capabilities
 
+#### internal State
+
+- `isMonsterTurnInProgress`: Boolean (Default: false)
+
 #### runMonsterTurn
 
 - **Contract**: Orchestrates the actions of all monsters currently on the board.
 - **Trigger**: Called by `Dungeon` when `currentTurn` exceeds the number of heroes.
 - **Flow**:
+  - IF `isMonsterTurnInProgress` is true, RETURN.
+  - SET `isMonsterTurnInProgress` to true.
   - Trigger `onNotify("Turno del Master: i mostri si muovono...")`.
   - FOR EACH `monster` IN `gameSession.monsters`:
     - Wait 800ms (for visual clarity).
@@ -62,7 +68,7 @@
           - Set `navigationTarget` to `hero` position (fallback to approach as close as possible).
     - **Movement**:
       - IF `navigationTarget` is NOT current position:
-        - Calculate `path` to `navigationTarget` using `pathfinding.calculatePath` (maxDepth: 100, ignoreEntities: true).
+        - Calculate `path` to `navigationTarget` using `pathfinding.calculatePath` (maxDepth: 100, ignoreEntities: false).
       - ELSE: Let `path` be an empty list.
       - IF path length > 0:
         - Filter path to keep only cells where `fog` is false in `visibilityMap.data`.
@@ -97,6 +103,7 @@
           - Trigger `onNotify(hero.hero.classe + " è caduto in battaglia!")`.
         - Trigger `onUpdateSession`.
   - **End Phase**:
+    - SET `isMonsterTurnInProgress` to false.
     - Set `gameSession.currentTurn` to 1.
     - For each hero in `gameSession.heroes`:
       - Set `turnPhase.HasMoved` to `false`.

@@ -28,9 +28,9 @@
   - IF `startVisCell` is null, Return empty list.
   - Add `{x: startX, y: startY}` to `visibleCells`.
   - **Phase 1: Room Visibility**
-    - IF `startVisCell.valo` is NOT "1":
+    - IF `startVisCell.valo` is NOT "1" (Not a corridor):
       - Iterate through all cells in `visibilityMap.data`.
-      - IF `cell.valo` == `startVisCell.valo`:
+      - IF `cell.valo` == `startVisCell.vis1` OR `cell.valo` == `startVisCell.vis2` OR `cell.valo` == `startVisCell.valo`:
         - Add `{x: cell.x, y: cell.y}` to `visibleCells`.
       - Return `visibleCells`.
   - **Phase 2: Corridor Visibility (Ray Casting)**

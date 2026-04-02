@@ -6,47 +6,57 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
-export const useCampaignManager = (config = {}) => {
-  const saveCampaign = useCallback((heroes, nextMissionIndex) => {
-    const campaignData = {
-      heroes: heroes,
-      nextMissionIndex: nextMissionIndex,
-      timestamp: Date.now()
+export function useCampaignManager(config = {}) {
+    const STORAGE_KEY = "hq_campaign_data";
+
+    const saveCampaign = useCallback((heroes, nextMissionIndex) => {
+        const campaignData = {
+            heroes: heroes != null ? heroes : [],
+            nextMissionIndex: nextMissionIndex != null ? nextMissionIndex : 0,
+            timestamp: Date.now()
+        };
+
+        try {
+            const serializedData = JSON.stringify(campaignData);
+            localStorage.setItem(STORAGE_KEY, serializedData);
+        } catch (error) {
+            console.error("Error saving campaign:", error);
+            // Fallback UI notification as requested by flow, since no specific notification service is injected
+            alert("Could not save progress");
+        }
+    }, []);
+
+    const loadCampaign = useCallback(() => {
+        const item = localStorage.getItem(STORAGE_KEY);
+        
+        if (item == null || item === "") {
+            return null;
+        }
+
+        try {
+            const campaignData = JSON.parse(item);
+            return campaignData;
+        } catch (error) {
+            console.error("Error parsing campaign data:", error);
+            return null;
+        }
+    }, []);
+
+    const hasSavedCampaign = useCallback(() => {
+        const item = localStorage.getItem(STORAGE_KEY);
+        return item != null && item !== "";
+    }, []);
+
+    const resetCampaign = useCallback(() => {
+        localStorage.removeItem(STORAGE_KEY);
+    }, []);
+
+    return {
+        saveCampaign,
+        loadCampaign,
+        hasSavedCampaign,
+        resetCampaign
     };
-    
-    localStorage.setItem("hq_campaign_data", JSON.stringify(campaignData));
-  }, []);
-
-  const loadCampaign = useCallback(() => {
-    const item = localStorage.getItem("hq_campaign_data");
-    
-    if (item == null || item === "") {
-      return null;
-    }
-    
-    try {
-      const campaignData = JSON.parse(item);
-      return campaignData;
-    } catch (error) {
-      return null;
-    }
-  }, []);
-
-  const hasSavedCampaign = useCallback(() => {
-    const item = localStorage.getItem("hq_campaign_data");
-    return item != null && item !== "";
-  }, []);
-
-  const resetCampaign = useCallback(() => {
-    localStorage.removeItem("hq_campaign_data");
-  }, []);
-
-  return {
-    saveCampaign,
-    loadCampaign,
-    hasSavedCampaign,
-    resetCampaign
-  };
-};
+}

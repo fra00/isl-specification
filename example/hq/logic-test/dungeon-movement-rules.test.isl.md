@@ -1,57 +1,57 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-movement-rules.isl.md -->
 
-## Scenario: Validate Destination Blocked by Dynamic Entities
+## Scenario: Validate Destination on Occupied Cell
 - **Given**: A `GameSession` where a Monster is at coordinates (5, 5) with `currentBody` > 0.
-- **When**: `isValidDestination(5, 5, heroId)` is called for a Hero.
+- **When**: `isValidDestination(5, 5, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - `mapQuery.isBlockedByMonster` returns TRUE.
-    - `isValidDestination` returns FALSE.
-    - The system correctly identifies the collision despite the cell being technically traversable in the map grid.
+    - Returns `FALSE` because the cell is blocked by a monster.
+    - Ensures the `excludeEntityId` logic correctly identifies the target cell as non-traversable for movement termination.
 
 ## Scenario: Walkable Path Through FoggyMist
-- **Given**: A Hero at (2, 2) with `activeStatus` containing "FoggyMist". A Monster is at (2, 3).
+- **Given**: A Hero with `activeStatus` containing "FoggyMist" at (2, 2). A Monster is positioned at (2, 3).
 - **When**: `isWalkable(2, 2, 2, 3, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - `mapQuery.isBlockedByMonster` returns TRUE.
-    - The logic checks `hero.activeStatus` for "FoggyMist".
-    - `isWalkable` returns TRUE (overriding the standard monster block).
+    - Returns `TRUE`.
+    - Validates that the "FoggyMist" status correctly overrides the `isBlockedByMonster` check.
 
-## Scenario: Crossing Room Boundaries Without Door
-- **Given**: Source cell (10, 10) in Room A, Target cell (10, 11) in Room B. No door or secret passage exists at these coordinates.
-- **When**: `isWalkable(10, 10, 10, 11, heroId)` is called.
+## Scenario: Crossing Rooms Without Door or Status
+- **Given**: `VisibilityCell` at (3, 3) has `valo` "RoomA". `VisibilityCell` at (3, 4) has `valo` "RoomB". No door or secret passage exists between these coordinates. The Hero has no special status.
+- **When**: `isWalkable(3, 3, 3, 4, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - `sourceValo` != `targetValo`.
-    - `isDoor` and `isSecretPassage` return FALSE.
-    - `isWalkable` returns FALSE (enforcing room separation).
+    - Returns `FALSE`.
+    - Ensures that movement between distinct `valo` zones is strictly gated by the presence of doors, passages, or specific hero status effects.
 
-## Scenario: Crossing Room Boundaries With WallPass Effect
-- **Given**: Source cell (10, 10) in Room A, Target cell (10, 11) in Room B. No door exists. Hero has "WallPass" in `activeStatus`.
-- **When**: `isWalkable(10, 10, 10, 11, heroId)` is called.
+## Scenario: Boundary Constraint Enforcement
+- **Given**: A map with dimensions 26x19.
+- **When**: `isWalkable` is called with target coordinates (0, 5) or (27, 5).
 - **Assert (Expected Outcomes)**:
-    - The logic detects the room mismatch.
-    - The logic detects the "WallPass" status.
-    - `isWalkable` returns TRUE.
+    - Returns `FALSE` for any coordinate outside the [1, 26] and [1, 19] range.
+    - Ensures the system prevents out-of-bounds memory access or logic errors.
 
-## Scenario: Out of Bounds Movement
-- **Given**: Map dimensions are 26x19.
-- **When**: `isWalkable(1, 1, 0, 1, heroId)` is called (attempting to move to X=0).
+## Scenario: Deterministic Handling of Missing Visibility Data
+- **Given**: `visibilityMap` is `null` or the `VisibilityCell` for a specific coordinate is missing.
+- **When**: `isWalkable` is called for adjacent cells.
 - **Assert (Expected Outcomes)**:
-    - Bounds check triggers.
-    - `isWalkable` returns FALSE.
-    - The system prevents access to invalid grid indices.
+    - Returns `TRUE` (assuming no other obstacles like furniture or rocks exist).
+    - Ensures the system defaults to "open space" behavior rather than crashing or blocking movement when metadata is incomplete.
 
-## Scenario: Deterministic Handling of Null VisibilityMap
-- **Given**: `visibilityMap` is null.
-- **When**: `isWalkable` is called for any adjacent cells.
+## Scenario: Rock Obstacle Blocking
+- **Given**: A `MapCell` at (10, 10) where `arnt.antroc` is `TRUE`.
+- **When**: `isValidDestination(10, 10, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - The component does not throw a null reference exception.
-    - The flow gracefully handles the absence of `VisibilityCell` data (e.g., treating room logic as neutral or defaulting to blocked).
-    - The system maintains a stable state and returns a boolean result.
+    - Returns `FALSE`.
+    - Confirms that rock-blocked cells are correctly identified as invalid for ending movement.
 
-## Scenario: Rock Obstacle Enforcement
-- **Given**: A cell (4, 4) where `MapCell.arnt.antroc` is TRUE.
-- **When**: `isValidDestination(4, 4, heroId)` is called.
+## Scenario: Hero Passing Through Wall via Status
+- **Given**: A Hero with `activeStatus` containing "WallPass" at (5, 5). Target (5, 6) is in a different `valo` zone with no door.
+- **When**: `isWalkable(5, 5, 5, 6, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - `mapQuery.isBlockedByRock` returns TRUE.
-    - `isValidDestination` returns FALSE.
-    - The hero is prevented from ending their turn on a rock-blocked cell.
+    - Returns `TRUE`.
+    - Validates that the `activeStatus` correctly bypasses the room-crossing restriction logic.
+
+## Scenario: Deterministic Completion of Monster Check
+- **Given**: A monster exists at (4, 4) but its `currentBody` is 0 (defeated).
+- **When**: `isBlockedByMonster(4, 4, heroId)` is called.
+- **Assert (Expected Outcomes)**:
+    - Returns `FALSE`.
+    - Ensures that defeated monsters do not block movement, maintaining flow continuity and preventing logical dead-ends where a hero is trapped by a "dead" entity.

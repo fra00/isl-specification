@@ -1,1 +1,1 @@
-export default function DungeonMissionSummary(props: { isOpen: boolean; heroes: any[]; allEquipment: any[]; allItems: any[]; onClose: () => void }): React.ReactElement | null;
+export default function DungeonMissionSummary(props: { isOpen?: boolean; heroes?: Array<any>; allEquipment?: Array<any>; allItems?: Array<any>; onClose?: () => void }): React.ReactElement | null;

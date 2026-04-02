@@ -26,6 +26,7 @@
 - `gameSession`: @GameSession (Current state of the session, nullable).
 - `onChangePageView`: (nextPage: @PageNavigationEnum) -> void (Callback to change page).
 - `onUpdateSession`: (session: @GameSession) -> void (Callback to update the session state).
+- `campaign`: @Campaign (Provided by MainContent).
 
 ### 🔍 Appearance
 
@@ -54,21 +55,16 @@
 #### internal State
 
 - `statsHeroes`
-- `campaign`
 - `maxUnlockedMissionIndex`: Integer (Highest mission index accessible).
 - `gameSession`
 - `campaignManager`: @useCampaignManager
 
 #### initSession
 
-- **Contract**: Fetches the campaign definition from the static JSON file.
+- **Contract**: Initializes the local state using the provided campaign data.
 - **Trigger**: On Component Mount.
 - **Flow**:
-  - Fetch data from `/jsonData/campagne.json`.
-  - Parse response into @Campaign structure.
-  - Ignore any data where x or y is 0. 💡 Note: This is MANDATORY as grid coordinates are strictly 1-indexed (1 to 26).
-  - Store in local state `campaign`.
-  - Handle fetch errors (e.g., log to console).
+  - // Use `campaign` prop for mission list.
   - Fetch data from `/jsonData/heroes.json`.
   - Parse response into List<@Hero> structure
   - Store in local state `statsHeroes`.

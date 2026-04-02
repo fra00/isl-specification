@@ -33,6 +33,7 @@ function getFilesRecursively(dir: string, fileList: string[] = []): string[] {
 async function main() {
   const args = process.argv.slice(2);
   const useGemini = args.includes("--gemini");
+  const isCriticalOnly = args.includes("--critical");
   const positionalArgs = args.filter((a) => !a.startsWith("--"));
   const pathArg = positionalArgs[0];
 
@@ -43,24 +44,39 @@ async function main() {
   const reports: string[] = [];
   const startDir =
     pathArg && !pathArg.endsWith(".isl.md") ? pathArg : process.cwd();
+  const reportDir = path.join(startDir, "logic-test", "report");
+  const reportPath = path.join(reportDir, "audit-summary.report.md");
 
+  let files: string[] = [];
   if (pathArg && pathArg.endsWith(".isl.md")) {
-    const report = await auditor.runAudit(pathArg);
-    if (report) reports.push(report);
+    files = [path.resolve(pathArg)];
   } else {
-    console.log(`🔍 Auditing ISL files in: ${startDir}...`);
-    const files = getFilesRecursively(startDir);
-    for (const file of files) {
-      const report = await auditor.runAudit(file);
-      if (report) reports.push(report);
-    }
+    console.log(`🔍 Searching ISL files in: ${startDir}...`);
+    files = getFilesRecursively(startDir);
+  }
+
+  if (isCriticalOnly && fs.existsSync(reportPath)) {
+    console.log(
+      `🎯 --critical active: filtering files from previous summary...`,
+    );
+    const reportContent = fs.readFileSync(reportPath, "utf-8");
+    const sections = reportContent.split("## Audit Report for:").slice(1);
+    const criticalFilenames = sections
+      .filter((s) => s.includes("[CRITICAL]"))
+      .map((s) => s.split("\n")[0].trim());
+
+    files = files.filter((f) => criticalFilenames.includes(path.basename(f)));
+    console.log(
+      `📂 Found ${files.length} files with critical issues to re-audit.`,
+    );
+  }
+
+  for (const file of files) {
+    const report = await auditor.runAudit(file);
+    if (report) reports.push(report);
   }
 
   if (reports.length > 0) {
-    const reportDir = path.join(startDir, "logic-test", "report");
-    if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
-    const reportPath = path.join(reportDir, "audit-summary.report.md");
-
     const combinedReport = `# Global ISL Audit Report\n\nGenerated on: ${new Date().toLocaleString()}\n\n${reports.join("\n")}`;
     fs.writeFileSync(reportPath, combinedReport);
 

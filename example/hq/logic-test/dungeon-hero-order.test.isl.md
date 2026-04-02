@@ -8,59 +8,53 @@ This document outlines the logical test scenarios for the `DungeonHeroOrder` com
 - **Assert (Expected Outcomes)**:
     - `selectedOrder` is initialized as an empty list `[]`.
     - `availableHeroes` contains all 4 `HeroState` objects from the `heroes` prop.
-    - The "Confirm Order" button is disabled (as `selectedOrder.length` < 4).
+    - The "Confirm Order" button is disabled (as `selectedOrder.length` < `heroes.length`).
 
 ## Scenario: Selecting a Hero
-- **Given**: `availableHeroes` contains a hero with `heroId: 1`.
-- **When**: The user clicks on the hero with `heroId: 1`.
+- **Given**: `availableHeroes` contains a Hero with `id: 1`.
+- **When**: The user clicks on the Hero with `id: 1`.
 - **Assert (Expected Outcomes)**:
-    - `heroId: 1` is added to `selectedOrder`.
-    - `heroId: 1` is removed from `availableHeroes`.
-    - The UI reflects the hero in the first available slot.
+    - `selectedOrder` contains `[1]`.
+    - `availableHeroes` no longer contains the Hero with `id: 1`.
+    - The UI reflects the hero in the first slot of the "Current Order Section".
 
-## Scenario: Removing a Selected Hero
-- **Given**: `selectedOrder` contains `[1]`, and `availableHeroes` contains `[2, 3, 4]`.
-- **When**: The user clicks on the hero with `heroId: 1` in the "Current Order" section.
+## Scenario: Removing a Hero from Order
+- **Given**: `selectedOrder` is `[1, 2]` and `availableHeroes` contains `[3, 4]`.
+- **When**: The user clicks on the Hero with `id: 1` in the "Current Order Section".
 - **Assert (Expected Outcomes)**:
-    - `heroId: 1` is removed from `selectedOrder`.
-    - `heroId: 1` is added back to `availableHeroes`.
-    - The "Confirm Order" button remains disabled.
+    - `selectedOrder` is updated to `[2]`.
+    - `availableHeroes` now contains `[1, 3, 4]`.
+    - The UI removes the hero from the "Current Order Section" and restores them to the "Available Heroes Section".
 
-## Scenario: Reaching Full Order Capacity
-- **Given**: 3 heroes have been selected, `selectedOrder` has length 3, and 1 hero remains in `availableHeroes`.
-- **When**: The user clicks the final remaining hero in `availableHeroes`.
+## Scenario: Reaching Maximum Order Capacity
+- **Given**: `heroes` prop contains 4 heroes; `selectedOrder` currently contains 3 heroes.
+- **When**: The user clicks the final available hero.
 - **Assert (Expected Outcomes)**:
-    - `selectedOrder` now contains all 4 hero IDs.
+    - `selectedOrder` contains all 4 hero IDs.
     - `availableHeroes` is empty.
     - The "Confirm Order" button becomes enabled.
 
 ## Scenario: Deterministic Confirmation Flow
-- **Given**: `selectedOrder` contains all hero IDs, and `onConfirmOrder` is provided as a prop.
-- **When**: The user clicks the "Confirm Order" button.
+- **Given**: `selectedOrder` contains all hero IDs; `onConfirmOrder` callback is provided.
+- **When**: The user clicks "Confirm Order".
 - **Assert (Expected Outcomes)**:
-    - The `onConfirmOrder` callback is triggered exactly once.
-    - The callback receives the `selectedOrder` list as an argument.
-    - The system state transitions to the next phase (external to this component).
+    - The `onConfirmOrder` callback is triggered exactly once with the correct `List<Integer>` of IDs.
+    - The system state remains consistent (no duplicate IDs in `selectedOrder`).
+    - The flow ensures that the action is only possible if `selectedOrder.length === heroes.length`.
 
-## Scenario: Adversarial - Attempting to Confirm Incomplete Order
-- **Given**: `selectedOrder` contains only 3 out of 4 heroes.
-- **When**: The user attempts to trigger the `confirm` action (e.g., via UI interaction or programmatic bypass).
+## Scenario: Adversarial Input (Rapid Clicking)
+- **Given**: `selectedOrder` is empty.
+- **When**: The user triggers `selectHero(1)` twice in rapid succession.
 - **Assert (Expected Outcomes)**:
-    - The `confirm` logic must block execution.
-    - `onConfirmOrder` is NOT called.
-    - The component remains in the current state, preventing a logical dead-end or invalid game state.
+    - `selectedOrder` contains `[1]` (Length is 1).
+    - The logic prevents duplicate entries of the same `heroId` in `selectedOrder`.
+    - The component state remains valid and does not crash or enter an inconsistent state.
 
-## Scenario: Prop Change Handling
+## Scenario: Prop Update Integrity
 - **Given**: The component is mounted with a specific list of `heroes`.
-- **When**: The `heroes` prop is updated (e.g., a hero is removed from the session).
+- **When**: The `heroes` prop changes (e.g., a hero is removed from the session).
 - **Assert (Expected Outcomes)**:
     - The `initialize` flow is re-triggered.
     - `selectedOrder` is reset to `[]` to prevent stale references to non-existent heroes.
     - `availableHeroes` is synchronized with the new `heroes` prop.
-
-## Scenario: Data Integrity of Hero Portraits
-- **Given**: A `HeroState` object with `hero.portrait = "warrior.png"`.
-- **When**: The hero is rendered in the "Current Order" section.
-- **Assert (Expected Outcomes)**:
-    - The image source path is correctly mapped to `img/eroi/warrior.png`.
-    - The component correctly accesses the nested `hero` object within `HeroState` to retrieve the portrait string.
+    - The component avoids "logical dead-ends" by resetting the selection state when the underlying data source changes.

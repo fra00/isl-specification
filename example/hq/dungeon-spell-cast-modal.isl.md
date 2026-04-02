@@ -32,6 +32,7 @@
 
 - **Header**: Title "Lancia Incantesimo" and the hero's class name.
 - **Spell Cards**: For each `spellId` in `hero.availableSpells`:
+  - Guard: IF spellId NOT IN allSpells, skip rendering or render placeholder.
   - **Card Face**:
     - Image: `/img/cinc/` + `spell.immagine`.
     - Name: `spell.nome`.

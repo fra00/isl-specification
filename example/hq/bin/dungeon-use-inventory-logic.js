@@ -7,83 +7,80 @@
  */
 
 import { useCallback } from 'react';
+import { GameSession, HeroState } from './domain-session';
 
 export const isItemCompatibleWithHero = (hero, item) => {
-  if (!hero || !item) return false;
-
-  if (item.solopsg && item.solopsgid !== hero.heroId) {
-    return false;
-  }
-
-  if (item.nopsg && item.nopsgid === hero.heroId) {
-    return false;
-  }
-
-  return true;
+    if (item?.solopsg === true && item?.solopsgid !== hero?.heroId) {
+        return false;
+    }
+    if (item?.nopsg === true && item?.nopsgid === hero?.heroId) {
+        return false;
+    }
+    return true;
 };
 
-export function useInventoryLogic({ staticEquipment = [], onUpdateSession, onNotify }) {
-  
-  const toggleEquipItem = useCallback((heroId, itemId, gameSession) => {
-    if (!gameSession || !gameSession.heroes) return;
+export const useInventoryLogic = ({ staticEquipment = [], onUpdateSession, onNotify }) => {
+    const toggleEquipItem = useCallback((heroId, itemId, gameSession) => {
+        if (!gameSession?.heroes) return;
 
-    const hero = gameSession.heroes.find(h => h.heroId === heroId);
-    if (!hero) return;
+        const heroIndex = gameSession.heroes.findIndex(h => h.heroId === heroId);
+        if (heroIndex === -1) return;
 
-    const item = staticEquipment.find(e => e.id === itemId);
-    if (!item) {
-      if (onNotify) onNotify('Oggetto non trovato.');
-      return;
-    }
+        const hero = gameSession.heroes[heroIndex];
+        const item = staticEquipment.find(eq => eq.id === itemId);
 
-    let newEquipped = Array.isArray(hero.equipped) ? [...hero.equipped] : [];
-
-    if (newEquipped.includes(itemId)) {
-      newEquipped = newEquipped.filter(id => id !== itemId);
-    } else {
-      // Step 1: Validate Class
-      if (!isItemCompatibleWithHero(hero, item)) {
-        if (onNotify) onNotify("La tua classe non può equipaggiare questo oggetto.");
-        return;
-      }
-
-      // Step 2: Handle Incompatibilities (noogg)
-      if (item.noogg != null && item.noogg > 0) {
-        newEquipped = newEquipped.filter(id => id !== item.noogg);
-      }
-
-      newEquipped = newEquipped.filter(equippedId => {
-        const equippedItem = staticEquipment.find(e => e.id === equippedId);
-        if (equippedItem && equippedItem.noogg === itemId) {
-          if (onNotify) onNotify("Hai rimosso " + equippedItem.nome + " perché incompatibile.");
-          return false;
+        if (!item) {
+            onNotify?.('Oggetto non trovato.');
+            return;
         }
-        return true;
-      });
 
-      // Step 3: Add Item
-      newEquipped.push(itemId);
-    }
+        let newEquipped = [...(hero.equipped || [])];
 
-    // Update Session Immutably
-    const updatedHeroes = gameSession.heroes.map(h => {
-      if (h.heroId === heroId) {
-        return { ...h, equipped: newEquipped };
-      }
-      return h;
-    });
+        if (newEquipped.includes(itemId)) {
+            newEquipped = newEquipped.filter(id => id !== itemId);
+        } else {
+            if (!isItemCompatibleWithHero(hero, item)) {
+                onNotify?.("La tua classe non può equipaggiare questo oggetto.");
+                return;
+            }
 
-    if (onUpdateSession) {
-      onUpdateSession({
-        ...gameSession,
-        heroes: updatedHeroes
-      });
-    }
+            if (item.noogg != null && item.noogg > 0) {
+                newEquipped = newEquipped.filter(id => id !== item.noogg);
+            }
 
-  }, [staticEquipment, onUpdateSession, onNotify]);
+            const itemsToRemove = [];
+            newEquipped.forEach(equippedId => {
+                const equippedItem = staticEquipment.find(eq => eq.id === equippedId);
+                if (equippedItem?.noogg === itemId) {
+                    itemsToRemove.push(equippedId);
+                    onNotify?.("Hai rimosso " + equippedItem.nome + " perché incompatibile.");
+                }
+            });
 
-  return {
-    isItemCompatibleWithHero,
-    toggleEquipItem
-  };
-}
+            if (itemsToRemove.length > 0) {
+                newEquipped = newEquipped.filter(id => !itemsToRemove.includes(id));
+            }
+
+            newEquipped.push(itemId);
+        }
+
+        const updatedHero = HeroState({
+            ...hero,
+            equipped: newEquipped
+        });
+
+        const updatedHeroes = [...gameSession.heroes];
+        updatedHeroes[heroIndex] = updatedHero;
+
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: updatedHeroes
+        });
+
+        onUpdateSession?.(updatedSession);
+    }, [staticEquipment, onNotify, onUpdateSession]);
+
+    return {
+        toggleEquipItem
+    };
+};

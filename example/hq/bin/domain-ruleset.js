@@ -6,11 +6,6 @@
  * Edit the ISL file instead.
  */
 
-/**
- * Domain Ruleset
- * Defines the domain entities and factories for the Heroquest game.
- */
-
 export const Hero = (data = {}) => ({
   id: data.id ?? 0,
   classe: data.classe ?? "",
@@ -34,7 +29,7 @@ export const Monster = (data = {}) => ({
   mente: data.mente ?? 0,
   immagine: data.immagine ?? "",
   immalarge: data.immalarge ?? "",
-  nonmorto: Boolean(data.nonmorto)
+  nonmorto: data.nonmorto ?? false
 });
 
 export const Equipment = (data = {}) => ({
@@ -45,19 +40,19 @@ export const Equipment = (data = {}) => ({
   daddifex: data.daddifex ?? 0,
   numdadicontr: data.numdadicontr ?? 0,
   targetMonster: data.targetMonster ?? "",
-  doppioatt: Boolean(data.doppioatt),
+  doppioatt: data.doppioatt ?? false,
   mosdoppio: data.mosdoppio ?? 0,
   puntimente: data.puntimente ?? 0,
-  doppiamag: Boolean(data.doppiamag),
+  doppiamag: data.doppiamag ?? false,
   movim: data.movim ?? 0,
   noogg: data.noogg ?? 0,
-  diago: Boolean(data.diago),
-  tiro: Boolean(data.tiro),
-  tirounavo: Boolean(data.tirounavo),
-  disinnesc: Boolean(data.disinnesc),
-  nopsg: Boolean(data.nopsg),
+  diago: data.diago ?? false,
+  tiro: data.tiro ?? false,
+  tirounavo: data.tirounavo ?? false,
+  disinnesc: data.disinnesc ?? false,
+  nopsg: data.nopsg ?? false,
   nopsgid: data.nopsgid ?? 0,
-  solopsg: Boolean(data.solopsg),
+  solopsg: data.solopsg ?? false,
   solopsgid: data.solopsgid ?? 0,
   prezzo: data.prezzo ?? 0,
   immagine: data.immagine ?? ""
@@ -73,7 +68,7 @@ export const Item = (data = {}) => ({
   attacco: data.attacco ?? 0,
   difesa: data.difesa ?? 0,
   natt: data.natt ?? 0,
-  acqua: Boolean(data.acqua),
+  acqua: data.acqua ?? false,
   danni: data.danni ?? 0
 });
 

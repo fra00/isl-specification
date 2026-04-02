@@ -1,56 +1,71 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon.isl.md -->
 
-## Scenario: Fog of War Persistence
-- **Given**: A `GameSession` where a hero is at (5,5) and `boardVisibilityMap` has fog enabled for all cells.
-- **When**: The hero moves to (5,6), triggering `useFogOfWar.calculateFog`.
+## Scenario: Movement Through Fog of War
+- **Given**: A hero is at (5, 5). A monster is at (5, 7). The cell (5, 6) is currently under `fog: true` in `boardVisibilityMap`.
+- **When**: The hero attempts to move to (5, 7) via `handleBoardClick`.
 - **Assert (Expected Outcomes)**:
-  - The cells within the hero's line of sight (calculated via `useVisibilityCalc`) must have `fog` set to `false`.
-  - The `fog` status of previously visited cells (e.g., (5,5)) must remain `false` (Deterministic persistence).
-  - The system must never revert a `false` fog status to `true` regardless of hero movement.
+  - `hooksPathfinding.calculatePath` must return an empty path because the path crosses a fogged cell (or the destination is fogged).
+  - `isMoving` remains `false`.
+  - The hero does not move.
+  - `onNotify` is triggered with "Percorso non valido" or similar.
 
-## Scenario: Trap Detection and Disarm Logic
-- **Given**: A hero is adjacent to a trap at (3,3) of type 2 (Spear Trap) and `areMonstersVisible` is false.
-- **When**: The hero performs `searchTraps` and then `attemptDisarmTrap` on the detected trap.
+## Scenario: Deterministic Trap Trigger and Turn End
+- **Given**: A hero has `movementPoints: 3`. The hero moves to a cell containing a Trap (tipo: 2).
+- **When**: The hero enters the trap cell during `movementEffect`.
 - **Assert (Expected Outcomes)**:
-  - `searchTraps` must correctly identify the trap and add it to `triggeredTraps` with status 'DETECTED'.
-  - `attemptDisarmTrap` must validate the `canDisarm` capability (hero must have disarm tool).
-  - If the random roll is < 6, status must transition to 'DISARMED'.
-  - If the random roll is 6, status must transition to 'TRIGGERED' and apply damage to the hero.
+  - `trapsLogic.registerTriggeredTrap` is called for the cell.
+  - `currentHero.currentBody` is decremented.
+  - `turnPhase.hasMoved` and `turnPhase.hasPerformedAction` are set to `true`.
+  - `activePath` is cleared immediately.
+  - The hero stops moving, ensuring no further movement points are consumed.
 
-## Scenario: Combat Resolution and State Cleanup
-- **Given**: A hero attacks a monster with 1 Body Point remaining using a weapon with 2 attack dice.
-- **When**: `resolveCombat` is triggered and the monster's `currentBody` drops to 0.
+## Scenario: Combat Resolution - Gargoyle Defense
+- **Given**: A hero attacks a "Gargoyle" monster.
+- **When**: `handleMonsterClick` is triggered.
 - **Assert (Expected Outcomes)**:
-  - `combatResult.damageDealt` must be correctly calculated as `Max(0, skulls - shields)`.
-  - The monster must be removed from `gameSession.monsters`.
-  - The `lastAttack` object must be populated in the session for UI display.
-  - The system must ensure `attacksPerformed` is incremented and `turnPhase.hasPerformedAction` is set to `true` if no double attack is possible.
+  - `combatLogic.resolveCombat` is called with `defenseDice` = `monster.monster.difesa` + 2.
+  - The `CombatResultModal` displays the correct damage calculation.
+  - If `newBody` <= 0, the monster is removed from `gameSession.monsters`.
 
-## Scenario: Deterministic Movement and Trap Trigger
-- **Given**: A hero has 5 movement points and there is a trap at the next step of the path.
-- **When**: `movementEffect` processes the step onto the trap cell.
+## Scenario: Spell Targeting - Genie vs Line of Sight
+- **Given**: `targetingSpell` is "Genio". A monster is behind a wall (Line of Sight is blocked).
+- **When**: The user clicks the monster.
 - **Assert (Expected Outcomes)**:
-  - The hero's position must update to the trap cell.
-  - `movementPoints` must decrement.
-  - `checkTrapActivation` must return true, triggering the trap effect (damage/status change).
-  - The movement animation must stop immediately (`isMoving` = false), and the turn must end (`hasMoved` = true, `hasPerformedAction` = true).
-  - The system must ensure no logical dead-end occurs; the hero must remain in a valid state even after taking damage.
+  - `hooksMagicLogic.castSpell` is called successfully (Genie ignores LOS).
+  - `combatResult` is generated with 5 attack dice.
+  - `targetingSpell` is reset to `null`.
 
-## Scenario: Spell Targeting and Line of Sight
-- **Given**: A hero is targeting a "Palla di Fuoco" spell at a monster behind a wall.
-- **When**: The user clicks the monster on the board.
+## Scenario: Inventory Integrity - Two-Handed Weapon Conflict
+- **Given**: Hero has a "Shield" (ID 11) equipped.
+- **When**: User calls `hooksInventoryLogic.toggleEquipItem` for a "Great Axe" (ID 20, `noogg: 11`).
 - **Assert (Expected Outcomes)**:
-  - `handleMonsterClick` must invoke `hooksVisibilityCalc.hasLineOfSight`.
-  - Since LOS is blocked, the system must trigger `onNotify("Non hai linea di vista sul mostro!")` and abort the cast.
-  - The `targetingSpell` state must remain active, allowing the user to select a valid target or cancel.
-  - The system must not consume the spell from `availableSpells` until a valid cast is confirmed.
+  - The "Shield" (ID 11) is removed from `hero.equipped`.
+  - The "Great Axe" (ID 20) is added to `hero.equipped`.
+  - `onNotify` is triggered confirming the removal of the Shield.
 
-## Scenario: Inventory Mutual Exclusivity
-- **Given**: A hero has a "Shield" (ID 11) equipped and attempts to equip a "Two-Handed Sword" (noogg: 11).
-- **When**: `toggleEquipItem` is called for the sword.
+## Scenario: Deterministic Completion - Monster Turn
+- **Given**: `gameSession.currentTurn` > `gameSession.heroes.length`.
+- **When**: `Dungeon` component triggers `hooksMonsterAI.runMonsterTurn()`.
 - **Assert (Expected Outcomes)**:
-  - The system must detect the `noogg` conflict.
-  - The "Shield" must be automatically removed from `hero.equipped`.
-  - The "Two-Handed Sword" must be added to `hero.equipped`.
-  - A notification "Hai rimosso Scudo perché incompatibile" must be triggered.
-  - The session must be updated to reflect the new equipment state.
+  - `isMonsterTurnInProgress` is set to `true` at start and `false` at completion.
+  - `gameSession.currentTurn` is reset to 1.
+  - All `turnPhase` flags are reset to `false`.
+  - The system never hangs; even if no heroes are visible, the loop completes and returns control to the hero phase.
+
+## Scenario: Treasure Search - Wandering Monster
+- **Given**: A hero searches for treasure in a room with no treasures.
+- **When**: `hooksTreasure.searchTreasure` is called and the deck contains a "Mostro Errante" card.
+- **Assert (Expected Outcomes)**:
+  - `drawnTreasureCard` is set to the "Mostro Errante" card.
+  - `onTreasureCardDrawn` is triggered.
+  - Upon `closeTreasureCardModal`, `hooksTreasure.applyTreasureEffect` triggers `handleWanderingMonster`.
+  - A new monster is spawned adjacent to the hero and `performInstantAttack` is executed.
+
+## Scenario: Spell Selection - Wizard/Elf Logic
+- **Given**: `isSpellSelectionRequired` is `true`.
+- **When**: The Wizard selects 3 elements.
+- **Assert (Expected Outcomes)**:
+  - `currentHeroPicking` automatically transitions to the Elf.
+  - The UI updates to "Turno dell'Elfo".
+  - The 4th element is automatically assigned to the Elf upon selection.
+  - `onConfirmSelection` is triggered with the complete map of spells.

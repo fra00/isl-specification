@@ -1,50 +1,51 @@
 <!-- LOGIC TEST SCENARIOS FOR: shop-inventory.isl.md -->
 
-## Scenario: Item Selection State Synchronization
-- **Given**: The `ShopInventory` component is rendered with a list of `Equipment` items. `selectedItemId` is currently `null` or a different ID.
-- **When**: The user clicks on an item card in the list.
+## Scenario: Selection of Valid Equipment
+- **Given**: `items` contains a list of `Equipment` objects; `selectedItemId` is currently null.
+- **When**: User clicks on an `Equipment` item with a valid `id` present in the `items` list.
 - **Assert (Expected Outcomes)**:
-    - The `onSelect` callback is triggered with the correct `id` of the clicked item.
-    - The component reflects the selection (e.g., visual highlight) only after the parent state updates `selectedItemId`.
-    - The Preview area updates to display the image path `/img/equip/` + `selectedItem.immagine`.
+    - `onSelect` is triggered with the correct `id`.
+    - The UI reflects the selection (highlighting the item).
+    - The Preview component updates to display the image path: `/img/equip/` + `selectedItem.immagine`.
 
-## Scenario: Purchase Action Guarding
-- **Given**: An item is selected where `canBuy` is `false` (e.g., insufficient gold or `nopsg` / `solopsg` conflict).
-- **When**: The user attempts to click the "Acquista" button.
+## Scenario: Attempting Purchase of Incompatible or Unaffordable Item
+- **Given**: `selectedItemId` is set to an item where `canBuy` is `false` and `buyReason` is "Insufficient Gold" or "Incompatible Class".
+- **When**: User clicks the "Acquista" button.
 - **Assert (Expected Outcomes)**:
     - The `onBuy` callback is **not** triggered.
-    - The button remains in a disabled state.
-    - The UI displays the `buyReason` string as a tooltip or helper text to inform the user of the restriction.
+    - The "Acquista" button remains in a disabled state.
+    - The UI displays the `buyReason` string as a tooltip or helper text.
 
-## Scenario: Deterministic Purchase Flow
-- **Given**: An item is selected where `canBuy` is `true`.
-- **When**: The user clicks the "Acquista" button.
+## Scenario: Deterministic Flow on Successful Purchase
+- **Given**: `selectedItemId` is set to an item where `canBuy` is `true`.
+- **When**: User clicks the "Acquista" button.
 - **Assert (Expected Outcomes)**:
-    - The `onBuy` callback is triggered exactly once.
-    - The system must handle the asynchronous nature of the transaction: the component must remain responsive and not enter a "dead-end" state if the parent takes time to process the gold deduction.
-    - Upon successful purchase, the component state must refresh to reflect updated availability (e.g., if the item is now sold out or removed from the list).
+    - `onBuy` is triggered.
+    - The system must ensure the state transition is atomic (the purchase logic must complete or fail gracefully).
+    - The component must reset or update the `canBuy` status based on the new inventory/gold state returned by the parent.
+    - The flow must never remain in a "processing" state; the UI must re-enable interaction immediately after the parent confirms the transaction.
 
-## Scenario: Navigation Flow Integrity
-- **Given**: The shop interface is active.
-- **When**: The user clicks "Entra nel dungeon" or "Esci".
-- **Assert (Expected Outcomes)**:
-    - The respective callback (`onEnterDungeon` or `onExit`) is triggered.
-    - The component must ensure that any pending purchase state is cleared or finalized before navigation occurs.
-    - The flow must guarantee that the application transitions to the next game phase (Dungeon or Main Menu) without leaving the shop component in a "processing" or "loading" state.
-
-## Scenario: Edge Case - Empty Inventory
-- **Given**: The `items` list provided to the component is empty.
+## Scenario: Handling Empty or Null Item List
+- **Given**: `items` is an empty list `[]`.
 - **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-    - The list area displays an empty state message.
-    - The "Acquista" button is disabled by default.
-    - The Preview area is empty or shows a placeholder.
-    - No runtime errors occur when attempting to access `selectedItem` properties.
+    - The list container renders as empty (no items displayed).
+    - `selectedItemId` is effectively ignored or reset to null.
+    - The "Acquista" button is disabled by default as no selection is possible.
+    - No runtime errors occur during the iteration of `items`.
 
 ## Scenario: Adversarial Input - Invalid Selection
-- **Given**: The component is active.
-- **When**: A user attempts to trigger `onSelect` with an `id` that does not exist in the current `items` list.
+- **Given**: `items` contains IDs `[1, 2, 3]`.
+- **When**: `handleInteraction` is triggered with an `id` of `99` (non-existent).
 - **Assert (Expected Outcomes)**:
-    - The component logic must safely ignore the invalid selection.
-    - The `selectedItemId` should not be updated to an invalid reference.
-    - The UI must maintain the previous valid state or reset to a neutral state rather than crashing.
+    - The `onSelect` callback is **not** triggered.
+    - The component state remains unchanged (no invalid item is selected).
+    - The system maintains structural integrity by validating the existence of the item before updating the selection state.
+
+## Scenario: Guaranteed Flow Continuity (Navigation)
+- **Given**: The shop is open and the user is interacting with the list.
+- **When**: User clicks "Entra nel dungeon" or "Esci".
+- **Assert (Expected Outcomes)**:
+    - The respective callback (`onEnterDungeon` or `onExit`) is triggered.
+    - The flow ensures that any pending UI state (like hover effects or tooltips) is cleared.
+    - The system transitions out of the Shop component, ensuring no "zombie" listeners or blocking flags remain active in the parent state.

@@ -1,61 +1,58 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-spell-selection-modal.isl.md -->
 
-## Scenario: Initialization Flow
-- **Given**: A `GameSession` containing a Wizard and an Elf hero.
-- **When**: The `DungeonSpellSelectionModal` is mounted.
+## Scenario: Initialization with Valid Hero Party
+- **Given**: `heroes` contains both a Wizard and an Elf; `allSpells` is populated with 12 spells.
+- **When**: The `DungeonSpellSelectionModal` is initialized.
 - **Assert (Expected Outcomes)**:
-    - `currentHeroPicking` is correctly set to the Wizard instance.
+    - `currentHeroPicking` is set to the Wizard instance.
     - `pickedElements` is initialized as an empty list.
     - UI instruction displays "Turno del Mago".
 
-## Scenario: Wizard Element Selection (Partial)
-- **Given**: `currentHeroPicking` is the Wizard; `pickedElements` is empty.
-- **When**: The user selects "Fuoco".
+## Scenario: Initialization with Missing Wizard
+- **Given**: `heroes` contains only an Elf (no Wizard present).
+- **When**: The `DungeonSpellSelectionModal` is initialized.
 - **Assert (Expected Outcomes)**:
-    - "Fuoco" is added to `pickedElements`.
-    - `pickedElements.length` is 1.
-    - `currentHeroPicking` remains the Wizard.
+    - `currentHeroPicking` is null.
+    - UI displays "Nessun mago disponibile".
+    - `onConfirmSelection` is never triggered.
 
-## Scenario: Wizard Completes Selection (Transition to Elf)
-- **Given**: `currentHeroPicking` is the Wizard; `pickedElements` contains ["Fuoco", "Acqua"].
-- **When**: The user selects "Aria".
+## Scenario: Wizard Selection Flow (3 Elements)
+- **Given**: `currentHeroPicking` is the Wizard; `pickedElements` is empty.
+- **When**: The user selects 3 distinct elements (e.g., "Fuoco", "Acqua", "Aria").
 - **Assert (Expected Outcomes)**:
-    - "Aria" is added to `pickedElements`.
-    - `pickedElements.length` is 3.
-    - `currentHeroPicking` transitions to the Elf.
+    - `pickedElements` contains exactly 3 elements.
+    - `currentHeroPicking` transitions to the Elf instance.
     - UI instruction updates to "Turno dell'Elfo".
 
-## Scenario: Elf Completes Selection (Deterministic Completion)
-- **Given**: `currentHeroPicking` is the Elf; `pickedElements` contains ["Fuoco", "Acqua", "Aria"].
-- **When**: The user selects "Terra".
-- **Assert (Expected Outcomes)**:
-    - "Terra" is added to `pickedElements`.
-    - `pickedElements.length` is 4.
-    - `wizardSpells` contains all spells matching "Fuoco", "Acqua", and "Aria".
-    - `elfSpells` contains all spells matching "Terra".
-    - `onConfirmSelection` is triggered with the correct map: `{ wizardId: [...], elfId: [...] }`.
-    - The modal flow terminates, ensuring no further interactions are possible (Deterministic Completion).
-
-## Scenario: Adversarial - Duplicate Element Selection
+## Scenario: Prevent Duplicate Element Selection
 - **Given**: `pickedElements` contains ["Fuoco"].
 - **When**: The user attempts to select "Fuoco" again.
 - **Assert (Expected Outcomes)**:
     - `pickedElements` remains length 1.
     - No state transition occurs.
-    - The system ignores the duplicate input, maintaining structural integrity.
+    - The action is ignored.
 
-## Scenario: Adversarial - Out of Bounds Selection
-- **Given**: `pickedElements` contains ["Fuoco", "Acqua", "Aria", "Terra"].
-- **When**: The user attempts to select a 5th element.
+## Scenario: Deterministic Completion (Wizard to Elf Handover)
+- **Given**: Wizard has picked 3 elements; `currentHeroPicking` is the Elf.
+- **When**: The user selects the 4th and final element (e.g., "Terra").
 - **Assert (Expected Outcomes)**:
-    - The system rejects the input.
-    - The `onConfirmSelection` trigger is not called a second time.
-    - The flow remains in the final state, preventing logical dead-ends or state corruption.
+    - `pickedElements` contains 4 elements.
+    - `wizardSpells` are correctly filtered from `allSpells` based on the first 3 elements.
+    - `elfSpells` are correctly filtered from `allSpells` based on the 4th element.
+    - `onConfirmSelection` is triggered with a map containing both `wizardId` and `elfId` keys.
+    - The modal flow reaches a terminal state (Success).
 
-## Scenario: Missing Hero Dependency
-- **Given**: `heroes` list contains only a Barbarian (no Wizard or Elf).
-- **When**: The component initializes.
+## Scenario: Adversarial - Attempting Selection After Completion
+- **Given**: `pickedElements` already contains 4 elements and `onConfirmSelection` has been triggered.
+- **When**: The user attempts to trigger `selectElement` again.
 - **Assert (Expected Outcomes)**:
-    - The system handles the missing dependency gracefully (e.g., `currentHeroPicking` is null).
-    - The flow does not crash.
-    - The UI remains in a safe state, preventing invalid `onConfirmSelection` calls.
+    - The logic must be idempotent; no further state changes occur.
+    - The system does not re-trigger `onConfirmSelection`.
+
+## Scenario: Data Integrity - Spell Filtering
+- **Given**: `allSpells` contains 12 spells (3 per element).
+- **When**: Wizard selects "Fuoco", "Acqua", "Aria".
+- **Assert (Expected Outcomes)**:
+    - `wizardSpells` contains exactly 9 spell IDs (3 from each selected element).
+    - `elfSpells` contains exactly 3 spell IDs (from the remaining "Terra" element).
+    - No spell IDs are duplicated between the two lists.

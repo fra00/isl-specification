@@ -7,118 +7,125 @@
  */
 
 import React, { useCallback } from 'react';
-import { Item, Equipment } from './domain-ruleset';
 
-export default function DungeonInventoryModal({ isOpen, hero, onClose }) {
-  const handleClose = useCallback(() => {
-    if (onClose) {
-      onClose();
+export default function DungeonInventoryModal({
+  isOpen = false,
+  hero = null,
+  onClose = () => {},
+  itemsRegistry = [],
+  equipmentRegistry = []
+}) {
+  const handleClose = useCallback((e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
     }
+    onClose();
   }, [onClose]);
 
   if (!isOpen || !hero) {
     return null;
   }
 
-  // Fallback to interface properties if ISL specific properties are missing in the actual data
-  const heroImage = hero?.hero?.immagine || hero?.hero?.portrait;
-  const heroName = hero?.hero?.nome || hero?.hero?.classe || 'Eroe Sconosciuto';
-  const heroClass = hero?.hero?.classe || '';
+  const heroData = hero.hero || {};
+  // Fallback to portrait or miniature since 'immagine' is not explicitly in the Hero signature
+  const heroImage = heroData.portrait || heroData.miniature || '';
+  const heroName = heroData.nome || heroData.classe || 'Eroe Sconosciuto';
+  const heroClass = heroData.classe || 'Classe Ignota';
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
       onClick={handleClose}
     >
-      <div 
-        className="bg-gray-900 text-white rounded-lg shadow-2xl max-w-[500px] w-full p-6 flex flex-col gap-6"
+      <div
+        className="bg-gray-900 text-white rounded-xl shadow-2xl w-full max-w-[500px] max-h-[90vh] overflow-y-auto p-6 relative flex flex-col gap-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-gray-700 pb-4">
+        <div className="flex justify-between items-center border-b border-gray-700 pb-3">
           <h2 className="text-2xl font-bold">Inventario</h2>
-          <button 
+          <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors text-xl"
+            className="text-gray-400 hover:text-white transition-colors"
             aria-label="Chiudi"
           >
-            ✕
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {/* Hero Identity */}
-        <div className="flex items-center gap-4 bg-gray-800 p-4 rounded-lg">
+        <div className="flex items-center gap-4">
           {heroImage && (
-            <img 
-              src={`/img/personaggi/${heroImage}`} 
-              alt={heroName} 
-              className="w-16 h-16 object-cover rounded-full border-2 border-gray-600"
+            <img
+              src={`/img/personaggi/${heroImage}`}
+              alt={heroName}
+              className="w-16 h-16 rounded-full object-cover bg-gray-800 border-2 border-gray-600"
             />
           )}
-          <div>
-            <h3 className="text-xl font-bold">{heroName}</h3>
-            {heroClass && heroClass !== heroName && (
-              <p className="text-gray-400 text-sm">{heroClass}</p>
-            )}
+          <div className="flex flex-col">
+            <h3 className="text-xl font-bold text-gray-100">{heroName}</h3>
+            <span className="text-sm text-gray-400">{heroClass}</span>
           </div>
         </div>
 
         {/* Gold Balance */}
-        <div className="bg-yellow-900/30 border border-yellow-700/50 p-4 rounded-lg flex justify-between items-center">
-          <span className="font-semibold text-yellow-500">Monete d'Oro:</span>
-          <span className="text-xl font-bold text-yellow-400">{hero?.gold || 0}</span>
+        <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-between border border-yellow-900/50">
+          <span className="text-gray-300 font-medium">Monete d'Oro:</span>
+          <span className="text-yellow-400 font-bold text-xl">{hero.gold || 0}</span>
         </div>
 
         {/* Items Grid (Oggetti) */}
-        <div>
-          <h4 className="text-lg font-semibold mb-3 border-b border-gray-700 pb-2">Oggetti</h4>
-          {hero?.inventory && hero.inventory.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          <h4 className="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-1">Oggetti</h4>
+          {(!hero.inventory || hero.inventory.length === 0) ? (
+            <p className="text-gray-500 italic text-sm">Nessun oggetto nell'inventario.</p>
+          ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {hero.inventory.map((itemId, index) => {
-                const itemInstance = Item({ id: itemId });
+                const item = itemsRegistry.find(i => i.id === itemId);
                 return (
-                  <div key={`item-${itemId}-${index}`} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center text-center gap-2 border border-gray-700">
-                    {itemInstance?.immagine ? (
-                      <img src={`/img/oggetti/${itemInstance.immagine}`} alt={itemInstance.nome} className="w-10 h-10 object-cover rounded" />
+                  <div key={`item-${itemId}-${index}`} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col items-center text-center gap-2">
+                    {item ? (
+                      <>
+                        <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400">
+                          Img
+                        </div>
+                        <span className="text-sm font-medium">{item.nome}</span>
+                      </>
                     ) : (
-                      <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-xs">
-                        #{itemId}
-                      </div>
+                      <span className="text-sm text-gray-500 italic">Unknown Item</span>
                     )}
-                    <span className="text-sm">{itemInstance?.nome || `Oggetto ${itemId}`}</span>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <p className="text-gray-500 italic text-sm">Nessun oggetto nell'inventario.</p>
           )}
         </div>
 
         {/* Equipment List (Equipaggiamento) */}
-        <div>
-          <h4 className="text-lg font-semibold mb-3 border-b border-gray-700 pb-2">Equipaggiamento</h4>
-          {hero?.equipment && hero.equipment.length > 0 ? (
-            <ul className="space-y-2">
+        <div className="flex flex-col gap-3">
+          <h4 className="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-1">Equipaggiamento</h4>
+          {(!hero.equipment || hero.equipment.length === 0) ? (
+            <p className="text-gray-500 italic text-sm">Nessun equipaggiamento.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
               {hero.equipment.map((equipId, index) => {
-                const equipInstance = Equipment({ id: equipId });
+                const equip = equipmentRegistry.find(e => e.id === equipId);
                 return (
-                  <li key={`equip-${equipId}-${index}`} className="bg-gray-800 p-3 rounded-lg flex items-center gap-3 border border-gray-700">
-                    {equipInstance?.immagine ? (
-                       <img src={`/img/equip/${equipInstance.immagine}`} alt={equipInstance.nome} className="w-8 h-8 object-cover rounded" />
+                  <div key={`equip-${equipId}-${index}`} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex items-center gap-3">
+                    {equip ? (
+                      <span className="text-sm font-medium">{equip.nome}</span>
                     ) : (
-                       <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs">#{equipId}</div>
+                      <span className="text-sm text-gray-500 italic">Unknown Equipment</span>
                     )}
-                    <span className="text-sm font-medium">{equipInstance?.nome || `Equipaggiamento ${equipId}`}</span>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
-          ) : (
-            <p className="text-gray-500 italic text-sm">Nessun equipaggiamento.</p>
+            </div>
           )}
         </div>
-
       </div>
     </div>
   );

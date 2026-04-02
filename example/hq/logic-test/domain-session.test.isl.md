@@ -1,62 +1,52 @@
 <!-- LOGIC TEST SCENARIOS FOR: domain-session.isl.md -->
 
-# GameDomainSession Logic Test Scenarios
-
 ## Scenario: Hero Inventory Integrity
 - **Given**: A `HeroState` with an empty `inventory` and `equipment` list.
-- **When**: An `Item` or `Equipment` ID is added to the respective lists.
-- **Assert (Expected Outcomes)**:
-    - The ID must exist within the valid range defined in `@Item` or `@Equipment`.
-    - The `HeroState` must not allow duplicate IDs if the business rule dictates unique ownership.
-    - Adding an item must not trigger a state mutation in the static `@Hero` definition.
+- **When**: An item ID is added to `inventory` and an equipment ID is added to `equipped`.
+- **Assert (Expected Outcomes)**: 
+    - The `inventory` list contains the added item ID.
+    - The `equipped` list contains the added equipment ID.
+    - The `HeroState` remains valid (no null references in lists).
+    - The `currentBody` and `currentMind` values remain unchanged unless the item/equipment provides a passive modifier.
 
 ## Scenario: Monster Spawn Determinism
-- **Given**: A `GameSession` with a `currentMap` containing `MapCellMonster` definitions and an empty `monsters` list.
-- **When**: The game engine triggers a spawn event for a specific coordinate (x, y).
+- **Given**: A `GameSession` with an empty `monsters` list and a `MapDefinition` containing a `MapCell` with a `MapCellMonster` (mos: true).
+- **When**: The system triggers a spawn event for that coordinate.
 - **Assert (Expected Outcomes)**:
-    - The coordinate (x, y) must be added to `spawnedLocations` to prevent duplicate spawning.
-    - A new `MonsterState` must be instantiated using the `@Monster` definition linked to the `MapCellMonster.mosid`.
-    - The `currentBody` and `currentMind` of the `MonsterState` must initialize to the values defined in the static `@Monster` definition unless overridden by `MapCellMonster` properties.
+    - A new `MonsterState` is added to the `GameSession.monsters` list.
+    - The `spawnedLocations` list in `GameSession` is updated with the "x,y" string of the cell.
+    - The `MonsterState` correctly references the static `@Monster` definition.
+    - The `currentBody` of the `MonsterState` matches the `MapCellMonster.corpo` value.
 
-## Scenario: Door Interaction State
-- **Given**: A `GameSession` where a door exists at (x, y) in `currentMap.porte`.
-- **When**: A hero performs an "Open Door" action at (x, y).
+## Scenario: Turn Phase Transition Logic
+- **Given**: A `HeroState` where `TurnPhase` is `HasMoved`.
+- **When**: The hero performs an attack action.
 - **Assert (Expected Outcomes)**:
-    - The coordinate "x,y" must be appended to `openedDoors`.
-    - The `VisibilityMap` must be updated to reveal the area behind the door (fog of war removal).
-    - If the door triggers a `MapScript`, the script must be queued for execution.
+    - The `TurnPhase` transitions to `HasPerformedAction`.
+    - The `lastAttack` object in `GameSession` is populated with the combat result.
+    - The system prevents further movement actions for the remainder of the turn.
 
-## Scenario: Turn Phase Transition Continuity
-- **Given**: A `HeroState` in `TurnPhase.HasMoved` state.
-- **When**: The hero performs an action (e.g., `attack` or `search`).
+## Scenario: Door Interaction and State Persistence
+- **Given**: A `MapDoor` at coordinates (5, 5) and an empty `openedDoors` list in `GameSession`.
+- **When**: A hero moves to an adjacent cell and triggers an "Open Door" action.
 - **Assert (Expected Outcomes)**:
-    - The state must transition to `TurnPhase.HasPerformedAction`.
-    - The system must validate that the hero has sufficient movement points remaining if the action is movement-dependent.
-    - The system must prevent a second "Action" phase if the current phase is already `HasPerformedAction`.
+    - The string "5,5" is added to `GameSession.openedDoors`.
+    - The visibility logic (Fog of War) for the adjacent room is updated to `fog: false`.
+    - The state change is persistent across subsequent turns.
 
 ## Scenario: Guaranteed Completion of Treasure Draw
 - **Given**: A `GameSession` with a `treasureDeck` containing at least one `TreasureCard`.
-- **When**: A hero triggers a "Search for Treasure" action.
+- **When**: A hero performs a "Search for Treasure" action.
 - **Assert (Expected Outcomes)**:
-    - The `treasureDeck` must return the top card and remove it from the list.
-    - If the deck is empty, the flow must handle the "Empty Deck" state (e.g., reshuffle or no-op) without crashing.
-    - The `HeroState` must be updated based on the `TreasureCard.azione` (e.g., `modifica_hp` or `aggiungi_oro`).
-    - The system must ensure the "isProcessing" flag (if applicable to the UI/Logic bridge) is reset to `false` regardless of whether the card effect was a trap or a reward, ensuring the turn can proceed.
+    - The `treasureDeck` count decreases by 1.
+    - The `GameSession` state is updated to reflect the card's `azione` (e.g., `aggiungi_oro` or `mostro_errante`).
+    - If the deck is empty, the flow must trigger a "Deck Reshuffle" or "No Treasure" state to ensure the action completes without hanging.
+    - The `isProcessing` flag (if applicable to the UI/Logic bridge) is reset to `false` regardless of whether a card was drawn or the deck was empty.
 
-## Scenario: Adversarial Movement Validation
-- **Given**: A `HeroState` at (x, y) and a `MapCell` at (x+1, y) where `arnt.antroc` is `true`.
-- **When**: The hero attempts to move to (x+1, y).
+## Scenario: Adversarial Movement Restriction
+- **Given**: A `HeroState` at (1, 1) and a `MapCell` at (1, 2) where `arnt.antroc` is `true` (Rock block).
+- **When**: The hero attempts to move to (1, 2).
 - **Assert (Expected Outcomes)**:
-    - The movement action must be rejected.
-    - The `HeroState` coordinates (x, y) must remain unchanged.
-    - The `TurnPhase` must not advance to `HasMoved` if the move was invalid.
-
-## Scenario: Deterministic Session Cleanup
-- **Given**: A `GameSession` with active `monsters` and `openedDoors`.
-- **When**: The `currentMissionIndex` is incremented (Mission Complete).
-- **Assert (Expected Outcomes)**:
-    - All `monsters` must be cleared from the `GameSession`.
-    - `openedDoors` and `spawnedLocations` must be reset to empty lists.
-    - `currentTurn` must reset to 1.
-    - The `HeroState` must persist `gold`, `inventory`, and `equipment` while resetting `currentBody` and `currentMind` to base values (or mission-start values).
-    - The system must guarantee that no stale references to the previous `MapDefinition` remain in memory.
+    - The movement action is rejected by the domain logic.
+    - The `HeroState.x` and `HeroState.y` remain at (1, 1).
+    - No movement points are deducted from the hero's turn allowance.

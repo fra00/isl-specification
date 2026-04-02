@@ -1,51 +1,53 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-secret-passages.isl.md -->
 
-## Scenario: Search Passages - Successful Discovery
-- **Given**: A hero is positioned at (5, 5). A secret passage exists at (6, 5) with `oriz: false` (Vertical). The `visibilityCalc` returns a list of visible cells including (5, 5) and (7, 5).
+## Scenario: Successful Discovery of a Horizontal Secret Passage
+- **Given**: A hero is at (5, 5). A secret passage exists at (5, 6) with `oriz: true`. The `visibilityCalc` returns a list of visible cells including (5, 5) and (5, 7).
 - **When**: The user triggers `searchPassages`.
 - **Assert (Expected Outcomes)**:
-    - `isDiscoverable` evaluates to true because (7, 5) is in `visibleCells` and the passage is vertical.
-    - The passage at (6, 5) is added to `foundPassages` with `img: "psv.jpg"`.
+    - `isDiscoverable` evaluates to true because (5, 7) is in `visibleCells` (adjacent to (5, 6)).
+    - `foundPassages` contains `{x: 5, y: 6, img: "pso.jpg"}`.
     - `onNotify` is called with "Hai trovato un passaggio segreto!".
     - `onActionDone` is triggered to end the hero's turn action.
 
-## Scenario: Search Passages - No Passage Found
-- **Given**: A hero is at (10, 10). The `visibilityCalc` returns visible cells (10, 10) and (11, 10). No cells with `psgg.ps > 0` are adjacent to the visible area.
+## Scenario: No Secret Passage in Proximity
+- **Given**: A hero is at (10, 10). The nearest secret passage is at (20, 20). `visibilityCalc` returns cells only within a 3-tile radius of (10, 10).
 - **When**: The user triggers `searchPassages`.
 - **Assert (Expected Outcomes)**:
-    - `foundInThisSearch` remains false.
+    - `isDiscoverable` remains false for all potential passages.
+    - `foundPassages` remains unchanged.
     - `onNotify` is called with "Nessun passaggio segreto trovato.".
-    - `onActionDone` is triggered to end the hero's turn action.
+    - `onActionDone` is triggered to ensure the turn flow continues.
 
-## Scenario: Get Found Passages - Fog of War Re-hiding
-- **Given**: A secret passage at (3, 3) was previously discovered and added to `foundPassages`. The `visibilityMap` for (3, 3) and its adjacent cells (2, 3) and (4, 3) is updated to `fog: true`.
+## Scenario: Visibility-Based Filtering of Found Passages
+- **Given**: `foundPassages` contains a passage at (2, 2). The `visibilityMap` has `fog: true` for (2, 2) and all adjacent cells (1, 2), (3, 2), (2, 1), (2, 3).
 - **When**: `getFoundPassages` is called.
 - **Assert (Expected Outcomes)**:
-    - `isVisible` evaluates to false for the passage at (3, 3) because all `cellsToCheck` have `fog: true`.
-    - The returned `visiblePassages` list is empty.
-    - The internal `foundPassages` state remains unchanged (persistence of discovery).
+    - `isVisible` evaluates to false because no `cellsToCheck` have `fog: false`.
+    - The returned list `visiblePassages` is empty.
+    - The system correctly hides the passage from the UI even though it is in the `foundPassages` state.
 
-## Scenario: Search Passages - Already Discovered
-- **Given**: A secret passage at (2, 2) is already present in `foundPassages`. The hero performs a search while standing adjacent to (2, 2).
-- **When**: The user triggers `searchPassages`.
+## Scenario: Deterministic Flow Completion (Action Reset)
+- **Given**: A hero has `turnOrder` matching `currentTurn`. The `searchPassages` logic is triggered.
+- **When**: The search logic completes (regardless of whether a passage was found or not).
 - **Assert (Expected Outcomes)**:
-    - The logic checks `{x: 2, y: 2}` against `foundPassages` and identifies it is already present.
-    - The passage is not added a second time (no duplicate entries).
-    - `foundInThisSearch` remains false (unless another *new* passage is found).
-    - `onNotify` is called with "Nessun passaggio segreto trovato." (assuming no other new passages exist).
+    - The `onActionDone` callback is guaranteed to execute.
+    - The system state never remains in a "searching" or "processing" deadlock.
+    - The `GameSession` turn phase is updated to reflect that the action has been consumed.
 
-## Scenario: Deterministic Flow Completion
-- **Given**: The `searchPassages` function is triggered.
-- **When**: The execution completes regardless of whether a passage is found or not.
-- **Assert (Expected Outcomes)**:
-    - The flow must guarantee that `onActionDone()` is called in every branch (Success or Failure).
-    - The system state must not remain in a "searching" or "processing" state.
-    - The `foundPassages` list must maintain structural integrity (never null, only valid coordinate objects).
-
-## Scenario: Boundary Condition - Horizontal Passage Orientation
-- **Given**: A horizontal passage (`oriz: true`) at (5, 5). The hero is at (5, 6).
+## Scenario: Edge Case - Invalid Visibility Map Data
+- **Given**: `visibilityCalc.calculateVisibleCells` returns an empty list due to a map error or null `visibilityMap`.
 - **When**: `searchPassages` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The logic checks `(5, 5-1)` i.e., (5, 4) and `(5, 5+1)` i.e., (5, 6).
-    - Since (5, 6) is in `visibleCells`, `isDiscoverable` is set to true.
-    - The passage is correctly identified and added with `img: "pso.jpg"`.
+    - The loop over `potentialPassages` fails to find any `isDiscoverable` matches.
+    - `foundInThisSearch` remains false.
+    - `onNotify` triggers the "Nessun passaggio segreto trovato." message.
+    - `onActionDone` is triggered, preventing the UI from hanging on a failed calculation.
+
+## Scenario: Duplicate Discovery Prevention
+- **Given**: A secret passage at (8, 8) is already present in `foundPassages`.
+- **When**: The hero performs `searchPassages` again while standing adjacent to (8, 8).
+- **Assert (Expected Outcomes)**:
+    - The condition `{x: px, y: py} NOT in foundPassages` evaluates to false.
+    - The passage is not added a second time.
+    - `foundInThisSearch` remains false (unless another *new* passage is found).
+    - The system does not trigger redundant notifications for already discovered passages.

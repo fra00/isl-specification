@@ -8,218 +8,189 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
+import { MapDefinition } from './domain-map';
+import { Hero, Equipment } from './domain-ruleset';
+import { GameSession, HeroState } from './domain-session';
 import { useCampaignManager } from './dungeon-use-campaign-manager';
-import { HeroState, GameSession } from './domain-session';
 
-export default function PlayGame({ gameSession, onChangePageView, onUpdateSession }) {
-  const [campaign, setCampaign] = useState(null);
-  const [statsHeroes, setStatsHeroes] = useState([]);
-  const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+export default function PlayGame({ gameSession, onChangePageView, onUpdateSession, campaign }) {
+    const { loadCampaign, saveCampaign } = useCampaignManager({});
+    const [statsHeroes, setStatsHeroes] = useState([]);
+    const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const campaignManager = useCampaignManager({});
+    useEffect(() => {
+        let isMounted = true;
 
-  useEffect(() => {
-    let isMounted = true;
+        const initSession = async () => {
+            try {
+                setIsLoading(true);
+                
+                const heroesRes = await fetch('/jsonData/heroes.json');
+                const heroesJson = await heroesRes.json();
+                const heroesData = heroesJson.map(h => Hero(h));
+                
+                const equipRes = await fetch('/jsonData/equipment.json');
+                const equipJson = await equipRes.json();
+                // Parse equipment to validate data structure as per ISL
+                equipJson.map(e => Equipment(e));
 
-    const initSession = async () => {
-      try {
-        const [campaignRes, heroesRes, equipmentRes] = await Promise.all([
-          fetch('/jsonData/campagne.json'),
-          fetch('/jsonData/heroes.json'),
-          fetch('/jsonData/equipment.json')
-        ]);
+                if (!isMounted) return;
 
-        const campaignData = await campaignRes.json();
-        const heroesData = await heroesRes.json();
-        const equipmentData = await equipmentRes.json();
+                setStatsHeroes(heroesData);
 
-        if (!isMounted) return;
+                const savedData = loadCampaign();
+                if (savedData != null) {
+                    setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
+                } else {
+                    const defaultHeroes = heroesData.map((hero, index) => {
+                        let initialEquipment = [];
+                        if (hero.classe === 'Barbaro') initialEquipment = [13];
+                        else if (hero.classe === 'Nano') initialEquipment = [2];
+                        else if (hero.classe === 'Elfo') initialEquipment = [12];
+                        else if (hero.classe === 'Mago') initialEquipment = [4];
 
-        // Deep clean function to ignore any data where x or y is 0 (as per strict 1-indexed grid rules)
-        const cleanData = (obj) => {
-          if (Array.isArray(obj)) {
-            return obj
-              .filter(item => item?.x !== 0 && item?.y !== 0)
-              .map(cleanData);
-          } else if (obj !== null && typeof obj === 'object') {
-            const newObj = {};
-            for (const key in obj) {
-              newObj[key] = cleanData(obj[key]);
+                        return HeroState({
+                            heroId: hero.id,
+                            turnOrder: index + 1,
+                            currentBody: hero.corpo,
+                            currentMind: hero.mente,
+                            gold: 0,
+                            inventory: [],
+                            equipment: initialEquipment,
+                            equipped: initialEquipment,
+                            availableSpells: [],
+                            activeStatus: [],
+                            isEscaped: false,
+                            x: 0,
+                            y: 0,
+                            hero: hero
+                        });
+                    });
+                    
+                    saveCampaign(defaultHeroes, 0);
+                    setMaxUnlockedMissionIndex(0);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError(err instanceof Error ? err.message : 'Failed to initialize session');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
-            return newObj;
-          }
-          return obj;
         };
 
-        const cleanedCampaign = cleanData(campaignData);
-        setCampaign(cleanedCampaign);
-        setStatsHeroes(heroesData);
+        initSession();
 
-        const savedData = campaignManager.loadCampaign();
-        
-        if (savedData != null) {
-          setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
-        } else {
-          const defaultHeroes = heroesData.map((hero, index) => {
-            let initialEquipment = [];
-            if (hero.classe === "Barbaro") initialEquipment = [13];
-            else if (hero.classe === "Nano") initialEquipment = [2];
-            else if (hero.classe === "Elfo") initialEquipment = [12];
-            else if (hero.classe === "Mago") initialEquipment = [4];
+        return () => {
+            isMounted = false;
+        };
+    }, [loadCampaign, saveCampaign]);
 
-            return HeroState({
-              heroId: hero.id,
-              turnOrder: index + 1,
-              currentBody: hero.corpo,
-              currentMind: hero.mente,
-              gold: 0,
-              inventory: [],
-              equipment: initialEquipment,
-              equipped: initialEquipment,
-              availableSpells: [],
-              activeStatus: [],
-              isEscaped: false,
-              x: 0,
-              y: 0,
-              hero: hero
-            });
-          });
-          
-          campaignManager.saveCampaign(defaultHeroes, 0);
-          setMaxUnlockedMissionIndex(0);
+    const selectMission = useCallback(async (index) => {
+        try {
+            const savedData = loadCampaign();
+            
+            if (index <= maxUnlockedMissionIndex && savedData != null) {
+                const missionFile = campaign?.missioni?.[index]?.file;
+                if (!missionFile) return;
+
+                const mapRes = await fetch(`/jsonData/map/${missionFile}`);
+                const mapJson = await mapRes.json();
+                const mapData = MapDefinition(mapJson);
+
+                const updatedSession = GameSession({
+                    ...(gameSession || {}),
+                    campaignName: campaign?.nome_campagna || "",
+                    currentMap: mapData,
+                    currentMissionIndex: index,
+                    heroes: savedData.heroes
+                });
+
+                onUpdateSession(updatedSession);
+                onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+            }
+        } catch (err) {
+            console.error("Failed to load mission:", err);
         }
-      } catch (error) {
-        console.error("Error initializing session:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+    }, [campaign, gameSession, maxUnlockedMissionIndex, onChangePageView, onUpdateSession, loadCampaign]);
 
-    initSession();
+    const goBack = useCallback(() => {
+        onChangePageView(PageNavigationEnum.MAIN_MENU);
+    }, [onChangePageView]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [campaignManager]);
-
-  const selectMission = useCallback(async (index) => {
-    const savedData = campaignManager.loadCampaign();
-    const maxAccessibleIndex = maxUnlockedMissionIndex;
-
-    if (index <= maxAccessibleIndex && savedData != null && campaign != null) {
-      try {
-        const missionFile = campaign.missioni[index].file;
-        const mapRes = await fetch(`/jsonData/map/${missionFile}`);
-        let mapData = await mapRes.json();
-
-        // Ensure grid coordinates strictly follow the 1-indexed rule by filtering out 0s
-        if (mapData.grid) mapData.grid = mapData.grid.filter(c => c.x !== 0 && c.y !== 0);
-        if (mapData.eroi_start) mapData.eroi_start = mapData.eroi_start.filter(c => c.x !== 0 && c.y !== 0);
-        if (mapData.porte) mapData.porte = mapData.porte.filter(c => c.x !== 0 && c.y !== 0);
-        if (mapData.scripts) mapData.scripts = mapData.scripts.filter(c => c.x !== 0 && c.y !== 0);
-
-        const updatedSession = GameSession({
-          campaignName: campaign.nome_campagna,
-          currentMap: mapData,
-          currentMissionIndex: index,
-          heroes: savedData.heroes,
-          monsters: [],
-          openedDoors: [],
-          spawnedLocations: [],
-          currentTurn: 1,
-          isHeroOrderConfirmed: false,
-          lastAttack: null,
-          treasureDeck: []
-        });
-
-        onUpdateSession(updatedSession);
-        onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-      } catch (error) {
-        console.error("Failed to load mission map:", error);
-      }
-    }
-  }, [campaign, maxUnlockedMissionIndex, campaignManager, onUpdateSession, onChangePageView]);
-
-  const goBack = useCallback(() => {
-    onChangePageView(PageNavigationEnum.MAIN_MENU);
-  }, [onChangePageView]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center w-full min-h-screen bg-gray-900 text-yellow-500 text-2xl font-bold">
-        Loading Campaign...
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center w-full min-h-screen p-8 bg-gray-900 text-white font-sans">
-      <h1 className="text-4xl font-bold mb-10 text-yellow-500 tracking-wider text-center">
-        {campaign?.nome_campagna || "HeroQuest Campaign"}
-      </h1>
-      
-      <div className="flex flex-col gap-6 w-full max-w-3xl">
-        {campaign?.missioni?.map((mission, index) => {
-          const isUnlocked = index <= maxUnlockedMissionIndex;
-          const isCompleted = index < maxUnlockedMissionIndex;
-          
-          let statusColor = "text-gray-500";
-          let borderColor = "border-gray-700";
-          let bgColor = "bg-gray-800";
-          let statusText = "Locked";
-
-          if (isCompleted) {
-            statusColor = "text-green-400";
-            borderColor = "border-green-600";
-            bgColor = "bg-gray-800";
-            statusText = "Completed";
-          } else if (isUnlocked) {
-            statusColor = "text-yellow-400";
-            borderColor = "border-yellow-500";
-            bgColor = "bg-gray-700";
-            statusText = "Available";
-          }
-
-          return (
-            <div 
-              key={mission.ordine || index}
-              className={`p-6 border-2 rounded-xl flex justify-between items-center transition-all duration-300 ${borderColor} ${bgColor} ${isUnlocked ? 'hover:scale-[1.02] shadow-lg cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-              onClick={() => isUnlocked && selectMission(index)}
-            >
-              <div className="flex flex-col">
-                <span className={`text-sm font-bold uppercase tracking-widest mb-1 ${statusColor}`}>
-                  {statusText}
-                </span>
-                <h2 className="text-2xl font-bold text-gray-100">
-                  {mission.ordine}. {mission.titolo}
-                </h2>
-              </div>
-              
-              {isUnlocked && (
-                <button 
-                  className="px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg shadow-md transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectMission(index);
-                  }}
-                >
-                  {isCompleted ? "Replay" : "Start"}
-                </button>
-              )}
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-full w-full bg-gray-900 text-white text-2xl font-bold">
+                Loading campaign...
             </div>
-          );
-        })}
-      </div>
+        );
+    }
 
-      <button 
-        onClick={goBack}
-        className="mt-12 px-8 py-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition-colors"
-      >
-        Back to Menu
-      </button>
-    </div>
-  );
+    if (error) {
+        return (
+            <div className="flex flex-col justify-center items-center h-full w-full bg-gray-900 text-red-500 space-y-4">
+                <div className="text-2xl font-bold">Error</div>
+                <div>{error}</div>
+                <button 
+                    onClick={goBack}
+                    className="px-6 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded shadow-lg transition-colors"
+                >
+                    Back to Menu
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col items-center p-8 w-full h-full bg-gray-900 text-white overflow-y-auto">
+            <h1 className="text-4xl font-bold mb-8 text-yellow-500 tracking-wider">
+                {campaign?.nome_campagna || "Campaign"}
+            </h1>
+            
+            <div className="w-full max-w-3xl space-y-4 mb-8">
+                {campaign?.missioni?.map((mission, index) => {
+                    const isCompleted = index < maxUnlockedMissionIndex;
+                    const isAvailable = index === maxUnlockedMissionIndex;
+                    const isLocked = index > maxUnlockedMissionIndex;
+
+                    let statusColor = "bg-gray-800 border-gray-700 text-gray-500";
+                    if (isCompleted) {
+                        statusColor = "bg-green-900 border-green-700 text-green-200 cursor-pointer hover:bg-green-800 shadow-md";
+                    } else if (isAvailable) {
+                        statusColor = "bg-yellow-900 border-yellow-700 text-yellow-200 cursor-pointer hover:bg-yellow-800 shadow-md shadow-yellow-900/50";
+                    }
+
+                    return (
+                        <div 
+                            key={index}
+                            onClick={() => !isLocked && selectMission(index)}
+                            className={`p-5 border-2 rounded-lg flex justify-between items-center transition-all duration-200 ${statusColor} ${isLocked ? 'opacity-60 cursor-not-allowed' : 'transform hover:-translate-y-1'}`}
+                        >
+                            <div>
+                                <h2 className="text-xl font-bold">
+                                    Mission {mission.ordine}: {mission.titolo}
+                                </h2>
+                            </div>
+                            <div>
+                                {isCompleted && <span className="font-bold uppercase tracking-wider text-sm">Completed</span>}
+                                {isAvailable && <span className="font-bold uppercase tracking-wider text-sm animate-pulse">Available</span>}
+                                {isLocked && <span className="font-bold uppercase tracking-wider text-sm">Locked</span>}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <button 
+                onClick={goBack}
+                className="px-8 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded shadow-lg transition-colors uppercase tracking-widest"
+            >
+                Back to Menu
+            </button>
+        </div>
+    );
 }

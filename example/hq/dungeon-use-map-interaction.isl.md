@@ -26,20 +26,22 @@
 #### isFrontOfDoor
 
 - **Contract**: Checks if coordinates are on or adjacent to a passage (door or revealed secret passage) and calculates the logical destination.
-- **Signature**: `(x: Integer, y: Integer) -> { found: Boolean, destination: {x: Integer, y: Integer} | null, passageCell: {x: Integer, y: Integer} | null }`
+- **Signature**: `(x: Integer, y: Integer) -> { found: Boolean, destination: {x: Integer, y: Integer}, passageCell: {x: Integer, y: Integer} } | null`
 - **Flow**:
-  - Search for a valid Passage at the provided coordinates or in the immediate adjacent cells.
+  - Search for a valid Passage at the provided `(x, y)` coordinates or its immediate neighbors (+- 1 distance).
     - A Passage is valid if it is a Door or a Secret Passage that has been previously discovered AND it is NOT in `gameSession.openedDoors`.
-  - IF no Passage is found, report that no interaction is possible.
+  - IF no Passage is found:
+    - RETURN null.
   - Identify the orientation of the found Passage (Horizontal or Vertical).
   - **Determine the Logical Destination**:
-    - Inspect the two cells adjacent to the Passage along its axis of transition.
-    - For Horizontal Passages, check the cells above and below.
-    - For Vertical Passages, check the cells to the left and right.
-    - Compare the Area ID (`valo`) of these cells with the Area ID of the starting position.
-    - The Destination is the adjacent cell that belongs to a different, valid Area (not wall or void).
+    - Find the hero whose turn it is in `gameSession`.
+    - Let `heroArea` be the Area ID (`valo`) of the cell where the hero is currently standing.
+    - Identify the two potential destination cells (`sideA`, `sideB`) adjacent to the Passage (North/South if Horizontal, East/West if Vertical).
+    - IF `sideA.valo` matches `heroArea`:
+      - The Destination is `sideB`.
+    - ELSE:
+      - The Destination is `sideA`. (Symmetric logic ensures transition regardless of starting side).
   - Return the Passage location and the calculated Destination.
-  - ELSE IF no valid Destination area is found, return no result.
 
 #### openPassage
 
@@ -47,12 +49,12 @@
 - **Signature**: `(passageX: Integer, passageY: Integer, destinationX: Integer, destinationY: Integer)`
 - **Flow**:
   - Let `coordKey` = `passageX + "," + passageY`.
+  - IF NOT (gameSession.currentMap.porte.exists(p => p.x == passageX AND p.y == passageY) OR foundPassages.exists(p => p.x == passageX AND p.y == passageY)) THEN RETURN.
   - IF `gameSession.openedDoors` does NOT contain `coordKey`:
-    - Add `coordKey` to `gameSession.openedDoors`.
-    - Trigger `onNotify("Porta aperta.")`.
     - TRY:
-      - **Reveal Vision**:
-        - Call `fogOfWarLogic.revealFromPoint(destinationX, destinationY)`.
+      - Call `fogOfWarLogic.revealFromPoint(destinationX, destinationY)`.
+      - Add `coordKey` to `gameSession.openedDoors`.
+      - Trigger `onNotify("Porta aperta.")`.
       - Trigger `onUpdateSession` with updated session.
     - CATCH:
       - LOG "Errore durante l'apertura della porta o rivelazione nebbia."

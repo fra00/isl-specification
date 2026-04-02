@@ -8,19 +8,17 @@
 
 import { useMemo } from 'react';
 
-export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
+export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
   const visibleDoors = useMemo(() => {
-    if (!gameSession?.currentMap || !boardVisibilityMap) {
+    if (!gameSession?.currentMap?.porte || !boardVisibilityMap?.data) {
       return [];
     }
 
-    const porte = gameSession.currentMap.porte || [];
-    const openedDoors = gameSession.openedDoors || [];
-    const visibilityData = boardVisibilityMap.data || [];
     const result = [];
+    const openedDoors = gameSession.openedDoors || [];
+    const visibilityData = boardVisibilityMap.data;
 
-    for (let i = 0; i < porte.length; i++) {
-      const door = porte[i];
+    for (const door of gameSession.currentMap.porte) {
       const x = parseInt(door.x, 10);
       const y = parseInt(door.y, 10);
       const doorCoordKey = `${x},${y}`;
@@ -43,8 +41,7 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
           cellsToCheck.push({ x: x + 1, y });
         }
 
-        for (let j = 0; j < cellsToCheck.length; j++) {
-          const coord = cellsToCheck[j];
+        for (const coord of cellsToCheck) {
           const visCell = visibilityData.find(
             (cell) => cell.x === coord.x && cell.y === coord.y
           );
@@ -67,4 +64,4 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
   }, [gameSession, boardVisibilityMap]);
 
   return { visibleDoors };
-}
+};

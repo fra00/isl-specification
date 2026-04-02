@@ -22,7 +22,11 @@
 - **Flow**:
   - Create `campaignData` object: `{ heroes: heroes, nextMissionIndex: nextMissionIndex, timestamp: Date.now() }`.
   - Serialize `campaignData` to JSON string.
-  - Save string to LocalStorage with key `"hq_campaign_data"`.
+  - TRY:
+    - Save string to LocalStorage with key `"hq_campaign_data"`.
+  - CATCH:
+    - Log error to console.
+    - Trigger UI notification "Could not save progress".
 
 #### loadCampaign
 

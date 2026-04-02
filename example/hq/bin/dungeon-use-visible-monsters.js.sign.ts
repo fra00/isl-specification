@@ -1,1 +1,1 @@
-export function useDungeonVisibleMonsters(config: { gameSession: any; boardVisibilityMap: any }): { visibleMonsters: any[] };
+export function useDungeonVisibleMonsters(config: { gameSession?: any; boardVisibilityMap?: any }): { visibleMonsters: Array<any> };

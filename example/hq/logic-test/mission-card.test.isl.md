@@ -1,46 +1,50 @@
 <!-- LOGIC TEST SCENARIOS FOR: mission-card.isl.md -->
 
-## Scenario: Locked Mission Interaction
-- **Given**: A `MissionCard` component where `status` is set to 'LOCKED'.
-- **When**: The user triggers `handleInteraction` (clicks the card or button).
+## Scenario: Render State Integrity
+- **Given**: A `MissionCard` component is initialized with a valid `Mission` object, an `index` of 0, and `status` set to 'AVAILABLE'.
+- **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-    - The `onSelect` callback must **not** be invoked.
-    - The component state remains unchanged.
-    - The UI remains in the 'LOCKED' visual state (gray theme, reduced opacity).
+    - The container applies the Gold theme styling.
+    - The title displays `mission.titolo`.
+    - The subtitle displays "Mission 1" (index + 1).
+    - The action button displays "Start".
 
-## Scenario: Available Mission Selection
-- **Given**: A `MissionCard` component where `status` is set to 'AVAILABLE'.
+## Scenario: Locked State Interaction Prevention
+- **Given**: A `MissionCard` component is initialized with `status` = 'LOCKED'.
+- **When**: The user triggers `handleInteraction` (click event).
+- **Assert (Expected Outcomes)**:
+    - The `onSelect` callback is NOT invoked.
+    - The component maintains its gray theme and reduced opacity.
+    - No state transition occurs within the component.
+
+## Scenario: Completed State Replay Capability
+- **Given**: A `MissionCard` component is initialized with `status` = 'COMPLETED'.
+- **When**: The user triggers `handleInteraction` (click event).
+- **Assert (Expected Outcomes)**:
+    - The `onSelect` callback is invoked with the correct `index`.
+    - The component maintains the Green theme styling.
+    - The action button displays "Replay".
+
+## Scenario: Null Mission Handling (Defensive Programming)
+- **Given**: A `MissionCard` component is initialized with `mission` = `null` and `status` = 'AVAILABLE'.
 - **When**: The user triggers `handleInteraction`.
 - **Assert (Expected Outcomes)**:
-    - The `onSelect` callback must be invoked exactly once with the correct `index` parameter.
-    - The flow must ensure the action is processed synchronously to prevent double-triggering.
+    - The flow terminates immediately.
+    - The `onSelect` callback is NOT invoked.
+    - The component does not crash (graceful exit).
 
-## Scenario: Completed Mission Replay
-- **Given**: A `MissionCard` component where `status` is set to 'COMPLETED'.
-- **When**: The user triggers `handleInteraction`.
+## Scenario: Deterministic Status Mapping
+- **Given**: A list of missions is processed to generate `MissionCard` components.
+- **When**: The `status` prop is toggled between 'LOCKED', 'AVAILABLE', and 'COMPLETED'.
 - **Assert (Expected Outcomes)**:
-    - The `onSelect` callback must be invoked with the correct `index`.
-    - The component must maintain the 'COMPLETED' visual state (green theme) regardless of the interaction, as the status is determined by external campaign progress.
+    - The component must strictly map 'LOCKED' to the gray theme/lock icon.
+    - The component must strictly map 'AVAILABLE' to the gold theme/play icon.
+    - The component must strictly map 'COMPLETED' to the green theme/checkmark icon.
+    - The system must never enter an undefined state (e.g., no theme or missing icon) for any valid enum value.
 
-## Scenario: Data Integrity and Mapping
-- **Given**: A `Mission` object with `titolo` = "The Trial" and `ordine` = 1.
-- **When**: The component is rendered with `index` = 0.
+## Scenario: Index-to-Order Consistency
+- **Given**: A `Mission` object where `ordine` is 5, but the component `index` is 2.
+- **When**: The component renders the subtitle.
 - **Assert (Expected Outcomes)**:
-    - The Title text displays "The Trial".
-    - The Subtitle text displays "Mission 1" (derived from `mission.ordine` or `index + 1`).
-    - The component maps the `status` string to the correct visual theme (Green/Yellow/Gray) as defined in the Appearance section.
-
-## Scenario: Deterministic State Handling
-- **Given**: A `MissionCard` component initialized with a null or undefined `mission` object.
-- **When**: The component attempts to render.
-- **Assert (Expected Outcomes)**:
-    - The component must handle the missing data gracefully (e.g., fallback to empty strings or default placeholders).
-    - The flow must not crash or enter an undefined state.
-    - `handleInteraction` must be guarded against null references to ensure no runtime exceptions occur if a user clicks a malformed card.
-
-## Scenario: Adversarial Interaction (Rapid Clicking)
-- **Given**: A `MissionCard` component where `status` is 'AVAILABLE'.
-- **When**: The user triggers `handleInteraction` multiple times in rapid succession.
-- **Assert (Expected Outcomes)**:
-    - The `onSelect` callback should be debounced or handled such that the application logic is not overwhelmed by redundant navigation requests.
-    - The system must ensure that even if multiple events fire, the final state of the application remains consistent and does not result in a logical dead-end (e.g., stuck in a loading state).
+    - The subtitle displays "Mission 3" (based on `index + 1` logic as per specification).
+    - The logic ensures that the UI reflects the sequence position rather than the raw `ordine` property if the specification mandates `index + 1`.

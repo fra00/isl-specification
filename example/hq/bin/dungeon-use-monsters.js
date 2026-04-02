@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { GameSession, MonsterState } from './domain-session';
 
 export function useDungeonMonsters({
@@ -16,53 +16,45 @@ export function useDungeonMonsters({
   onNotify,
   monsterDefinitions
 }) {
-  // internalState: Tracks which map cells have had monsters spawned to prevent duplicates
-  const spawnedLocationsRef = useRef(gameSession?.spawnedLocations || []);
-
-  // Sync internal ref with session state to ensure consistency across renders
-  useEffect(() => {
-    if (gameSession?.spawnedLocations) {
-      spawnedLocationsRef.current = gameSession.spawnedLocations;
-    }
-  }, [gameSession?.spawnedLocations]);
+  // internalState: spawnedLocations
+  // Derived from gameSession to ensure synchronization with the global state and prevent duplicates
+  const spawnedLocations = gameSession?.spawnedLocations || [];
 
   // Capability: spawnMonsters
   useEffect(() => {
-    if (!visibilityMap || !visibilityMap.data || !gameSession?.currentMap?.grid) {
+    if (!visibilityMap?.data || !gameSession?.currentMap?.grid) {
       return;
     }
 
     const newMonsters = [];
     const newSpawnedLocations = [];
-    const currentSpawned = spawnedLocationsRef.current;
 
     visibilityMap.data.forEach((visCell) => {
-      const locKey = `${visCell.x},${visCell.y}`;
+      const posKey = `${visCell.x},${visCell.y}`;
       
-      if (visCell.fog === false && !currentSpawned.includes(locKey)) {
+      if (!visCell.fog && !spawnedLocations.includes(posKey) && !newSpawnedLocations.includes(posKey)) {
         const mapCell = gameSession.currentMap.grid.find(
           (c) => c.x === visCell.x && c.y === visCell.y
         );
 
-        if (mapCell?.mostab?.mos === true) {
+        if (mapCell?.mostab?.mos) {
           const monsterDef = monsterDefinitions?.find(
             (m) => m.id === mapCell.mostab.mosid
           );
 
           if (monsterDef) {
             const newMonster = MonsterState({
-              id: Math.floor(Math.random() * 1000000),
+              id: Date.now() + Math.floor(Math.random() * 100000) + newMonsters.length,
               monster: monsterDef,
               x: visCell.x,
               y: visCell.y,
-              currentBody: monsterDef.corpo || 0,
-              currentMind: monsterDef.mente || 0,
+              currentBody: monsterDef.corpo,
+              currentMind: monsterDef.mente,
               activeStatus: []
             });
-            
+
             newMonsters.push(newMonster);
-            newSpawnedLocations.push(locKey);
-            currentSpawned.push(locKey); // Update ref immediately for the current loop execution
+            newSpawnedLocations.push(posKey);
           }
         }
       }
@@ -72,14 +64,11 @@ export function useDungeonMonsters({
       const updatedSession = GameSession({
         ...gameSession,
         monsters: [...(gameSession.monsters || []), ...newMonsters],
-        spawnedLocations: [...(gameSession.spawnedLocations || []), ...newSpawnedLocations]
+        spawnedLocations: [...spawnedLocations, ...newSpawnedLocations]
       });
-      
-      if (onUpdateSession) {
-        onUpdateSession(updatedSession);
-      }
+      onUpdateSession?.(updatedSession);
     }
-  }, [visibilityMap, gameSession, monsterDefinitions, onUpdateSession]);
+  }, [visibilityMap, gameSession, monsterDefinitions, onUpdateSession, spawnedLocations]);
 
   // Capability: spawnWanderingMonster
   const spawnWanderingMonster = useCallback((heroX, heroY) => {
@@ -102,14 +91,14 @@ export function useDungeonMonsters({
 
       if (mapCell) {
         const isWalkable = !mapCell.arnt?.antroc && !mapCell.arnt?.inv;
-        const isOccupiedByHero = gameSession?.heroes?.some(
+        const hasHero = gameSession?.heroes?.some(
           (h) => h.x === targetX && h.y === targetY
         );
-        const isOccupiedByMonster = gameSession?.monsters?.some(
+        const hasMonster = gameSession?.monsters?.some(
           (m) => m.x === targetX && m.y === targetY
         );
 
-        if (isWalkable && !isOccupiedByHero && !isOccupiedByMonster) {
+        if (isWalkable && !hasHero && !hasMonster) {
           spawnCell = { x: targetX, y: targetY };
           break;
         }
@@ -117,30 +106,23 @@ export function useDungeonMonsters({
     }
 
     if (!spawnCell) {
-      if (onNotify) {
-        onNotify("Non c'è spazio per il mostro errante!");
-      }
+      onNotify?.("Non c'è spazio per il mostro errante!");
       return null;
     }
 
-    // Pick a monster definition (Default ID 1 - Orco, or random from monsterDefinitions)
-    let selectedDef = monsterDefinitions?.find((m) => m.id === 1);
-    if (!selectedDef && monsterDefinitions?.length > 0) {
-      const randomIndex = Math.floor(Math.random() * monsterDefinitions.length);
-      selectedDef = monsterDefinitions[randomIndex];
-    }
-
-    if (!selectedDef) {
+    const defaultMonster = monsterDefinitions?.find((m) => m.id === 1) || monsterDefinitions?.[0];
+    
+    if (!defaultMonster) {
       return null;
     }
 
     const newMonster = MonsterState({
-      id: Math.floor(Math.random() * 1000000),
-      monster: selectedDef,
+      id: Date.now() + Math.floor(Math.random() * 100000),
+      monster: defaultMonster,
       x: spawnCell.x,
       y: spawnCell.y,
-      currentBody: selectedDef.corpo || 0,
-      currentMind: selectedDef.mente || 0,
+      currentBody: defaultMonster.corpo,
+      currentMind: defaultMonster.mente,
       activeStatus: []
     });
 
@@ -149,14 +131,12 @@ export function useDungeonMonsters({
       monsters: [...(gameSession?.monsters || []), newMonster]
     });
 
-    if (onUpdateSession) {
-      onUpdateSession(updatedSession);
-    }
-
+    onUpdateSession?.(updatedSession);
     return newMonster;
   }, [gameSession, monsterDefinitions, onNotify, onUpdateSession]);
 
   return {
+    spawnedLocations,
     spawnWanderingMonster
   };
 }

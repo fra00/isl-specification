@@ -35,7 +35,8 @@
 - **Gold Balance**:
   - Display: "Monete d'Oro: " + `hero.gold`.
 - **Items Grid (Oggetti)**:
-  - List: Iterate `hero.inventory`. For each ID, display the corresponding name and image of `@Item`.
+  - List: Iterate `hero.inventory`.
+    - Guard: IF item exists in registry: display name/image. ELSE: display 'Unknown Item' placeholder.
 - **Equipment List (Equipaggiamento)**:
   - List: Iterate `hero.equipment`. For each ID, display the corresponding name of `@Equipment`.
 

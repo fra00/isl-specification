@@ -50,7 +50,7 @@
 - **Contract**: Delegates actions to parent.
 - **Trigger**: User clicks buttons or items.
 - **Flow**:
-  - IF Item clicked -> Trigger `onSelect(id)`.
+  - IF Item clicked -> IF items.find(i => i.id === id) == null THEN return; ELSE Trigger onSelect(id).
   - IF "Acquista" clicked AND `canBuy` -> Trigger `onBuy()`.
   - IF "Entra nel dungeon" clicked -> Trigger `onEnterDungeon()`.
   - IF "Esci" clicked -> Trigger `onExit()`.

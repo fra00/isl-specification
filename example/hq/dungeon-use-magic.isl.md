@@ -40,7 +40,7 @@
   - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
   - IF `currentHero` is null, RETURN.
   - Find `spell` in `staticSpells` matching `spellId`.
-  - IF `spell` is null, RETURN.
+  - IF spell is null: onActionDone(); RETURN.
 
   - **Apply Spell Effect**:
     - Initialize `wasCastSuccessful` to false.
@@ -97,6 +97,7 @@
           - **Immunity Check**:
             - IF `targetMonster.monster.nonmorto` is true:
               - Trigger `onNotify("I non-morti non possono dormire!")`.
+              - Trigger `onActionDone()`.
               - RETURN.
           - **Mental Resistance Test**:
             - Roll a standard 6-sided die for each point of `targetMonster.currentMind`.
@@ -105,7 +106,7 @@
             - ELSE:
               - Add "Sleep" to `targetMonster.activeStatus`.
               - Trigger `onNotify(targetMonster.monster.nome + " cade in un sonno profondo!")`.
-            - Set `wasCastSuccessful` to true.
+          - Set `wasCastSuccessful` to true.
       - CASE "Genio":
         - IF `targetMonsterId` is NOT null:
           - Find `targetMonster` in `gameSession.monsters` matching `targetMonsterId`.
@@ -128,6 +129,7 @@
                 - Remove "Sleep" from `targetMonster.activeStatus`.
                 - Trigger `onNotify(targetMonster.monster.nome + " si è svegliato!")`.
             - Set `wasCastSuccessful` to true.
+
         - ELSE IF `targetX` is NOT null AND `targetY` is NOT null:
           - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(targetX, targetY)`.
           - IF `doorCheck.found` is true:
@@ -136,6 +138,7 @@
             - Set `wasCastSuccessful` to true.
           - ELSE:
             - Trigger `onNotify("Il Genio non trova alcuna porta da aprire qui.")`.
+
       - CASE "Tempesta":
         - Find `targetMonster` in `gameSession.monsters` matching `targetMonsterId`.
         - IF `targetMonster` is found:
@@ -177,7 +180,9 @@
       - Trigger `onNotify(currentHero.hero.classe + " lancia " + spell.nome + "!")`.
       - Trigger `onUpdateSession` with updated `gameSession`.
       - Trigger `onActionDone()`.
-
+    - IF wasCastSuccessful is false:
+      - Trigger onNotify('Bersaglio non valido.')
+      - Trigger onActionDone()
 
 #### removeExpiredEffects
 

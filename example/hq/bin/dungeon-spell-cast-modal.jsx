@@ -9,94 +9,103 @@
 import React, { useCallback } from 'react';
 
 export default function DungeonSpellCastModal({
-  isOpen = false,
-  hero = null,
-  allSpells = [],
-  onCastSpell = () => {},
-  onClose = () => {}
+    isOpen = false,
+    hero = null,
+    allSpells = [],
+    onCastSpell = () => {},
+    onClose = () => {}
 }) {
-  const handleCast = useCallback((spellId) => {
-    if (spellId != null) {
-      onCastSpell(spellId);
+    const handleCast = useCallback((spellId) => {
+        onCastSpell(spellId);
+    }, [onCastSpell]);
+
+    const handleClose = useCallback(() => {
+        onClose();
+    }, [onClose]);
+
+    if (!isOpen || !hero) {
+        return null;
     }
-  }, [onCastSpell]);
 
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
+    const availableSpells = hero.availableSpells || [];
 
-  if (!isOpen || !hero) {
-    return null;
-  }
-
-  // Map available spell IDs to actual spell objects
-  const availableSpellObjects = (hero.availableSpells || [])
-    .map(id => allSpells.find(s => s?.id === id))
-    .filter(Boolean);
-
-  return (
-    <div
-      className="fixed inset-0 z-[65] bg-black/85 flex items-center justify-center p-4"
-      onClick={handleClose}
-    >
-      <div
-        className="w-[90%] max-w-[1000px] bg-gray-900 text-white rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-          <h2 className="text-2xl font-bold text-amber-400">
-            Lancia Incantesimo - {hero.hero?.classe || 'Eroe'}
-          </h2>
-          <button
+    return (
+        <div 
+            className="fixed inset-0 z-[65] flex items-center justify-center bg-black/85 p-4"
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors text-3xl leading-none"
-            aria-label="Chiudi"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="overflow-y-auto pr-2 custom-scrollbar">
-          {availableSpellObjects.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">Nessun incantesimo disponibile.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {availableSpellObjects.map((spell) => (
-                <div
-                  key={spell.id}
-                  className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 flex flex-col hover:border-amber-500 transition-colors"
-                >
-                  {spell.immagine && (
-                    <div className="h-48 w-full bg-gray-950 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={`/img/cinc/${spell.immagine}`}
-                        alt={spell.nome || 'Incantesimo'}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Fallback in case the image is missing
-                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMzMzMiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzY2NiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbW1hZ2luZSBub24gdHJvdmF0YTwvdGV4dD48L3N2Zz4=';
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="text-lg font-bold text-amber-300 mb-2">{spell.nome}</h3>
-                    <p className="text-sm text-gray-300 flex-1 mb-4">{spell.descrizione}</p>
-                    <button
-                      className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors"
-                      onClick={() => handleCast(spell.id)}
+        >
+            <div 
+                className="w-[90%] max-w-[1000px] bg-slate-900 text-slate-100 rounded-xl shadow-2xl flex flex-col max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-700">
+                    <h2 className="text-2xl font-bold text-amber-500">
+                        Lancia Incantesimo - {hero.hero?.classe || 'Eroe'}
+                    </h2>
+                    <button 
+                        onClick={handleClose}
+                        className="text-slate-400 hover:text-white transition-colors text-3xl leading-none"
+                        aria-label="Chiudi"
                     >
-                      Lancia
+                        &times;
                     </button>
-                  </div>
                 </div>
-              ))}
+
+                {/* Content */}
+                <div className="p-6 overflow-y-auto">
+                    {availableSpells.length === 0 ? (
+                        <div className="text-center text-slate-400 py-8">
+                            Nessun incantesimo disponibile.
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {availableSpells.map((spellId) => {
+                                const spell = allSpells.find((s) => s?.id === spellId);
+                                
+                                if (!spell) {
+                                    return null;
+                                }
+
+                                return (
+                                    <div 
+                                        key={spellId} 
+                                        className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg hover:border-amber-500/50 transition-colors"
+                                    >
+                                        <div className="relative h-48 bg-slate-950 flex items-center justify-center p-2">
+                                            {spell.immagine ? (
+                                                <img 
+                                                    src={`/img/cinc/${spell.immagine}`} 
+                                                    alt={spell.nome || 'Incantesimo'} 
+                                                    className="max-w-full max-h-full object-contain"
+                                                />
+                                            ) : (
+                                                <div className="text-slate-600 text-sm">Nessuna immagine</div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="p-4 flex flex-col flex-grow">
+                                            <h3 className="text-lg font-bold text-amber-400 mb-2">
+                                                {spell.nome}
+                                            </h3>
+                                            <p className="text-sm text-slate-300 flex-grow mb-4">
+                                                {spell.descrizione}
+                                            </p>
+                                            
+                                            <button
+                                                onClick={() => handleCast(spellId)}
+                                                className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded transition-colors"
+                                            >
+                                                Lancia
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
-          )}
         </div>
-      </div>
-    </div>
-  );
+    );
 }

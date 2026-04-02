@@ -15,12 +15,23 @@
 > **Reference**: Armory in `./armory.isl.md`
 > **Reference**: Dungeon in `./dungeon.isl.md`
 > **Reference**: DungeonDescription in `./dungeon-description.isl.md`
+> **Reference**: @Monster, @Equipment, @Item, @Spell, @TreasureCard in `./domain-ruleset.isl.md`.
+> **Reference**: @Campaign in `./domain-map.isl.md`.
 
 ## Component: PageContent
 
 Contenitore delle pagine, al suo interno vengono visualizzate le varie `PageView` tramite naviagazione
 
 ### Role: Presentation
+
+**Signature**:
+- `monsters`: List<@Monster>
+- `boardData`: @VisibilityMap
+- `equipment`: List<@Equipment>
+- `items`: List<@Item>
+- `spells`: List<@Spell>
+- `treasureDeck`: List<@TreasureCard>
+- `campaign`: @Campaign
 
 ### 🔍 Appearance
 
@@ -78,8 +89,8 @@ Carica il componente PageView visualizzare
 
 1. SWITCH currentPageView (PageNavigationEnum)
    CASE `MAIN_MENU` Render `@MainMenu` with `onChangePageView` = `changePageView`.
-   CASE `PLAY_GAME` Render `@PlayGame` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+   CASE `PLAY_GAME` Render `@PlayGame` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`, `campaign` = `campaign`.
    CASE `EDITOR_GAME` Render `@EditorGame`.
    CASE `SHOP` Render `@Armory` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
-   CASE `DUNGEON` Render `@Dungeon` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+   CASE `DUNGEON` Render `@Dungeon` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`, `staticMonsters` = `monsters`, `staticVisibilityMap` = `boardData`, `staticEquipment` = `equipment`, `staticItems` = `items`, `staticSpells` = `spells`, `treasureDeck` = `treasureDeck`.
    CASE `DUNGEON_DESCRIPTION` Render `@DungeonDescription` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.

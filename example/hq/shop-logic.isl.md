@@ -44,6 +44,7 @@
 - **Flow**:
   - Clone the `session` object to avoid mutation.
   - Retrieve the `HeroState` at `heroIndex`.
+  - IF heroIndex < 0 OR heroIndex >= session.heroes.length THEN Return session (or throw Error to prevent corruption).
   - Create a new `HeroState` by spreading all current properties and updating:
     - `gold` = `currentGold` - `item.prezzo`.
     - `equipment` = `currentEquipment` + `item.id` (Added to backpack).

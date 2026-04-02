@@ -1,46 +1,45 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-visible-monsters.isl.md -->
 
 ## Scenario: Empty Session or Missing Visibility Data
-- **Given**: `gameSession` is initialized but `monsters` list is empty, OR `boardVisibilityMap` is null/undefined.
-- **When**: `visibleMonsters` is invoked.
+- **Given**: A `gameSession` where `monsters` is an empty list, or a `boardVisibilityMap` that is null/undefined.
+- **When**: The `visibleMonsters` capability is invoked.
 - **Assert (Expected Outcomes)**:
-    - The function returns an empty list `[]`.
-    - No runtime errors or exceptions are thrown.
-    - The system maintains a stable state without attempting to access properties of null objects.
+    - The returned list must be empty.
+    - The system must not throw a runtime error (null pointer exception).
+    - The flow must terminate gracefully.
 
 ## Scenario: Monster in Fog of War
-- **Given**: 
-    - A `MonsterState` exists at coordinates `(5, 5)`.
-    - `boardVisibilityMap` contains a `VisibilityCell` at `(5, 5)` where `fog` is `true`.
-- **When**: `visibleMonsters` is invoked.
+- **Given**: A `gameSession` containing a `MonsterState` at coordinates (5, 5). The corresponding `VisibilityCell` for (5, 5) in `boardVisibilityMap` has `fog: true`.
+- **When**: The `visibleMonsters` capability is invoked.
 - **Assert (Expected Outcomes)**:
-    - The monster at `(5, 5)` is excluded from the returned list.
-    - The function correctly identifies the `fog` property as the primary filter for visibility.
+    - The monster at (5, 5) must NOT be included in the returned list.
+    - The logic must correctly identify the `fog` property as the primary filter for visibility.
 
 ## Scenario: Monster in Visible Area
-- **Given**: 
-    - A `MonsterState` exists at coordinates `(2, 2)`.
-    - `boardVisibilityMap` contains a `VisibilityCell` at `(2, 2)` where `fog` is `false`.
-- **When**: `visibleMonsters` is invoked.
+- **Given**: A `gameSession` containing a `MonsterState` at coordinates (2, 2). The corresponding `VisibilityCell` for (2, 2) in `boardVisibilityMap` has `fog: false`.
+- **When**: The `visibleMonsters` capability is invoked.
 - **Assert (Expected Outcomes)**:
-    - The monster at `(2, 2)` is included in the returned list.
-    - The returned list contains the full `MonsterState` object for the visible monster.
+    - The monster at (2, 2) must be included in the returned list.
+    - The returned object must contain the full `MonsterState` data.
 
-## Scenario: Multiple Monsters with Mixed Visibility
-- **Given**: 
-    - `gameSession.monsters` contains three instances: M1 at `(1, 1)`, M2 at `(2, 2)`, and M3 at `(3, 3)`.
-    - `boardVisibilityMap` has `fog: false` for `(1, 1)` and `(3, 3)`, but `fog: true` for `(2, 2)`.
-- **When**: `visibleMonsters` is invoked.
+## Scenario: Mixed Visibility State
+- **Given**: A `gameSession` with two monsters: Monster A at (1, 1) and Monster B at (10, 10). `VisibilityCell` for (1, 1) has `fog: false`, and `VisibilityCell` for (10, 10) has `fog: true`.
+- **When**: The `visibleMonsters` capability is invoked.
 - **Assert (Expected Outcomes)**:
-    - The returned list contains exactly two monsters: M1 and M3.
-    - M2 is correctly filtered out due to the `fog` status.
-    - The order of the returned list preserves the relative order of the original `gameSession.monsters` list.
+    - The returned list must contain exactly one element (Monster A).
+    - The system must correctly filter out Monster B while preserving Monster A.
 
-## Scenario: Deterministic Completion and Boundary Handling
-- **Given**: 
-    - A `MonsterState` exists at coordinates `(99, 99)` (out of bounds of the provided `boardVisibilityMap` data).
-- **When**: `visibleMonsters` is invoked.
+## Scenario: Monster Coordinates Outside Visibility Map
+- **Given**: A `gameSession` with a `MonsterState` at (99, 99). The `boardVisibilityMap` only contains cells for coordinates (0,0) to (10,10).
+- **When**: The `visibleMonsters` capability is invoked.
 - **Assert (Expected Outcomes)**:
-    - The function handles the missing coordinate mapping gracefully (e.g., treats as `fog: true` or ignores).
-    - The flow completes deterministically without crashing due to index out-of-bounds or undefined lookup.
-    - The system ensures that only monsters explicitly confirmed as visible (fog: false) are returned, defaulting to "not visible" for unknown coordinates.
+    - The monster at (99, 99) must NOT be included in the returned list.
+    - The flow must handle the missing `VisibilityCell` (lookup failure) as a "not visible" state rather than a crash.
+
+## Scenario: Deterministic Completion and State Integrity
+- **Given**: A `gameSession` with multiple monsters and a valid `VisibilityMap`.
+- **When**: The `visibleMonsters` capability is invoked repeatedly under high load or rapid state updates.
+- **Assert (Expected Outcomes)**:
+    - The function must be pure (no side effects on `gameSession` or `boardVisibilityMap`).
+    - The function must return a consistent result for the same input state.
+    - The flow must ensure that even if a `VisibilityCell` is malformed (e.g., missing `fog` property), it defaults to `fog: true` (safe-fail) to prevent accidental monster reveal.

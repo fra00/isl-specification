@@ -4,13 +4,10 @@ export default function DungeonBoard(props: {
   onCellClick: (x: number, y: number) => void;
   onCellHover: (x: number, y: number) => void;
   onMonsterClick: (monsterId: number) => void;
-  hoveredPath?: { x: number; y: number }[];
-  secretPassages?: { x: number; y: number; img: string }[];
-  treasures?: { x: number; y: number; img: string }[];
-  triggeredTraps?: { x: number; y: number; tipo: number }[];
+  hoveredPath?: Array<{x: number; y: number}>;
+  secretPassages?: Array<{x: number; y: number; img: string}>;
+  treasures?: Array<{x: number; y: number; img: string}>;
+  triggeredTraps?: Array<{x: number; y: number; tipo: number}>;
   targetingSpell?: any;
-  visibilityCalc?: {
-    calculateVisibleCells: (startX: number, startY: number) => { x: number; y: number }[];
-    hasLineOfSight: (startX: number, startY: number, targetX: number, targetY: number) => boolean;
-  };
+  visibilityCalc?: any;
 }): React.ReactElement;

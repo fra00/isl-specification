@@ -3,48 +3,50 @@
 This test suite focuses on the **DungeonDescription** component, ensuring that the presentation layer correctly interprets the `GameSession` state and maps user intents to the required `PageNavigationEnum` transitions.
 
 ## Scenario: Navigation to Dungeon View
-- **Given**: `gameSession` is initialized with a valid `MapDefinition` containing a `descrizione`.
+- **Given**: A `GameSession` is active with a valid `MapDefinition` containing a mission description.
 - **When**: The user clicks the "Entra nel dungeon" button.
-- **Assert (Expected Outcomes)**:
-    - `onChangePageView` is invoked exactly once.
-    - The argument passed to `onChangePageView` is `PageNavigationEnum.DUNGEON`.
-    - No modification is made to the `gameSession` object.
+- **Assert (Expected Outcomes)**: 
+    - `onChangePageView` is triggered with `PageNavigationEnum.DUNGEON`.
+    - The system state remains consistent with the current `gameSession`.
 
 ## Scenario: Navigation to Shop View
-- **Given**: `gameSession` is active and the user is viewing the mission description.
+- **Given**: A `GameSession` is active.
 - **When**: The user clicks the "Armeria" button.
-- **Assert (Expected Outcomes)**:
-    - `onChangePageView` is invoked exactly once.
-    - The argument passed to `onChangePageView` is `PageNavigationEnum.SHOP`.
-    - The system remains in the current session state without resetting mission progress.
+- **Assert (Expected Outcomes)**: 
+    - `onChangePageView` is triggered with `PageNavigationEnum.SHOP`.
+    - No modifications are made to the `gameSession` object.
 
 ## Scenario: Navigation Back to Play Game
-- **Given**: `gameSession` is active.
+- **Given**: A `GameSession` is active.
 - **When**: The user clicks the "Indietro" button.
-- **Assert (Expected Outcomes)**:
-    - `onChangePageView` is invoked exactly once.
-    - The argument passed to `onChangePageView` is `PageNavigationEnum.PLAY_GAME`.
+- **Assert (Expected Outcomes)**: 
+    - `onChangePageView` is triggered with `PageNavigationEnum.PLAY_GAME`.
 
-## Scenario: Deterministic Rendering of Mission Description
-- **Given**: `gameSession.currentMap.header.descrizione` contains a multi-paragraph string.
+## Scenario: Rendering Mission Description Text
+- **Given**: `gameSession.currentMap.header.descrizione` contains a non-empty string (e.g., "The dark corridors await...").
 - **When**: The `DungeonDescription` component mounts.
-- **Assert (Expected Outcomes)**:
-    - The component successfully reads `gameSession.currentMap.header.descrizione`.
-    - The UI container is rendered with the scrollable property enabled to accommodate the text length.
-    - The text content matches the source string exactly (no truncation or encoding errors).
+- **Assert (Expected Outcomes)**: 
+    - The UI displays the exact text found in `gameSession.currentMap.header.descrizione`.
+    - The text container is scrollable if the content exceeds the defined viewport height.
 
-## Scenario: Adversarial/Edge Case - Missing Description
-- **Given**: `gameSession.currentMap.header` exists, but `descrizione` is an empty string or null.
-- **When**: The component attempts to render the description text.
-- **Assert (Expected Outcomes)**:
-    - The component handles the empty/null value gracefully without throwing a runtime exception.
-    - A fallback placeholder (e.g., "Nessuna descrizione disponibile") is displayed to ensure the UI does not appear broken.
-    - The "Entra nel dungeon" button remains interactive and functional.
+## Scenario: Handling Null or Empty Description
+- **Given**: `gameSession.currentMap.header.descrizione` is an empty string or null.
+- **When**: The `DungeonDescription` component mounts.
+- **Assert (Expected Outcomes)**: 
+    - The component renders a fallback message (e.g., "No description available") or an empty state without crashing.
+    - The "Entra nel dungeon" button remains functional and accessible.
 
-## Scenario: Guaranteed Flow Integrity (State Persistence)
-- **Given**: A `gameSession` with modified `HeroState` (e.g., gold, inventory) and `currentMissionIndex`.
-- **When**: The user navigates between `DUNGEON_DESCRIPTION` and `SHOP` multiple times.
-- **Assert (Expected Outcomes)**:
-    - `onUpdateSession` is not triggered by navigation actions (navigation is read-only for the session).
-    - The `gameSession` object passed to the component remains immutable throughout the navigation lifecycle.
-    - The system never enters a dead-end state where buttons become unresponsive after repeated navigation.
+## Scenario: Deterministic Navigation Flow (Adversarial/Rapid Click)
+- **Given**: The user is on the `DungeonDescription` view.
+- **When**: The user triggers multiple rapid clicks on the "Entra nel dungeon" button.
+- **Assert (Expected Outcomes)**: 
+    - The `onChangePageView` callback is invoked.
+    - The system ensures that the navigation transition is idempotent; subsequent clicks do not trigger redundant state changes or race conditions in the `GameDomainCore`.
+    - The system releases any internal "isProcessing" flags if the navigation logic involves an asynchronous transition.
+
+## Scenario: Integrity of Session Data during Navigation
+- **Given**: A `GameSession` with modified `HeroState` (e.g., gold, inventory).
+- **When**: The user navigates to any page via the `DungeonDescription` buttons.
+- **Assert (Expected Outcomes)**: 
+    - The `onUpdateSession` callback is not triggered unless a session modification is explicitly required by the transition.
+    - The `gameSession` object passed to the component remains immutable during the render cycle.

@@ -4,54 +4,60 @@
 - **Given**: A `GameSession` is active, but `visibilityMap` is passed as `null`.
 - **When**: `initialize` is called.
 - **Assert (Expected Outcomes)**:
-    - The component state remains valid.
-    - `getVisibilityCell` returns `null` for any coordinate input.
-    - No runtime exceptions are thrown during internal structure setup.
-    - Deterministic completion: The component signals "ready" state despite the missing optional dependency.
+    - The component state remains stable.
+    - Subsequent calls to `getVisibilityCell` return `null` rather than throwing an exception.
+    - Internal flags (e.g., `isInitialized`) are set to `true` to ensure deterministic completion.
 
-## Scenario: Get Map Cell at Boundary
-- **Given**: A `MapDefinition` with a grid containing cells at (0,0) and (25,18).
-- **When**: `getMapCell(25, 18)` is called.
+## Scenario: Retrieve Valid Map Cell
+- **Given**: A `MapDefinition` exists with a `MapCell` at coordinates `(5, 5)`.
+- **When**: `getMapCell(5, 5)` is called.
 - **Assert (Expected Outcomes)**:
     - Returns the correct `@MapCell` object.
-    - `getMapCell(26, 19)` returns `null` (Out of bounds).
-    - `getMapCell(-1, -1)` returns `null` (Out of bounds).
+    - The returned object contains the expected `mobili`, `mostab`, and `trpl` properties.
 
-## Scenario: Blocked by Monster (Exclusion Logic)
-- **Given**: A `GameSession` with a `MonsterState` at (5,5) with `currentBody` = 2.
-- **When**: `isBlockedByMonster(5, 5, 999)` is called (where 999 is a different ID).
+## Scenario: Detect Monster Blockage (Exclusion Logic)
+- **Given**: A `GameSession` with a monster at `(10, 10)` with `currentBody: 2`.
+- **When**: `isBlockedByMonster(10, 10, 999)` is called (where 999 is a different ID).
 - **Assert (Expected Outcomes)**:
-    - Returns `TRUE` because the monster at (5,5) is alive and ID 999 does not match.
-    - `isBlockedByMonster(5, 5, [MonsterID])` returns `FALSE` (Self-exclusion allows movement through own space).
-    - `isBlockedByMonster(5, 5, 999)` where `currentBody` = 0 returns `FALSE` (Dead monsters do not block).
+    - Returns `true` because the monster at `(10, 10)` is alive and its ID does not match the exclusion ID.
 
-## Scenario: Door Detection
-- **Given**: `MapDefinition.porte` contains an entry at (10, 10).
-- **When**: `isDoor(10, 10)` is called.
+## Scenario: Detect Monster Blockage (Dead Monster)
+- **Given**: A `GameSession` with a monster at `(10, 10)` with `currentBody: 0`.
+- **When**: `isBlockedByMonster(10, 10, 0)` is called.
 - **Assert (Expected Outcomes)**:
-    - Returns `TRUE`.
-    - `isDoor(10, 11)` returns `FALSE`.
+    - Returns `false` because the monster is dead (Body Points <= 0), effectively treating the cell as unblocked.
 
-## Scenario: Rock Block Integrity
-- **Given**: A `@MapCell` at (2,2) where `arnt.antroc` is `true`.
+## Scenario: Detect Rock Blockage
+- **Given**: A `MapCell` at `(2, 2)` where `arnt.antroc` is `true`.
 - **When**: `isBlockedByRock(2, 2)` is called.
 - **Assert (Expected Outcomes)**:
-    - Returns `TRUE`.
-    - `isBlockedByRock(3, 3)` (where `antroc` is `false`) returns `FALSE`.
-    - `isBlockedByRock(99, 99)` (non-existent cell) returns `FALSE`.
+    - Returns `true`.
+    - If `arnt.antroc` is `false` or the cell does not exist, returns `false`.
 
-## Scenario: Occupied by Hero
-- **Given**: `GameSession.heroes` contains a hero at (7,7).
-- **When**: `isOccupiedByHero(7, 7, 0)` is called.
+## Scenario: Boundary Conditions for Map Dimensions
+- **Given**: The system is initialized.
+- **When**: `getMapDimensions()` is called.
 - **Assert (Expected Outcomes)**:
-    - Returns `TRUE`.
-    - `isOccupiedByHero(7, 7, [HeroID])` returns `FALSE` (Self-exclusion).
-    - `isOccupiedByHero(8, 8, 0)` returns `FALSE`.
+    - Returns a fixed object `{ width: 26, height: 19 }`.
+    - Ensures no out-of-bounds errors occur if coordinate queries are made at the exact edges (0,0) or (25, 18).
 
-## Scenario: Deterministic Completion of Query
-- **Given**: A high-frequency sequence of queries (`isBlockedByMonster`, `isDoor`, `getMapCell`) is triggered.
-- **When**: The `GameSession` object is updated (e.g., a monster moves).
+## Scenario: Adversarial Coordinate Query
+- **Given**: A `MapDefinition` with standard grid size.
+- **When**: `getMapCell` is called with coordinates outside the grid (e.g., `(-1, -1)` or `(100, 100)`).
 - **Assert (Expected Outcomes)**:
-    - The `useDungeonMapQuery` must return the updated state immediately upon the next call.
-    - No stale data is cached if the `gameSession` reference changes.
-    - The flow never enters a "loading" state that blocks subsequent queries; all operations are synchronous and deterministic.
+    - The function returns `null` gracefully.
+    - The system does not throw an "Index Out of Bounds" error.
+
+## Scenario: Deterministic Completion of Visibility Query
+- **Given**: A `visibilityMap` containing a list of `VisibilityCell`.
+- **When**: `getVisibilityCell(x, y)` is called for a coordinate that does not exist in the `data` list.
+- **Assert (Expected Outcomes)**:
+    - The flow completes deterministically by returning `null`.
+    - No blocking flags remain active; the system is ready for the next query immediately.
+
+## Scenario: Door Detection
+- **Given**: `MapDefinition.porte` contains an entry at `(8, 8)`.
+- **When**: `isDoor(8, 8)` is called.
+- **Assert (Expected Outcomes)**:
+    - Returns `true`.
+    - If called for `(8, 9)` (where no door exists), returns `false`.

@@ -1,65 +1,73 @@
 <!-- LOGIC TEST SCENARIOS FOR: page-presentation.isl.md -->
 
-This test suite focuses on the **Domain Integrity** and **Flow Continuity** of the `Heroquest React` application, specifically targeting the critical transitions between the `Armory`, `Dungeon`, and `TurnLogic` components.
+This document outlines the critical logic test scenarios for the **Heroquest React** system, focusing on domain integrity, state transitions, and flow continuity.
 
 ---
 
-## Scenario: Purchase Validation Integrity
-- **Given**: A `HeroState` (Barbarian, 500 Gold) and an `Equipment` item (ID 11: Shield, Price 150).
-- **When**: `ShopLogic.validatePurchase` is called for the Barbarian.
+## Scenario: Hero Purchase Validation (Domain Integrity)
+- **Given**: A `HeroState` with 100 Gold and an `Equipment` item (ID: 11, Shield) with `prezzo: 150` and `nopsgid: 1` (Barbarian).
+- **When**: The `ShopLogic.validatePurchase` is called for a Barbarian hero.
 - **Assert (Expected Outcomes)**:
-    - `allowed` is `true`.
-    - If `heroState.gold` is set to 100, `allowed` is `false` with reason "Not enough gold".
-    - If `item.nopsgid` matches the Barbarian's ID, `allowed` is `false` with reason "Forbidden for class".
+    - `allowed` must be `false`.
+    - `reason` must be "Not enough gold".
+    - If gold is increased to 200, `allowed` must be `false` with `reason` "Forbidden for class" (if heroId is 1).
 
-## Scenario: Inventory Equipment Exclusivity (noogg)
-- **Given**: A `HeroState` with an equipped "Spadone" (ID 13, `noogg: 11`) and a "Shield" (ID 11) in inventory.
-- **When**: `useInventoryLogic.toggleEquipItem` is called to equip the Shield (ID 11).
+## Scenario: Turn Phase Transition (Flow Continuity)
+- **Given**: A `GameSession` where the current hero has `movementPoints: 5` and `turnPhase: {HasMoved: false, HasPerformedAction: false}`.
+- **When**: The hero moves 5 tiles and calls `markActionDone`.
 - **Assert (Expected Outcomes)**:
-    - The "Shield" is added to `hero.equipped`.
-    - The "Spadone" (ID 13) is automatically removed from `hero.equipped` due to the `noogg` constraint.
-    - `onUpdateSession` is triggered with the modified `GameSession`.
+    - `movementPoints` must be 0.
+    - `turnPhase.HasMoved` must be `true`.
+    - `turnPhase.HasPerformedAction` must be `true`.
+    - The system must prevent further movement or actions for this turn.
 
-## Scenario: Deterministic Movement and Trap Trigger
-- **Given**: A hero at (2,2) with 5 `movementPoints` and a "Pit Trap" (tipo: 1) at (2,3).
-- **When**: `hooksTurnLogic.handleBoardClick(2, 3)` is triggered.
+## Scenario: Deterministic Trap Trigger (Flow Integrity)
+- **Given**: A hero moves onto a cell containing a "Falling Rock" trap (`tipo: 3`) and `trapsLogic.checkTrapActivation` returns `true`.
+- **When**: The movement animation completes on the trap cell.
 - **Assert (Expected Outcomes)**:
-    - `isMoving` transitions to `true`.
-    - Hero position updates to (2,3).
-    - `trapsLogic.registerTriggeredTrap` is called for (2,3).
-    - `currentBody` is decremented by 1.
-    - `turnPhase.hasMoved` and `turnPhase.hasPerformedAction` are set to `true` (End of turn).
-    - `isMoving` resets to `false`.
+    - `currentHero.currentBody` must be decremented by 1.
+    - The trap must be registered in `triggeredTraps` with status `TRIGGERED`.
+    - The target cell defined in `rccadex/y` must have `arnt.antroc` set to `true` (blocking the path).
+    - `turnPhase` must be forced to `IsTurnFinished: true` to prevent further movement.
 
-## Scenario: Combat Resolution and Monster Death
-- **Given**: A hero with 3 attack dice and a monster with 2 body points.
-- **When**: `hooksTurnLogic.handleMonsterClick(monsterId)` is triggered.
+## Scenario: Combat Resolution (Adversarial Scenario)
+- **Given**: A hero with 3 attack dice attacks a monster with 2 defense dice.
+- **When**: `combatLogic.resolveCombat` is executed.
 - **Assert (Expected Outcomes)**:
-    - `combatLogic.resolveCombat` is called with correct dice counts.
-    - If `damageDealt` >= 2, the monster is removed from `gameSession.monsters`.
-    - `lastAttack` object is populated for UI display.
-    - If `canAttackTwice` is true and `attacksPerformed` < 2, `turnPhase.hasPerformedAction` remains `false`.
+    - `damageDealt` must be `Max(0, skulls - shields)`.
+    - `attackerDice` and `defenderDice` lists must contain exactly the number of dice rolled.
+    - If `damageDealt` >= `monster.currentBody`, the monster must be removed from `gameSession.monsters`.
 
-## Scenario: Fog of War Persistence
-- **Given**: A hero moves from (5,5) to (5,6), revealing a room.
-- **When**: The hero moves back to (5,5).
+## Scenario: Spell Casting Consumption (Flow Continuity)
+- **Given**: A hero has `availableSpells: [1, 2]` (where 1 is "Palla di Fuoco").
+- **When**: `hooksMagicLogic.castSpell` is called successfully for spell ID 1.
 - **Assert (Expected Outcomes)**:
-    - The cells revealed at (5,6) remain with `fog: false` in `boardVisibilityMap`.
-    - The system never reverts `fog` to `true` for previously visited cells.
+    - The spell ID `1` must be removed from `hero.availableSpells`.
+    - `onUpdateSession` must be triggered with the updated session.
+    - `onActionDone` must be triggered to mark the turn action as complete.
+    - The system must never leave the spell in the list if the cast was successful.
 
-## Scenario: Guaranteed Flow Completion (Monster AI)
-- **Given**: All heroes have ended their turns (`currentTurn` > `heroes.length`).
-- **When**: `monitorTurn` detects the turn overflow.
+## Scenario: Monster AI Turn (Deterministic Completion)
+- **Given**: A session with 2 monsters and 1 hero.
+- **When**: `hooksMonsterAI.runMonsterTurn` is triggered.
 - **Assert (Expected Outcomes)**:
-    - `hooksMonsterAI.runMonsterTurn()` is executed.
-    - After all monsters act, `gameSession.currentTurn` is reset to 1.
-    - `turnPhase` for all heroes is reset to `false` (HasMoved, HasPerformedAction, IsTurnFinished).
-    - The system never enters a state where `currentTurn` is stuck or `turnPhase` remains locked.
+    - `isMonsterTurnInProgress` must be `true` during execution.
+    - Each monster must perform exactly one movement and one attack (if in range).
+    - After all monsters act, `isMonsterTurnInProgress` must be `false`.
+    - `currentTurn` must reset to 1.
+    - All `turnPhase` flags must be reset to `false` for all heroes.
 
-## Scenario: Spell Targeting Cancellation
-- **Given**: `targetingSpell` is set to "Palla di Fuoco".
-- **When**: `cancelTargeting` is called.
+## Scenario: Inventory Incompatibility (Domain Integrity)
+- **Given**: A hero has a "Two-Handed Sword" (ID 20, `noogg: 11`) equipped.
+- **When**: The user attempts to equip a "Shield" (ID 11).
 - **Assert (Expected Outcomes)**:
-    - `targetingSpell` becomes `null`.
-    - `notificationMessage` is updated to "Lancio incantesimo annullato.".
-    - The board cursor reverts from `crosshair` to `pointer`.
+    - The "Two-Handed Sword" must be automatically removed from `hero.equipped`.
+    - The "Shield" must be added to `hero.equipped`.
+    - `onNotify` must be triggered indicating the removal of the incompatible item.
+
+## Scenario: Fog of War Persistence (Domain Integrity)
+- **Given**: A cell has `fog: true`. A hero moves into a position where the cell becomes visible.
+- **When**: The hero moves away from the cell.
+- **Assert (Expected Outcomes)**:
+    - The cell's `fog` property must remain `false` (permanently revealed).
+    - The system must not revert the cell to `fog: true` when the hero leaves the line of sight.

@@ -49,6 +49,7 @@
   - **Room/Wall Logic**:
     - Get `sourceValo` from `mapQuery.getVisibilityCell(sourceX, sourceY)` (@VisibilityCell).
     - Get `targetValo` from `mapQuery.getVisibilityCell(targetX, targetY)` (@VisibilityCell).
+    - IF sourceValo IS NULL OR targetValo IS NULL: RETURN TRUE (Assume open space if visibility data missing).
     - **(Crossing Rooms)**: IF `sourceValo` != `targetValo`:
       - IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)` OR `mapQuery.isSecretPassage(sourceX, sourceY)` OR `mapQuery.isSecretPassage(targetX, targetY)`:
         - Return TRUE.

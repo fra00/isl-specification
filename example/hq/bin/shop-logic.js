@@ -7,26 +7,22 @@
  */
 
 import { Hero, Equipment } from "./domain-ruleset";
-import { HeroState, GameSession } from "./domain-session";
+import { GameSession, HeroState } from "./domain-session";
 
-/**
- * Loads static data for Heroes and Equipment.
- * @returns {Promise<{ heroes: Object[], items: Object[] }>}
- */
 export const loadShopData = async () => {
   try {
-    const [heroesResponse, equipmentResponse] = await Promise.all([
+    const [heroesRes, equipmentRes] = await Promise.all([
       fetch('/jsonData/heroes.json'),
       fetch('/jsonData/equipment.json')
     ]);
 
-    const heroesData = await heroesResponse.json();
-    const equipmentData = await equipmentResponse.json();
+    const heroesData = await heroesRes.json();
+    const equipmentData = await equipmentRes.json();
 
-    const heroes = (heroesData || []).map(hero => Hero(hero));
-    const items = (equipmentData || [])
-      .map(item => Equipment(item))
-      .filter(item => item.prezzo != null && item.prezzo > 0);
+    const heroes = (Array.isArray(heroesData) ? heroesData : []).map(h => Hero(h));
+    const items = (Array.isArray(equipmentData) ? equipmentData : [])
+      .map(e => Equipment(e))
+      .filter(item => (item.prezzo || 0) > 0);
 
     return { heroes, items };
   } catch (error) {
@@ -35,15 +31,9 @@ export const loadShopData = async () => {
   }
 };
 
-/**
- * Checks if a hero is allowed to buy a specific item.
- * @param {Object} heroState 
- * @param {Object} item 
- * @returns {{ allowed: boolean, reason: string }}
- */
 export const validatePurchase = (heroState, item) => {
   if (!heroState || !item) {
-    return { allowed: false, reason: "Invalid data provided" };
+    return { allowed: false, reason: "Invalid data" };
   }
 
   const currentGold = heroState.gold || 0;
@@ -57,37 +47,32 @@ export const validatePurchase = (heroState, item) => {
     return { allowed: false, reason: "Already owned" };
   }
 
-  if (item.nopsg === true && item.nopsgid === heroState.heroId) {
+  if (item.nopsg && item.nopsgid === heroState.heroId) {
     return { allowed: false, reason: "Forbidden for class" };
   }
 
-  if (item.solopsg === true && item.solopsgid !== heroState.heroId) {
+  if (item.solopsg && item.solopsgid !== heroState.heroId) {
     return { allowed: false, reason: "Exclusive to other class" };
   }
 
   return { allowed: true, reason: "" };
 };
 
-/**
- * Performs the purchase transaction and returns the updated game session.
- * @param {Object} session 
- * @param {number} heroIndex 
- * @param {Object} item 
- * @returns {Object} Updated GameSession
- */
 export const executePurchase = (session, heroIndex, item) => {
-  if (!session || !session.heroes || !session.heroes[heroIndex] || !item) {
+  if (!session || !Array.isArray(session.heroes)) {
+    return session;
+  }
+
+  if (heroIndex < 0 || heroIndex >= session.heroes.length) {
     return session;
   }
 
   const currentHeroState = session.heroes[heroIndex];
-  const currentGold = currentHeroState.gold || 0;
-  const currentEquipment = currentHeroState.equipment || [];
-
+  
   const updatedHeroState = HeroState({
     ...currentHeroState,
-    gold: currentGold - (item.prezzo || 0),
-    equipment: [...currentEquipment, item.id]
+    gold: (currentHeroState.gold || 0) - (item.prezzo || 0),
+    equipment: [...(currentHeroState.equipment || []), item.id]
   });
 
   const updatedHeroes = [...session.heroes];

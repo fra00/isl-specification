@@ -4,45 +4,46 @@
 - **Given**: A `VisibilityMap` where a cluster of cells shares the same `valo` (e.g., "RoomA"). The hero is at `(5, 5)` inside "RoomA".
 - **When**: `calculateVisibleCells(5, 5)` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The `visibleCells` list contains all coordinates `(x, y)` where `cell.valo == "RoomA"`.
-    - The logic does not attempt ray casting for corridors because the room condition is met.
-    - The hero's current position `(5, 5)` is included in the returned list.
+    - The `visibleCells` list must contain all coordinates `(x, y)` where `cell.valo == "RoomA"`.
+    - The logic must not trigger Ray Casting (Phase 2) if the hero is inside a defined room (`valo != "1"`).
+    - The result must be deterministic regardless of the hero's specific coordinate within the room.
 
 ## Scenario: Corridor Ray Casting with Rock Obstacle
-- **Given**: A corridor path starting at `(10, 10)` with `valo` "1". At `(10, 13)`, there is a `MapCell` where `arnt.antroc` is `true`.
-- **When**: `calculateVisibleCells(10, 10)` is triggered and the ray moves in the Down `(0, 1)` direction.
+- **Given**: A corridor defined by `valo: "1"`. A hero is at `(2, 2)`. A rock block (`antroc: true`) exists at `(2, 5)`.
+- **When**: `calculateVisibleCells(2, 2)` is triggered.
 - **Assert (Expected Outcomes)**:
-    - Cells `(10, 11)` and `(10, 12)` are added to `visibleCells` (Corridor propagation).
-    - Cell `(10, 13)` is added to `visibleCells` (Rule 2: See the rock).
-    - The loop terminates at `(10, 13)` and does not process `(10, 14)`.
+    - The `visibleCells` list must include all corridor cells from `(2, 3)` to `(2, 4)`.
+    - The `visibleCells` list must include the rock cell at `(2, 5)` (Rule 2: See the rock).
+    - The loop must terminate immediately after adding the rock cell, ensuring no cells beyond `(2, 5)` are added.
 
 ## Scenario: Line of Sight Blocked by Furniture
-- **Given**: A hero at `(2, 2)` and a monster at `(2, 5)`. A `MapCell` at `(2, 4)` contains `MapCellFurniture` with a valid `num`.
-- **When**: `hasLineOfSight(2, 2, 2, 5)` is triggered.
+- **Given**: A hero at `(1, 1)` and a target monster at `(1, 5)`. A furniture object exists at `(1, 3)`.
+- **When**: `hasLineOfSight(1, 1, 1, 5)` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The function detects the furniture at `(2, 4)` during the line trace.
-    - The function returns `false` (Line of Sight is obstructed).
+    - The function must return `false`.
+    - The logic must identify the furniture at `(1, 3)` as an obstruction during the line trace.
+    - The check must verify the `mobili` property of the `MapCell` at the intersection point.
 
 ## Scenario: Line of Sight Through Open Door
-- **Given**: A hero at `(5, 5)` and a monster at `(5, 8)`. A `MapDoor` exists at `(5, 6)` and is present in `gameSession.openedDoors`.
-- **When**: `hasLineOfSight(5, 5, 5, 8)` is triggered.
+- **Given**: A hero at `(2, 2)` and a target at `(2, 6)`. A door exists at `(2, 4)` and is present in `gameSession.openedDoors`.
+- **When**: `hasLineOfSight(2, 2, 2, 6)` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The logic identifies the transition at `(5, 6)` as an open door.
-    - The obstruction check for the door is bypassed.
-    - The function returns `true` (Line of Sight is clear).
+    - The function must return `true`.
+    - The logic must recognize the door coordinate `(2, 4)` as "open" via `gameSession.openedDoors`, bypassing the standard wall/room boundary obstruction rule.
 
-## Scenario: Deterministic Completion on Null Visibility Data
-- **Given**: A `VisibilityMap` where the requested `startX, startY` does not exist in the `data` list.
-- **When**: `calculateVisibleCells(startX, startY)` is triggered.
+## Scenario: Deterministic Completion on Invalid Coordinates
+- **Given**: A `VisibilityMap` with a limited grid (e.g., 10x10).
+- **When**: `calculateVisibleCells` or `hasLineOfSight` is called with coordinates outside the grid bounds (e.g., `(-1, -1)` or `(99, 99)`).
 - **Assert (Expected Outcomes)**:
-    - The flow identifies `startVisCell` as `null`.
-    - The function returns an empty list `[]` immediately.
-    - The system state remains unchanged; no errors are thrown, and no blocking flags are left active.
+    - The system must not throw an unhandled exception.
+    - `calculateVisibleCells` must return an empty list or the initial cell if valid, but never crash.
+    - `hasLineOfSight` must return `false` if the target is unreachable or out of bounds.
+    - The flow must ensure any internal processing flags (if applicable) are reset to a clean state.
 
-## Scenario: Room Boundary Termination
-- **Given**: A hero at `(1, 1)` in a corridor (`valo` "1"). The adjacent cell `(2, 1)` has `valo` "RoomB".
-- **When**: `calculateVisibleCells(1, 1)` is triggered and the ray moves Right `(1, 0)`.
+## Scenario: Room Boundary Transition
+- **Given**: A hero at `(5, 5)` (Room A) adjacent to a corridor at `(5, 6)` (Room/Corridor "1").
+- **When**: `calculateVisibleCells(5, 5)` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The logic checks `visCell.valo` for `(2, 1)`.
-    - Since `valo` is not "1", the loop breaks (Rule 1: Room Boundary).
-    - The cell `(2, 1)` is NOT added to the `visibleCells` list.
+    - The logic must strictly adhere to Rule 1 (Room Boundary).
+    - The `visibleCells` must include all cells in Room A.
+    - The `visibleCells` must NOT include the adjacent corridor cell at `(5, 6)` because the `valo` transition from "RoomA" to "1" triggers a stop.

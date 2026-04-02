@@ -6,13 +6,118 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PageContent from './page-presentation';
+import { Monster, Equipment, Item, Spell, TreasureCard } from './domain-ruleset';
+import { VisibilityMap, Campaign } from './domain-map';
 
 export default function MainContent() {
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [globalMonsters, setGlobalMonsters] = useState([]);
+  const [globalBoardData, setGlobalBoardData] = useState(null);
+  const [globalEquipment, setGlobalEquipment] = useState([]);
+  const [globalItems, setGlobalItems] = useState([]);
+  const [globalSpells, setGlobalSpells] = useState([]);
+  const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
+  const [globalCampaign, setGlobalCampaign] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const bootstrap = async () => {
+      try {
+        const urls = {
+          monsters: '/jsonData/monsters.json',
+          boardData: '/jsonData/tabellone/default.json',
+          equipment: '/jsonData/equipment.json',
+          items: '/jsonData/items.json',
+          treasureDeck: '/jsonData/treasure-card.json',
+          campaign: '/jsonData/campagne.json'
+        };
+
+        const fetchJson = async (url) => {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+          } catch (err) {
+            console.error(`Failed to fetch: ${url}`);
+            throw err;
+          }
+        };
+
+        const [
+          monstersData,
+          boardDataJson,
+          equipmentData,
+          itemsData,
+          treasureDeckData,
+          campaignData
+        ] = await Promise.all([
+          fetchJson(urls.monsters),
+          fetchJson(urls.boardData),
+          fetchJson(urls.equipment),
+          fetchJson(urls.items),
+          fetchJson(urls.treasureDeck),
+          fetchJson(urls.campaign)
+        ]);
+
+        if (!isMounted) return;
+
+        setGlobalMonsters(Array.isArray(monstersData) ? monstersData.map(Monster) : []);
+        setGlobalBoardData(VisibilityMap(boardDataJson));
+        setGlobalEquipment(Array.isArray(equipmentData) ? equipmentData.map(Equipment) : []);
+        setGlobalItems(Array.isArray(itemsData) ? itemsData.map(Item) : []);
+        setGlobalTreasureDeck(Array.isArray(treasureDeckData) ? treasureDeckData.map(TreasureCard) : []);
+        setGlobalCampaign(Campaign(campaignData));
+        setGlobalSpells([]); 
+
+        setIsAppReady(true);
+      } catch (err) {
+        if (isMounted) {
+          setError(err?.message || "Errore sconosciuto");
+        }
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-4 text-center">
+        <h1 className="text-2xl font-bold">Errore fatale durante l'avvio: {error}</h1>
+      </div>
+    );
+  }
+
+  if (!isAppReady) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <h2 className="text-xl animate-pulse">Inizializzazione Sistema...</h2>
+      </div>
+    );
+  }
+
   return (
-    <main className="w-full h-screen flex items-center justify-center">
-      <PageContent />
-    </main>
+    <div className="w-full h-screen flex items-center justify-center bg-black overflow-hidden">
+      <PageContent
+        monsters={globalMonsters}
+        boardData={globalBoardData}
+        equipment={globalEquipment}
+        items={globalItems}
+        spells={globalSpells}
+        treasureDeck={globalTreasureDeck}
+        campaign={globalCampaign}
+      />
+    </div>
   );
 }

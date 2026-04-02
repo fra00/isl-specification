@@ -118,3 +118,5 @@
     - Set internal dragging flag to false.
     - Remove global event listeners.
     - Save current `position` to LocalStorage key "dungeonTurnControlsPosition".
+
+- **On Unmount**: Remove all global event listeners for `mousemove` and `mouseup`.

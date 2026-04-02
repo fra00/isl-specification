@@ -49,6 +49,12 @@
 - `gameSession`: @GameSession (Current session state).
 - `onChangePageView`: (nextPage: @PageNavigationEnum) -> void (Callback to navigate).
 - `onUpdateSession`: (session: @GameSession) -> void (Callback to update session).
+- `staticMonsters`: List<@Monster>
+- `staticVisibilityMap`: @VisibilityMap
+- `staticEquipment`: List<@Equipment>
+- `staticItems`: List<@Item>
+- `staticSpells`: List<@Spell>
+- `treasureDeck`: List<@TreasureCard>
 
 ### 🔍 Appearance
 
@@ -134,17 +140,8 @@
 
 #### internal state
 
-- `isStaticDataLoaded`: Boolean (Tracks if static data like visibility map is loaded. Default false).
+- `isMissionInitialized`: Boolean (Tracks if hero placement is done. Default false).
 - `isInventoryOpen`: Boolean (Tracks if inventory modal is visible. Default false).
-- `staticVisibilityMap`: @VisibilityMap (The static visibility map loaded from the mission data, used as reference for calculations).
-- `staticEquipment`: List of @Equipment (Loaded from JSON).
-- `staticItems`: List of @Item (Loaded from JSON).
-- `staticSpells`: List of @Spell (The 12 elemental spells):
-  - **Fuoco**: 1. Palla di Fuoco (Effetto: "Palla di Fuoco", Target: Monster, Valore: 2), 2. Frecce di Fuoco (Effetto: "Frecce di Fuoco", Target: Monster, Valore: 1), 3. Coraggio (Effetto: "Coraggio", Target: Hero).
-  - **Acqua**: 4. Acqua Guaritrice (Effetto: "Acqua Guaritrice", Target: Hero, Valore: 4), 5. Nebbia Caliginosa (Effetto: "Nebbia Caliginosa", Target: Hero), 6. Sonno (Effetto: "Sonno", Target: Monster).
-  - **Aria**: 7. Genio (Effetto: "Genio", Target: Monster/Door, Valore: 5), 8. Tempesta (Effetto: "Tempesta", Target: Monster), 9. Passaggio Invisibile (Effetto: "Passaggio Invisibile", Target: Hero).
-  - **Terra**: 10. Pelle di Pietra (Effetto: "Pelle di Pietra", Target: Hero, Valore: 1), 11. Passapareti (Effetto: "Passapareti", Target: Hero), 12. Intralcio (Effetto: "Intralcio", Target: Monster).
-- `staticMonsters`: List of @Monster (Loaded from JSON).
 - `isSpellSelectionRequired`: Boolean (Tracks if spell selection is needed. Default false).
 - `isSpellCastModalOpen`: Boolean (Tracks if the spell casting modal is visible. Default false).
 - `isMissionSummaryOpen`: Boolean (Tracks if the victory summary is visible. Default false).
@@ -158,7 +155,7 @@
 - `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment`, `onUpdateSession`, and `setNotificationMessage`.
 - `hooksItemLogic`: @useItemLogic passing `staticItems`, `onUpdateSession`, and `setNotificationMessage`.
 - `hooksCampaignManager`: @useCampaignManager.
-- `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `boardVisibilityMap`: `staticVisibilityMap`.
+- `hooksVisibilityCalc`: @useVisibilityCalc passing gameSession and visibilityMap: staticVisibilityMap.
 - `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
 - `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.foundPassages`, `onUpdateSession`, `setNotificationMessage`, and `hooksFogOfWar`.
@@ -172,31 +169,12 @@
 - `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `onUpdateSession`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
 - `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
 
-#### fetchHqData
+#### initializeMission
 
-- **Contract**: Fetches static data for the HQ.
-- **Trigger**: On Mount.
+- **Contract**: Initializes hero positions and map vision once the mission starts.
+- **Trigger**: On Mount (after `gameSession` is available).
 - **Flow**:
-  - TRY:
-    - Define `fetchJson(url)`: Fetch from `url`. IF response is NOT 200 OK OR header is not JSON, throw Error including the URL.
-    - Define `fetchJson(url)`: Fetch from `url`. IF `response.ok` is false OR `Content-Type` is not `application/json`, throw Error "Impossibile caricare [url] - Verificare che il file esista nella cartella public".
-    - Fetch board data from `/jsonData/tabellone/default.json` using `fetchJson`.
-    - Fetch treasure cards from `/jsonData/treasure-card.json` using `fetchJson`.
-    - Fetch equipment data from `/jsonData/equipment.json` using `fetchJson`.
-    - Fetch items data from `/jsonData/items.json` using `fetchJson`.
-    - Fetch monsters data from `/jsonData/monsters.json` using `fetchJson`.
-    - Avoid the silent fail / block if one fetch fail. if one fetch fail show an error with the path of fetch has fired exception.
-    - Parse and store board data in `staticVisibilityMap`.
-    - Parse and shuffle treasure cards.
-    - Parse and store `staticEquipment`.
-    - Parse and store `staticItems`.
-    - Parse and store `staticMonsters`.
-    - Initialize `staticSpells` objects with full metadata (id, nome, elemento, immagine, dorso, targetType, effetto, valore) matching the Elemental list.
-    - Set `isStaticDataLoaded` to true.
-  - CATCH Error:
-    - Set `notificationMessage` to "Errore caricamento asset: " + error.message.
-    - Set `notificationMessage` to "Errore critico: " + error.message.
-    - RETURN (Stop initialization to prevent corrupted state).
+  - SET `staticVisibilityMap` from `gameSession.currentMap`.
   - **Hero Initialization**:
     - Create `placedHeroes` by mapping `gameSession.heroes`.
     - FOR EACH `heroState` in `placedHeroes`:
@@ -206,8 +184,9 @@
         - Set `heroState.y` to `spawnPoint.y`.
   - **Finalize Session**:
     - Create `newSession` as a shallow copy of `gameSession` (to preserve currentMap).
-    - Update `newSession.heroes` with `placedHeroes` and `newSession.treasureDeck` with shuffled cards.
+    - Update `newSession.heroes` with `placedHeroes` and `newSession.treasureDeck` with `treasureDeck` (already shuffled).
     - Trigger `onUpdateSession(newSession)`.
+    - SET `isMissionInitialized` to true.
 
 #### order turn selection
 
@@ -218,6 +197,8 @@
   - onConfirmOrder:
     - Update `gameSession.heroes` with correct `turnOrder`.
     - Set `gameSession.isHeroOrderConfirmed` to true.
+    - **Trigger Initial Visibility**:
+      - Call `hooksFogOfWar.revealInitialVisibility()`.
     - IF any hero in `gameSession.heroes` has `hero.classe` matching "Mago" or "Elfo":
       - Set `isSpellSelectionRequired` to true.
   - Trigger `onUpdateSession`.

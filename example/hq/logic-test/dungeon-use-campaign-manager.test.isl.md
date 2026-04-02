@@ -1,52 +1,51 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-campaign-manager.isl.md -->
 
-## Scenario: Save Campaign Data Integrity
-- **Given**: A list of `HeroState` objects with valid attributes and a `nextMissionIndex` of 2.
-- **When**: `saveCampaign(heroes, 2)` is executed.
+## Scenario: Successful Campaign Persistence
+- **Given**: A `GameSession` with a list of `HeroState` objects and `currentMissionIndex` set to 2.
+- **When**: `saveCampaign(heroes, 2)` is invoked.
 - **Assert (Expected Outcomes)**:
     - LocalStorage key `"hq_campaign_data"` exists.
-    - The stored JSON string, when parsed, contains the exact `heroes` list provided.
-    - The stored `nextMissionIndex` matches 2.
-    - A `timestamp` property exists in the stored object and is a valid numeric value.
-
-## Scenario: Load Campaign with Non-Existent Data
-- **Given**: LocalStorage is empty or the key `"hq_campaign_data"` does not exist.
-- **When**: `loadCampaign()` is called.
-- **Assert (Expected Outcomes)**:
-    - The function returns `null`.
-    - No errors are thrown during the parsing attempt.
-    - The system state remains unchanged.
+    - The parsed JSON object contains the exact `heroes` list provided.
+    - The `nextMissionIndex` property in storage is 2.
+    - The `timestamp` property is present and represents a valid numeric time.
 
 ## Scenario: Load Campaign with Corrupted Data
-- **Given**: LocalStorage contains `"hq_campaign_data"` with invalid/malformed JSON string.
-- **When**: `loadCampaign()` is called.
+- **Given**: LocalStorage key `"hq_campaign_data"` contains an invalid, non-JSON string (e.g., "corrupted_data_123").
+- **When**: `loadCampaign()` is invoked.
 - **Assert (Expected Outcomes)**:
-    - The flow handles the parsing failure gracefully (e.g., via try-catch).
-    - The function returns `null` rather than crashing the application.
-    - The system does not attempt to initialize a session with partial or invalid data.
+    - The `TRY/CATCH` block catches the JSON parsing error.
+    - The function returns `null` instead of throwing an exception.
+    - The system state remains stable (no partial data corruption).
 
 ## Scenario: Deterministic Reset of Campaign
 - **Given**: A valid campaign exists in LocalStorage (`"hq_campaign_data"` is populated).
-- **When**: `resetCampaign()` is executed.
+- **When**: `resetCampaign()` is invoked.
 - **Assert (Expected Outcomes)**:
     - `hasSavedCampaign()` returns `false`.
     - `loadCampaign()` returns `null`.
-    - The key `"hq_campaign_data"` is completely removed from LocalStorage (not just set to null or empty string).
+    - The LocalStorage key `"hq_campaign_data"` is removed from the browser storage.
 
-## Scenario: Verify Campaign Persistence Flow (Round-trip)
-- **Given**: A `GameSession` with modified `HeroState` (e.g., gold updated to 600, inventory updated).
-- **When**: 
-    1. `saveCampaign(heroes, 1)` is called.
-    2. `loadCampaign()` is called.
+## Scenario: Handling Storage Quota/Access Failure
+- **Given**: The browser environment has disabled LocalStorage or the storage quota is full.
+- **When**: `saveCampaign(heroes, 1)` is invoked.
 - **Assert (Expected Outcomes)**:
-    - The loaded `heroes` list matches the state of the heroes at the time of saving.
-    - The `nextMissionIndex` is correctly retrieved as 1.
-    - The system state is restored to the exact point of the last save, ensuring no data loss between sessions.
+    - The `CATCH` block is triggered.
+    - An error is logged to the console.
+    - A UI notification "Could not save progress" is triggered (simulated via the defined flow).
+    - The system does not crash and maintains the current in-memory `GameSession` state.
 
-## Scenario: Adversarial Input Handling
-- **Given**: An empty list of `heroes` and a negative `nextMissionIndex`.
-- **When**: `saveCampaign([], -1)` is executed.
+## Scenario: Load Campaign with Empty Storage
+- **Given**: LocalStorage is empty (no `"hq_campaign_data"` key).
+- **When**: `loadCampaign()` is invoked.
 - **Assert (Expected Outcomes)**:
-    - The system successfully serializes the empty list and the negative index.
-    - `loadCampaign()` successfully retrieves the empty list and negative index.
-    - *Note*: While the business logic might later reject a negative index, the `CampaignManager` must act as a transparent storage layer and preserve the data provided without mutation.
+    - The function returns `null` immediately.
+    - No errors are logged.
+    - The flow correctly identifies that no session is available to resume.
+
+## Scenario: Integrity of HeroState during Save/Load
+- **Given**: A `HeroState` with complex nested data (e.g., `inventory` list, `equipped` list, `activeStatus` list).
+- **When**: `saveCampaign` is called, followed by `loadCampaign`.
+- **Assert (Expected Outcomes)**:
+    - The deserialized `HeroState` matches the original `HeroState` in all properties (`currentBody`, `gold`, `inventory`, etc.).
+    - List types (inventory, equipment) maintain their order and content integrity after serialization/deserialization.
+    - The `hero` definition reference (if serialized) remains consistent with the domain ruleset.

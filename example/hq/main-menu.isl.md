@@ -60,7 +60,11 @@ Azione da eseguire al click su voce di menu
 **Trigger**:
 Click su voce di menu
 **Side Effects**:
-vai alla pagina `destination` (onChangePageView(`PageNavigationEnum`))
+IF NOT isProcessing:
+
+- set isProcessing = TRUE
+- vai alla pagina `destination` (onChangePageView(`PageNavigationEnum`))
+- set isProcessing = FALSE
 
 #### mouseOverMenuItems
 

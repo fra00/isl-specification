@@ -1,62 +1,68 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-turn-logic.isl.md -->
 
-## Scenario: Movement Pathfinding with Obstacle Avoidance
-- **Given**: A `GameSession` where the hero is at (5,5) and a `MapDefinition` containing a rock block (`arnt.antroc: true`) at (5,6).
-- **When**: The user triggers `handleBoardHover` for target cell (5,7).
+## Scenario: Movement Interruption by Trap
+- **Given**: A hero is at (5,5) with 4 movement points. A trap (type 2: Spear) is located at (5,6). The hero initiates a move to (5,7).
+- **When**: The hero moves to (5,6) during the `movementEffect` flow.
 - **Assert (Expected Outcomes)**:
-    - `hoveredPath` must be empty because the path is blocked by the rock at (5,6).
-    - The system must not allow `handleBoardClick` to initiate movement to (5,7).
-
-## Scenario: Combat Resolution with Equipment Bonus
-- **Given**: A hero with `attacco: 2` equipped with a weapon (`dadatt: 3`). A monster with `difesa: 2`.
-- **When**: The user triggers `handleMonsterClick` on the monster.
-- **Assert (Expected Outcomes)**:
-    - `heroStatsLogic.calculateAttackDice` must return 3 (the weapon value, not the sum).
-    - `combatLogic.resolveCombat` must be called with 3 attack dice.
-    - `combatResult.damageDealt` must be calculated as `Max(0, skulls - shields)`.
-
-## Scenario: Trap Trigger and Movement Interruption
-- **Given**: A hero at (2,2) with 5 `movementPoints`. A trap of type 2 (Lance) exists at (2,3).
-- **When**: The user clicks (2,4) to move, and the path includes (2,3).
-- **Assert (Expected Outcomes)**:
-    - `movementEffect` must detect the trap at (2,3).
-    - `currentHero.currentBody` must be decremented by 1.
-    - `isMoving` must be set to `false` immediately upon triggering the trap.
-    - `turnPhase.hasMoved` and `turnPhase.hasPerformedAction` must be set to `true`, ending the turn prematurely.
-
-## Scenario: Deterministic Turn Transition and Cleanup
-- **Given**: A hero with "FoggyMist" status active at the end of their turn.
-- **When**: The user triggers `endTurn()`.
-- **Assert (Expected Outcomes)**:
-    - "FoggyMist" must be removed from `hero.activeStatus`.
-    - `turnPhase` must be reset to initial state (all flags false).
-    - `movementPoints` must be reset to `null`.
-    - `attacksPerformed` must be reset to 0.
-    - `onUpdateSession` must be called to persist the state change.
+    - `trapsLogic.checkTrapActivation` returns true.
+    - `currentHero.currentBody` is decremented by 1.
+    - `trapsLogic.registerTriggeredTrap` is called for (5,6) with status 'TRIGGERED'.
+    - `isMoving` is set to false.
+    - `turnPhase.hasMoved` and `turnPhase.hasPerformedAction` are set to true.
+    - `activePath` is cleared, halting further movement.
 
 ## Scenario: Ranged Weapon Consumption
-- **Given**: A hero equipped with a weapon where `tirounavo: true`.
-- **When**: The hero performs a ranged attack (`handleMonsterClick`) on a monster at distance > 1.
+- **Given**: A hero is equipped with a "Throwing Axe" (ID: 101, `tirounavo: true`). The hero is at (2,2) and a monster is at (2,5).
+- **When**: The hero performs `handleMonsterClick` on the monster at (2,5).
 - **Assert (Expected Outcomes)**:
-    - The weapon ID must be identified via `getConsumableWeaponId`.
-    - The weapon ID must be removed from `hero.equipped` and `hero.equipment`.
-    - The state must update to reflect the loss of the weapon.
+    - `combatLogic.resolveCombat` is executed.
+    - `heroStatsLogic.getConsumableWeaponId` returns 101.
+    - ID 101 is removed from `hero.equipped` and `hero.equipment`.
+    - `onNotify` is triggered with "Hai lanciato l'arma e l'hai persa!".
+    - `onUpdateSession` is called to reflect the inventory change.
 
-## Scenario: Mission Objective Completion (Escape)
-- **Given**: A map where `header.nfine` requires a specific boss kill, and the boss is still alive in `gameSession.monsters`.
-- **When**: The hero moves onto a cell marked as `fine` (exit).
+## Scenario: Deterministic Turn End and Cleanup
+- **Given**: A hero has finished their movement and performed an action.
+- **When**: The user triggers `endTurn()`.
 - **Assert (Expected Outcomes)**:
-    - `checkMissionObjective` must return `false`.
-    - The hero must NOT be marked as `isEscaped`.
-    - The system must trigger `onNotify` with the message: "Non puoi uscire! Devi prima compiere la missione."
-    - The hero must remain on the map.
+    - `isMoving` is false.
+    - `turnPhase` properties are reset to false.
+    - `movementPoints` is reset to null.
+    - `attacksPerformed` is reset to 0.
+    - `gameSession.currentTurn` is incremented.
+    - If the hero had "FoggyMist" status, it is removed, and `onNotify` is triggered.
+    - `onUpdateSession` is called to persist the state transition.
+
+## Scenario: Boss Kill Mission Completion
+- **Given**: `MapHeader.mostro_uscita` is set to "Gargoyle" (ID: 5). The only remaining monster in `gameSession.monsters` is the Gargoyle.
+- **When**: The hero attacks the Gargoyle, and `combatResult.damageDealt` reduces `currentBody` to 0.
+- **Assert (Expected Outcomes)**:
+    - The Gargoyle is removed from `gameSession.monsters`.
+    - `checkMissionObjective()` returns true.
+    - The system state is updated to reflect the mission completion.
+
+## Scenario: Invalid Movement Pathing (Adversarial)
+- **Given**: A hero is at (1,1). A wall (Rock) exists at (1,2).
+- **When**: The user attempts `handleBoardClick` to (1,3) by passing through (1,2).
+- **Assert (Expected Outcomes)**:
+    - `hooksPathfinding.calculatePath` returns an empty list because `movementRules.isWalkable` returns false for the rock obstacle.
+    - `isMoving` remains false.
+    - No position update occurs for the hero.
+    - `hoveredPath` remains empty.
+
+## Scenario: Courage Spell Expiration
+- **Given**: A hero has "Courage" in `activeStatus`. No monsters are visible (all cells in `visibilityMap.data` with `fog: false` contain no monsters).
+- **When**: `updateCanAttack` is triggered.
+- **Assert (Expected Outcomes)**:
+    - "Courage" is removed from `hero.activeStatus`.
+    - `onNotify` is triggered with "L'effetto di Coraggio svanisce...".
+    - `onUpdateSession` is called.
 
 ## Scenario: Deterministic Completion of Movement
 - **Given**: A hero is moving along an `activePath` of length 3.
-- **When**: The hero reaches the final destination cell.
+- **When**: The hero reaches the final destination coordinate.
 - **Assert (Expected Outcomes)**:
-    - `isMoving` must be set to `false`.
-    - `activePath` must be cleared.
-    - If `movementPoints` > 0, the system must remain in a state where further actions (like searching or attacking) are permitted.
-    - If `movementPoints` == 0, `turnPhase.hasMoved` must be set to `true`.
-    - The system must never remain in a "moving" state (dead-end) if the path is completed.
+    - `isMoving` is set to false.
+    - `activePath` is set to empty.
+    - If the destination cell has `fine` property and `checkMissionObjective` is true, the hero is marked as `isEscaped` and `endTurn` is triggered.
+    - The system ensures no "isMoving" flag remains stuck, preventing future actions.

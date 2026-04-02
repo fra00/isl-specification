@@ -1,58 +1,61 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-pathfinding.isl.md -->
 
-This document outlines the logical test scenarios for the `usePathfinding` component, ensuring structural integrity, flow continuity, and deterministic behavior in the Heroquest pathfinding logic.
+This document outlines the logical test scenarios for the `usePathfinding` component, focusing on state transitions, movement constraints, and deterministic flow.
 
-## Scenario: Pathfinding Blocked by Static Obstacle
-- **Given**: A `GameSession` where a `MapCell` at (5, 5) has `arnt.antroc = true` (Rock).
-- **When**: `calculatePath` is called from (5, 4) to (5, 6) with `maxDepth = 10`.
+## Scenario: Pathfinding Blocked by Static Obstacles
+- **Given**: A `GameSession` where a hero is at (1,1) and a wall (Rock) exists at (1,2). `maxDepth` is set to 5.
+- **When**: `calculatePath(1, 1, 1, 3, 5, heroId)` is called.
 - **Assert (Expected Outcomes)**:
-    - The pathfinding algorithm must identify (5, 5) as non-walkable via `isWalkable`.
-    - The returned path must be empty (no valid route).
-    - The system must not enter an infinite loop or crash when encountering the rock.
+    - `movementRules.isWalkable` returns `FALSE` for the transition (1,1) to (1,2).
+    - The BFS algorithm correctly identifies the rock as a terminal node for that branch.
+    - The function returns an empty list `[]` if no alternative path exists.
 
 ## Scenario: Pathfinding Through Discovered Secret Passage
-- **Given**: A `GameSession` where a secret passage exists at (10, 10). The `foundPassages` list contains `{x: 10, y: 10}`.
-- **When**: `calculatePath` is called from (10, 9) to (10, 11).
+- **Given**: A `GameSession` where a secret passage exists at (5,5). The `foundPassages` list contains `{x: 5, y: 5}`.
+- **When**: `calculatePath` is called for a path that requires crossing the secret passage at (5,5).
 - **Assert (Expected Outcomes)**:
-    - `movementRules.isWalkable` must return `TRUE` for the transition between (10, 9) and (10, 10) because the passage is in `foundPassages`.
-    - The path must successfully include the secret passage coordinate in the returned list.
+    - `movementRules.isWalkable` evaluates the passage as `TRUE` because it is present in `foundPassages`.
+    - The path returned includes the coordinates of the secret passage.
+    - The flow does not treat the passage as a wall.
 
-## Scenario: Pathfinding with "FoggyMist" Status Effect
-- **Given**: A hero with `excludeEntityId = 1` has `activeStatus` containing "FoggyMist". A monster is standing at (3, 3).
-- **When**: `calculatePath` is called for the hero, attempting to traverse through the monster's coordinate (3, 3).
+## Scenario: Pathfinding with Dynamic Monster Obstacle
+- **Given**: A `GameSession` where a monster is at (2,2). The hero does not have the "FoggyMist" status.
+- **When**: `calculatePath` attempts to traverse through (2,2).
 - **Assert (Expected Outcomes)**:
-    - `isWalkable` must evaluate the monster presence and override the block due to the "FoggyMist" status.
-    - The path must successfully traverse through the monster's cell.
-    - The path must be the shortest valid route considering the override.
+    - `movementRules.isWalkable` returns `FALSE` for the target (2,2) because `isBlockedByMonster` is `TRUE`.
+    - The pathfinding algorithm treats the monster as a dynamic obstacle and attempts to route around it.
+    - If no detour exists, the function returns an empty list.
 
-## Scenario: Deterministic Completion and Boundary Safety
-- **Given**: A `GameSession` with a map of 26x19. `calculatePath` is called with `targetX = 50, targetY = 50` (out of bounds).
-- **When**: The pathfinding logic executes.
-- **Assert (Expected Outcomes)**:
-    - `movementRules.isValidDestination` must return `FALSE` for out-of-bounds coordinates.
-    - `calculatePath` must return an empty list immediately upon the pre-check failure.
-    - The system must not attempt to access `grid` indices that would cause an out-of-bounds exception.
-
-## Scenario: Pathfinding Depth Limitation
-- **Given**: A path exists between (1, 1) and (1, 10) consisting of 9 steps. `maxDepth` is set to 5.
+## Scenario: Pathfinding with "FoggyMist" Status (Adversarial/Special)
+- **Given**: A hero has the `activeStatus` containing "FoggyMist". A monster is blocking the only path to the target.
 - **When**: `calculatePath` is called.
 - **Assert (Expected Outcomes)**:
-    - The BFS algorithm must terminate the search branch once `path.length` reaches `maxDepth`.
-    - The function must return an empty list, as the target is unreachable within the allowed depth.
-    - The system must release the BFS queue and return to a stable state.
+    - `movementRules.isWalkable` checks the hero's `activeStatus`.
+    - The logic allows the hero to move into the monster's cell (traversal allowed).
+    - The path returned includes the monster's coordinates.
 
-## Scenario: Adversarial/Invalid Entity ID Handling
-- **Given**: A `GameSession` where `excludeEntityId` is provided as a non-existent hero ID.
+## Scenario: Deterministic Completion (Max Depth Limit)
+- **Given**: A target destination is 10 tiles away, but `maxDepth` is set to 5.
+- **When**: `calculatePath` is executed.
+- **Assert (Expected Outcomes)**:
+    - The BFS queue processes nodes until `current.path.length` reaches 5.
+    - The algorithm terminates the search for that branch once the depth limit is hit.
+    - The function returns an empty list `[]` (or partial path if target reached within depth, but here it is unreachable).
+    - The system state remains clean (no hanging flags or memory leaks).
+
+## Scenario: Invalid Destination Handling
+- **Given**: A target coordinate (10, 10) that is occupied by furniture.
+- **When**: `calculatePath` is called with this target.
+- **Assert (Expected Outcomes)**:
+    - `movementRules.isValidDestination` is called first.
+    - It returns `FALSE` because `isBlockedByFurniture` is `TRUE`.
+    - `calculatePath` immediately returns an empty list `[]` without initiating the BFS, ensuring efficiency and logical safety.
+
+## Scenario: Room/Wall Crossing Logic
+- **Given**: A hero is in a room with `valo: "A"`. The target is in a room with `valo: "B"`. No door exists between them.
 - **When**: `calculatePath` is called.
 - **Assert (Expected Outcomes)**:
-    - The logic must handle the missing hero gracefully (i.e., not crash when checking `activeStatus`).
-    - The pathfinding must default to standard movement rules (no status-based overrides).
-    - The function must return a valid path if one exists under standard rules, or an empty list if blocked.
-
-## Scenario: Guaranteed Completion (No Dead-Ends)
-- **Given**: A complex map with multiple rooms and closed doors.
-- **When**: `calculatePath` is triggered for a target that is logically unreachable (e.g., behind a closed door not in `foundPassages`).
-- **Assert (Expected Outcomes)**:
-    - The BFS must exhaust all reachable nodes within the `maxDepth`.
-    - The function must return an empty list `[]` rather than `null` or `undefined`.
-    - The flow must ensure that the `visited` set is cleared/scoped to the current execution, preventing memory leaks or state pollution for subsequent calls.
+    - `movementRules.isWalkable` detects `sourceValo != targetValo`.
+    - It checks for `isDoor` and `isSecretPassage`.
+    - Since neither exists, it returns `FALSE`.
+    - The pathfinding algorithm correctly identifies the rooms as disconnected and returns an empty list.

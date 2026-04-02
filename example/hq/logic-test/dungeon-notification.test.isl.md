@@ -9,42 +9,48 @@
     - The component remains hidden (no DOM elements rendered).
     - No timers are initialized.
 
-## Scenario: Auto-Close Deterministic Completion
-- **Given**: `message` is set to "Enemy Spotted", `duration` is 3000ms, and `onClose` is a mock function.
-- **When**: The component mounts and 3000ms elapses.
+## Scenario: Auto-Close Lifecycle (Deterministic Completion)
+- **Given**: `message` is set to "Enemy Spotted", `duration` is 3000ms.
+- **When**: The component mounts and the duration elapses.
 - **Assert (Expected Outcomes)**:
-    - `onClose` is called exactly once.
+    - `onClose` callback is invoked exactly once.
     - The flow transitions to a "closed" state.
-    - No memory leaks (timeout is cleared).
+    - The internal timer is cleared/disposed to prevent memory leaks.
 
 ## Scenario: Message Update Reset (Flow Continuity)
-- **Given**: A notification is currently active with `message` "Trap Detected" and a pending timeout.
-- **When**: `message` is updated to "Gold Found" before the initial 3000ms expires.
+- **Given**: A notification is currently visible with `message` "A" and a pending timer.
+- **When**: `message` changes to "B" before the initial 3000ms duration expires.
 - **Assert (Expected Outcomes)**:
-    - The previous timeout is cleared/cancelled.
-    - A new timeout is initialized for the full `duration` of the new message.
-    - The component does not trigger `onClose` prematurely.
+    - The previous timer is cleared immediately.
+    - A new timer is initialized for the new `message` using the current `duration`.
+    - The component remains visible and displays "B".
+    - No stale `onClose` triggers occur from the previous message.
 
-## Scenario: Component Unmount Cleanup (Deterministic Completion)
+## Scenario: Unmount Cleanup (Adversarial/Edge Case)
 - **Given**: A notification is active with a pending `autoClose` timer.
-- **When**: The component is unmounted from the React tree.
+- **When**: The component is unmounted (e.g., user navigates away or parent removes the component) before the timer expires.
 - **Assert (Expected Outcomes)**:
-    - The active timeout is cleared immediately.
-    - `onClose` is NOT triggered (preventing state updates on unmounted components).
-    - The system state is reset to prevent dangling references.
+    - The timer is successfully cleared.
+    - No attempt is made to call `onClose` after unmount (preventing state update errors on unmounted components).
 
-## Scenario: Adversarial Input Handling
-- **Given**: `message` is provided, but `duration` is passed as a negative integer or zero.
+## Scenario: Zero or Negative Duration Handling
+- **Given**: `message` is "Test", `duration` is 0 or -1000.
 - **When**: The component mounts.
 - **Assert (Expected Outcomes)**:
-    - The component handles the invalid duration gracefully (e.g., defaults to a minimum threshold or closes immediately).
-    - The system does not crash or enter an infinite loop.
-    - `onClose` is triggered to ensure the flow does not hang in a "stuck" notification state.
+    - The system treats the duration as an immediate trigger.
+    - `onClose` is invoked immediately (or on the next tick).
+    - The component does not persist in a "stuck" state.
 
-## Scenario: Rapid Message Toggling
-- **Given**: `message` is updated multiple times in rapid succession (e.g., within 100ms).
-- **When**: The component processes these updates.
+## Scenario: Callback Integrity
+- **Given**: `onClose` is provided as a function.
+- **When**: The `autoClose` timer triggers.
 - **Assert (Expected Outcomes)**:
-    - The component maintains a single active timer.
-    - The final state reflects the last provided `message`.
-    - The flow remains deterministic, ensuring the notification eventually closes based on the final message's `duration`.
+    - The `onClose` function is executed with no arguments.
+    - The component logic does not crash if `onClose` is undefined (defensive programming check).
+
+## Scenario: Z-Index and Positioning Persistence
+- **Given**: The component is active.
+- **When**: The window is resized or the DOM structure changes.
+- **Assert (Expected Outcomes)**:
+    - The component maintains `fixed` positioning.
+    - The component maintains `z-index: 100` to ensure it remains on top of the game board/UI.

@@ -16,7 +16,7 @@
 
 ### Role: Business Logic
 
-**Signature**: `useFogOfWar({ gameSession: GameSession, staticVisibilityMap: VisibilityMap }): VisibilityMap`
+**Signature**: `useFogOfWar({ gameSession: @GameSession, staticVisibilityMap: @VisibilityMap })`
 
 - `gameSession`: @GameSession (Current session state containing heroes).
 - `staticVisibilityMap`: @VisibilityMap (The static board configuration loaded from JSON).
@@ -41,6 +41,7 @@
 - **Contract**: Computes the current visibility state of the board based on hero positions.
 - **Trigger**: When @gameSession.heroes or `staticVisibilityMap` changes.
 - **Flow**:
+  - IF `gameSession.isHeroOrderConfirmed` is false, RETURN.
   - Find `heroInTurn` in `gameSession.heroes` matching `gameSession.currentTurn`.
   - IF `heroInTurn` is found:
     - Call `visibilityCalc.calculateVisibleCells(heroInTurn.x, heroInTurn.y)` to get `visibleCells`.
@@ -48,6 +49,15 @@
       - Find corresponding cell in `fogVisibilityMap`.
       - Set `fog` to `false`.
   - Return the processed `fogVisibilityMap`.
+
+#### revealInitialVisibility
+- **Contract**: Clears fog for all positioned heroes at once.
+- **Flow**:
+  - FOR EACH `hero` IN `gameSession.heroes`:
+    - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
+    - Iterate through `visibleCells`:
+      - Find corresponding cell in `fogVisibilityMap` and set `fog` to `false`.
+  - Return `fogVisibilityMap`.
 
 #### revealFromPoint
 

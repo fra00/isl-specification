@@ -1,48 +1,48 @@
 <!-- LOGIC TEST SCENARIOS FOR: editor-game.isl.md -->
 
-# PlayGame.test.isl.md
+# EditorGame.test.isl.md
 
-As the **ISL Test Architect**, I have analyzed the `PlayGame` component. Given its role as the **Backend** for the "Area di gioco" (Game Area) and its requirement to maintain the game state, the following scenarios focus on structural integrity, state persistence, and deterministic flow completion.
+As the **ISL Test Architect**, I have defined the following test scenarios for the `EditorGame` component. Given its role as **Presentation**, these tests focus on the mapping of user intent to the underlying game state and the guarantee of deterministic flow during map manipulation.
 
 ---
 
-## Scenario: Initial State Initialization
-- **Given**: The `PlayGame` component is mounted in the application lifecycle.
-- **When**: The component initializes its internal state.
+## Scenario: Map Initialization and State Reset
+- **Given**: The `EditorGame` component is mounted with an empty map configuration.
+- **When**: The user triggers the "Initialize New Map" action with specific dimensions (e.g., 10x10).
 - **Assert (Expected Outcomes)**:
-    - The static title "editor game" is rendered in the DOM.
-    - The internal game state object is initialized to a valid `GameState` structure (non-null).
-    - The `isLoading` flag is set to `false` after the initial render cycle.
+    - The internal state `mapData` is correctly initialized with the provided dimensions.
+    - The `isLoading` flag is set to `false` immediately after the grid generation.
+    - The component renders the grid interface, ensuring no "dead-end" states where the UI remains in a loading loop.
 
-## Scenario: Deterministic State Loading (Flow Integrity)
-- **Given**: The game engine is triggered to load a map or scenario.
-- **When**: An asynchronous request to fetch game data is initiated.
+## Scenario: Deterministic Tile Modification (Input Mapping)
+- **Given**: A valid map is loaded in the `EditorGame` workspace.
+- **When**: The user selects a tile type (e.g., "Wall") and clicks on a coordinate `(x, y)`.
 - **Assert (Expected Outcomes)**:
-    - The system must transition to an `isProcessing` state.
-    - **Success Path**: Upon successful data retrieval, the state updates to `READY` and `isProcessing` is reset to `false`.
-    - **Failure Path**: If the fetch fails (e.g., 404 or network timeout), the system must catch the error, reset `isProcessing` to `false`, and transition to an `ERROR` state rather than hanging in a loading loop.
-    - **Guaranteed Completion**: The component must never remain in a "Loading" state indefinitely, regardless of the outcome of the external dependency.
+    - The `EditorGame` correctly maps the UI click event to the `updateTile(x, y, type)` capability.
+    - The state transition is atomic: the tile at `(x, y)` is updated, and the `isProcessing` flag is reset to `false` regardless of whether the update was successful or rejected by the domain logic.
+    - The UI reflects the change immediately, ensuring synchronization between the presentation layer and the domain model.
 
-## Scenario: Domain Integrity - Invalid State Transition
-- **Given**: The game is currently in a `PLAYING` state.
-- **When**: An action is dispatched that violates the `GameState` domain rules (e.g., moving a hero to an out-of-bounds coordinate or an occupied tile).
+## Scenario: Handling Invalid Input Mapping (Adversarial)
+- **Given**: The `EditorGame` is active.
+- **When**: The user attempts to place a tile at out-of-bounds coordinates (e.g., `x = -1` or `x > mapWidth`).
 - **Assert (Expected Outcomes)**:
-    - The `PlayGame` backend must reject the state transition.
-    - The internal state must remain unchanged (Atomic Transaction).
-    - An error event or log must be generated indicating the violation of the `@Domain` constraints.
+    - The `EditorGame` logic intercepts the invalid coordinate before triggering the domain update.
+    - The component maintains its current valid state (no corruption of the map data).
+    - An error state or feedback is triggered, and the component remains responsive to further user input (no blocking flags left active).
 
-## Scenario: Cleanup and Reset Logic
-- **Given**: The user triggers a "Reset Game" or "Exit" action.
-- **When**: The component receives the cleanup signal.
+## Scenario: Deterministic Completion of Map Export
+- **Given**: A modified map exists in the `EditorGame` state.
+- **When**: The user triggers the "Export Map" capability.
 - **Assert (Expected Outcomes)**:
-    - All active game entities (Heroes, Monsters, Items) are purged from the memory state.
-    - The `isProcessing` flag is explicitly set to `false` to prevent blocking subsequent game sessions.
-    - The component returns to the base initialization state, ensuring no "ghost" data persists between sessions.
+    - The flow initiates an asynchronous serialization process.
+    - The `isProcessing` flag is set to `true` to prevent concurrent modifications.
+    - Upon completion (Success or Failure), the flow **must** transition to a final state where `isProcessing` is set to `false`.
+    - If the export fails (e.g., validation error), the system provides a clear error notification without leaving the component in a "hanging" state.
 
-## Scenario: Adversarial Input Handling
-- **Given**: The `PlayGame` component is active.
-- **When**: A malformed or unexpected payload is sent to the game engine (e.g., `null` player data or invalid turn sequence).
+## Scenario: Component Unmount during Processing
+- **Given**: The `EditorGame` is in the middle of a heavy operation (e.g., bulk map validation or saving).
+- **When**: The user navigates away, causing the component to unmount.
 - **Assert (Expected Outcomes)**:
-    - The component must perform input validation against the `@Type` definitions.
-    - The system must gracefully ignore the malformed input without crashing the main thread.
-    - The game must maintain its current valid state, ensuring the "Flow Continuity" is not broken by malicious or erroneous input.
+    - All pending asynchronous triggers are cancelled or cleaned up.
+    - Any global "isProcessing" or "isLoading" flags managed by the component are reset to their default (false) state to prevent blocking the rest of the application.
+    - No memory leaks or dangling promises remain in the execution context.

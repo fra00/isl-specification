@@ -15,22 +15,22 @@ export const CombatDiceResult = {
 };
 
 export const CombatResult = (data = {}) => ({
-  attackerDice: data?.attackerDice || [],
-  defenderDice: data?.defenderDice || [],
-  skulls: data?.skulls ?? 0,
-  shields: data?.shields ?? 0,
-  damageDealt: data?.damageDealt ?? 0
+  attackerDice: data.attackerDice || [],
+  defenderDice: data.defenderDice || [],
+  skulls: data.skulls || 0,
+  shields: data.shields || 0,
+  damageDealt: data.damageDealt || 0
 });
 
-export function useCombatLogic(config = {}) {
-  const resolveCombat = useCallback((attackDiceCount = 0, defenseDiceCount = 0, defenderIsHero = false) => {
-    const safeAttackDiceCount = Math.max(0, attackDiceCount);
-    const safeDefenseDiceCount = Math.max(0, defenseDiceCount);
+export const useCombatLogic = (config = {}) => {
+  const resolveCombat = useCallback((attackDiceCount, defenseDiceCount, defenderIsHero) => {
+    const safeAttackCount = Math.max(0, attackDiceCount != null ? attackDiceCount : 0);
+    const safeDefenseCount = Math.max(0, defenseDiceCount != null ? defenseDiceCount : 0);
 
     const attackerDice = [];
     let skulls = 0;
-    
-    for (let i = 0; i < safeAttackDiceCount; i++) {
+
+    for (let i = 0; i < safeAttackCount; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
       if (roll <= 3) {
         attackerDice.push(CombatDiceResult.SKULL);
@@ -44,8 +44,8 @@ export function useCombatLogic(config = {}) {
 
     const defenderDice = [];
     let shields = 0;
-    
-    for (let i = 0; i < safeDefenseDiceCount; i++) {
+
+    for (let i = 0; i < safeDefenseCount; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
       if (roll <= 3) {
         defenderDice.push(CombatDiceResult.SKULL);
@@ -76,4 +76,4 @@ export function useCombatLogic(config = {}) {
   return {
     resolveCombat
   };
-}
+};

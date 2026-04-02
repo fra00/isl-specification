@@ -26,14 +26,11 @@ export function useDungeonMovementRules({ mapQuery }) {
     const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
         if (!mapQuery) return false;
 
-        // Bounds Check
         const dimensions = mapQuery.getMapDimensions();
-        if (
-            targetX < 1 ||
-            targetY < 1 ||
-            targetX > (dimensions?.width || 0) ||
-            targetY > (dimensions?.height || 0)
-        ) {
+        if (!dimensions) return false;
+
+        // Bounds Check
+        if (targetX < 1 || targetY < 1 || targetX > dimensions.width || targetY > dimensions.height) {
             return false;
         }
 
@@ -45,10 +42,9 @@ export function useDungeonMovementRules({ mapQuery }) {
         // Dynamic Obstacles
         if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
             const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h?.id === excludeEntityId || h?.heroId === excludeEntityId);
+            const hero = heroes.find(h => h.id === excludeEntityId || h.heroId === excludeEntityId);
             
-            const hasFoggyMist = hero?.activeStatus?.includes("FoggyMist");
-            if (!hasFoggyMist) {
+            if (!hero?.activeStatus?.includes("FoggyMist")) {
                 return false;
             }
         }
@@ -59,29 +55,30 @@ export function useDungeonMovementRules({ mapQuery }) {
         }
 
         // Room/Wall Logic
-        const sourceCell = mapQuery.getVisibilityCell(sourceX, sourceY);
-        const targetCell = mapQuery.getVisibilityCell(targetX, targetY);
-        
-        const sourceValo = sourceCell?.valo;
-        const targetValo = targetCell?.valo;
+        const sourceVisibility = mapQuery.getVisibilityCell(sourceX, sourceY);
+        const targetVisibility = mapQuery.getVisibilityCell(targetX, targetY);
+
+        const sourceValo = sourceVisibility?.valo;
+        const targetValo = targetVisibility?.valo;
+
+        if (sourceValo == null || targetValo == null) {
+            return true;
+        }
 
         if (sourceValo !== targetValo) {
-            const isSourceDoor = mapQuery.isDoor(sourceX, sourceY);
-            const isTargetDoor = mapQuery.isDoor(targetX, targetY);
-            const isSourceSecret = mapQuery.isSecretPassage(sourceX, sourceY);
-            const isTargetSecret = mapQuery.isSecretPassage(targetX, targetY);
-
-            if (isSourceDoor || isTargetDoor || isSourceSecret || isTargetSecret) {
+            if (
+                mapQuery.isDoor(sourceX, sourceY) ||
+                mapQuery.isDoor(targetX, targetY) ||
+                mapQuery.isSecretPassage(sourceX, sourceY) ||
+                mapQuery.isSecretPassage(targetX, targetY)
+            ) {
                 return true;
             }
 
             const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h?.id === excludeEntityId || h?.heroId === excludeEntityId);
-            
-            const hasWallPass = hero?.activeStatus?.includes("WallPass");
-            const hasInvisiblePassage = hero?.activeStatus?.includes("InvisiblePassage");
+            const hero = heroes.find(h => h.id === excludeEntityId || h.heroId === excludeEntityId);
 
-            if (hero && (hasWallPass || hasInvisiblePassage)) {
+            if (hero?.activeStatus?.includes("WallPass") || hero?.activeStatus?.includes("InvisiblePassage")) {
                 return true;
             }
 

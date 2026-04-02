@@ -1,14 +1,15 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-spell-cast-modal.isl.md -->
 
-This document outlines the logical test scenarios for the `DungeonSpellCastModal` component. These tests focus on the presentation-to-logic mapping, ensuring that user intent is correctly translated into domain actions while maintaining state integrity.
+This document outlines the logical test scenarios for the `DungeonSpellCastModal` component, focusing on presentation mapping, input validation, and flow integrity.
 
-## Scenario: Modal Initialization with Available Spells
-- **Given**: `isOpen` is `true`, `hero` contains a list of `availableSpells` (e.g., `[101, 102]`), and `allSpells` contains definitions for those IDs.
+## Scenario: Modal Visibility and Data Binding
+- **Given**: `isOpen` is `true`, `hero` is initialized with `availableSpells` containing IDs `[1, 2]`, and `allSpells` contains definitions for IDs `1` and `2`.
 - **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-    - The modal displays exactly two spell cards corresponding to the IDs in `hero.availableSpells`.
-    - Each card correctly maps the `spell.nome`, `spell.descrizione`, and `spell.immagine` from `allSpells`.
-    - The header displays the correct `hero.hero.classe`.
+    - The modal container is visible in the DOM.
+    - The number of rendered spell cards matches the length of `hero.availableSpells`.
+    - Each card displays the correct `spell.nome` and `spell.descrizione` by mapping `hero.availableSpells` against `allSpells`.
+    - The hero's class name is correctly extracted from `hero.hero.classe` and displayed in the header.
 
 ## Scenario: Empty Spell Inventory
 - **Given**: `isOpen` is `true`, `hero.availableSpells` is an empty list `[]`.
@@ -19,33 +20,31 @@ This document outlines the logical test scenarios for the `DungeonSpellCastModal
     - The component remains in a valid, non-crashing state.
 
 ## Scenario: Successful Spell Execution
-- **Given**: `isOpen` is `true`, `hero.availableSpells` contains `[101]`.
-- **When**: The user clicks the "Lancia" button on the spell card for ID `101`.
+- **Given**: `isOpen` is `true`, a spell card with `spellId: 5` is rendered.
+- **When**: The user clicks the "Lancia" button for `spellId: 5`.
 - **Assert (Expected Outcomes)**:
-    - `onCastSpell(101)` is triggered exactly once.
-    - The flow proceeds to the game logic layer to process the spell effect.
-    - The modal does not automatically close (closing logic is handled by the parent component after successful validation).
+    - The `onCastSpell` callback is triggered exactly once with the argument `5`.
+    - The modal does not automatically close (closing logic is delegated to the parent component via `onCastSpell` or `onClose`).
 
 ## Scenario: Modal Dismissal via Backdrop
 - **Given**: `isOpen` is `true`.
-- **When**: The user clicks the backdrop (outside the dialog container).
+- **When**: The user clicks the backdrop overlay.
 - **Assert (Expected Outcomes)**:
-    - `onClose()` is triggered.
-    - The component ceases to render (or `isOpen` becomes `false`).
-    - No spell casting logic is triggered.
+    - The `onClose` callback is triggered.
+    - The component state reflects the intent to close (the parent should toggle `isOpen` to `false`).
 
-## Scenario: Deterministic State Cleanup
-- **Given**: The modal is open and the user is interacting with the spell list.
-- **When**: The parent component updates the `hero` state (e.g., the hero loses a spell due to an external event) or triggers `onClose`.
+## Scenario: Deterministic Completion and Cleanup
+- **Given**: The modal is open and the user initiates a spell cast.
+- **When**: `onCastSpell` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The component must immediately reflect the updated `hero.availableSpells` list.
-    - If `onClose` is triggered, the component must release all local focus/interaction states.
-    - The system must never remain in a "loading" or "blocked" state; it must always return to the main game loop view.
+    - The flow ensures that regardless of whether the spell cast succeeds or fails in the business logic layer, the `DungeonSpellCastModal` must be prepared to transition to a closed state.
+    - The component must not maintain internal "processing" flags that block subsequent openings if the parent fails to re-render the modal correctly.
+    - The component must guarantee that `onClose` is reachable via user interaction even if a previous `onCastSpell` action is pending.
 
-## Scenario: Adversarial Spell Selection
-- **Given**: `isOpen` is `true`, `hero.availableSpells` is `[101]`.
-- **When**: A malicious user attempts to trigger `onCastSpell` with an ID not present in `hero.availableSpells` (e.g., `999`).
+## Scenario: Adversarial Input (Invalid Spell IDs)
+- **Given**: `hero.availableSpells` contains an ID `999` which does not exist in `allSpells`.
+- **When**: The component attempts to render the card for `999`.
 - **Assert (Expected Outcomes)**:
-    - The UI must only provide "Lancia" buttons for valid IDs present in `hero.availableSpells`.
-    - If the logic is bypassed, the `onCastSpell` handler must validate the ID against the `hero.availableSpells` list before proceeding to the game engine.
-    - The system must reject the action and maintain the current `GameSession` state without corruption.
+    - The component must handle the missing reference gracefully (e.g., skip rendering the card or render a placeholder).
+    - The component must not throw a runtime exception that crashes the UI thread.
+    - The system maintains structural integrity by not attempting to access properties of an undefined spell object.

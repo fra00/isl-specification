@@ -72,9 +72,11 @@
   - Find trap at `{x, y}` in `triggeredTraps`.
   - IF NOT found OR `trap.status` != 'DETECTED':
     - Trigger `onNotify("Non c'è una trappola disarmabile qui.")`.
+    - Trigger `onActionDone()`.
     - RETURN.
   - IF `canDisarm` is false:
     - Trigger `onNotify("Non hai gli strumenti per disarmare questa trappola.")`.
+    - Trigger `onActionDone()`.
     - RETURN.
   - Generate random number `roll` between 1 and 6.
   - IF `roll` < 6:

@@ -9,41 +9,42 @@
     - The system does not mutate the original `staticVisibilityMap` reference.
 
 ## Scenario: Fog Removal on Hero Movement
-- **Given**: A `gameSession` with a hero at `(5, 5)` and a `fogVisibilityMap` where all cells are `fog: true`.
-- **When**: `calculateFog` is triggered for the hero at `(5, 5)`.
+- **Given**: A `gameSession` with a hero at position (5, 5). `fogVisibilityMap` has `fog: true` for all cells.
+- **When**: `calculateFog` is triggered for the hero at (5, 5).
 - **Assert (Expected Outcomes)**:
     - `visibilityCalc.calculateVisibleCells(5, 5)` is invoked.
-    - All cells returned by the calculation have their `fog` property updated to `false` in `fogVisibilityMap`.
-    - Cells not returned by the calculation remain `fog: true`.
+    - All cells returned by the calculator have their `fog` property updated to `false` in `fogVisibilityMap`.
+    - Cells not returned by the calculator remain `fog: true`.
 
-## Scenario: Persistence of Revealed Fog (Constraint Verification)
-- **Given**: A `fogVisibilityMap` where cells `(1,1)` to `(3,3)` are already `fog: false` (previously revealed).
-- **When**: The hero moves to a new position `(10, 10)` that does not include `(1,1)` to `(3,3)` in its visibility range.
+## Scenario: Permanent Visibility (Persistence)
+- **Given**: A hero moves from (5, 5) to (6, 6). The cell (5, 5) was previously revealed (`fog: false`).
+- **When**: `calculateFog` is triggered for the new position (6, 6).
 - **Assert (Expected Outcomes)**:
-    - `calculateFog` updates the new visible cells to `fog: false`.
-    - Cells `(1,1)` to `(3,3)` retain `fog: false` (they do not revert to `true`).
-    - The system state satisfies the "permanently visible" constraint.
+    - The cell at (5, 5) remains `fog: false` (it does not revert to `true`).
+    - The cells visible from (6, 6) are updated to `fog: false`.
+    - The system state correctly accumulates revealed areas across multiple turns.
 
-## Scenario: Manual Reveal via Script/Event
-- **Given**: A `fogVisibilityMap` where a specific room at `(20, 20)` is currently `fog: true`.
-- **When**: `revealFromPoint(20, 20)` is called (e.g., triggered by a secret passage or map script).
+## Scenario: Manual Reveal via Script
+- **Given**: A `fogVisibilityMap` where a specific room (e.g., Room ID "2") is entirely under fog (`fog: true`).
+- **When**: `revealFromPoint(x, y)` is called for a coordinate inside Room "2".
 - **Assert (Expected Outcomes)**:
-    - `visibilityCalc.calculateVisibleCells(20, 20)` is executed.
-    - All cells in the returned area are updated to `fog: false` in `fogVisibilityMap`.
-    - The update is reflected immediately in the returned `fogVisibilityMap`.
+    - `visibilityCalc.calculateVisibleCells(x, y)` identifies all cells in Room "2".
+    - Every cell in Room "2" has its `fog` property set to `false`.
+    - The change is persisted in the `fogVisibilityMap` for the remainder of the session.
 
-## Scenario: Deterministic Handling of Null/Invalid Inputs
+## Scenario: Handling Null/Invalid Inputs
 - **Given**: `staticVisibilityMap` is `null` or the `gameSession` contains no heroes.
 - **When**: `calculateFog` or `init` is triggered.
 - **Assert (Expected Outcomes)**:
-    - The flow handles the null reference gracefully without throwing exceptions.
-    - `fogVisibilityMap` is set to `null` (or empty state) as per contract.
-    - The system does not enter a dead-end state; it remains ready for a valid `staticVisibilityMap` injection.
+    - `fogVisibilityMap` is set to `null` (or remains empty).
+    - The system does not throw runtime exceptions (Deterministic Completion).
+    - The flow gracefully exits without attempting to access properties of undefined objects.
 
-## Scenario: Visibility Calculation Boundary Edge Case
-- **Given**: A hero is positioned at the edge of the map `(0, 0)`.
+## Scenario: Deterministic Completion of Visibility Calculation
+- **Given**: A complex map with multiple rooms and corridors.
 - **When**: `calculateFog` is triggered.
 - **Assert (Expected Outcomes)**:
-    - `visibilityCalc` is called with `(0, 0)`.
-    - The logic correctly handles the boundary without attempting to access out-of-bounds indices in `fogVisibilityMap`.
-    - Only valid cells within the map grid are updated to `fog: false`.
+    - The flow iterates through the full list of `visibleCells` returned by `visibilityCalc`.
+    - The loop completes for every cell, ensuring no partial updates occur.
+    - The function returns the fully updated `fogVisibilityMap` object, ensuring the UI/State layer receives a consistent snapshot of the board.
+    - No "isProcessing" or "isLoading" flags are left in a blocking state (if applicable to the implementation).

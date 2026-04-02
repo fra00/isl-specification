@@ -2,44 +2,53 @@
 
 # MainMenu.test.isl.md
 
-## Scenario: Navigation Trigger on Menu Click
-- **Given**: The `MainMenu` component is rendered; `onChangePageView` is provided as a mock function.
+## Scenario: Navigation Trigger Integrity
+- **Given**: The `MainMenu` component is mounted with `onChangePageView` mocked.
 - **When**: The user clicks the "Gioca" menu item.
-- **Assert (Expected Outcomes)**: 
-    - `onChangePageView` is called exactly once.
-    - The argument passed to `onChangePageView` is `PageNavigationEnum.PLAY_GAME`.
+- **Assert (Expected Outcomes)**:
+    - The `onChangePageView` function is called exactly once.
+    - The argument passed to `onChangePageView` is strictly `PageNavigationEnum.PLAY_GAME`.
 
-## Scenario: Editor Navigation Trigger on Menu Click
-- **Given**: The `MainMenu` component is rendered; `onChangePageView` is provided as a mock function.
+## Scenario: Editor Navigation Trigger
+- **Given**: The `MainMenu` component is mounted with `onChangePageView` mocked.
 - **When**: The user clicks the "Editor" menu item.
-- **Assert (Expected Outcomes)**: 
-    - `onChangePageView` is called exactly once.
-    - The argument passed to `onChangePageView` is `PageNavigationEnum.EDITOR_GAME`.
+- **Assert (Expected Outcomes)**:
+    - The `onChangePageView` function is called exactly once.
+    - The argument passed to `onChangePageView` is strictly `PageNavigationEnum.EDITOR_GAME`.
 
-## Scenario: MouseOver Image Update for "Gioca"
+## Scenario: MouseOver Image Loading (Gioca)
 - **Given**: The `MouseOverImage` component is initialized and empty.
 - **When**: The user performs a `mouseOver` event on the "Gioca" menu item.
-- **Assert (Expected Outcomes)**: 
-    - The `MouseOverImage` source is updated to `/img/main-menu/nuova.jpg`.
-    - The image maintains its aspect ratio within the 30% height constraint.
+- **Assert (Expected Outcomes)**:
+    - The `MouseOverImage` source URL is updated to `/img/main-menu/nuova.jpg`.
+    - The `MouseOverImage` visibility state is set to active/visible.
 
-## Scenario: MouseOver Image Update for "Editor"
+## Scenario: MouseOver Image Loading (Editor)
 - **Given**: The `MouseOverImage` component is initialized and empty.
 - **When**: The user performs a `mouseOver` event on the "Editor" menu item.
-- **Assert (Expected Outcomes)**: 
-    - The `MouseOverImage` source is updated to `/img/main-menu/editor.jpg`.
-    - The image maintains its aspect ratio within the 30% height constraint.
+- **Assert (Expected Outcomes)**:
+    - The `MouseOverImage` source URL is updated to `/img/main-menu/editor.jpg`.
+    - The `MouseOverImage` visibility state is set to active/visible.
 
-## Scenario: Deterministic State Reset on Interaction
-- **Given**: The user has triggered a `mouseOver` on "Gioca", causing the `MouseOverImage` to display.
-- **When**: The user clicks a menu item to trigger `onChangePageView`.
-- **Assert (Expected Outcomes)**: 
-    - The navigation flow completes successfully.
-    - The component ensures that any pending image loading states are cleared or unmounted as the view transitions, preventing memory leaks or stale image references in the `MouseOverImage` container.
+## Scenario: Deterministic State Cleanup on Interaction
+- **Given**: The user has hovered over "Gioca" (image is loaded).
+- **When**: The user moves the mouse away from the menu item.
+- **Assert (Expected Outcomes)**:
+    - The `MouseOverImage` source is cleared or set to a null/default state.
+    - The system ensures no memory leak or dangling reference to the previous image URL.
+    - The flow transitions back to the idle state, ensuring the component is ready for the next `mouseOver` trigger.
 
-## Scenario: Input Mapping Integrity
-- **Given**: The `MainMenu` component is active.
-- **When**: An invalid or undefined menu item is clicked (simulated via manual trigger).
-- **Assert (Expected Outcomes)**: 
-    - The `onChangePageView` function is NOT triggered.
-    - The system state remains at the `MAIN_MENU` view, ensuring no illegal transitions occur due to malformed input.
+## Scenario: Input Mapping Validation (Adversarial)
+- **Given**: The `MainMenu` component is rendered.
+- **When**: An attempt is made to trigger `clickMenuItems` with an undefined or invalid `PageNavigationEnum` value.
+- **Assert (Expected Outcomes)**:
+    - The component logic must reject the action.
+    - `onChangePageView` must not be triggered with invalid data.
+    - The system state remains unchanged (no navigation occurs).
+
+## Scenario: Guaranteed Flow Continuity
+- **Given**: The user clicks "Gioca".
+- **When**: The `onChangePageView` callback is triggered.
+- **Assert (Expected Outcomes)**:
+    - The flow must guarantee that the transition to the new view is initiated.
+    - If the navigation process involves an asynchronous transition, the component must maintain a "processing" state that prevents double-clicks or redundant navigation triggers until the transition is complete or the component is unmounted.

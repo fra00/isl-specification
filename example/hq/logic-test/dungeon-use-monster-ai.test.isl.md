@@ -1,61 +1,59 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-monster-ai.isl.md -->
 
-## Scenario: Monster Movement Blocked by Dynamic Entities
-- **Given**: A `Monster` is at (5, 5). A `Hero` is at (5, 7). The path (5, 6) is clear, but (5, 7) is occupied by the `Hero`.
-- **When**: `runMonsterTurn` is triggered and the `Monster` attempts to move toward the `Hero`.
-- **Assert (Expected Outcomes)**:
-    - The `Monster` calculates the path to (5, 7).
-    - The `Occupancy Check` identifies (5, 7) as occupied.
-    - The `Monster` stops at (5, 6) (the last valid, unoccupied cell in the path).
-    - The `Monster` does not overlap the `Hero`.
+This test suite focuses on the **Business Logic** and **Flow Integrity** of the `useMonsterAI` component, ensuring deterministic state transitions and adherence to the dungeon rules.
 
-## Scenario: Monster Turn Skip due to Status Effects
-- **Given**: A `Monster` has "Sleep" in its `activeStatus` list.
-- **When**: `runMonsterTurn` reaches this specific `Monster`.
+## Scenario: Monster Turn Initialization and Skipping
+- **Given**: A `GameSession` where `currentTurn` > number of heroes. One monster has `activeStatus` = ["Sleep"], another has ["Tempest"].
+- **When**: `runMonsterTurn` is triggered.
 - **Assert (Expected Outcomes)**:
-    - `onNotify` is triggered with the message indicating the monster is sleeping.
-    - The `Monster` movement logic is bypassed entirely.
-    - The loop proceeds immediately to the next `Monster` in the `gameSession.monsters` list.
+    - `isMonsterTurnInProgress` is set to `true`.
+    - The "Sleep" monster triggers `onNotify` and skips movement/combat logic.
+    - The "Tempest" monster triggers `onNotify`, removes "Tempest" from `activeStatus`, and skips movement/combat logic.
+    - `onUpdateSession` is called after the "Tempest" status removal.
 
-## Scenario: Hero Defense against Monster Attack
-- **Given**: A `Monster` (Attack: 3) is adjacent to a `Hero` (Defense: 2).
-- **When**: `runMonsterTurn` triggers `combatLogic.resolveCombat`.
+## Scenario: Pathfinding and Movement Constraints
+- **Given**: A monster is 5 tiles away from a hero. A wall (rock) exists between them. The path is partially covered by `fog = true`.
+- **When**: `runMonsterTurn` calculates the path.
 - **Assert (Expected Outcomes)**:
-    - `combatLogic` generates 3 attack dice for the monster and 2 defense dice for the hero.
-    - `damageDealt` is calculated as `Max(0, Skulls - WhiteShields)`.
-    - `hero.currentBody` is updated by subtracting `damageDealt`.
-    - `gameSession.lastAttack` is populated with the correct combat result.
+    - The pathfinding algorithm ignores cells where `fog` is `true`.
+    - The monster does not move into or through cells blocked by `isBlockedByRock` or `isBlockedByFurniture`.
+    - The monster stops movement if the calculated `reachablePath` is blocked by another entity (Hero or Monster).
+    - The monster never moves into a cell occupied by another entity.
 
-## Scenario: Deterministic Turn Reset
-- **Given**: All `Monster` actions in `runMonsterTurn` have completed.
-- **When**: The `runMonsterTurn` function reaches the "End Phase".
+## Scenario: Combat Resolution and Status Effects
+- **Given**: A monster is adjacent to a hero with `activeStatus` = ["RockSkin"].
+- **When**: `runMonsterTurn` executes the combat phase for this monster.
 - **Assert (Expected Outcomes)**:
-    - `gameSession.currentTurn` is reset to 1.
-    - All `TurnPhase` flags (`HasMoved`, `HasPerformedAction`, `IsTurnFinished`) for all heroes are set to `false`.
-    - `onNotify` confirms the transition to the Hero turn.
-    - The system state is guaranteed to be ready for the next player input, preventing a logical dead-end.
+    - `combatLogic.resolveCombat` is called with correct dice counts.
+    - If `damageDealt` > 0, the hero's `currentBody` is reduced.
+    - If `damageDealt` > 0, "RockSkin" is removed from `hero.activeStatus`.
+    - `gameSession.lastAttack` is updated with the combat result.
+    - `onNotify` is triggered to announce the attack and the shattering of "RockSkin".
 
-## Scenario: Fog of War Constraint on Targeting
-- **Given**: A `Hero` is at (10, 10), but the `VisibilityCell` at (10, 10) has `fog: true`.
-- **When**: `findNearestHero` is called by a `Monster`.
+## Scenario: Deterministic Turn Completion (Flow Integrity)
+- **Given**: All monsters have completed their movement and combat actions.
+- **When**: The final monster in the `gameSession.monsters` list finishes its turn.
 - **Assert (Expected Outcomes)**:
-    - The `Hero` is excluded from the candidate list because they are in a fogged area.
-    - If no other heroes are visible, `findNearestHero` returns `null`.
-    - The `Monster` does not move or attack, as it cannot "see" the target.
+    - `isMonsterTurnInProgress` is reset to `false`.
+    - `gameSession.currentTurn` is reset to `1`.
+    - All heroes' `turnPhase` flags (`HasMoved`, `HasPerformedAction`, `IsTurnFinished`) are reset to `false`.
+    - `onNotify` triggers "Nuovo Turno! Tocca agli eroi."
+    - The system is in a valid state for the next hero input, ensuring no logical dead-ends.
 
-## Scenario: RockSkin Status Removal
-- **Given**: A `Hero` has "RockSkin" in `activeStatus` and receives 1 damage from a `Monster`.
-- **When**: `runMonsterTurn` applies the combat result.
+## Scenario: Instant Attack (Mostro Errante)
+- **Given**: A monster is spawned via `performInstantAttack` against a hero.
+- **When**: `performInstantAttack` is called.
 - **Assert (Expected Outcomes)**:
-    - `hero.currentBody` is reduced.
-    - "RockSkin" is removed from `hero.activeStatus`.
-    - `onNotify` is triggered to inform the player that the "RockSkin" has shattered.
+    - `onNotify` announces the immediate attack.
+    - Combat is resolved using `combatLogic`.
+    - If the hero's `currentBody` reaches <= 0, the death notification is triggered.
+    - `onUpdateSession` is called to persist the damage.
+    - The flow waits (simulated delay) before returning control, ensuring the UI has time to reflect the state change.
 
-## Scenario: Instant Attack Flow Integrity
-- **Given**: A `Monster` is triggered via `performInstantAttack` against a `Hero`.
-- **When**: The combat resolves and the `Hero` reaches 0 Body Points.
+## Scenario: Targeting Logic (Nearest Hero)
+- **Given**: Two heroes are on the map. Hero A is at distance 3 (visible), Hero B is at distance 2 (visible).
+- **When**: `findNearestHero` is called for a monster.
 - **Assert (Expected Outcomes)**:
-    - `onNotify` reports the hero's defeat.
-    - `gameSession` is updated via `onUpdateSession`.
-    - The process waits 1000ms to ensure the UI reflects the final state before potentially triggering game-over logic.
-    - The flow completes deterministically without leaving the system in a "processing" state.
+    - The monster identifies Hero B as the target.
+    - If Hero B enters `fog` (becomes hidden), the monster re-evaluates and targets Hero A.
+    - If no heroes are visible (all in fog), the function returns `null` and the monster remains stationary.

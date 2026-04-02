@@ -9,204 +9,191 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function DungeonTurnControls({
-  currentHero = null,
-  movementPoints = null,
-  turnPhase = { HasMoved: false, HasPerformedAction: false, IsTurnFinished: false },
-  canOpenDoor = false,
-  isTargeting = false,
-  isMoving = false,
-  onRollMovement = () => {},
-  onEndTurn = () => {},
-  onSearchPassages = () => {},
-  onSearchTreasure = () => {},
-  onSearchTraps = () => {},
-  onOpenMagic = () => {},
-  onOpenInventory = () => {},
-  onCancelTargeting = () => {},
-  onOpenDoor = () => {}
+  currentHero,
+  movementPoints,
+  turnPhase,
+  canOpenDoor,
+  isTargeting,
+  isMoving,
+  onRollMovement,
+  onEndTurn,
+  onSearchPassages,
+  onSearchTreasure,
+  onSearchTraps,
+  onOpenMagic,
+  onOpenInventory,
+  onCancelTargeting,
+  onOpenDoor
 }) {
-  const [position, setPosition] = useState({ x: 20, y: 20 });
-  const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
-
-  useEffect(() => {
+  const [position, setPosition] = useState(() => {
     try {
-      const savedPosition = localStorage.getItem("dungeonTurnControlsPosition");
-      if (savedPosition) {
-        const parsed = JSON.parse(savedPosition);
-        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
-          setPosition(parsed);
-        }
+      const saved = localStorage.getItem("dungeonTurnControlsPosition");
+      if (saved) {
+        return JSON.parse(saved);
       }
-    } catch (error) {
-      setPosition({ x: 20, y: 20 });
+    } catch (e) {
+      console.warn("Failed to parse saved position", e);
     }
-  }, []);
+    return { x: 20, y: 20 };
+  });
+
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const positionRef = useRef(position);
 
   const handleMouseDown = useCallback((e) => {
-    dragRef.current.isDragging = true;
-    dragRef.current.offsetX = e.clientX - position.x;
-    dragRef.current.offsetY = e.clientY - position.y;
+    setIsDragging(true);
+    dragOffset.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+  }, [position]);
 
-    const handleMouseMove = (moveEvent) => {
-      if (!dragRef.current.isDragging) return;
-      setPosition({
-        x: moveEvent.clientX - dragRef.current.offsetX,
-        y: moveEvent.clientY - dragRef.current.offsetY
-      });
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
+      const newPos = {
+        x: e.clientX - dragOffset.current.x,
+        y: e.clientY - dragOffset.current.y
+      };
+      setPosition(newPos);
+      positionRef.current = newPos;
     };
 
-    const handleMouseUp = (upEvent) => {
-      dragRef.current.isDragging = false;
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      
-      const finalX = upEvent.clientX - dragRef.current.offsetX;
-      const finalY = upEvent.clientY - dragRef.current.offsetY;
-      
-      try {
-        localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify({ x: finalX, y: finalY }));
-      } catch (error) {
-        // Silently handle localStorage errors
-      }
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  }, [position.x, position.y]);
 
-  if (!currentHero) {
-    return null;
-  }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  if (!currentHero) return null;
 
   const heroClass = currentHero?.hero?.classe || "Unknown";
-  const gold = currentHero?.gold ?? 0;
-  const health = currentHero?.currentBody ?? 0;
-  const intelligence = currentHero?.currentMind ?? 0;
-  const attack = currentHero?.hero?.attacco ?? 0;
-  const defense = currentHero?.hero?.difesa ?? 0;
-  const availableSpells = currentHero?.availableSpells ?? [];
-
-  const isRollMovementDisabled = turnPhase?.HasMoved || movementPoints !== null;
-  const isActionDisabled = turnPhase?.HasPerformedAction;
-  const isMagicDisabled = turnPhase?.HasPerformedAction || availableSpells.length === 0;
+  const hasMoved = turnPhase?.HasMoved === true;
+  const hasPerformedAction = turnPhase?.HasPerformedAction === true;
+  const hasSpells = currentHero?.availableSpells?.length > 0;
 
   return (
-    <div 
-      className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col overflow-hidden"
+    <div
+      className="fixed z-50 w-[250px] bg-gray-800 text-white rounded-lg shadow-xl select-none flex flex-col"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
-      {/* Header */}
-      <div 
-        className="bg-gray-900 p-3 cursor-grab active:cursor-grabbing select-none font-bold text-center border-b border-gray-700"
+      {/* Header / Drag Handle */}
+      <div
+        className={`bg-gray-900 p-3 rounded-t-lg font-bold text-center border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
       >
         Turn Controls
       </div>
 
-      <div className="p-4 flex flex-col gap-4">
+      <div className="p-3 flex flex-col gap-3">
         {/* Info Section */}
-        <div className="flex flex-col gap-1 text-sm bg-gray-700 p-3 rounded">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Class:</span>
-            <span className="font-semibold">{heroClass}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Movement:</span>
-            <span className="font-semibold">{movementPoints !== null ? movementPoints : '-'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Gold:</span>
-            <span className="font-semibold text-yellow-400">{gold}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Health:</span>
-            <span className="font-semibold text-red-400">{health}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Mind:</span>
-            <span className="font-semibold text-blue-400">{intelligence}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Attack:</span>
-            <span className="font-semibold">{attack}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Defense:</span>
-            <span className="font-semibold">{defense}</span>
-          </div>
+        <div className="bg-gray-700/50 rounded p-2 text-sm grid grid-cols-2 gap-x-2 gap-y-1">
+          <div className="text-gray-400">Class:</div>
+          <div className="font-semibold text-right">{heroClass}</div>
+          
+          <div className="text-gray-400">Movement:</div>
+          <div className="font-semibold text-right">{movementPoints ?? "-"}</div>
+          
+          <div className="text-gray-400">Gold:</div>
+          <div className="font-semibold text-right text-yellow-400">{currentHero?.gold ?? 0}</div>
+          
+          <div className="text-gray-400">Health:</div>
+          <div className="font-semibold text-right text-red-400">{currentHero?.currentBody ?? "-"}</div>
+          
+          <div className="text-gray-400">Mind:</div>
+          <div className="font-semibold text-right text-blue-400">{currentHero?.currentMind ?? "-"}</div>
+          
+          <div className="text-gray-400">Attack:</div>
+          <div className="font-semibold text-right">{currentHero?.hero?.attacco ?? "-"}</div>
+          
+          <div className="text-gray-400">Defense:</div>
+          <div className="font-semibold text-right">{currentHero?.hero?.difesa ?? "-"}</div>
         </div>
 
         {/* Inventory Section */}
-        <button 
+        <button
           onClick={onOpenInventory}
-          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+          className="w-full py-2 px-4 rounded font-semibold transition-colors bg-blue-600 hover:bg-blue-700"
         >
           Inventory
         </button>
 
+        <hr className="border-gray-600" />
+
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
-          <button 
+          <button
             onClick={onRollMovement}
-            disabled={isRollMovementDisabled}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+            disabled={hasMoved || movementPoints != null || isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Roll Movement
           </button>
 
-          <button 
+          <button
             onClick={onSearchPassages}
-            disabled={isActionDisabled}
-            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+            disabled={hasPerformedAction || isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Search Passages
           </button>
 
-          <button 
+          <button
             onClick={onSearchTreasure}
-            disabled={isActionDisabled}
-            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+            disabled={hasPerformedAction || isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Search Treasure
           </button>
 
-          <button 
+          <button
             onClick={onSearchTraps}
-            disabled={isActionDisabled}
-            className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+            disabled={hasPerformedAction || isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Search Traps
+            Search Trap
           </button>
 
-          <button 
+          <button
             onClick={onOpenMagic}
-            disabled={isMagicDisabled}
-            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-medium transition-colors"
+            disabled={hasPerformedAction || !hasSpells || isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Magic
           </button>
 
           {isTargeting && (
-            <button 
+            <button
               onClick={onCancelTargeting}
-              className="w-full py-2 bg-gray-500 hover:bg-gray-600 text-white rounded font-medium transition-colors"
+              className="w-full py-2 px-4 rounded font-semibold transition-colors bg-gray-600 hover:bg-gray-700"
             >
               Cancel Targeting
             </button>
           )}
 
           {canOpenDoor && (
-            <button 
+            <button
               onClick={onOpenDoor}
-              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+              className="w-full py-2 px-4 rounded font-semibold transition-colors bg-green-600 hover:bg-green-700"
             >
               Open Door
             </button>
           )}
 
-          <button 
+          <button
             onClick={onEndTurn}
-            className="w-full py-2 mt-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+            disabled={isMoving}
+            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
             End Turn
           </button>

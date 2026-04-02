@@ -6,159 +6,135 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 
 export default function ShopInventory({
   items = [],
   selectedItemId = null,
   canBuy = false,
   buyReason = "",
-  onSelect = () => {},
-  onBuy = () => {},
-  onEnterDungeon = () => {},
-  onExit = () => {}
+  onSelect,
+  onBuy,
+  onEnterDungeon,
+  onExit
 }) {
-  const selectedItem = useMemo(() => {
-    return items.find(item => item?.id === selectedItemId) || null;
-  }, [items, selectedItemId]);
+  const selectedItem = items.find(i => i.id === selectedItemId);
 
-  const handleSelect = useCallback((id) => {
-    if (id != null) {
+  const handleItemClick = useCallback((id) => {
+    const itemExists = items.find(i => i.id === id);
+    if (itemExists == null) {
+      return;
+    }
+    if (onSelect) {
       onSelect(id);
     }
-  }, [onSelect]);
+  }, [items, onSelect]);
 
-  const handleBuy = useCallback(() => {
-    if (canBuy) {
+  const handleBuyClick = useCallback(() => {
+    if (canBuy && onBuy) {
       onBuy();
     }
   }, [canBuy, onBuy]);
 
-  const handleEnterDungeon = useCallback(() => {
-    onEnterDungeon();
+  const handleEnterDungeonClick = useCallback(() => {
+    if (onEnterDungeon) {
+      onEnterDungeon();
+    }
   }, [onEnterDungeon]);
 
-  const handleExit = useCallback(() => {
-    onExit();
+  const handleExitClick = useCallback(() => {
+    if (onExit) {
+      onExit();
+    }
   }, [onExit]);
 
   return (
-    <div className="flex flex-col h-full w-full p-6 bg-slate-900 text-slate-100 font-sans">
-      <h2 className="text-2xl font-bold mb-6 text-center text-amber-500 tracking-wider">
-        Armeria
-      </h2>
-
-      <div className="flex flex-col md:flex-row flex-1 gap-6 overflow-hidden min-h-[400px]">
-        {/* Item List */}
-        <div className="flex-1 flex flex-col bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-          <div className="p-3 bg-slate-950 border-b border-slate-700 text-sm font-semibold text-slate-400 uppercase tracking-wider">
-            Oggetti Disponibili
-          </div>
-          <ul className="flex-1 overflow-y-auto p-2 space-y-2">
-            {items.map(item => (
-              <li
-                key={item?.id}
-                onClick={() => handleSelect(item?.id)}
-                className={`p-4 cursor-pointer rounded-md flex justify-between items-center transition-all duration-200 border ${
-                  item?.id === selectedItemId
-                    ? 'bg-amber-900/40 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                    : 'bg-slate-800 border-transparent hover:bg-slate-700 hover:border-slate-600'
-                }`}
-              >
-                <span className="font-medium text-lg">{item?.nome}</span>
-                <span className="text-amber-400 font-bold bg-slate-900 px-3 py-1 rounded-full text-sm">
-                  {item?.prezzo} Monete
-                </span>
-              </li>
-            ))}
-            {items.length === 0 && (
-              <li className="p-4 text-center text-slate-500 italic">
-                Nessun oggetto disponibile.
-              </li>
-            )}
-          </ul>
-        </div>
-
-        {/* Preview Panel */}
-        <div className="w-full md:w-1/3 flex flex-col bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-          <div className="p-3 bg-slate-950 border-b border-slate-700 text-sm font-semibold text-slate-400 uppercase tracking-wider">
-            Dettagli
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            {selectedItem ? (
-              <>
-                {selectedItem.immagine ? (
-                  <div className="w-48 h-48 mb-6 flex items-center justify-center bg-slate-900 rounded-lg border border-slate-700 p-2 shadow-inner">
-                    <img
-                      src={`/img/equip/${selectedItem.immagine}`}
-                      alt={selectedItem.nome}
-                      className="max-w-full max-h-full object-contain drop-shadow-md"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-48 h-48 mb-6 flex items-center justify-center bg-slate-900 rounded-lg border border-slate-700 text-slate-600">
-                    Nessuna Immagine
-                  </div>
-                )}
-                <h3 className="text-2xl font-bold text-amber-500 mb-2">
-                  {selectedItem.nome}
-                </h3>
-                <p className="text-xl text-amber-400 font-semibold mb-4">
-                  {selectedItem.prezzo} Monete
-                </p>
-              </>
+    <div className="flex flex-col h-full w-full max-w-md mx-auto bg-slate-900 text-slate-100 p-4 rounded-xl shadow-2xl border border-slate-700">
+      
+      {/* Preview Section */}
+      <div className="h-56 bg-slate-800 rounded-lg mb-4 flex flex-col items-center justify-center p-4 border border-slate-600 shadow-inner relative">
+        {selectedItem ? (
+          <>
+            {selectedItem.immagine ? (
+              <img
+                src={`/img/equip/${selectedItem.immagine}`}
+                alt={selectedItem.nome || 'Oggetto'}
+                className="max-h-full max-w-full object-contain drop-shadow-md"
+              />
             ) : (
-              <div className="text-slate-500 flex flex-col items-center">
-                <svg className="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-                <p>Seleziona un oggetto dall'elenco per visualizzarne i dettagli.</p>
-              </div>
+              <span className="text-slate-500 italic">Nessuna immagine disponibile</span>
             )}
-          </div>
-        </div>
+            <div className="absolute bottom-2 left-0 right-0 text-center bg-slate-900/80 py-1 px-2 mx-4 rounded">
+              <span className="font-bold text-amber-400">{selectedItem.prezzo || 0} Oro</span>
+            </div>
+          </>
+        ) : (
+          <span className="text-slate-400 font-medium">Seleziona un oggetto per i dettagli</span>
+        )}
       </div>
 
-      {/* Actions */}
-      <div className="mt-8 flex flex-wrap gap-4 justify-center md:justify-end items-center border-t border-slate-800 pt-6">
-        <div className="relative group flex items-center">
-          <button
-            onClick={handleBuy}
-            disabled={!canBuy || !selectedItem}
-            className={`px-8 py-3 rounded-md font-bold text-lg transition-all duration-200 ${
-              canBuy && selectedItem
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(5,150,105,0.4)]'
-                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            Acquista
-          </button>
-          
-          {/* Tooltip for Buy Reason */}
-          {!canBuy && buyReason && selectedItem && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block w-max max-w-xs bg-red-950 border border-red-800 text-red-200 text-sm p-3 rounded shadow-xl z-10 text-center">
-              {buyReason}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-800"></div>
-            </div>
-          )}
-        </div>
+      {/* Item List Section */}
+      <div className="flex-1 overflow-y-auto mb-4 border border-slate-600 rounded-lg bg-slate-800 shadow-inner">
+        {items.length === 0 ? (
+          <div className="p-6 text-center text-slate-400">
+            Nessun oggetto disponibile nel negozio.
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-700">
+            {items.map((item) => {
+              const isSelected = item.id === selectedItemId;
+              return (
+                <li
+                  key={item.id}
+                  onClick={() => handleItemClick(item.id)}
+                  className={`p-3 cursor-pointer flex justify-between items-center transition-all duration-200 ${
+                    isSelected 
+                      ? 'bg-indigo-900/80 text-indigo-100 border-l-4 border-indigo-400' 
+                      : 'hover:bg-slate-700 border-l-4 border-transparent'
+                  }`}
+                >
+                  <span className="font-semibold truncate pr-2">{item.nome}</span>
+                  <span className="text-amber-400 font-bold whitespace-nowrap">
+                    {item.prezzo || 0} <span className="text-amber-600 text-sm">G</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
-        <div className="flex-1"></div>
-
+      {/* Actions Section */}
+      <div className="flex flex-col gap-3 mt-auto">
         <button
-          onClick={handleEnterDungeon}
-          className="px-6 py-3 bg-red-700 hover:bg-red-600 text-white rounded-md font-bold transition-colors shadow-lg"
+          onClick={handleBuyClick}
+          disabled={!canBuy || !selectedItem}
+          title={!canBuy && selectedItem ? buyReason : ''}
+          className={`w-full py-3 px-4 rounded-lg font-bold text-lg transition-all duration-200 shadow-md ${
+            canBuy && selectedItem
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
+              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+          }`}
         >
-          Entra nel dungeon
+          Acquista
         </button>
         
-        <button
-          onClick={handleExit}
-          className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-md font-bold transition-colors"
-        >
-          Esci
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleEnterDungeonClick}
+            className="flex-1 py-2 px-4 bg-rose-800 hover:bg-rose-700 text-rose-100 rounded-lg font-semibold transition-all duration-200 shadow-md active:scale-95"
+          >
+            Entra nel dungeon
+          </button>
+          <button
+            onClick={handleExitClick}
+            className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-semibold transition-all duration-200 shadow-md active:scale-95"
+          >
+            Esci
+          </button>
+        </div>
       </div>
+
     </div>
   );
 }

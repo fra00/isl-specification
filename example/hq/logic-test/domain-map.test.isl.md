@@ -3,55 +3,55 @@
 ## Scenario: Equipment Compatibility Constraint
 - **Given**: A `Hero` with `id: 5` (e.g., Wizard) and an `Equipment` item with `nopsg: true` and `nopsgid: 5`.
 - **When**: The system attempts to assign the `Equipment` to the `Hero`.
-- **Assert (Expected Outcomes)**:
-    - The assignment operation must be rejected.
+- **Assert (Expected Outcomes)**: 
+    - The assignment logic must return a validation failure.
     - The `Hero` inventory state remains unchanged.
-    - A validation error or boolean `false` result is returned to the caller.
+    - The system must not trigger any UI update that suggests the item was equipped.
 
-## Scenario: Map Cell Monster Initialization
-- **Given**: A `MapCell` definition where `mostab.mos` is `true` and `mostab.mosid` is `101`.
-- **When**: The `MapDefinition` is loaded into the game engine.
+## Scenario: Map Cell Collision Integrity
+- **Given**: A `MapCell` where `arnt.antroc` is `true` (Rock block).
+- **When**: A `Hero` movement logic attempts to calculate a path through the coordinate `(x, y)` of that cell.
 - **Assert (Expected Outcomes)**:
-    - A new `Monster` instance is instantiated using the definition from `@Monster` (ID 101).
-    - The instance `corpo` points must match `MapCellMonster.corpo` if provided, otherwise default to the `@Monster` base definition.
-    - The monster must be placed at the coordinates `(x, y)` defined in the `MapCell`.
-
-## Scenario: Visibility Fog-of-War Update
-- **Given**: A `VisibilityCell` at `(5, 5)` with `fog: true` and a `Hero` moving into an adjacent cell.
-- **When**: The `Hero` position update triggers a visibility recalculation.
-- **Assert (Expected Outcomes)**:
-    - The `fog` property for the cell at `(5, 5)` must transition to `false` if the cell belongs to a visible `valo` (Room ID).
-    - All entities (monsters, furniture) within the newly visible cell must be rendered/initialized in the game state.
-    - The system must ensure no "ghost" entities remain if the cell is re-fogged.
+    - The pathfinding algorithm must treat the cell as non-traversable.
+    - The movement cost calculation must exclude this cell from valid destination candidates.
+    - The system must prevent the `Hero` entity from occupying the coordinate.
 
 ## Scenario: Treasure Trap Trigger
-- **Given**: A `MapCell` containing `MapCellTreasure` with `trp: 2` (Trap ID) and a `Hero` performing a "Search for Treasure" action.
-- **When**: The search action is executed and the logic determines a trap trigger.
+- **Given**: A `MapCell` with `tes.trp` set to a valid trap ID and a `Hero` performing a "Search for Treasure" action.
+- **When**: The search action is executed on the cell.
 - **Assert (Expected Outcomes)**:
-    - The `MapCellTrap` properties at the current location must be activated.
-    - The `Hero` must receive the damage or effect defined by the `Trap` type.
-    - The `MapCellTreasure` must be marked as "searched" to prevent duplicate triggers.
+    - The system must evaluate the trap trigger logic.
+    - If the trap is triggered, the `Hero` must receive the corresponding damage or status effect defined by the trap ID.
+    - The `MapCellTreasure` state must be updated to reflect that the treasure has been searched (preventing infinite gold farming).
 
-## Scenario: Deterministic Script Execution
-- **Given**: A `MapScript` at `(2, 2)` with `isOneTime: true` and a `GameScript` command `aggoro` (add gold).
-- **When**: A `Hero` enters cell `(2, 2)`.
+## Scenario: Visibility Fog-of-War Update
+- **Given**: A `VisibilityMap` where a cell at `(x, y)` has `fog: true`.
+- **When**: A `Hero` moves to an adjacent cell that shares the same `valo` (Room ID) as the target cell.
 - **Assert (Expected Outcomes)**:
-    - The `aggoro` command is executed, updating the `Hero` gold balance.
-    - The `MapScript` instance must be removed from the active `MapDefinition.scripts` list to ensure it cannot be triggered again.
-    - The system state must confirm the transition to the next turn or phase without blocking.
+    - The `fog` property for the target cell must transition to `false`.
+    - The system must trigger a re-render/refresh of the map visibility layer.
+    - Any `MapCellMonster` located in the newly revealed cell must become visible to the player.
 
-## Scenario: Equipment Diagonal Attack Logic
-- **Given**: A `Hero` equipped with an `Equipment` item where `diago: true`.
-- **When**: The `Hero` targets a `Monster` located at a diagonal coordinate (e.g., `x+1, y+1`).
+## Scenario: Deterministic Script Execution (One-Time)
+- **Given**: A `GameScript` with `isOneTime: true` located at `(x, y)`.
+- **When**: A `Hero` enters the coordinate `(x, y)`.
 - **Assert (Expected Outcomes)**:
-    - The range validation logic must return `true` for the diagonal distance.
-    - The attack calculation must include the `dadatt` (attack dice) from the `Equipment`.
-    - The flow must proceed to the combat resolution phase.
+    - The `command` (e.g., `aggoro`) must be executed exactly once.
+    - The `GameScript` must be removed from the `MapDefinition.scripts` list or marked as "consumed" in the active game state.
+    - Subsequent entries to `(x, y)` by any entity must not re-trigger the script.
 
-## Scenario: Invalid Map Coordinate Access
-- **Given**: A `MapDefinition` with a grid size of 10x10.
-- **When**: An external process attempts to move a `Hero` or place a `Monster` at coordinate `(15, 15)`.
+## Scenario: Monster Death State Transition
+- **Given**: A `MapCellMonster` with `corpo: 1` (1 Body Point remaining).
+- **When**: An attack action results in damage calculation that reduces `corpo` to `0`.
 - **Assert (Expected Outcomes)**:
-    - The system must throw an "Out of Bounds" exception or return a failure state.
-    - The game state must not be mutated by the invalid coordinate request.
-    - The flow must maintain the previous valid position of the entity.
+    - The `mos` flag in `MapCellMonster` must be set to `false`.
+    - The monster entity must be removed from the active turn order/initiative list.
+    - The system must ensure the `corpo` value does not underflow (e.g., stay at 0, not negative).
+
+## Scenario: Equipment Attribute Modifier Application
+- **Given**: A `Hero` with base `attacco: 2` and an `Equipment` with `dadatt: 1`.
+- **When**: The `Hero` equips the item.
+- **Assert (Expected Outcomes)**:
+    - The effective `attacco` value must be calculated as `base + modifier` (3).
+    - The system must maintain the original `Hero` definition as immutable while applying the modifier to the "Active Hero" state.
+    - Removing the equipment must revert the `attacco` value to the base 2.

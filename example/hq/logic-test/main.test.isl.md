@@ -1,85 +1,55 @@
 <!-- LOGIC TEST SCENARIOS FOR: main.isl.md -->
 
-This document outlines the critical logic test scenarios for the **Heroquest React** application, focusing on domain integrity, state transitions, and flow continuity.
-
-## Scenario: Campaign Initialization (Default State)
-- **Given**: The application is mounted, no saved campaign exists in `localStorage` (via `campaignManager`).
-- **When**: `PlayGame` component initializes (`initSession`).
+## Scenario: Bootstrap Deterministic Completion
+- **Given**: The `MainContent` component is mounted and the application is in the initial loading state (`isAppReady` = false).
+- **When**: The `bootstrap` capability executes the parallel fetch of all required JSON assets (`monsters`, `equipment`, `items`, `treasure-card`, `campagne`).
 - **Assert (Expected Outcomes)**:
+    - If all fetches succeed: `isAppReady` transitions to `true`, and all global state variables are populated with parsed data.
+    - If any fetch fails: The system catches the error, logs the specific failed URL, and displays the critical error message, ensuring the application does not hang in a "loading" state indefinitely.
+    - The flow must guarantee that `PagePresentation` is only rendered once all assets are successfully initialized.
+
+## Scenario: Progression Rule Violation (PlayGame)
+- **Given**: `GameSession` exists with `currentMissionIndex` = 0 and `maxUnlockedMissionIndex` = 0.
+- **When**: The user attempts to trigger `selectMission` for `index` = 2.
+- **Assert (Expected Outcomes)**:
+    - The `index` (2) is compared against `maxAccessibleIndex` (0).
+    - The condition `index <= maxAccessibleIndex` evaluates to `false`.
+    - The system prevents the loading of the mission map and triggers the "locked" visual feedback.
+    - The `GameSession` remains unchanged, and the view does not transition to `DUNGEON_DESCRIPTION`.
+
+## Scenario: Default Campaign Initialization
+- **Given**: `GameSession` is null and `campaignManager.loadCampaign()` returns `null`.
+- **When**: `PlayGame.initSession` is triggered.
+- **Assert (Expected Outcomes)**:
+    - A default campaign is created.
     - `maxUnlockedMissionIndex` is set to 0.
-    - `defaultHeroes` are created with correct initial equipment based on class (e.g., Barbaro gets ID 13).
-    - `campaignManager.saveCampaign` is called with the default hero state.
-    - System transitions to a valid state where Mission 0 is accessible.
+    - `defaultHeroes` are generated with correct initial equipment based on class (e.g., Barbaro gets ID 13).
+    - `campaignManager.saveCampaign` is called with the new hero state and index 0.
+    - The local state `statsHeroes` is correctly populated from `heroes.json`.
 
-## Scenario: Progression Rule Violation
-- **Given**: `maxUnlockedMissionIndex` is 0.
-- **When**: User attempts to trigger `selectMission(1)`.
+## Scenario: Spell Targeting Logic (Dungeon)
+- **Given**: A hero has selected a spell with `targetType` = "Monster" and the `isSpellCastModalOpen` is closed.
+- **When**: The user clicks on a monster on the board.
 - **Assert (Expected Outcomes)**:
-    - The condition `index <= maxAccessibleIndex` fails.
-    - `onUpdateSession` is NOT triggered.
-    - Navigation to `DUNGEON_DESCRIPTION` is blocked.
-    - Visual feedback (if implemented) or no state change occurs.
+    - `handleMonsterClick` verifies if `targetingSpell` is not null.
+    - The system checks `hooksVisibilityCalc.hasLineOfSight` between the hero and the monster.
+    - If LOS is valid, `hooksMagicLogic.castSpell` is executed with the `monsterId`.
+    - `targetingSpell` is reset to `null` and `notificationMessage` is cleared, ensuring the targeting state is released.
 
-## Scenario: Dungeon Initialization and Hero Placement
-- **Given**: A valid `GameSession` exists with heroes and a selected map.
-- **When**: `Dungeon` component mounts and `fetchHqData` completes.
+## Scenario: Turn Transition and Victory Condition
+- **Given**: The `GameSession` has multiple heroes, and the `currentTurn` increments beyond the number of heroes.
+- **When**: `monitorTurn` is triggered by the `currentTurn` change.
 - **Assert (Expected Outcomes)**:
-    - `isStaticDataLoaded` becomes true.
-    - Each `HeroState` is updated with `x, y` coordinates matching the `eroi_start` definition in the map JSON.
-    - `treasureDeck` is shuffled and assigned to the session.
-    - `onUpdateSession` is called with the initialized session.
+    - The system checks if all `activeHeroes` (body > 0) are also `isEscaped` = true.
+    - If the condition is met, `isMissionSummaryOpen` is set to `true`.
+    - If the condition is not met, `hooksMonsterAI.runMonsterTurn()` is triggered, ensuring the game flow continues to the monster phase.
+    - The system must never enter a state where neither the hero turn nor the monster turn is active.
 
-## Scenario: Turn Order and Spell Selection Flow
-- **Given**: `isHeroOrderConfirmed` is false, and the party contains a "Mago".
-- **When**: User confirms turn order in `DungeonHeroOrder`.
+## Scenario: Inventory/Equipment Integrity
+- **Given**: A hero has an item in the `inventory` list.
+- **When**: `hooksInventoryLogic.toggleEquipItem` is called.
 - **Assert (Expected Outcomes)**:
-    - `gameSession.isHeroOrderConfirmed` becomes true.
-    - `isSpellSelectionRequired` becomes true.
-    - `DungeonSpellSelectionModal` is rendered.
-    - `confirmSpellSelection` updates `availableSpells` for the Mago and sets `isSpellSelectionRequired` to false.
-
-## Scenario: Deterministic Combat Resolution
-- **Given**: A `lastAttack` object exists in `gameSession`.
-- **When**: User triggers `closeCombatResult`.
-- **Assert (Expected Outcomes)**:
-    - `gameSession.lastAttack` is set to `null`.
-    - `onUpdateSession` is triggered to propagate the change.
-    - The `CombatResultModal` is removed from the view.
-    - The system remains in a valid `TurnPhase` (no dead-end).
-
-## Scenario: Spell Targeting and Line of Sight
-- **Given**: `targetingSpell` is active (e.g., "Palla di Fuoco").
-- **When**: User clicks a coordinate `(x, y)` on the board.
-- **Assert (Expected Outcomes)**:
-    - If `hasLineOfSight` is false, `notificationMessage` is updated and the spell is NOT cast.
-    - If `hasLineOfSight` is true, `hooksMagicLogic.castSpell` is executed.
-    - `targetingSpell` is reset to `null`.
-    - `notificationMessage` is cleared.
-
-## Scenario: Mission Victory and State Cleanup
-- **Given**: All active heroes have `isEscaped` = true.
-- **When**: `monitorTurn` detects the victory condition.
-- **Assert (Expected Outcomes)**:
-    - `isMissionSummaryOpen` is set to true.
-    - Upon `completeMission`:
-        - `campaignManager.saveCampaign` is called with `currentMissionIndex + 1`.
-        - Navigation transitions to `PLAY_GAME`.
-        - The system resets any blocking flags (e.g., `isMissionSummaryOpen` = false).
-
-## Scenario: Adversarial/Invalid Data Handling
-- **Given**: A malformed JSON response from `/jsonData/map/[filename]`.
-- **When**: `fetchHqData` attempts to parse the map.
-- **Assert (Expected Outcomes)**:
-    - The `CATCH` block is triggered.
-    - `notificationMessage` is set to "Errore critico: ...".
-    - `isStaticDataLoaded` remains false.
-    - The flow halts to prevent the application from entering an undefined state (no corrupted session created).
-
-## Scenario: Inventory/Item Usage Flow
-- **Given**: `isInventoryOpen` is true, user selects an item with `targetType` = "Monster".
-- **When**: `handleUseItem` is called.
-- **Assert (Expected Outcomes)**:
-    - `isInventoryOpen` is set to false.
-    - `targetingItem` is set to the selected item.
-    - `notificationMessage` informs the user to select a monster.
-    - The system enters a "targeting" state, ensuring the user cannot perform other actions until the target is selected or cancelled.
+    - The item ID is moved between `inventory` and `equipped` lists.
+    - The `GameSession` is updated via `onUpdateSession`.
+    - The system ensures that the `equipped` list does not contain duplicate items or items that violate class restrictions (if defined in `Equipment` rules).
+    - The `isInventoryOpen` flag remains consistent with the user's intent to keep the modal open or closed after the toggle.

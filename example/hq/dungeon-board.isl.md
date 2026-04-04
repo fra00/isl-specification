@@ -49,15 +49,20 @@
   - **Visibility**: Use `boardVisibilityMap` prop (@VisibilityMap).
   - **Cells**: Divs representing the grid squares (26x19 0-indexed) width:34px, height:34px.
     - **Cursor**:
-      - IF `targetingSpell` is NOT null THEN `cursor-crosshair` (or custom magic wand cursor).
+      - IF `targetingSpell` is NOT null AND (`targetingSpell.targetType` IN ["Point", "Door"] OR `targetingSpell.effetto` == "Genio") THEN `cursor-crosshair`.
+      - ELSE IF `targetingSpell` is NOT null THEN `cursor-default`.
       - ELSE `cursor-pointer`.
     - **Fog of War Layer**: Each cell MUST render a black background overlay (70% opacity) by default.
     - **Unfogging Logic**: The black overlay MUST become fully transparent ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`.
     - **Path Highlight**: If cell {x+1, y+1} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
     - **Targeting Highlight**:
       - IF `targetingSpell` is NOT null:
+        - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+        - Let `hasLOS` = `visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, x + 1, y + 1)`.
         - IF `targetingSpell.effetto` == "Genio" AND cell contains a Monster or a closed Door: add a pulsing blue/purple border or overlay (bg-blue-500/30 animate-pulse).
-        - IF mouse is over a valid target for the current `targetingSpell.targetType`: add a stronger highlight (bg-blue-400/50).
+        - ELSE IF mouse is over a valid target for the current `targetingSpell.targetType`:
+          - IF `hasLOS` is true: add a stronger highlight (bg-blue-400/50).
+          - ELSE: add a red warning highlight (bg-red-500/40).
 - **Furniture**: Visual elements for map furniture.
   - **Data Source**: Derive `visibleFurniture` using `useDungeonFurniture(@GameSession, @VisibilityMap)`.
   - **Render**: Image at x,y coordinates(start from 1). Src: `/img/mobili/` + `img`. do not scale.
@@ -68,7 +73,8 @@
   - **Data Source**: Derive `visibleMonsters` using `useDungeonVisibleMonsters(@GameSession, @VisibilityMap)`.
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
   - **Cursor**:
-    - IF `targetingSpell` is NOT null THEN `cursor-crosshair`.
+    - IF `targetingSpell` is NOT null AND (`targetingSpell.targetType` == "Monster" OR `targetingSpell.effetto` == "Genio") THEN `cursor-crosshair`.
+    - ELSE IF `targetingSpell` is NOT null THEN `cursor-default`.
     - ELSE `cursor-pointer`.
   - **Status Effects**:
     - IF `@MonsterState.activeStatus` contains "Sleep":

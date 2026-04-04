@@ -24,14 +24,14 @@
 
 - **Overlay**: Fixed full-screen backdrop (bg-black/90), z-index 70.
 - **Layout**: Columnar layout showing the elements available.
-- **Card Backs**: Large images of element backs (`img/cinc/Fuoco00_Dorso.jpg`, etc.).
+- **Card Backs**: Large images of element backs (`/img/cinc/Fuoco00_Dorso.jpg`, etc.).
 
 ### 📦 Content
 
 - **Title**: "Selezione Incantesimi".
 - **Instruction**: Displays whose turn it is to pick (Wizard first, then Elf).
 - **Element Grid**:
-  - Shows the 4 element backs.
+  - Shows the 4 element backs (Source: `/img/cinc/` + `[Element]00_Dorso.jpg`).
   - Elements already picked are greyed out or hidden.
 
 ### ⚡ Capabilities
@@ -53,14 +53,21 @@
 - **Flow**:
   - IF `pickedElements` contains `elemento` RETURN.
   - Add `elemento` to `pickedElements`.
-    - IF `currentHeroPicking` is Wizard AND `pickedElements.length` == 3:
-      - Find Elf in `heroes` -> Set as `currentHeroPicking`.
-      - Update UI instruction to "Turno dell'Elfo".
-    - ELSE IF `currentHeroPicking` is Elf AND `pickedElements.length` == 4:
-      - Let `wizardId` = Wizard's heroId. Let `elfId` = Elf's heroId.
-      - Let `wizardSpells` = Filter `allSpells` where `elemento` is in the first 3 `pickedElements` -> map to `id`.
-      - Let `elfSpells` = Filter `allSpells` where `elemento` is the 4th `pickedElements` -> map to `id`.
-      - Create result map: `{ wizardId: wizardSpells, elfId: elfSpells }`.
-      - Trigger `onConfirmSelection`.
+    - IF `currentHeroPicking.hero.classe` == "Mago" AND `pickedElements.length` == 3:
+      - // Auto-assign remaining element to Elf if present
+      - Let `elf` = Find hero in `heroes` where `hero.classe` == "Elfo".
+      - IF `elf` is found:
+        - Let `allElements` = ["Fuoco", "Acqua", "Terra", "Aria"].
+        - Let `remaining` = Find element in `allElements` NOT IN `pickedElements`.
+        - Add `remaining` to `pickedElements`.
+      - // Finalize selection
+      - Let `wizardId` = `currentHeroPicking.heroId`.
+      - Let `wizardSpells` = Filter `allSpells` where `spell.elemento` is in the first 3 `pickedElements` -> map to `id`.
+      - Let `selectionMap` = New Map.
+      - Add `wizardId -> wizardSpells` to `selectionMap`.
+      - IF `elf` is found:
+        - Let `elfSpells` = Filter `allSpells` where `spell.elemento` is the 4th `pickedElements` -> map to `id`.
+        - Add `elf.heroId -> elfSpells` to `selectionMap`.
+      - Trigger `onConfirmSelection(selectionMap)`.
 
 **💡 Implementation Hint**: The Wizard picks 3 elements, leaving exactly one for the Elf automatically.

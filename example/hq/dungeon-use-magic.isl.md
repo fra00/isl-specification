@@ -44,7 +44,22 @@
 
   - **Apply Spell Effect**:
     - Initialize `wasCastSuccessful` to false.
-    - SWITCH `spell.effetto`:
+    - Let `targetCoord` = null.
+    - IF `targetMonsterId` is NOT null:
+      - Let `m` = Find `targetMonster` in `gameSession.monsters` matching `targetMonsterId`.
+      - IF `m` is found: SET `targetCoord` to {x: `m.x`, y: `m.y`}.
+    - ELSE IF `targetHeroId` is NOT null:
+      - Let `h` = Find `targetHero` in `gameSession.heroes` matching `targetHeroId`.
+      - IF `h` is found: SET `targetCoord` to {x: `h.x`, y: `h.y`}.
+    - ELSE IF `targetX` is NOT null AND `targetY` is NOT null:
+      - SET `targetCoord` to {x: `targetX`, y: `targetY`}.
+
+    - Let `hasLOS` = true.
+    - IF `spell.effetto` != "Genio" AND `spell.targetType` != "Self" AND `targetCoord` is NOT null:
+      - SET `hasLOS` to `fogOfWarLogic.visibilityCalc.hasLineOfSight(currentHero.x, currentHero.y, targetCoord.x, targetCoord.y)`.
+
+    - IF `hasLOS` is true:
+      - SWITCH `spell.effetto`:
       - CASE "Palla di Fuoco":
         - Find `targetMonster` in `gameSession.monsters` matching `targetMonsterId`.
         - IF `targetMonster` is found:

@@ -1,1 +1,1 @@
-export default function DungeonSpellSelectionModal(props: { heroes: Array<any>; allSpells: Array<any>; onConfirmSelection: (selection: Map<number, Array<number>>) => void }): React.ReactElement;
+export default function DungeonSpellSelectionModal(props: { heroes?: Array<any>; allSpells?: Array<any>; onConfirmSelection?: (selection: Map<number, Array<number>>) => void }): React.ReactElement;

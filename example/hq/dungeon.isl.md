@@ -62,6 +62,11 @@
 
 ### 📦 Content
 
+- **Hero Order**: Displays `DungeonHeroOrder` IF `isMissionInitialized` is true AND `gameSession.isHeroOrderConfirmed` is false.
+  - **Props**:
+    - `heroes`: `gameSession.heroes`.
+    - `onConfirmOrder`: Trigger `confirmHeroOrder`.
+
 - **Spell Selection**: Displays `DungeonSpellSelectionModal` if `gameSession.isHeroOrderConfirmed` is true AND `isSpellSelectionRequired` is true.
   - **Props**:
     - `heroes`: `gameSession.heroes`.
@@ -72,6 +77,8 @@
   - `secretPassages`: `hooksSecretPassages.foundPassages`.
   - `treasures`: `hooksTreasure.foundTreasures`.
   - `triggeredTraps`: `hooksTraps.triggeredTraps`.
+  - `targetingSpell`: `targetingSpell`.
+  - `visibilityCalc`: `hooksVisibilityCalc`.
 - **Turn Controls**:
   - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
   - **Props**:
@@ -188,18 +195,18 @@
     - Trigger `onUpdateSession(newSession)`.
     - SET `isMissionInitialized` to true.
 
-#### order turn selection
+#### confirmHeroOrder
 
 - **Contract**: Before start show a `DungeonHeroOrder`` when user can select the order turn of Heroes
-- **Trigger**: after loaded
+- **Signature**: `(orderedHeroIds: List<Integer>) -> void`
 - **Flow**:
-  - Show `DungeonHeroOrder` modal if `gameSession.isHeroOrderConfirmed` is false.
-  - onConfirmOrder:
-    - Update `gameSession.heroes` with correct `turnOrder`.
-    - Set `gameSession.isHeroOrderConfirmed` to true.
-    - **Trigger Initial Visibility**:
-      - Call `hooksFogOfWar.revealInitialVisibility()`.
-    - IF any hero in `gameSession.heroes` has `hero.hero.classe` matching "Mago" or "Elfo":
+  - For each `hero` in `gameSession.heroes`:
+    - Set `turnOrder` matching the position of `hero.heroId` in `orderedHeroIds`.
+  - Set `gameSession.isHeroOrderConfirmed` to true.
+  - **Trigger Initial Visibility**:
+    - Call `hooksFogOfWar.revealInitialVisibility()`.
+  - **Magic Check**:
+    - IF any `hero` in `gameSession.heroes` has `hero.hero.classe` matching "Mago" or "Elfo":
       - Set `isSpellSelectionRequired` to true.
   - Trigger `onUpdateSession`.
 
@@ -330,13 +337,7 @@
 - **Flow**:
   - IF `targetingSpell` is NOT null:
     - Find `currentHero` in `gameSession.heroes`.
-    - IF `targetingSpell.effetto` IS NOT "Genio" AND `hooksVisibilityCalc.hasLineOfSight(currentHero.x, currentHero.y, x, y)` is false:
-      - Set `notificationMessage` to "Non hai linea di vista sul bersaglio!".
-      - RETURN.
-    - IF `targetingSpell.targetType` IN ["Point", "Door"] OR `targetingSpell.effetto` EQUALS "Genio":
-      - Call `hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y)`.
-      - Set `targetingSpell` to `null`.
-      - Set `notificationMessage` to `null`.
+    - IF `targetingSpell.Message` to `null`.
     - ELSE IF `targetingSpell.targetType` EQUALS "Hero":
       - Find `hero` in `gameSession.heroes` at coordinates `x, y`.
       - IF `hero` is found:
@@ -364,15 +365,9 @@
   - IF `targetingSpell` is NOT null:
     - Find `currentHero` in `gameSession.heroes`.
     - Find `monster` in `gameSession.monsters` by `monsterId`.
-    - IF `targetingSpell.effetto` IS NOT "Genio" AND `hooksVisibilityCalc.hasLineOfSight(currentHero.x, currentHero.y, monster.x, monster.y)` is false:
-      - Set `notificationMessage` to "Non hai linea di vista sul mostro!".
-      - RETURN.
     - IF `targetingSpell.targetType` EQUALS "Monster" OR `targetingSpell.effetto` EQUALS "Genio":
       - Call `hooksMagicLogic.castSpell(targetingSpell.id, null, monsterId, null, null)`.
-      - Set `targetingSpell` to `null`.
-      - Set `notificationMessage` to `null`.
-    - ELSE:
-      - Set `notificationMessage` to "Questo incantesimo non può essere lanciato su un mostro!".
+      - Set `targetingSpell` to `null`.otificationMessage` to "Questo incantesimo non può essere lanciato su un mostro!".
   - ELSE:
     - Call `hooksTurnLogic.handleMonsterClick(monsterId)`.
 

@@ -27,6 +27,8 @@
 - `onChangePageView`: (nextPage: @PageNavigationEnum) -> void (Callback to change page).
 - `onUpdateSession`: (session: @GameSession) -> void (Callback to update the session state).
 - `campaign`: @Campaign (Provided by MainContent).
+- `staticHeroes`: List<@Hero> (Provided by MainContent).
+- `staticEquipment`: List<@Equipment> (Provided by MainContent).
 
 ### 🔍 Appearance
 
@@ -48,15 +50,13 @@
 - **Dungeon Description**: Visible only when a mission is selected.
   - **Props**:
     - `description`: `currentMap.header.descrizione`.
-- **Loading State**: Displays while fetching `campagne.json`.
+- **Loading State**: Displays IF `campaign` or `staticHeroes` is null.
 
 ### ⚡ Capabilities
 
 #### internal State
 
-- `statsHeroes`
 - `maxUnlockedMissionIndex`: Integer (Highest mission index accessible).
-- `gameSession`
 - `campaignManager`: @useCampaignManager
 
 #### initSession
@@ -64,24 +64,21 @@
 - **Contract**: Initializes the local state using the provided campaign data.
 - **Trigger**: On Component Mount.
 - **Flow**:
-  - // Use `campaign` prop for mission list.
-  - Fetch data from `/jsonData/heroes.json`.
-  - Parse response into List<@Hero> structure
-  - Store in local state `statsHeroes`.
-  - Fetch data from `/jsonData/equipment.json`.
-  - Parse response into List<@Equipment> (`equipmentList`).
   - **Campaign Check**:
     - Let `savedData` = `campaignManager.loadCampaign()`.
     - IF `savedData` is NOT null:
       - Set `maxUnlockedMissionIndex` to `savedData.nextMissionIndex`.
     - ELSE (Create Default Campaign):
-      - Create `defaultHeroes` list by mapping `statsHeroes` to `HeroState`:
+      - Create `defaultHeroes` list by mapping `staticHeroes` to `HeroState`:
         - `heroId`: `Hero.id`.
+        - `hero`: `Hero`.
         - `currentBody`: `Hero.corpo`.
         - `currentMind`: `Hero.mente`.
         - `gold`: 0.
         - `inventory`: [].
-        - Let `initialEquipment` = List of IDs found in `equipmentList` matching:
+        - `availableSpells`: [].
+        - `activeStatus`: [].
+        - Let `initialEquipment` = List of IDs found in `staticEquipment` matching:
           - IF `Hero.classe` == "Barbaro": ID = 13 for "Spadone".
           - IF `Hero.classe` == "Nano": ID = 2 for "Ascia".
           - IF `Hero.classe` == "Elfo": ID = 12 for "Spadino".

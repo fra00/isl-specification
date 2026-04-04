@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 
 export default function DungeonSpellCastModal({
   isOpen = false,
@@ -15,10 +15,7 @@ export default function DungeonSpellCastModal({
   onCastSpell = () => {},
   onClose = () => {}
 }) {
-  const handleClose = useCallback((e) => {
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
+  const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
@@ -26,53 +23,58 @@ export default function DungeonSpellCastModal({
     onCastSpell(spellId);
   }, [onCastSpell]);
 
-  const availableSpells = useMemo(() => {
-    if (!hero || !Array.isArray(hero.availableSpells)) {
-      return [];
-    }
-    
-    return hero.availableSpells
-      .map(spellId => allSpells.find(s => s?.id === spellId))
-      .filter(spell => spell != null);
-  }, [hero, allSpells]);
-
   if (!isOpen || !hero) {
     return null;
   }
 
+  const getTargetText = (targetType) => {
+    switch (targetType) {
+      case 'Self': return 'Bersaglio: Su se stessi';
+      case 'Hero': return 'Bersaglio: Personaggio';
+      case 'Monster': return 'Bersaglio: Mostro';
+      case 'Point': return 'Bersaglio: Punto nella mappa';
+      case 'Door': return 'Bersaglio: Porta';
+      default: return `Bersaglio: ${targetType || 'Sconosciuto'}`;
+    }
+  };
+
+  const availableSpells = hero.availableSpells || [];
+  const heroClass = hero.hero?.classe || 'Eroe';
+
   return (
     <div 
-      className="fixed inset-0 z-[65] bg-black/85 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/85 z-[65] flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <div 
-        className="w-[90%] max-w-[1000px] bg-gray-900 text-gray-100 rounded-xl shadow-2xl flex flex-col max-h-[90vh]"
+        className="bg-gray-900 border-2 border-yellow-600 rounded-lg w-[90%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-6 text-white relative shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-800 rounded-t-xl shrink-0">
-          <h2 className="text-2xl font-bold text-white">
-            Lancia Incantesimo - {hero.hero?.classe || 'Eroe'}
-          </h2>
-          <button 
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors text-3xl leading-none"
-            aria-label="Chiudi"
-          >
-            &times;
-          </button>
-        </div>
+        <button 
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none"
+          aria-label="Chiudi"
+        >
+          &times;
+        </button>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto">
-          {availableSpells.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {availableSpells.map((spell) => (
-                <div 
-                  key={spell.id} 
-                  className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-lg"
-                >
-                  <div className="h-48 bg-black p-2 flex items-center justify-center">
+        <h2 className="text-2xl font-bold text-yellow-500 mb-6 border-b border-gray-700 pb-2">
+          Lancia Incantesimo - {heroClass}
+        </h2>
+
+        {availableSpells.length === 0 ? (
+          <div className="text-center py-12 text-gray-400 italic text-lg">
+            Non hai più incantesimi disponibili per questa missione.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {availableSpells.map((spellId) => {
+              const spell = allSpells.find(s => s.id === spellId);
+              if (!spell) return null;
+
+              return (
+                <div key={`spell-${spell.id}`} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
+                  <div className="w-full h-48 bg-black flex items-center justify-center p-2">
                     {spell.immagine ? (
                       <img 
                         src={`/img/cinc/${spell.immagine}`} 
@@ -83,29 +85,30 @@ export default function DungeonSpellCastModal({
                       <div className="text-gray-600 italic">Nessuna immagine</div>
                     )}
                   </div>
+                  
                   <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-xl font-bold text-yellow-400 mb-2">
-                      {spell.nome}
-                    </h3>
-                    <p className="text-sm text-gray-300 flex-grow mb-4">
+                    <h3 className="text-lg font-bold text-yellow-400 mb-2">{spell.nome}</h3>
+                    
+                    <span className="text-xs font-semibold text-blue-300 bg-blue-900/30 px-2 py-1 rounded inline-block mb-3 self-start">
+                      {getTargetText(spell.targetType)}
+                    </span>
+                    
+                    <p className="text-sm text-gray-300 italic mb-4 flex-grow">
                       {spell.descrizione}
                     </p>
+                    
                     <button
                       onClick={() => handleCast(spell.id)}
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition-colors"
+                      className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded transition-colors mt-auto"
                     >
                       Lancia
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-400 text-lg">
-              Nessun incantesimo disponibile.
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

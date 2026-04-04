@@ -27,17 +27,29 @@
 - **Overlay**: Fixed full-screen backdrop (bg-black/85), z-index 65.
 - **Dialog**: Centered container, width 90%, max-width 1000px, dark theme.
 - **Grid**: Responsive grid showing spell cards.
+- **Spell Card**:
+  - **Layout**: Stack verticale con immagine in alto, seguita da titolo e descrizione.
+  - **Typography**:
+    - **Name**: Titolo in grassetto (oro/bianco).
+    - **Description**: Blocco di testo dedicato sotto il nome, con stile corsivo o colore tenue, che spiega chiaramente l'effetto dell'incantesimo.
+  - **Target Info**: Piccola etichetta o icona che indica il tipo di bersaglio (es. "Su se stessi", "Su un mostro").
 
 ### 📦 Content
 
 - **Header**: Title "Lancia Incantesimo" and the hero's class name.
-- **Spell Cards**: For each `spellId` in `hero.availableSpells`:
-  - Guard: IF spellId NOT IN allSpells, skip rendering or render placeholder.
-  - **Card Face**:
-    - Image: `/img/cinc/` + `spell.immagine`.
-    - Name: `spell.nome`.
-    - Description: `spell.descrizione`.
-    - Action: Button "Lancia".
+- **Spell Grid**:
+  - IF `hero.availableSpells.length` == 0:
+    - Display: "Non hai più incantesimi disponibili per questa missione."
+  - ELSE:
+    - For each `spellId` in `hero.availableSpells`:
+      - Let `spell` = Find in `allSpells` where `id` == `spellId`.
+      - Guard: IF `spell` is null, skip rendering.
+      - **Card Face**:
+        - Image: `/img/cinc/` + `spell.immagine`.
+        - Name: `spell.nome`.
+        - Description: `spell.descrizione`.
+        - Target Info: Display text based on `spell.targetType` (e.g., "Bersaglio: Mostro" or "Bersaglio: Personaggio").
+        - Action: Button "Lancia" -> Trigger `handleCast(spell.id)`.
 
 ### ⚡ Capabilities
 

@@ -15,10 +15,12 @@ Una porta viene visualizzata sul tabellone se soddisfa almeno una di queste cond
 
 ## 3. Verifica Adiacenza Porta
 
-La verifica dell'adiacenza della porta viene fatta tramite il metodo `isFrontOfDoor` dell'hook `useMapInteraction`.
-Ritorna un valore booleano se l'eroe è sopra una porta (x,y dell'eroe è uguale a x,y della porta), o se è `adiacente` (x, y+-1 per porte orizzontali, x+-1 per porte verticali) ad una porta.
-Le porte sono posizionate su di una cella , ma queste in realtà interagiscono con due celle, una di ingresso e una di destinazione. il metodo ritorna oltre al booleano le coordinate della cella di destinazione.
-La cella di destinazione è la cella `adiacente` che ha un valore di `valo` diverso da quello della cella su cui è posizionata la porta. Es: eroe è in x,y ed è la porta e ha `valo` 1, x+1 ha `valo` 1, mentre x-1 ha `valo` 2. Allora la cella di destinazione è x-1.
+La verifica viene fatta tramite `isFrontOfDoor`. Le porte sono posizionate su una cella $(x, y)$ e agiscono come confine tra due celle specifiche:
+
+- **Porta Orizzontale**: Collega la cella sopra $(x, y-1)$ e la cella della porta stessa $(x, y)$.
+- **Porta Verticale**: Collega la cella a sinistra $(x-1, y)$ e la cella della porta stessa $(x, y)$.
+
+Il metodo identifica queste due celle come `sideA` e `sideB`. La **cella di destinazione** è quella delle due che ha un ID area (`valo`) differente da quello della cella in cui si trova attualmente l'eroe.
 
 ## 3. Apertura delle Porte
 
@@ -31,9 +33,11 @@ L'apertura di una porta avviene in due modalità:
 ### B. Apertura Manuale (Azione)
 
 - La capability `useMapInteraction.isFrontOfDoor` verifica la presenza di passaggi (porta o passaggio segreto) validi **esclusivamente nelle 4 celle cardinali adiacenti (N, S, E, O)** rispetto alla posizione corrente (x, y) dell'eroe o se l'eroe è sopra la porta (x,y).
-- **Validazione Orientamento**:
-  - Una porta **Orizzontale** è considerata valida solo se l'eroe si trova nella cella sopra (y-1) o sotto (y+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
-  - Una porta **Verticale** è considerata valida solo se l'eroe si trova nella cella a sinistra (x-1) o a destra (x+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
+- **Requisito per Apertura**:
+  il requisito è che `useMapInteraction.isFrontOfDoor` sia true,
+  cioè l'eroe per poter aprire una porta deve soddisfare le seguenti condizioni di posizionamento:
+  - Per una porta **Orizzontale** è considerata valida solo se l'eroe si trova nella cella sopra (y-1) o sotto (y+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
+  - Per una porta **Verticale** è considerata valida solo se l'eroe si trova nella cella a sinistra (x-1) o a destra (x+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
 - L'interazione diagonale è tassativamente vietata.
 - **Consumo Azione**: L'apertura di una porta (sia manuale che automatica) **non consuma l'azione del turno** (attacco o ricerca). L'eroe può aprire una porta e successivamente attaccare o cercare tesori nella stessa attivazione.
 - **Abilitazione UI**: Il pulsante "Open Door" si abilita solo se l'eroe è adiacente cardinalmente (cioè se `useMapInteraction.isFrontOfDoor` ritorna `true`) a una porta chiusa .
@@ -45,8 +49,7 @@ L'apertura di una porta (automatica o manuale) è un'operazione atomica che eseg
 1. **Trigger di Apertura**:
    - **Apertura Automatica**: Avviene solo se l'eroe attraversa fisicamente una porta chiusa. quindi se ha cambiato `valo` rispetto alla precedente cella. L'unico modo per cambiare `valo` è tramite una porta o passaggio segreto.
    - **Apertura Manuale**: Avviene solo tramite pressione del pulsante dedicato quando l'eroe è adiacente.
-2. **Identificazione Destinazione**: Chiama il metodo `isFrontOfDoor` per ottenere la `destinationCell`.
-   - **Logica del Valo (Symmetry Rule)**: Per calcolare la destinazione, il sistema confronta il `valo` (Area ID) della cella occupata dall'eroe con il `valo` della cella target (la porta o la cella immediatamente successiva). La `destinationCell` è definita come la cella che ha un `valo` diverso da quello della cella di partenza dell'eroe.
+2. **Identificazione Destinazione**: Il sistema identifica le due celle collegate (`sideA` e `sideB`). La `destinationCell` è la cella tra le due che possiede un `valo` diverso da quello della cella di partenza dell'eroe. Questo garantisce che la nebbia venga rimossa sempre nel lato "nuovo" rispetto alla posizione del giocatore.
 3. **Reveal**: Chiama `fogOfWarLogic.revealFromPoint` sulla cella di `destinationCell`.
    - **Nota**: L'algoritmo deve calcolare la visibilità come se l'eroe si trovasse fisicamente nella cella di destinazione, svelando l'area oltre la porta senza spostare il token.
 4. **State Update**: Aggiunge la coordinata della porta a `openedDoors`.

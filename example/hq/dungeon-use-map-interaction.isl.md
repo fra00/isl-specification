@@ -43,7 +43,9 @@
   - **Determine the Logical Destination**:
     - Find the hero whose turn it is in `gameSession`.
     - Let `heroArea` be the Area ID (`valo`) of the cell where the hero is currently standing.
-    - Identify the two potential destination cells (`sideA`, `sideB`) adjacent to the Passage (North/South if Horizontal, East/West if Vertical).
+    - Identify the two cells connected by the Passage:
+      - IF **Horizontal**: `sideA` is (passage.x, passage.y - 1), `sideB` is (passage.x, passage.y).
+      - ELSE (**Vertical**): `sideA` is (passage.x - 1, passage.y), `sideB` is (passage.x, passage.y).
     - IF `sideA.valo` matches `heroArea`:
       - The Destination is `sideB`.
     - ELSE:

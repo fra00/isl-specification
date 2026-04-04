@@ -32,12 +32,9 @@ L'apertura di una porta avviene in due modalità:
 
 ### B. Apertura Manuale (Azione)
 
-- La capability `useMapInteraction.isFrontOfDoor` verifica la presenza di passaggi (porta o passaggio segreto) validi **esclusivamente nelle 4 celle cardinali adiacenti (N, S, E, O)** rispetto alla posizione corrente (x, y) dell'eroe o se l'eroe è sopra la porta (x,y).
+- La capability `useMapInteraction.isFrontOfDoor` verifica la presenza di passaggi (porta o passaggio segreto) validi .
 - **Requisito per Apertura**:
-  il requisito è che `useMapInteraction.isFrontOfDoor` sia true,
-  cioè l'eroe per poter aprire una porta deve soddisfare le seguenti condizioni di posizionamento:
-  - Per una porta **Orizzontale** è considerata valida solo se l'eroe si trova nella cella sopra (y-1) o sotto (y+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
-  - Per una porta **Verticale** è considerata valida solo se l'eroe si trova nella cella a sinistra (x-1) o a destra (x+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
+  il requisito è che `useMapInteraction.isFrontOfDoor` sia true,vedi la sezione `Verifica Adiacenza Porta` per maggiori dettagli.
 - L'interazione diagonale è tassativamente vietata.
 - **Consumo Azione**: L'apertura di una porta (sia manuale che automatica) **non consuma l'azione del turno** (attacco o ricerca). L'eroe può aprire una porta e successivamente attaccare o cercare tesori nella stessa attivazione.
 - **Abilitazione UI**: Il pulsante "Open Door" si abilita solo se l'eroe è adiacente cardinalmente (cioè se `useMapInteraction.isFrontOfDoor` ritorna `true`) a una porta chiusa .
@@ -56,10 +53,25 @@ L'apertura di una porta (automatica o manuale) è un'operazione atomica che eseg
 5. **State Reset**: Il flag di interazione `canOpenDoor` deve essere resettato a `null` immediatamente dopo l'apertura.
 6. **Notification**: Invia un feedback all'utente ("Porta aperta.").
 
-## 5. Passaggi Segreti
+## 5. Ricerca e Scoperta di Passaggi Segreti
 
-- I passaggi segreti seguono le stesse regole delle porte una volta scoperti tramite l'azione "Cerca Passaggi Segreti".
-- Finché non vengono scoperti, sono trattati come muri invalicabili e non possono essere aperti.
+I passaggi segreti sono inizialmente invisibili e agiscono come muri invalicabili. Possono essere rivelati solo tramite l'azione di ricerca.
+
+### A. Azione "Cerca Passaggi"
+
+- **Trigger**: Pressione del pulsante "Search Passages" nel pannello di controllo.
+- **Logica di Rilevamento**:
+  - Il sistema calcola le celle attualmente visibili all'eroe:
+    - se dentro una stanza (`valo` != "1") l'area visibile sarà la stanza stessa.
+    - se in un corridoio (`valo` == "1") utilizza la Logica Ray Tracing
+  - Un passaggio segreto viene scoperto se almeno una delle sue celle di confine (sopra/sotto per orizzontali, sinistra/destra per verticali useMapInteraction.isFrontOfDoor return true) fa parte dell'area rivelata (non coperta da nebbia).
+- **Consumo**: Questa operazione **consuma l'azione** del turno (`HasPerformedAction: true`).
+- **Stato**: Una volta scoperto, il passaggio viene aggiunto alla lista `foundPassages` e viene renderizzato sul tabellone (`pso.jpg` o `psv.jpg`).
+
+### B. Interazione Post-Scoperta
+
+- Una volta scoperto, un passaggio segreto eredita **tutte le regole di interazione delle porte** descritte nei punti 3 e 4.
+- Può essere aperto manualmente (se adiacente) o automaticamente (se attraversato), innescando la rimozione della nebbia nell'area di destinazione.
 
 ## 6. Attori della Funzionalità
 
@@ -77,6 +89,11 @@ L'apertura di una porta (automatica o manuale) è un'operazione atomica che eseg
 
 - **Compito**: Filtra le porte da visualizzare sul tabellone.
 - **Responsabilità**: Decide se una porta deve essere renderizzata in base allo stato `openedDoors` o alla rivelazione delle celle adiacenti nella `boardVisibilityMap`.
+
+### 🔍 useSecretPassages (Rilevatore)
+
+- **Compito**: Gestisce la scansione dell'area per elementi nascosti.
+- **Responsabilità**: Implementa `searchPassages` confrontando la griglia dei passaggi della mappa con le `visibleCells` fornite dal calcolo della visibilità.
 
 ### 🔍 useDungeonMapQuery (Fornitore Dati)
 

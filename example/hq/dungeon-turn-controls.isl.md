@@ -73,7 +73,8 @@
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchTraps`.
   - **Magic**:
-    - Disabled IF `turnPhase.HasPerformedAction` is true OR `currentHero.availableSpells` is empty.
+    - Visible IF `currentHero.availableSpells.length` > 0.
+    - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
     - Style: Purple/Indigo button.
     - OnClick: Trigger `onOpenMagic`.
   - **Cancel Targeting**:
@@ -81,7 +82,7 @@
     - Style: Gray/Neutral secondary button.
     - OnClick: Trigger `onCancelTargeting`.
   - **Open Door**:
-    - Visible IF `canOpenDoor` is true.
+    - Visible IF `canOpenDoor` is NOT null AND `canOpenDoor.found` is true.
     - Style: Green success button.
     - OnClick: Trigger `onOpenDoor`.
   - **End Turn**:

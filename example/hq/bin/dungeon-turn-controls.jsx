@@ -13,147 +13,157 @@ export default function DungeonTurnControls({
   movementPoints,
   turnPhase,
   canOpenDoor,
-  isTargeting,
-  isMoving,
-  onRollMovement,
-  onEndTurn,
-  onSearchPassages,
-  onSearchTreasure,
-  onSearchTraps,
-  onOpenMagic,
-  onOpenInventory,
-  onCancelTargeting,
-  onOpenDoor
+  isTargeting = false,
+  isMoving = false,
+  onRollMovement = () => {},
+  onEndTurn = () => {},
+  onSearchPassages = () => {},
+  onSearchTreasure = () => {},
+  onSearchTraps = () => {},
+  onOpenMagic = () => {},
+  onOpenInventory = () => {},
+  onCancelTargeting = () => {},
+  onOpenDoor = () => {}
 }) {
-  const [position, setPosition] = useState({ x: 20, y: 20 });
-  const [isDragging, setIsDragging] = useState(false);
-  
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const positionRef = useRef({ x: 20, y: 20 });
-
-  // Initialize position from local storage
-  useEffect(() => {
+  // Initialize position from LocalStorage or use default
+  const [position, setPosition] = useState(() => {
     try {
-      const saved = localStorage.getItem('dungeonTurnControlsPosition');
+      const saved = localStorage.getItem("dungeonTurnControlsPosition");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          setPosition(parsed);
-          positionRef.current = parsed;
+          return parsed;
         }
       }
     } catch (e) {
       console.error("Failed to parse dungeonTurnControlsPosition", e);
     }
-  }, []);
+    return { x: 20, y: 20 };
+  });
+
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Refs to hold mutable drag state without triggering re-renders during calculation
+  const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+  const positionRef = useRef(position);
+
+  // Keep positionRef updated with the latest state for the mouseup event closure
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
-    dragOffset.current = {
-      x: e.clientX - positionRef.current.x,
-      y: e.clientY - positionRef.current.y
-    };
+    dragRef.current.isDragging = true;
+    dragRef.current.offsetX = e.clientX - positionRef.current.x;
+    dragRef.current.offsetY = e.clientY - positionRef.current.y;
   }, []);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      const newX = e.clientX - dragOffset.current.x;
-      const newY = e.clientY - dragOffset.current.y;
-      const newPos = { x: newX, y: newY };
-      
-      setPosition(newPos);
-      positionRef.current = newPos;
+      if (!dragRef.current.isDragging) return;
+      setPosition({
+        x: e.clientX - dragRef.current.offsetX,
+        y: e.clientY - dragRef.current.offsetY
+      });
     };
 
     const handleMouseUp = () => {
-      if (!isDragging) return;
-      setIsDragging(false);
-      localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(positionRef.current));
+      if (dragRef.current.isDragging) {
+        dragRef.current.isDragging = false;
+        setIsDragging(false);
+        try {
+          localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
+        } catch (e) {
+          console.error("Failed to save dungeonTurnControlsPosition", e);
+        }
+      }
     };
 
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, []);
 
+  // Safe data access
   const heroClass = currentHero?.hero?.classe || "Unknown";
-  const hasMoved = turnPhase?.HasMoved || false;
-  const hasPerformedAction = turnPhase?.HasPerformedAction || false;
-  const hasSpells = currentHero?.availableSpells?.length > 0;
+  const gold = currentHero?.gold ?? 0;
+  const health = currentHero?.currentBody ?? 0;
+  const intelligence = currentHero?.currentMind ?? 0;
+  const attack = currentHero?.hero?.attacco ?? 0;
+  const defense = currentHero?.hero?.difesa ?? 0;
+  
+  const hasMoved = turnPhase?.HasMoved ?? false;
+  const hasPerformedAction = turnPhase?.HasPerformedAction ?? false;
+  const availableSpellsCount = currentHero?.availableSpells?.length ?? 0;
 
   return (
     <div
-      className="fixed bg-gray-800 text-white rounded-lg shadow-xl w-[250px] z-50 flex flex-col"
-      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      style={{ left: position.x, top: position.y, position: 'fixed' }}
+      className="w-[250px] bg-gray-800 text-white rounded-lg shadow-xl flex flex-col z-50 select-none"
     >
       {/* Header */}
       <div
-        className={`bg-gray-900 p-3 rounded-t-lg select-none flex justify-between items-center font-bold border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
+        className={`p-3 bg-gray-900 rounded-t-lg font-bold text-center border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
       >
-        <span>Turn Controls</span>
-        <span className="text-gray-400 text-xs">☰</span>
+        Turn Controls
       </div>
 
       {/* Info Section */}
-      <div className="p-4 space-y-1 text-sm border-b border-gray-700">
+      <div className="p-4 flex flex-col gap-2 text-sm border-b border-gray-700">
         <div className="flex justify-between">
           <span className="text-gray-400">Class:</span>
           <span className="font-semibold">{heroClass}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Movement:</span>
-          <span className="font-semibold">{movementPoints != null ? movementPoints : '-'}</span>
+          <span className="font-semibold">{movementPoints ?? '-'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Gold:</span>
-          <span className="font-semibold text-yellow-400">{currentHero?.gold ?? 0}</span>
+          <span className="font-semibold text-yellow-400">{gold}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Health:</span>
-          <span className="font-semibold text-red-400">
-            {currentHero?.currentBody ?? 0} / {currentHero?.hero?.corpo ?? 0}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Intelligence:</span>
-          <span className="font-semibold text-blue-400">
-            {currentHero?.currentMind ?? 0} / {currentHero?.hero?.mente ?? 0}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Attack:</span>
-          <span className="font-semibold">{currentHero?.hero?.attacco ?? 0}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Defense:</span>
-          <span className="font-semibold">{currentHero?.hero?.difesa ?? 0}</span>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <div className="flex flex-col items-center bg-gray-700 p-1 rounded">
+            <span className="text-xs text-gray-400">Health</span>
+            <span className="font-bold text-red-400">{health}</span>
+          </div>
+          <div className="flex flex-col items-center bg-gray-700 p-1 rounded">
+            <span className="text-xs text-gray-400">Mind</span>
+            <span className="font-bold text-blue-400">{intelligence}</span>
+          </div>
+          <div className="flex flex-col items-center bg-gray-700 p-1 rounded">
+            <span className="text-xs text-gray-400">Attack</span>
+            <span className="font-bold text-orange-400">{attack}</span>
+          </div>
+          <div className="flex flex-col items-center bg-gray-700 p-1 rounded">
+            <span className="text-xs text-gray-400">Defense</span>
+            <span className="font-bold text-green-400">{defense}</span>
+          </div>
         </div>
       </div>
 
       {/* Inventory Section */}
-      <div className="p-4 pb-2">
+      <div className="p-3 border-b border-gray-700">
         <button
           onClick={onOpenInventory}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold transition-colors"
         >
           Inventory
         </button>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col gap-2 p-4 pt-2">
+      <div className="p-3 flex flex-col gap-2">
         <button
           onClick={onRollMovement}
           disabled={hasMoved || movementPoints != null}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
         >
           Roll Movement
         </button>
@@ -161,7 +171,7 @@ export default function DungeonTurnControls({
         <button
           onClick={onSearchPassages}
           disabled={hasPerformedAction}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
         >
           Search Passages
         </button>
@@ -169,7 +179,7 @@ export default function DungeonTurnControls({
         <button
           onClick={onSearchTreasure}
           disabled={hasPerformedAction}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
         >
           Search Treasure
         </button>
@@ -177,32 +187,34 @@ export default function DungeonTurnControls({
         <button
           onClick={onSearchTraps}
           disabled={hasPerformedAction}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
         >
           Search Traps
         </button>
 
-        <button
-          onClick={onOpenMagic}
-          disabled={hasPerformedAction || !hasSpells}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Magic
-        </button>
+        {availableSpellsCount > 0 && (
+          <button
+            onClick={onOpenMagic}
+            disabled={hasPerformedAction || isMoving || isTargeting}
+            className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+          >
+            Magic
+          </button>
+        )}
 
         {isTargeting && (
           <button
             onClick={onCancelTargeting}
-            className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-gray-600 hover:bg-gray-700 text-white"
+            className="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white rounded font-semibold transition-colors"
           >
             Cancel Targeting
           </button>
         )}
 
-        {canOpenDoor && (
+        {canOpenDoor != null && canOpenDoor.found === true && (
           <button
             onClick={onOpenDoor}
-            className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-green-600 hover:bg-green-700 text-white"
+            className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded font-semibold transition-colors"
           >
             Open Door
           </button>
@@ -210,7 +222,7 @@ export default function DungeonTurnControls({
 
         <button
           onClick={onEndTurn}
-          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-red-600 hover:bg-red-700 text-white mt-2"
+          className="w-full py-2 mt-2 bg-red-600 hover:bg-red-500 text-white rounded font-semibold transition-colors"
         >
           End Turn
         </button>

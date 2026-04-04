@@ -15,41 +15,44 @@ export const useMapInteraction = ({
   onNotify,
   fogOfWarLogic
 }) => {
+  const getCell = useCallback((x, y) => {
+    return gameSession?.currentMap?.grid?.find(c => c.x === x && c.y === y);
+  }, [gameSession]);
 
   const isFrontOfDoor = useCallback((x, y) => {
     if (!gameSession?.currentMap) return null;
 
     const neighbors = [
-      { nx: x, ny: y },
-      { nx: x + 1, ny: y },
-      { nx: x - 1, ny: y },
-      { nx: x, ny: y + 1 },
-      { nx: x, ny: y - 1 }
+      { x, y },
+      { x, y: y - 1 },
+      { x, y: y + 1 },
+      { x: x - 1, y },
+      { x: x + 1, y }
     ];
 
     let foundPassage = null;
     let isHorizontal = false;
 
-    for (const { nx, ny } of neighbors) {
-      const coordKey = `${nx},${ny}`;
+    for (const pos of neighbors) {
+      const coordKey = `${pos.x},${pos.y}`;
       
       if (gameSession.openedDoors?.includes(coordKey)) {
         continue;
       }
 
-      const door = gameSession.currentMap.porte?.find(p => p.x === nx && p.y === ny);
+      const door = gameSession.currentMap.porte?.find(p => p.x === pos.x && p.y === pos.y);
       if (door) {
-        foundPassage = { x: nx, y: ny };
+        foundPassage = pos;
         isHorizontal = door.oriz;
         break;
       }
 
-      const secretPassage = foundPassages.find(p => p.x === nx && p.y === ny);
+      const secretPassage = foundPassages.find(p => p.x === pos.x && p.y === pos.y);
       if (secretPassage) {
-        const gridCell = gameSession.currentMap.grid?.find(c => c.x === nx && c.y === ny);
-        if (gridCell?.psgg) {
-          foundPassage = { x: nx, y: ny };
-          isHorizontal = gridCell.psgg.oriz;
+        const cell = getCell(pos.x, pos.y);
+        if (cell?.psgg) {
+          foundPassage = pos;
+          isHorizontal = cell.psgg.oriz;
           break;
         }
       }
@@ -59,11 +62,18 @@ export const useMapInteraction = ({
       return null;
     }
 
-    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-    if (!currentHero) return null;
+    if (isHorizontal) {
+      if (!(x === foundPassage.x && (y === foundPassage.y || y === foundPassage.y - 1 || y === foundPassage.y + 1))) {
+        return null;
+      }
+    } else {
+      if (!(y === foundPassage.y && (x === foundPassage.x || x === foundPassage.x - 1 || x === foundPassage.x + 1))) {
+        return null;
+      }
+    }
 
-    const heroCell = gameSession.currentMap.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
-    const heroArea = heroCell?.valo;
+    const heroCell = getCell(x, y);
+    const heroArea = heroCell?.valo; 
 
     let sideA, sideB;
     if (isHorizontal) {
@@ -74,10 +84,10 @@ export const useMapInteraction = ({
       sideB = { x: foundPassage.x + 1, y: foundPassage.y };
     }
 
-    const sideACell = gameSession.currentMap.grid?.find(c => c.x === sideA.x && c.y === sideA.y);
-    
+    const cellA = getCell(sideA.x, sideA.y);
     let destination;
-    if (sideACell?.valo === heroArea) {
+
+    if (cellA?.valo === heroArea) {
       destination = sideB;
     } else {
       destination = sideA;
@@ -88,17 +98,17 @@ export const useMapInteraction = ({
       destination,
       passageCell: foundPassage
     };
-  }, [gameSession, foundPassages]);
+  }, [gameSession, foundPassages, getCell]);
 
   const openPassage = useCallback((passageX, passageY, destinationX, destinationY) => {
     if (!gameSession?.currentMap) return;
 
     const coordKey = `${passageX},${passageY}`;
-    
-    const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
-    const isSecretPassage = foundPassages.some(p => p.x === passageX && p.y === passageY);
 
-    if (!isDoor && !isSecretPassage) {
+    const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
+    const isSecret = foundPassages.some(p => p.x === passageX && p.y === passageY);
+
+    if (!isDoor && !isSecret) {
       return;
     }
 
@@ -107,13 +117,13 @@ export const useMapInteraction = ({
         if (fogOfWarLogic?.revealFromPoint) {
           fogOfWarLogic.revealFromPoint(destinationX, destinationY);
         }
-        
+
         const updatedOpenedDoors = [...(gameSession.openedDoors || []), coordKey];
-        
+
         if (onNotify) {
           onNotify("Porta aperta.");
         }
-        
+
         if (onUpdateSession) {
           onUpdateSession({
             ...gameSession,

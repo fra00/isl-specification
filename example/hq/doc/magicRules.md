@@ -52,6 +52,15 @@ Gli incantesimi possono applicare tag alla lista `activeStatus`:
 - **Incantesimi di Movimento**: Modificano le regole di validazione delle celle in `useDungeonMovementRules`.
 - **Il Genio e le Porte**: Il Genio può aprire porte a distanza (anche non in linea di vista). Questa operazione utilizza `openPassage` di `useMapInteraction`, che a sua volta triggera `revealFromPoint` per aggiornare la nebbia di guerra.
 
+## 7. Abilitazione Pulsante Magic (UI)
+
+Il pulsante per l'apertura del menu Magia deve seguire queste regole di attivazione:
+
+1. **Requisito di Classe**: Deve essere visibile solo per le classi in grado di usare la magia (Mago ed Elfo). Tecnicamente, questo si traduce nel verificare che la lista `availableSpells` dell'eroe non sia vuota.
+2. **Stato dell'Azione**: Il pulsante deve essere **disabilitato** se l'eroe ha già effettuato un'azione nel turno corrente (`turnPhase.HasPerformedAction` è true).
+3. **Stato del Movimento**: Il pulsante deve essere **disabilitato** mentre l'eroe è in fase di animazione di movimento (`isMoving` è true) per evitare conflitti di stato.
+4. **Targeting**: Se è già attiva una modalità di targeting (per un altro incantesimo), il pulsante deve permettere solo l'annullamento o essere disabilitato.
+
 ## 6. Attori della Funzionalità
 
 ### 🔮 useMagicLogic (Business Logic)

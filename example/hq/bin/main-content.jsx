@@ -6,15 +6,15 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from "react";
-import PageContent from "./page-presentation";
-import { Monster, Equipment, Item, Spell, TreasureCard } from "./domain-ruleset";
-import { Campaign, VisibilityMap } from "./domain-map";
+import React, { useState, useEffect } from 'react';
+import PageContent from './page-presentation';
+import { Monster, Equipment, Item, TreasureCard } from './domain-ruleset';
+import { VisibilityMap, Campaign } from './domain-map';
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
   const [error, setError] = useState(null);
-
+  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
   const [globalEquipment, setGlobalEquipment] = useState([]);
@@ -27,52 +27,50 @@ export default function MainContent() {
     let isMounted = true;
 
     const bootstrap = async () => {
-      try {
-        const endpoints = [
-          { url: "/jsonData/monsters.json", key: "monsters" },
-          { url: "/jsonData/tabellone/default.json", key: "board" },
-          { url: "/jsonData/equipment.json", key: "equipment" },
-          { url: "/jsonData/items.json", key: "items" },
-          { url: "/jsonData/treasure-card.json", key: "treasure" },
-          { url: "/jsonData/campagne.json", key: "campaign" }
-        ];
-
-        const responses = await Promise.all(
-          endpoints.map(endpoint => fetch(endpoint.url))
-        );
-
-        for (let i = 0; i < responses.length; i++) {
-          if (!responses[i].ok) {
-            console.error(`Failed to fetch: ${endpoints[i].url}`);
-            throw new Error(`HTTP error! status: ${responses[i].status} on ${endpoints[i].url}`);
+      const fetchJson = async (url) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
           }
+          return await response.json();
+        } catch (err) {
+          console.error(`Failed fetch URL: ${url}`);
+          throw err;
         }
+      };
 
+      try {
         const [
           monstersData,
-          boardData,
+          boardDataJson,
           equipmentData,
           itemsData,
-          treasureData,
+          treasureDeckData,
           campaignData
-        ] = await Promise.all(responses.map(res => res.json()));
+        ] = await Promise.all([
+          fetchJson('/jsonData/monsters.json'),
+          fetchJson('/jsonData/tabellone/default.json'),
+          fetchJson('/jsonData/equipment.json'),
+          fetchJson('/jsonData/items.json'),
+          fetchJson('/jsonData/treasure-card.json'),
+          fetchJson('/jsonData/campagne.json')
+        ]);
 
         if (isMounted) {
-          setGlobalMonsters(Array.isArray(monstersData) ? monstersData.map(m => Monster(m)) : []);
-          setGlobalBoardData(VisibilityMap(boardData));
-          setGlobalEquipment(Array.isArray(equipmentData) ? equipmentData.map(e => Equipment(e)) : []);
-          setGlobalItems(Array.isArray(itemsData) ? itemsData.map(i => Item(i)) : []);
-          setGlobalTreasureDeck(Array.isArray(treasureData) ? treasureData.map(t => TreasureCard(t)) : []);
+          setGlobalMonsters(Array.isArray(monstersData) ? monstersData.map(Monster) : []);
+          setGlobalBoardData(VisibilityMap(boardDataJson));
+          setGlobalEquipment(Array.isArray(equipmentData) ? equipmentData.map(Equipment) : []);
+          setGlobalItems(Array.isArray(itemsData) ? itemsData.map(Item) : []);
+          setGlobalTreasureDeck(Array.isArray(treasureDeckData) ? treasureDeckData.map(TreasureCard) : []);
           setGlobalCampaign(Campaign(campaignData));
+          setGlobalSpells([]); 
           
-          setGlobalSpells([]);
-
           setIsAppReady(true);
         }
       } catch (err) {
         if (isMounted) {
-          console.error("Errore fatale durante l'avvio: " + err.message);
-          setError(err);
+          setError("Errore fatale durante l'avvio: " + err.message);
         }
       }
     };
@@ -86,25 +84,22 @@ export default function MainContent() {
 
   if (error) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 overflow-hidden">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Errore Critico</h1>
-          <p>Errore fatale durante l'avvio: {error.message}</p>
-        </div>
+      <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-4 text-center">
+        <h1 className="text-2xl font-bold">{error}</h1>
       </div>
     );
   }
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white overflow-hidden">
-        <p className="text-xl animate-pulse">Inizializzazione Sistema...</p>
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <h2 className="text-2xl animate-pulse">Inizializzazione Sistema...</h2>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-black overflow-hidden">
+    <div className="w-full h-screen flex items-center justify-center overflow-hidden bg-black">
       <PageContent
         monsters={globalMonsters}
         boardData={globalBoardData}

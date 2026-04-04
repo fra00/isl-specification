@@ -1,4 +1,4 @@
-export function useMagicLogic(config: {
+export function useMagicLogic(config?: {
     gameSession: any;
     onUpdateSession: (session: any) => void;
     onNotify: (message: string) => void;
@@ -9,6 +9,6 @@ export function useMagicLogic(config: {
     fogOfWarLogic: any;
     heroStatsLogic: any;
 }): {
-    castSpell: (spellId: number, targetHeroId: number | null, targetMonsterId: number | null, targetX: number | null, targetY: number | null) => void;
-    removeExpiredEffects: (heroId: number | null, monsterId: number | null, effect: string) => void;
+    castSpell: (spellId: number, targetHeroId?: number | null, targetMonsterId?: number | null, targetX?: number | null, targetY?: number | null) => void;
+    removeExpiredEffects: (heroId?: number | null, monsterId?: number | null, effect: string) => void;
 };

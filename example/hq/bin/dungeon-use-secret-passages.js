@@ -6,39 +6,43 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
+import { useState, useCallback } from 'react';
+import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone }) {
     const [foundPassages, setFoundPassages] = useState([]);
-    const foundPassagesRef = useRef(foundPassages);
-
-    useEffect(() => {
-        foundPassagesRef.current = foundPassages;
-    }, [foundPassages]);
-
-    const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
+    
+    const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
     const searchPassages = useCallback(() => {
-        const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
-        if (!currentHero) return;
+        if (!gameSession?.heroes || !gameSession?.currentMap?.grid) {
+            return;
+        }
 
-        const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
+        const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
+        if (!currentHero) {
+            return;
+        }
+
+        const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y) || [];
+        
         const isCellVisible = (x, y) => visibleCells.some(c => c.x === x && c.y === y);
 
         let foundInThisSearch = false;
         const newPassages = [];
 
-        const grid = gameSession?.currentMap?.grid || [];
-        const potentialPassages = grid.filter(cell => cell?.psgg?.ps != null && cell.psgg.ps > 0);
+        const potentialPassages = gameSession.currentMap.grid.filter(
+            cell => cell.psgg?.ps != null && cell.psgg.ps > 0
+        );
 
-        for (const potentialPassage of potentialPassages) {
+        potentialPassages.forEach(potentialPassage => {
             const px = potentialPassage.x;
             const py = potentialPassage.y;
-            let isDiscoverable = false;
-            const isOriz = potentialPassage.psgg?.oriz === true;
+            const oriz = potentialPassage.psgg?.oriz === true;
 
-            if (isOriz) {
+            let isDiscoverable = false;
+
+            if (oriz) {
                 if (isCellVisible(px, py - 1) || isCellVisible(px, py + 1)) {
                     isDiscoverable = true;
                 }
@@ -48,43 +52,56 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
                 }
             }
 
-            const alreadyFound = foundPassagesRef.current.some(p => p.x === px && p.y === py) || 
+            const alreadyFound = foundPassages.some(p => p.x === px && p.y === py) || 
                                  newPassages.some(p => p.x === px && p.y === py);
 
             if (isDiscoverable && !alreadyFound) {
-                const img = isOriz ? "pso.jpg" : "psv.jpg";
-                newPassages.push({ x: px, y: py, img, oriz: isOriz });
+                const img = oriz ? "pso.jpg" : "psv.jpg";
+                newPassages.push({ x: px, y: py, img, oriz });
                 foundInThisSearch = true;
             }
-        }
+        });
 
         if (foundInThisSearch) {
             setFoundPassages(prev => [...prev, ...newPassages]);
-            onNotify?.("Hai trovato un passaggio segreto!");
-            onActionDone?.();
+            if (typeof onNotify === 'function') {
+                onNotify("Hai trovato un passaggio segreto!");
+            }
+            if (typeof onActionDone === 'function') {
+                onActionDone();
+            }
         } else {
-            onNotify?.("Nessun passaggio segreto trovato.");
-            onActionDone?.();
+            if (typeof onNotify === 'function') {
+                onNotify("Nessun passaggio segreto trovato.");
+            }
+            if (typeof onActionDone === 'function') {
+                onActionDone();
+            }
         }
-    }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
+    }, [gameSession, foundPassages, visibilityCalc, onNotify, onActionDone]);
 
     const getFoundPassages = useCallback(() => {
         const visiblePassages = [];
-        
-        for (const passage of foundPassagesRef.current) {
+        const visData = visibilityMap?.data || [];
+
+        foundPassages.forEach(passage => {
             let isVisible = false;
-            const cellsToCheck = [{ x: passage.x, y: passage.y }];
+            const { x, y, oriz } = passage;
             
-            if (passage.oriz) {
-                cellsToCheck.push({ x: passage.x, y: passage.y - 1 });
-                cellsToCheck.push({ x: passage.x, y: passage.y + 1 });
+            const cellsToCheck = [{ x, y }];
+
+            if (oriz) {
+                cellsToCheck.push({ x, y: y - 1 });
+                cellsToCheck.push({ x, y: y + 1 });
             } else {
-                cellsToCheck.push({ x: passage.x - 1, y: passage.y });
-                cellsToCheck.push({ x: passage.x + 1, y: passage.y });
+                cellsToCheck.push({ x: x - 1, y });
+                cellsToCheck.push({ x: x + 1, y });
             }
 
-            for (const coord of cellsToCheck) {
-                const visCell = visibilityMap?.data?.find(c => c.x === coord.x && c.y === coord.y);
+            for (let i = 0; i < cellsToCheck.length; i++) {
+                const coord = cellsToCheck[i];
+                const visCell = visData.find(c => c.x === coord.x && c.y === coord.y);
+                
                 if (visCell && visCell.fog === false) {
                     isVisible = true;
                     break;
@@ -94,10 +111,10 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
             if (isVisible) {
                 visiblePassages.push(passage);
             }
-        }
+        });
 
         return { visiblePassages };
-    }, [visibilityMap]);
+    }, [foundPassages, visibilityMap]);
 
     return {
         searchPassages,

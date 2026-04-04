@@ -36,7 +36,7 @@ L'apertura di una porta avviene in due modalità:
   - Una porta **Verticale** è considerata valida solo se l'eroe si trova nella cella a sinistra (x-1) o a destra (x+1) o sopra (x,y) rispetto alle coordinate (x, y) della porta.
 - L'interazione diagonale è tassativamente vietata.
 - **Consumo Azione**: L'apertura di una porta (sia manuale che automatica) **non consuma l'azione del turno** (attacco o ricerca). L'eroe può aprire una porta e successivamente attaccare o cercare tesori nella stessa attivazione.
-- **Abilitazione UI**: Il pulsante "Open Door" si abilita solo se l'eroe è adiacente cardinalmente a una porta chiusa.
+- **Abilitazione UI**: Il pulsante "Open Door" si abilita solo se l'eroe è adiacente cardinalmente (cioè se `useMapInteraction.isFrontOfDoor` ritorna `true`) a una porta chiusa .
 
 ## 4. Impatto sulla Nebbia di Guerra
 

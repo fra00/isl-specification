@@ -6,11 +6,11 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
-import MainMenu from './main-menu';
 import PlayGame from './play-game';
 import EditorGame from './editor-game';
+import MainMenu from './main-menu';
 import Armory from './armory';
 import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
@@ -24,7 +24,7 @@ export default function PageContent({
   treasureDeck = [],
   campaign = null
 }) {
-  const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
+  const [currentPageView, setCurrentPageView] = useState(null);
   const [gameSession, setGameSession] = useState(null);
 
   useEffect(() => {
@@ -45,38 +45,34 @@ export default function PageContent({
     console.log("Starting mission:", missionIndex);
   }, []);
 
-  const renderPageView = () => {
+  const showPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
-      
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             campaign={campaign}
           />
         );
-      
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
-      
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
-      
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -86,24 +82,22 @@ export default function PageContent({
             treasureDeck={treasureDeck}
           />
         );
-      
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
-      
       default:
-        return <MainMenu onChangePageView={changePageView} />;
+        return null;
     }
   };
 
   return (
-    <div className="w-2/3 mx-auto h-screen bg-black overflow-hidden">
-      {renderPageView()}
+    <div className="w-2/3 h-screen bg-black overflow-hidden">
+      {currentPageView && showPageView()}
     </div>
   );
 }

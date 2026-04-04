@@ -1,5 +1,4 @@
 # Fog of War & Visibility Logic Rules
-
 Questo documento definisce le regole autoritative per la gestione della nebbia di guerra e della visibilità nel progetto Heroquest React.
 
 ## 1. Rimozione della Nebbia (Trigger Area)
@@ -10,15 +9,15 @@ Questo documento definisce le regole autoritative per la gestione della nebbia d
 
 ## 2. Il Ruolo delle Porte
 
-- Le porte **non sono** ostruzioni dirette per l'algoritmo di visibilità.
-- Le porte sono una **conseguenza topologica**: una porta chiusa impedisce al personaggio di occupare la cella sottostante o adiacente che contiene i puntatori `vis1`/`vis2` necessari per rivelare la stanza successiva.
-- Una volta aperta la porta, il personaggio può accedere alla cella di transizione, scatenando l'aggiornamento della visibilità basato sui nuovi `vis1` e `vis2`.
+- Le porte sono una **conseguenza topologica**: una porta chiusa impedisce al personaggio di occupare la cella sottostante o adiacente che contiene i puntatori `valo`/`vis1`/`vis2` necessari per rivelare la stanza successiva.
+- Una volta aperta la porta, il personaggio può accedere alla cella di transizione, scatenando l'aggiornamento della visibilità basato sui nuovi `valo`/`vis1`/`vis2`.
 
-## 3. Logica Ray Tracing (Vis0 / Valo)
+## 3. Logica Ray Tracing
 
 - Il Ray Tracing (propropagazione lineare della vista) non è onnipresente.
-- Deve essere eseguito **solo ed esclusivamente** per i punti in cui `vis0` (attributo `valo` nella specifica ISL) è diverso da zero (o identificato come corridoio, tipicamente `valo: "1"`).
-- Se il personaggio si trova in una stanza (dove `vis1` e `vis2` definiscono l'intero perimetro), il Ray Tracing non deve essere calcolato per evitare "fughe" di visibilità non desiderate.
+- Deve essere eseguito **solo ed esclusivamente** nei punti identificati come corridoi, tipicamente `valo: "1"`.
+- Se il personaggio si trova in una stanza dove `valo` è diverso da "1" , `valo` definisce l'intera stanza, il Ray Tracing non deve essere calcolato. Tutte le celle on quel `valo` devono avere `fog: false`.
+
 
 ## 4. Persistenza
 

@@ -26,7 +26,7 @@ L'apertura di una porta avviene in due modalità:
 
 ### A. Apertura Automatica (Movimento)
 
-- Durante l'esecuzione del movimento (`movementEffect`), se l'eroe passa sopra una cella identificata come porta, la capability `openPassage` viene triggerata automaticamente.
+- Durante l'esecuzione del movimento (`movementEffect`), se l'eroe attraversa una porta e transita su di una cella con `valo` diverso da quello precedente significa che ho attraversato una porta (è possibile cambiare `valo` solo attraversando porte o passaggi segreti), la capability `openPassage` viene triggerata automaticamente.
 
 ### B. Apertura Manuale (Azione)
 

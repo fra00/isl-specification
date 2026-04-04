@@ -6,32 +6,34 @@
  * Edit the ISL file instead.
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export default function TreasureCardModal({ 
     isOpen = false, 
     card = null, 
     onClose = () => {} 
 }) {
-    const isClosingRef = useRef(false);
+    const [isClosing, setIsClosing] = useState(false);
 
+    // Reset closing state when modal is opened
     useEffect(() => {
         if (isOpen) {
-            isClosingRef.current = false;
+            setIsClosing(false);
         }
     }, [isOpen]);
 
     const handleClose = useCallback(() => {
-        if (!isClosingRef.current) {
-            isClosingRef.current = true;
+        if (!isClosing) {
+            setIsClosing(true);
             onClose();
         }
-    }, [onClose]);
+    }, [isClosing, onClose]);
 
     const handleImageError = useCallback((e) => {
         e.currentTarget.src = '/img/placeholder.png';
     }, []);
 
+    // Guard: IF card IS NULL, return null to prevent runtime crash
     if (!isOpen || !card) {
         return null;
     }
@@ -43,12 +45,16 @@ export default function TreasureCardModal({
             role="dialog"
             aria-modal="true"
         >
-            <div className="relative flex items-center justify-center p-4">
-                <img 
-                    src={`/img/cartetesoro/${card.immagine}`} 
-                    alt={card.effetto || 'Treasure Card'} 
+            <div 
+                className="relative flex items-center justify-center p-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <img
+                    src={`/img/cartetesoro/${card.immagine}`}
+                    alt={card.effetto || 'Treasure Card'}
                     onError={handleImageError}
-                    className="max-h-[90vh] max-w-[90vw] cursor-pointer object-contain"
+                    onClick={handleClose}
+                    className="max-w-full max-h-[90vh] object-contain cursor-pointer rounded-lg shadow-2xl"
                 />
             </div>
         </div>

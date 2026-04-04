@@ -8,123 +8,126 @@
 
 import React, { useCallback } from 'react';
 
-export default function DungeonInventoryModal({
-  isOpen = false,
-  hero = null,
-  onClose = () => {},
-  itemsRegistry = [],
-  equipmentRegistry = []
+export default function DungeonInventoryModal({ 
+  isOpen = false, 
+  hero = null, 
+  onClose = () => {} 
 }) {
   const handleClose = useCallback((e) => {
-    if (e && e.stopPropagation) {
+    if (e) {
       e.stopPropagation();
     }
     onClose();
   }, [onClose]);
 
-  if (!isOpen || !hero) {
+  if (!isOpen || hero == null) {
     return null;
   }
 
-  const heroData = hero.hero || {};
-  // Fallback to portrait or miniature since 'immagine' is not explicitly in the Hero signature
-  const heroImage = heroData.portrait || heroData.miniature || '';
-  const heroName = heroData.nome || heroData.classe || 'Eroe Sconosciuto';
-  const heroClass = heroData.classe || 'Classe Ignota';
-
   return (
-    <div
+    <div 
       className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
       onClick={handleClose}
     >
-      <div
-        className="bg-gray-900 text-white rounded-xl shadow-2xl w-full max-w-[500px] max-h-[90vh] overflow-y-auto p-6 relative flex flex-col gap-6"
+      <div 
+        className="bg-gray-900 text-white rounded-lg shadow-2xl w-full max-w-[500px] flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-gray-700 pb-3">
-          <h2 className="text-2xl font-bold">Inventario</h2>
-          <button
+        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+          <h2 className="text-xl font-bold">Inventario</h2>
+          <button 
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white transition-colors text-2xl leading-none"
             aria-label="Chiudi"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            &times;
           </button>
         </div>
 
-        {/* Hero Identity */}
-        <div className="flex items-center gap-4">
-          {heroImage && (
-            <img
-              src={`/img/personaggi/${heroImage}`}
-              alt={heroName}
-              className="w-16 h-16 rounded-full object-cover bg-gray-800 border-2 border-gray-600"
-            />
-          )}
-          <div className="flex flex-col">
-            <h3 className="text-xl font-bold text-gray-100">{heroName}</h3>
-            <span className="text-sm text-gray-400">{heroClass}</span>
+        {/* Content */}
+        <div className="p-4 overflow-y-auto">
+          {/* Hero Identity */}
+          <div className="flex items-center gap-4 mb-6 bg-gray-800 p-4 rounded-lg border border-gray-700">
+            {hero.hero?.portrait ? (
+              <img 
+                src={`/img/personaggi/${hero.hero.portrait}`} 
+                alt={hero.hero.classe || 'Eroe'} 
+                className="w-16 h-16 object-cover rounded-full border-2 border-gray-600 bg-gray-900"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gray-700 border-2 border-gray-600 flex items-center justify-center text-xl font-bold">
+                ?
+              </div>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-gray-100">{hero.hero?.classe || 'Eroe Sconosciuto'}</h3>
+              <p className="text-sm text-gray-400">{hero.hero?.classe || 'Classe Sconosciuta'}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Gold Balance */}
-        <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-between border border-yellow-900/50">
-          <span className="text-gray-300 font-medium">Monete d'Oro:</span>
-          <span className="text-yellow-400 font-bold text-xl">{hero.gold || 0}</span>
-        </div>
+          {/* Gold Balance */}
+          <div className="mb-6 bg-yellow-900/20 border border-yellow-700/50 p-4 rounded-lg flex items-center justify-between">
+            <span className="text-yellow-500 font-semibold">Monete d'Oro:</span>
+            <span className="text-yellow-400 font-bold text-lg">{hero.gold ?? 0}</span>
+          </div>
 
-        {/* Items Grid (Oggetti) */}
-        <div className="flex flex-col gap-3">
-          <h4 className="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-1">Oggetti</h4>
-          {(!hero.inventory || hero.inventory.length === 0) ? (
-            <p className="text-gray-500 italic text-sm">Nessun oggetto nell'inventario.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {hero.inventory.map((itemId, index) => {
-                const item = itemsRegistry.find(i => i.id === itemId);
-                return (
-                  <div key={`item-${itemId}-${index}`} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col items-center text-center gap-2">
-                    {item ? (
-                      <>
-                        <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400">
-                          Img
-                        </div>
-                        <span className="text-sm font-medium">{item.nome}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-500 italic">Unknown Item</span>
-                    )}
+          {/* Items Grid (Oggetti) */}
+          <div className="mb-6">
+            <h4 className="text-lg font-bold mb-3 border-b border-gray-700 pb-2 text-gray-200">Oggetti</h4>
+            {hero.inventory && hero.inventory.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {hero.inventory.map((itemId, index) => (
+                  <div 
+                    key={`item-${itemId}-${index}`} 
+                    className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex flex-col items-center text-center shadow-sm"
+                  >
+                    <div className="w-12 h-12 bg-gray-700 rounded mb-2 flex items-center justify-center text-xs text-gray-500 border border-gray-600">
+                      ?
+                    </div>
+                    <span className="text-sm text-gray-300 font-medium">Unknown Item</span>
+                    <span className="text-xs text-gray-500 mt-1">ID: {itemId}</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 text-center">
+                <p className="text-sm text-gray-500 italic">Nessun oggetto nell'inventario.</p>
+              </div>
+            )}
+          </div>
 
-        {/* Equipment List (Equipaggiamento) */}
-        <div className="flex flex-col gap-3">
-          <h4 className="text-lg font-semibold text-gray-200 border-b border-gray-800 pb-1">Equipaggiamento</h4>
-          {(!hero.equipment || hero.equipment.length === 0) ? (
-            <p className="text-gray-500 italic text-sm">Nessun equipaggiamento.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {hero.equipment.map((equipId, index) => {
-                const equip = equipmentRegistry.find(e => e.id === equipId);
-                return (
-                  <div key={`equip-${equipId}-${index}`} className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex items-center gap-3">
-                    {equip ? (
-                      <span className="text-sm font-medium">{equip.nome}</span>
-                    ) : (
-                      <span className="text-sm text-gray-500 italic">Unknown Equipment</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Equipment List (Equipaggiamento) */}
+          <div>
+            <h4 className="text-lg font-bold mb-3 border-b border-gray-700 pb-2 text-gray-200">Equipaggiamento</h4>
+            {hero.equipment && hero.equipment.length > 0 ? (
+              <ul className="space-y-2">
+                {hero.equipment.map((equipId, index) => {
+                  const isEquipped = hero.equipped?.includes(equipId);
+                  return (
+                    <li 
+                      key={`equip-${equipId}-${index}`} 
+                      className="bg-gray-800 p-3 rounded-lg border border-gray-700 flex justify-between items-center shadow-sm"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-300 font-medium">Unknown Equipment</span>
+                        <span className="text-xs text-gray-500">ID: {equipId}</span>
+                      </div>
+                      {isEquipped && (
+                        <span className="text-xs bg-blue-900/50 text-blue-300 border border-blue-800 px-2 py-1 rounded font-medium">
+                          Equipaggiato
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 text-center">
+                <p className="text-sm text-gray-500 italic">Nessun equipaggiamento.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

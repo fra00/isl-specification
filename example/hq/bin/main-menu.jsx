@@ -15,41 +15,40 @@ export default function MainMenu({ onChangePageView = () => {} }) {
 
   const menuItems = [
     {
+      id: 'play',
       label: 'Gioca',
       destination: PageNavigationEnum.PLAY_GAME,
-      hoverImg: '/img/main-menu/nuova.jpg',
+      hoverImg: '/img/main-menu/nuova.jpg'
     },
     {
+      id: 'editor',
       label: 'Editor',
       destination: PageNavigationEnum.EDITOR_GAME,
-      hoverImg: '/img/main-menu/editor.jpg',
-    },
+      hoverImg: '/img/main-menu/editor.jpg'
+    }
   ];
 
-  const clickMenuItems = useCallback(
-    (destination) => {
-      if (!isProcessing) {
-        setIsProcessing(true);
-        try {
-          onChangePageView(destination);
-        } finally {
-          setIsProcessing(false);
-        }
-      }
-    },
-    [isProcessing, onChangePageView]
-  );
+  const handleMenuClick = useCallback((destination) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    try {
+      onChangePageView(destination);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isProcessing, onChangePageView]);
 
-  const mouseOverMenuItems = useCallback((imgUrl) => {
+  const handleMouseEnter = useCallback((imgUrl) => {
     setHoverImage(imgUrl);
   }, []);
 
-  const mouseLeaveMenuItems = useCallback(() => {
+  const handleMouseLeave = useCallback(() => {
     setHoverImage(null);
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black flex items-center justify-center">
+    <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
       <style>{`
         @keyframes zoomParallax {
           0% { transform: scale(1); }
@@ -59,29 +58,31 @@ export default function MainMenu({ onChangePageView = () => {} }) {
           animation: zoomParallax 50s ease-in-out infinite alternate;
         }
       `}</style>
-
+      
       {/* Background Layer */}
-      <div className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax" />
+      <div 
+        className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax"
+      />
 
       {/* MouseOverImage Layer */}
       {hoverImage && (
-        <img
-          src={hoverImage}
-          alt="Menu Preview"
+        <img 
+          src={hoverImage} 
+          alt="Menu Hover Preview" 
           className="absolute top-0 right-0 h-[30%] w-auto object-contain border-none z-20 pointer-events-none"
         />
       )}
 
       {/* Content Layer */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-8">
+      <div className="relative z-10 flex flex-col items-center gap-8">
         {menuItems.map((item) => (
           <button
-            key={item.destination}
-            onClick={() => clickMenuItems(item.destination)}
-            onMouseEnter={() => mouseOverMenuItems(item.hoverImg)}
-            onMouseLeave={mouseLeaveMenuItems}
+            key={item.id}
+            onClick={() => handleMenuClick(item.destination)}
+            onMouseEnter={() => handleMouseEnter(item.hoverImg)}
+            onMouseLeave={handleMouseLeave}
             disabled={isProcessing}
-            className="bg-transparent font-bold text-5xl text-white blur-[4px] hover:blur-none transition-all duration-500 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-transparent border-none text-white text-5xl font-bold blur-sm hover:blur-none transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {item.label}
           </button>

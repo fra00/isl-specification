@@ -1,1 +1,1 @@
-export default function PlayGame(props: { gameSession?: any; onChangePageView: (nextPage: string) => void; onUpdateSession: (session: any) => void; campaign: any }): React.ReactElement;
+export default function PlayGame(props: { gameSession?: any; onChangePageView?: Function; onUpdateSession?: Function; campaign?: any }): React.Element;

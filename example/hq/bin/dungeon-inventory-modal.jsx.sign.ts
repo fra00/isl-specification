@@ -1,1 +1,1 @@
-export default function DungeonInventoryModal(props: { isOpen: boolean; hero: any; onClose: () => void; itemsRegistry?: any[]; equipmentRegistry?: any[] }): React.ReactElement;
+export default function DungeonInventoryModal(props: { isOpen: boolean; hero: any; onClose: () => void }): React.ReactElement;

@@ -1,1 +1,1 @@
-export default function DungeonSpellCastModal(props: { isOpen: boolean; hero: any; allSpells: Array<any>; onCastSpell: Function; onClose: Function }): React.Element;
+export default function DungeonSpellCastModal(props: { isOpen: boolean; hero: any; allSpells: Array<any>; onCastSpell: (spellId: number) => void; onClose: () => void }): React.Element | null;

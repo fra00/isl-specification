@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 export default function DungeonNotification({ message, duration = 3000, onClose }) {
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function DungeonNotification({ message, duration = 3000, onClose 
     }
 
     const timer = setTimeout(() => {
-      if (typeof onClose === 'function') {
+      if (onClose) {
         onClose();
       }
     }, duration);
@@ -30,7 +30,7 @@ export default function DungeonNotification({ message, duration = 3000, onClose 
   }
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-2xl">
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-2xl animate-pulse">
       {message}
     </div>
   );

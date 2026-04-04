@@ -8,44 +8,57 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-const ELEMENTS = [
-    { id: 'Fuoco', img: 'img/cinc/Fuoco00_Dorso.jpg' },
-    { id: 'Acqua', img: 'img/cinc/Acqua00_Dorso.jpg' },
-    { id: 'Aria', img: 'img/cinc/Aria00_Dorso.jpg' },
-    { id: 'Terra', img: 'img/cinc/Terra00_Dorso.jpg' }
-];
+const ELEMENTS = ["Fuoco", "Acqua", "Aria", "Terra"];
 
-export default function DungeonSpellSelectionModal({
-    heroes = [],
-    allSpells = [],
-    onConfirmSelection
+export default function DungeonSpellSelectionModal({ 
+    heroes = [], 
+    allSpells = [], 
+    onConfirmSelection = () => {} 
 }) {
     const [pickedElements, setPickedElements] = useState([]);
     const [currentHeroPicking, setCurrentHeroPicking] = useState(null);
 
-    const getWizard = useCallback(() => {
-        return heroes.find(h => 
-            h?.hero?.classe?.toLowerCase() === 'mago' || 
-            h?.hero?.classe?.toLowerCase() === 'wizard'
-        );
-    }, [heroes]);
-
-    const getElf = useCallback(() => {
-        return heroes.find(h => 
-            h?.hero?.classe?.toLowerCase() === 'elfo' || 
-            h?.hero?.classe?.toLowerCase() === 'elf'
-        );
-    }, [heroes]);
-
+    // Initialize
     useEffect(() => {
-        const wizard = getWizard();
+        const wizard = heroes.find(h => h?.hero?.classe === "Mago");
+        const elf = heroes.find(h => h?.hero?.classe === "Elfo");
+
         if (wizard) {
             setCurrentHeroPicking(wizard);
+        } else if (elf) {
+            setCurrentHeroPicking(elf);
         } else {
             setCurrentHeroPicking(null);
+            // If neither magic user is present, finalize immediately to avoid blocking
+            onConfirmSelection(new Map());
         }
         setPickedElements([]);
-    }, [getWizard]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only once on mount
+
+    const finalizeSelection = useCallback((finalPicked) => {
+        const selectionMap = new Map();
+        const wizard = heroes.find(h => h?.hero?.classe === "Mago");
+        const elf = heroes.find(h => h?.hero?.classe === "Elfo");
+
+        if (wizard) {
+            const wizardElements = finalPicked.slice(0, 3);
+            const wizardSpells = allSpells
+                .filter(spell => wizardElements.includes(spell?.elemento))
+                .map(spell => spell?.id);
+            selectionMap.set(wizard.heroId, wizardSpells);
+        }
+
+        if (elf) {
+            const elfElement = finalPicked[finalPicked.length - 1];
+            const elfSpells = allSpells
+                .filter(spell => spell?.elemento === elfElement)
+                .map(spell => spell?.id);
+            selectionMap.set(elf.heroId, elfSpells);
+        }
+
+        onConfirmSelection(selectionMap);
+    }, [heroes, allSpells, onConfirmSelection]);
 
     const selectElement = useCallback((elemento) => {
         if (pickedElements.includes(elemento)) return;
@@ -53,96 +66,69 @@ export default function DungeonSpellSelectionModal({
         const newPicked = [...pickedElements, elemento];
         setPickedElements(newPicked);
 
-        const wizard = getWizard();
-        const elf = getElf();
+        const wizard = heroes.find(h => h?.hero?.classe === "Mago");
+        const elf = heroes.find(h => h?.hero?.classe === "Elfo");
 
-        const isWizardPicking = currentHeroPicking?.heroId != null && currentHeroPicking.heroId === wizard?.heroId;
-        const isElfPicking = currentHeroPicking?.heroId != null && currentHeroPicking.heroId === elf?.heroId;
-
-        if (isWizardPicking && newPicked.length === 3) {
-            if (elf) {
-                setCurrentHeroPicking(elf);
-            } else {
-                // Fallback: If there is no Elf, confirm the Wizard's selection immediately
-                const wizardSpells = allSpells
-                    .filter(s => newPicked.includes(s.elemento))
-                    .map(s => s.id);
-                
-                const selectionMap = new Map();
-                if (wizard?.heroId != null) {
-                    selectionMap.set(wizard.heroId, wizardSpells);
+        if (currentHeroPicking?.hero?.classe === "Mago") {
+            if (newPicked.length === 3) {
+                if (elf) {
+                    setCurrentHeroPicking(elf);
+                } else {
+                    finalizeSelection(newPicked);
                 }
-                onConfirmSelection?.(selectionMap);
             }
-        } else if (isElfPicking && newPicked.length === 4) {
-            const wizardId = wizard?.heroId;
-            const elfId = elf?.heroId;
-
-            const wizardSpells = allSpells
-                .filter(s => newPicked.slice(0, 3).includes(s.elemento))
-                .map(s => s.id);
-
-            const elfSpells = allSpells
-                .filter(s => s.elemento === newPicked[3])
-                .map(s => s.id);
-
-            const selectionMap = new Map();
-            if (wizardId != null) selectionMap.set(wizardId, wizardSpells);
-            if (elfId != null) selectionMap.set(elfId, elfSpells);
-
-            onConfirmSelection?.(selectionMap);
+        } else if (currentHeroPicking?.hero?.classe === "Elfo") {
+            const expectedLength = wizard ? 4 : 1;
+            if (newPicked.length === expectedLength) {
+                finalizeSelection(newPicked);
+            }
         }
-    }, [pickedElements, currentHeroPicking, getWizard, getElf, allSpells, onConfirmSelection]);
+    }, [pickedElements, currentHeroPicking, heroes, finalizeSelection]);
 
-    let instructionText = "";
     if (!currentHeroPicking) {
-        instructionText = "Nessun mago disponibile";
-    } else {
-        const isWizard = currentHeroPicking?.heroId === getWizard()?.heroId;
-        if (isWizard) {
-            instructionText = "Turno del Mago";
-        } else {
-            instructionText = "Turno dell'Elfo";
-        }
+        return null;
     }
 
+    const isWizardTurn = currentHeroPicking?.hero?.classe === "Mago";
+    const instructionText = isWizardTurn 
+        ? "Turno del Mago (Scegli 3 elementi)" 
+        : "Turno dell'Elfo (Scegli l'ultimo elemento)";
+
     return (
-        <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4">
-            <h2 className="text-4xl text-white font-bold mb-6 tracking-wider drop-shadow-lg">
+        <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4 select-none">
+            <h1 className="text-4xl md:text-5xl text-amber-500 font-bold mb-4 drop-shadow-lg text-center">
                 Selezione Incantesimi
+            </h1>
+            
+            <h2 className="text-2xl md:text-3xl text-white mb-10 text-center font-semibold">
+                {instructionText}
             </h2>
             
-            <p className="text-2xl text-yellow-400 mb-10 font-semibold drop-shadow-md">
-                {instructionText}
-            </p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {ELEMENTS.map((el) => {
-                    const isPicked = pickedElements.includes(el.id);
-                    const canPick = !isPicked && currentHeroPicking != null;
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-6xl w-full justify-items-center">
+                {ELEMENTS.map(el => {
+                    const isPicked = pickedElements.includes(el);
                     
                     return (
-                        <div 
-                            key={el.id}
-                            onClick={() => canPick && selectElement(el.id)}
-                            className={`relative flex flex-col items-center transition-all duration-300 ${
-                                isPicked 
-                                    ? 'opacity-40 grayscale cursor-not-allowed scale-95' 
-                                    : 'cursor-pointer hover:scale-105 hover:shadow-[0_0_15px_rgba(255,215,0,0.5)]'
-                            } ${!currentHeroPicking ? 'cursor-not-allowed' : ''}`}
+                        <div
+                            key={el}
+                            onClick={() => !isPicked && selectElement(el)}
+                            className={`relative rounded-xl overflow-hidden border-4 transition-all duration-300 ${
+                                isPicked
+                                    ? 'border-gray-700 opacity-40 grayscale cursor-not-allowed'
+                                    : 'border-amber-600 cursor-pointer hover:scale-105 hover:shadow-[0_0_25px_rgba(217,119,6,0.6)] hover:border-amber-400'
+                            }`}
                         >
-                            <img 
-                                src={el.img} 
-                                alt={`Dorso ${el.id}`} 
-                                className="w-48 h-auto rounded-lg shadow-xl border-2 border-gray-700"
+                            <img
+                                src={`img/cinc/${el}00_Dorso.jpg`}
+                                alt={`Dorso ${el}`}
+                                className="w-40 md:w-56 h-auto object-cover block"
+                                draggable="false"
                             />
-                            <span className="mt-4 text-xl text-gray-200 font-medium tracking-wide">
-                                {el.id}
-                            </span>
+                            
                             {isPicked && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="bg-black/80 text-red-500 font-bold px-4 py-2 rounded border border-red-500 transform -rotate-12 text-xl">
-                                        SELEZIONATO
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                                    <span className="text-red-500 font-black text-xl md:text-3xl tracking-widest uppercase rotate-[-20deg] border-4 border-red-500 p-2 rounded-lg bg-black/80 shadow-2xl">
+                                        Preso
                                     </span>
                                 </div>
                             )}

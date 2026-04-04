@@ -6,65 +6,74 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from "react";
-import { PageNavigationEnum } from "./domain-core";
+import React, { useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
 
-export default function DungeonDescription({
-  gameSession,
-  onChangePageView,
-  onUpdateSession = () => {}
+export default function DungeonDescription({ 
+  gameSession, 
+  onChangePageView, 
+  onUpdateSession 
 }) {
+  // Null safety and default initialization for the description text
+  const descriptionText = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
+
+  // Capability: handleInteraction - Enter Dungeon
   const handleEnterDungeon = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.DUNGEON);
     }
   }, [onChangePageView]);
 
+  // Capability: handleInteraction - Shop
   const handleShop = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.SHOP);
     }
   }, [onChangePageView]);
 
+  // Capability: handleInteraction - Back
   const handleBack = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.PLAY_GAME);
     }
   }, [onChangePageView]);
 
-  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4 font-serif">
-      <div className="max-w-3xl w-full bg-[#f4e4bc] text-gray-900 rounded-sm shadow-2xl border-4 border-[#5c4033] p-8 relative">
-        <h1 className="text-4xl font-bold text-center mb-6 text-[#5c4033] border-b-2 border-[#8b5a2b] pb-4 tracking-wide">
+      {/* Parchment Theme Container */}
+      <div className="max-w-3xl w-full bg-[#f4e4bc] text-gray-900 rounded-sm shadow-2xl border-4 border-[#8b5a2b] p-8 flex flex-col max-h-[90vh]">
+        
+        {/* Title */}
+        <h1 className="text-4xl font-bold text-center mb-6 border-b-2 border-[#8b5a2b] pb-4 text-[#5c3a21] uppercase tracking-wider">
           Mission Description
         </h1>
         
-        <div className="max-h-96 overflow-y-auto mb-8 pr-4">
+        {/* Scrollable Description Text */}
+        <div className="flex-1 overflow-y-auto mb-8 pr-4 custom-scrollbar">
           <p className="text-xl leading-relaxed whitespace-pre-wrap text-[#3e2723]">
-            {description}
+            {descriptionText}
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 mt-8 border-t-2 border-[#8b5a2b] pt-6">
-          <button
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row justify-center gap-6 mt-auto pt-4 border-t-2 border-[#8b5a2b]/30">
+          <button 
             onClick={handleEnterDungeon}
-            className="px-8 py-3 bg-[#8b0000] text-white font-bold rounded hover:bg-[#a52a2a] transition-colors shadow-md border-2 border-[#5c4033] focus:outline-none focus:ring-2 focus:ring-red-900"
+            className="px-8 py-3 bg-red-800 text-[#f4e4bc] font-bold rounded hover:bg-red-700 transition-colors shadow-md border-2 border-red-950 uppercase tracking-wide"
           >
             Entra nel dungeon
           </button>
           
-          <button
+          <button 
             onClick={handleShop}
-            className="px-8 py-3 bg-[#4a4a4a] text-white font-bold rounded hover:bg-[#696969] transition-colors shadow-md border-2 border-[#2f4f4f] focus:outline-none focus:ring-2 focus:ring-gray-700"
+            className="px-8 py-3 bg-blue-800 text-[#f4e4bc] font-bold rounded hover:bg-blue-700 transition-colors shadow-md border-2 border-blue-950 uppercase tracking-wide"
           >
             Armeria
           </button>
           
-          <button
+          <button 
             onClick={handleBack}
-            className="px-8 py-3 bg-transparent text-[#5c4033] font-bold rounded hover:bg-[#e6d5a8] transition-colors shadow-sm border-2 border-[#5c4033] focus:outline-none focus:ring-2 focus:ring-amber-900"
+            className="px-8 py-3 bg-gray-700 text-[#f4e4bc] font-bold rounded hover:bg-gray-600 transition-colors shadow-md border-2 border-gray-900 uppercase tracking-wide"
           >
             Indietro
           </button>

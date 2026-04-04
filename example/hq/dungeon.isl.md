@@ -199,7 +199,7 @@
     - Set `gameSession.isHeroOrderConfirmed` to true.
     - **Trigger Initial Visibility**:
       - Call `hooksFogOfWar.revealInitialVisibility()`.
-    - IF any hero in `gameSession.heroes` has `hero.classe` matching "Mago" or "Elfo":
+    - IF any hero in `gameSession.heroes` has `hero.hero.classe` matching "Mago" or "Elfo":
       - Set `isSpellSelectionRequired` to true.
   - Trigger `onUpdateSession`.
 

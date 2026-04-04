@@ -10,105 +10,93 @@ import { useState, useEffect, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useFogOfWar({ gameSession, staticVisibilityMap }) {
-    const [fogVisibilityMap, setFogVisibilityMap] = useState(null);
-
-    const visibilityCalc = useVisibilityCalc({
-        gameSession,
-        visibilityMap: staticVisibilityMap
+    const [fogVisibilityMap, setFogVisibilityMap] = useState(() => {
+        return staticVisibilityMap ? JSON.parse(JSON.stringify(staticVisibilityMap)) : null;
     });
 
-    // init fogVisibilityMap
+    const { calculateVisibleCells } = useVisibilityCalc({ 
+        gameSession, 
+        visibilityMap: staticVisibilityMap 
+    });
+
     useEffect(() => {
-        if (!staticVisibilityMap) {
-            setFogVisibilityMap(null);
-        } else {
+        if (staticVisibilityMap) {
             setFogVisibilityMap(JSON.parse(JSON.stringify(staticVisibilityMap)));
+        } else {
+            setFogVisibilityMap(null);
         }
     }, [staticVisibilityMap]);
 
-    // calculateFog
     useEffect(() => {
-        if (!gameSession?.isHeroOrderConfirmed) return;
+        if (!gameSession?.isHeroOrderConfirmed || !gameSession?.heroes) return;
 
-        const heroInTurn = gameSession?.heroes?.find(
-            (hero) => hero.turnOrder === gameSession.currentTurn
-        );
-
+        const heroInTurn = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
         if (heroInTurn) {
-            const visibleCells = visibilityCalc.calculateVisibleCells(heroInTurn.x, heroInTurn.y);
-
-            setFogVisibilityMap((prevMap) => {
-                if (!prevMap || !prevMap.data) return prevMap;
-
-                const visibleSet = new Set(visibleCells.map((c) => `${c.x},${c.y}`));
+            const visibleCells = calculateVisibleCells(heroInTurn.x, heroInTurn.y);
+            
+            setFogVisibilityMap(prevMap => {
+                if (!prevMap) return prevMap;
+                const newMap = { ...prevMap, data: [...prevMap.data] };
                 let hasChanges = false;
 
-                const newData = prevMap.data.map((cell) => {
-                    if (visibleSet.has(`${cell.x},${cell.y}`) && cell.fog !== false) {
+                visibleCells.forEach(vCell => {
+                    const cellIndex = newMap.data.findIndex(c => c.x === vCell.x && c.y === vCell.y);
+                    if (cellIndex !== -1 && newMap.data[cellIndex].fog !== false) {
+                        newMap.data[cellIndex] = { ...newMap.data[cellIndex], fog: false };
                         hasChanges = true;
-                        return { ...cell, fog: false };
                     }
-                    return cell;
                 });
 
-                return hasChanges ? { ...prevMap, data: newData } : prevMap;
+                return hasChanges ? newMap : prevMap;
             });
         }
-    }, [
-        gameSession?.heroes,
-        gameSession?.isHeroOrderConfirmed,
-        gameSession?.currentTurn,
-        staticVisibilityMap,
-        visibilityCalc
-    ]);
+    }, [gameSession?.heroes, gameSession?.currentTurn, gameSession?.isHeroOrderConfirmed, staticVisibilityMap, calculateVisibleCells]);
 
     const revealInitialVisibility = useCallback(() => {
-        if (!gameSession?.heroes) return;
+        if (!gameSession?.heroes || !fogVisibilityMap) return fogVisibilityMap;
 
-        let allVisibleCells = [];
-        gameSession.heroes.forEach((hero) => {
-            const cells = visibilityCalc.calculateVisibleCells(hero.x, hero.y);
-            allVisibleCells = allVisibleCells.concat(cells);
-        });
+        const newMap = { ...fogVisibilityMap, data: [...fogVisibilityMap.data] };
+        let hasChanges = false;
 
-        setFogVisibilityMap((prevMap) => {
-            if (!prevMap || !prevMap.data) return prevMap;
-
-            const visibleSet = new Set(allVisibleCells.map((c) => `${c.x},${c.y}`));
-            let hasChanges = false;
-
-            const newData = prevMap.data.map((cell) => {
-                if (visibleSet.has(`${cell.x},${cell.y}`) && cell.fog !== false) {
+        gameSession.heroes.forEach(hero => {
+            const visibleCells = calculateVisibleCells(hero.x, hero.y);
+            visibleCells.forEach(vCell => {
+                const cellIndex = newMap.data.findIndex(c => c.x === vCell.x && c.y === vCell.y);
+                if (cellIndex !== -1 && newMap.data[cellIndex].fog !== false) {
+                    newMap.data[cellIndex] = { ...newMap.data[cellIndex], fog: false };
                     hasChanges = true;
-                    return { ...cell, fog: false };
                 }
-                return cell;
             });
-
-            return hasChanges ? { ...prevMap, data: newData } : prevMap;
         });
-    }, [gameSession?.heroes, visibilityCalc]);
+
+        if (hasChanges) {
+            setFogVisibilityMap(newMap);
+            return newMap;
+        }
+        return fogVisibilityMap;
+    }, [gameSession?.heroes, calculateVisibleCells, fogVisibilityMap]);
 
     const revealFromPoint = useCallback((x, y) => {
-        const visibleCells = visibilityCalc.calculateVisibleCells(x, y);
+        if (!fogVisibilityMap) return null;
 
-        setFogVisibilityMap((prevMap) => {
-            if (!prevMap || !prevMap.data) return prevMap;
+        const visibleCells = calculateVisibleCells(x, y);
+        const newMap = { ...fogVisibilityMap, data: [...fogVisibilityMap.data] };
+        let hasChanges = false;
 
-            const visibleSet = new Set(visibleCells.map((c) => `${c.x},${c.y}`));
-            let hasChanges = false;
-
-            const newData = prevMap.data.map((cell) => {
-                if (visibleSet.has(`${cell.x},${cell.y}`) && cell.fog !== false) {
-                    hasChanges = true;
-                    return { ...cell, fog: false };
-                }
-                return cell;
-            });
-
-            return hasChanges ? { ...prevMap, data: newData } : prevMap;
+        visibleCells.forEach(vCell => {
+            const cellIndex = newMap.data.findIndex(c => c.x === vCell.x && c.y === vCell.y);
+            if (cellIndex !== -1 && newMap.data[cellIndex].fog !== false) {
+                newMap.data[cellIndex] = { ...newMap.data[cellIndex], fog: false };
+                hasChanges = true;
+            }
         });
-    }, [visibilityCalc]);
+
+        if (hasChanges) {
+            setFogVisibilityMap(newMap);
+            return newMap;
+        }
+        return fogVisibilityMap;
+    }, [calculateVisibleCells, fogVisibilityMap]);
 
     return {
         fogVisibilityMap,

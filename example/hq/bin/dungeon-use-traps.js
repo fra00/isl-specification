@@ -9,18 +9,23 @@
 import { useState, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
-export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNotify, onActionDone }) {
+export function useTraps({ 
+    gameSession, 
+    visibilityMap, 
+    areMonstersVisible, 
+    onNotify, 
+    onActionDone 
+}) {
     const [triggeredTraps, setTriggeredTraps] = useState([]);
-    const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
+
+    const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
     const checkTrapActivation = useCallback((trap, x, y) => {
-        if (!trap) return false;
-        
-        if (trap.tipo === 1) {
+        if (trap?.tipo === 1) {
             return true;
         }
         
-        if (trap.tipo === 2 || trap.tipo === 3) {
+        if (trap?.tipo === 2 || trap?.tipo === 3) {
             const found = triggeredTraps.find(t => t.x === x && t.y === y);
             if (found) {
                 if (found.status === 'TRIGGERED' || found.status === 'DISARMED') {
@@ -42,9 +47,11 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
 
     const registerTriggeredTrap = useCallback((x, y, tipo) => {
         setTriggeredTraps(prev => {
-            const exists = prev.find(t => t.x === x && t.y === y);
+            const exists = prev.some(t => t.x === x && t.y === y);
             if (exists) {
-                return prev.map(t => (t.x === x && t.y === y ? { ...t, status: 'TRIGGERED' } : t));
+                return prev.map(t => 
+                    (t.x === x && t.y === y) ? { ...t, status: 'TRIGGERED' } : t
+                );
             }
             return [...prev, { x, y, tipo, status: 'TRIGGERED' }];
         });
@@ -52,13 +59,13 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
 
     const attemptDisarmTrap = useCallback((x, y, canDisarm, onFail) => {
         const trap = triggeredTraps.find(t => t.x === x && t.y === y);
-        
+
         if (!trap || trap.status !== 'DETECTED') {
             onNotify?.("Non c'è una trappola disarmabile qui.");
             onActionDone?.();
             return;
         }
-        
+
         if (!canDisarm) {
             onNotify?.("Non hai gli strumenti per disarmare questa trappola.");
             onActionDone?.();
@@ -68,10 +75,14 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
         const roll = Math.floor(Math.random() * 6) + 1;
         
         if (roll < 6) {
-            setTriggeredTraps(prev => prev.map(t => (t.x === x && t.y === y ? { ...t, status: 'DISARMED' } : t)));
+            setTriggeredTraps(prev => prev.map(t => 
+                (t.x === x && t.y === y) ? { ...t, status: 'DISARMED' } : t
+            ));
             onNotify?.("Trappola disarmata con successo!");
         } else {
-            setTriggeredTraps(prev => prev.map(t => (t.x === x && t.y === y ? { ...t, status: 'TRIGGERED' } : t)));
+            setTriggeredTraps(prev => prev.map(t => 
+                (t.x === x && t.y === y) ? { ...t, status: 'TRIGGERED' } : t
+            ));
             onNotify?.("Hai fatto scattare la trappola!");
             onFail?.();
         }
@@ -89,15 +100,15 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
             return;
         }
 
-        const currentTurn = gameSession?.currentTurn ?? 1;
+        const currentTurn = gameSession?.currentTurn;
         const hero = gameSession?.heroes?.find(h => h.turnOrder === currentTurn);
-        
+
         if (!hero) {
             onActionDone?.();
             return;
         }
 
-        const visibleCells = visibilityCalc.calculateVisibleCells(hero.x, hero.y) || [];
+        const visibleCells = calculateVisibleCells(hero.x, hero.y) || [];
         let trapsFound = false;
         const newTraps = [];
 
@@ -105,11 +116,14 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
             const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === cell.x && c.y === cell.y);
             
             if (mapCell?.trpl && mapCell.trpl.tipo > 0) {
-                const alreadyTriggered = triggeredTraps.some(t => t.x === cell.x && t.y === cell.y);
-                const alreadyInNew = newTraps.some(t => t.x === cell.x && t.y === cell.y);
-                
-                if (!alreadyTriggered && !alreadyInNew) {
-                    newTraps.push({ x: cell.x, y: cell.y, tipo: mapCell.trpl.tipo, status: 'DETECTED' });
+                const exists = triggeredTraps.some(t => t.x === cell.x && t.y === cell.y);
+                if (!exists) {
+                    newTraps.push({ 
+                        x: cell.x, 
+                        y: cell.y, 
+                        tipo: mapCell.trpl.tipo, 
+                        status: 'DETECTED' 
+                    });
                     trapsFound = true;
                 }
             }
@@ -121,9 +135,9 @@ export function useTraps({ gameSession, visibilityMap, areMonstersVisible, onNot
         } else {
             onNotify?.("Nessuna trappola trovata.");
         }
-        
+
         onActionDone?.();
-    }, [areMonstersVisible, gameSession, visibilityCalc, triggeredTraps, onNotify, onActionDone]);
+    }, [areMonstersVisible, gameSession, calculateVisibleCells, triggeredTraps, onNotify, onActionDone]);
 
     return {
         checkTrapActivation,

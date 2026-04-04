@@ -77,9 +77,9 @@
     - Let `dist` = `dx` + `dy`.
     - IF `dist` <= 1: Set `canAttack` to true.
     - ELSE IF `dx` == 1 AND `dy` == 1 AND `stats.canAttackDiagonal` is true:
-      - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `canAttack` to true.
+      - IF `visibilityCalc` is NOT null AND `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `canAttack` to true.
     - ELSE IF `stats.canAttackRanged` is true:
-      - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `canAttack` to true.
+      - IF `visibilityCalc` is NOT null AND `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `canAttack` to true.
     - IF `canAttack` is true: BREAK loops.
   - Update internal state with new value of `canAttack`.
   - **Courage Check**:
@@ -129,6 +129,7 @@
   - IF `isMoving` is true OR `movementPoints` <= 0 RETURN.
   - Set `isMovingStarted` to true.
   - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - Set `canOpenDoor` to null.
   - Initialize `path` with `hoveredPath`.
   - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
     - Calculate path from `currentHero` to (x, y) using `hooksPathfinding`.
@@ -161,18 +162,26 @@
           - RETURN.
         - ELSE:
           - Trigger `onNotify("Non puoi uscire! Devi prima compiere la missione.")`.
-          
     - IF `movementPoints` <= 0 No movement left, mark action as done:
       - Set `turnPhase.hasMoved` to true.
     - RETURN.
   - Wait 300ms.
   - Get next step `nextPos` = `activePath[1]`.
+  - // Store old position to check for Area ID (valo) transition
+  - Let `oldPos` = {x: currentHero.x, y: currentHero.y}.
   - Update hero position to `nextPos`.
+  - // Reset manual door interaction flag during each step of movement
+  - Set `canOpenDoor` to null.
   - Decrement `movementPoints` by 1.
   - **Automatic Door Opening**:
-    - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(nextPos.x, nextPos.y)`.
-    - IF `doorCheck.found` is true AND `doorCheck.passageCell` is same as `nextPos`:
-      - Call `mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y)`.
+    - Let `oldVis` = find cell in `visibilityMap.data` matching `oldPos.x` and `oldPos.y`.
+    - Let `newVis` = find cell in `visibilityMap.data` matching `nextPos.x` and `nextPos.y`.
+    - // Trigger opening only if hero crosses between different Area IDs (valo)
+    - IF `oldVis` is NOT null AND `newVis` is NOT null AND `oldVis.valo` != `newVis.valo`:
+      - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(nextPos.x, nextPos.y)`.
+      - IF `doorCheck.found` is true AND `doorCheck.passageCell` is same as `nextPos`:
+        - Call `mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y)`.
+        - Set `canOpenDoor` to null.
 
   - Trigger `onUpdateSession`.
   - **Trap Check**:
@@ -264,6 +273,7 @@
       - Set `turnPhase.hasPerformedAction` to true.
     - IF the Hero has started to move before attack set `turnPhase.hasMoved` as true.
     - Set `lastAttack` on session to {hero:@HeroState,monster:@MonsterState,combatResult: @CombatResult} for potential UI display.
+    - Set `canOpenDoor` to null.
     - **Handle Weapon Consumption**:
       - Determine if it is a ranged attack: `dist` > 1 OR (`dx` == 1 AND `dy` == 1 AND `stats.canAttackDiagonal` is false).
       - IF it is a ranged attack:
@@ -289,6 +299,7 @@
 - **Flow**:
   - Set `turnPhase.hasPerformedAction` true.
   - if `isMovingStarted` is true set `turnPhase.hasMoved` as true.
+  - Set `canOpenDoor` to null.
 
 #### endTurn
 

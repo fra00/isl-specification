@@ -6,51 +6,52 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
-export function useMapInteraction({
+export const useMapInteraction = ({
   gameSession,
   foundPassages = [],
   onUpdateSession,
   onNotify,
   fogOfWarLogic
-}) {
+}) => {
+
   const isFrontOfDoor = useCallback((x, y) => {
-    if (x == null || y == null) return null;
+    if (!gameSession?.currentMap) return null;
 
     const neighbors = [
-      { dx: 0, dy: 0 },
-      { dx: 1, dy: 0 },
-      { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 },
-      { dx: 0, dy: -1 }
+      { nx: x, ny: y },
+      { nx: x + 1, ny: y },
+      { nx: x - 1, ny: y },
+      { nx: x, ny: y + 1 },
+      { nx: x, ny: y - 1 }
     ];
 
     let foundPassage = null;
     let isHorizontal = false;
 
-    for (const { dx, dy } of neighbors) {
-      const nx = x + dx;
-      const ny = y + dy;
+    for (const { nx, ny } of neighbors) {
       const coordKey = `${nx},${ny}`;
-
-      if (gameSession?.openedDoors?.includes(coordKey)) {
+      
+      if (gameSession.openedDoors?.includes(coordKey)) {
         continue;
       }
 
-      const door = gameSession?.currentMap?.porte?.find(p => p.x === nx && p.y === ny);
+      const door = gameSession.currentMap.porte?.find(p => p.x === nx && p.y === ny);
       if (door) {
         foundPassage = { x: nx, y: ny };
         isHorizontal = door.oriz;
         break;
       }
 
-      const secretPassage = foundPassages?.find(p => p.x === nx && p.y === ny);
+      const secretPassage = foundPassages.find(p => p.x === nx && p.y === ny);
       if (secretPassage) {
-        foundPassage = { x: nx, y: ny };
-        const gridCell = gameSession?.currentMap?.grid?.find(c => c.x === nx && c.y === ny);
-        isHorizontal = gridCell?.psgg?.oriz || false;
-        break;
+        const gridCell = gameSession.currentMap.grid?.find(c => c.x === nx && c.y === ny);
+        if (gridCell?.psgg) {
+          foundPassage = { x: nx, y: ny };
+          isHorizontal = gridCell.psgg.oriz;
+          break;
+        }
       }
     }
 
@@ -58,14 +59,10 @@ export function useMapInteraction({
       return null;
     }
 
-    const activeHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn) 
-      || gameSession?.heroes?.[0];
+    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!currentHero) return null;
 
-    if (!activeHero) {
-      return null;
-    }
-
-    const heroCell = gameSession?.currentMap?.grid?.find(c => c.x === activeHero.x && c.y === activeHero.y);
+    const heroCell = gameSession.currentMap.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
     const heroArea = heroCell?.valo;
 
     let sideA, sideB;
@@ -77,11 +74,10 @@ export function useMapInteraction({
       sideB = { x: foundPassage.x + 1, y: foundPassage.y };
     }
 
-    const cellA = gameSession?.currentMap?.grid?.find(c => c.x === sideA.x && c.y === sideA.y);
-    const isHeroOnSideA = activeHero.x === sideA.x && activeHero.y === sideA.y;
-
+    const sideACell = gameSession.currentMap.grid?.find(c => c.x === sideA.x && c.y === sideA.y);
+    
     let destination;
-    if ((cellA?.valo != null && cellA.valo === heroArea) || isHeroOnSideA) {
+    if (sideACell?.valo === heroArea) {
       destination = sideB;
     } else {
       destination = sideA;
@@ -95,34 +91,34 @@ export function useMapInteraction({
   }, [gameSession, foundPassages]);
 
   const openPassage = useCallback((passageX, passageY, destinationX, destinationY) => {
-    if (passageX == null || passageY == null || destinationX == null || destinationY == null) return;
+    if (!gameSession?.currentMap) return;
 
     const coordKey = `${passageX},${passageY}`;
+    
+    const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
+    const isSecretPassage = foundPassages.some(p => p.x === passageX && p.y === passageY);
 
-    const isDoor = gameSession?.currentMap?.porte?.some(p => p.x === passageX && p.y === passageY);
-    const isSecret = foundPassages?.some(p => p.x === passageX && p.y === passageY);
-
-    if (!isDoor && !isSecret) {
+    if (!isDoor && !isSecretPassage) {
       return;
     }
 
-    if (!gameSession?.openedDoors?.includes(coordKey)) {
+    if (!gameSession.openedDoors?.includes(coordKey)) {
       try {
         if (fogOfWarLogic?.revealFromPoint) {
           fogOfWarLogic.revealFromPoint(destinationX, destinationY);
         }
-
-        const updatedSession = {
-          ...gameSession,
-          openedDoors: [...(gameSession?.openedDoors || []), coordKey]
-        };
-
+        
+        const updatedOpenedDoors = [...(gameSession.openedDoors || []), coordKey];
+        
         if (onNotify) {
           onNotify("Porta aperta.");
         }
-
+        
         if (onUpdateSession) {
-          onUpdateSession(updatedSession);
+          onUpdateSession({
+            ...gameSession,
+            openedDoors: updatedOpenedDoors
+          });
         }
       } catch (error) {
         console.error("Errore durante l'apertura della porta o rivelazione nebbia.", error);
@@ -134,4 +130,4 @@ export function useMapInteraction({
     isFrontOfDoor,
     openPassage
   };
-}
+};

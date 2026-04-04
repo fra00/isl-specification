@@ -9,103 +9,114 @@
 import React, { useCallback } from 'react';
 
 export default function DungeonSpellCastModal({
-    isOpen = false,
-    hero = null,
-    allSpells = [],
-    onCastSpell = () => {},
-    onClose = () => {}
+  isOpen = false,
+  hero = null,
+  allSpells = [],
+  onCastSpell,
+  onClose
 }) {
-    const handleCast = useCallback((spellId) => {
-        onCastSpell(spellId);
-    }, [onCastSpell]);
-
-    const handleClose = useCallback(() => {
-        onClose();
-    }, [onClose]);
-
-    if (!isOpen || !hero) {
-        return null;
+  const handleClose = useCallback(() => {
+    if (onClose) {
+      onClose();
     }
+  }, [onClose]);
 
-    const availableSpells = hero.availableSpells || [];
+  const handleCast = useCallback((spellId) => {
+    if (onCastSpell) {
+      onCastSpell(spellId);
+    }
+  }, [onCastSpell]);
 
-    return (
-        <div 
-            className="fixed inset-0 z-[65] flex items-center justify-center bg-black/85 p-4"
+  if (!isOpen || !hero) {
+    return null;
+  }
+
+  const heroClassName = hero?.hero?.classe || 'Eroe';
+  const availableSpells = hero?.availableSpells || [];
+
+  return (
+    <div 
+      className="fixed inset-0 z-[65] flex items-center justify-center bg-black/85 p-4"
+      onClick={handleClose}
+    >
+      <div 
+        className="w-[90%] max-w-[1000px] bg-gray-900 text-gray-100 rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-700"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-gray-950">
+          <h2 className="text-2xl font-bold text-amber-500 tracking-wide">
+            Lancia Incantesimo <span className="text-gray-400 text-lg font-normal ml-2">- {heroClassName}</span>
+          </h2>
+          <button 
             onClick={handleClose}
-        >
-            <div 
-                className="w-[90%] max-w-[1000px] bg-slate-900 text-slate-100 rounded-xl shadow-2xl flex flex-col max-h-[90vh]"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-700">
-                    <h2 className="text-2xl font-bold text-amber-500">
-                        Lancia Incantesimo - {hero.hero?.classe || 'Eroe'}
-                    </h2>
-                    <button 
-                        onClick={handleClose}
-                        className="text-slate-400 hover:text-white transition-colors text-3xl leading-none"
-                        aria-label="Chiudi"
-                    >
-                        &times;
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 overflow-y-auto">
-                    {availableSpells.length === 0 ? (
-                        <div className="text-center text-slate-400 py-8">
-                            Nessun incantesimo disponibile.
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {availableSpells.map((spellId) => {
-                                const spell = allSpells.find((s) => s?.id === spellId);
-                                
-                                if (!spell) {
-                                    return null;
-                                }
-
-                                return (
-                                    <div 
-                                        key={spellId} 
-                                        className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden flex flex-col shadow-lg hover:border-amber-500/50 transition-colors"
-                                    >
-                                        <div className="relative h-48 bg-slate-950 flex items-center justify-center p-2">
-                                            {spell.immagine ? (
-                                                <img 
-                                                    src={`/img/cinc/${spell.immagine}`} 
-                                                    alt={spell.nome || 'Incantesimo'} 
-                                                    className="max-w-full max-h-full object-contain"
-                                                />
-                                            ) : (
-                                                <div className="text-slate-600 text-sm">Nessuna immagine</div>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="p-4 flex flex-col flex-grow">
-                                            <h3 className="text-lg font-bold text-amber-400 mb-2">
-                                                {spell.nome}
-                                            </h3>
-                                            <p className="text-sm text-slate-300 flex-grow mb-4">
-                                                {spell.descrizione}
-                                            </p>
-                                            
-                                            <button
-                                                onClick={() => handleCast(spellId)}
-                                                className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded transition-colors"
-                                            >
-                                                Lancia
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            </div>
+            className="text-gray-500 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-800 focus:outline-none"
+            aria-label="Chiudi"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-    );
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-grow custom-scrollbar">
+          {availableSpells.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 italic">
+              Questo eroe non ha incantesimi disponibili.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {availableSpells.map((spellId) => {
+                const spell = allSpells.find((s) => s.id === spellId);
+                
+                if (!spell) {
+                  return null;
+                }
+
+                return (
+                  <div 
+                    key={spellId} 
+                    className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden flex flex-col shadow-lg hover:border-amber-500/50 transition-colors duration-300"
+                  >
+                    {/* Card Image */}
+                    <div className="h-48 bg-black flex items-center justify-center p-2 relative">
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-50 z-10"></div>
+                      <img 
+                        src={`/img/cinc/${spell.immagine}`} 
+                        alt={spell.nome}
+                        className="max-h-full max-w-full object-contain relative z-20 drop-shadow-md"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/img/placeholder-spell.png';
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Card Details */}
+                    <div className="p-4 flex flex-col flex-grow">
+                      <h3 className="text-lg font-bold text-amber-400 mb-2 leading-tight">
+                        {spell.nome}
+                      </h3>
+                      <p className="text-sm text-gray-300 mb-6 flex-grow leading-relaxed">
+                        {spell.descrizione}
+                      </p>
+                      
+                      {/* Action */}
+                      <button
+                        onClick={() => handleCast(spellId)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 px-4 rounded shadow hover:shadow-lg transition-all duration-200 active:scale-95"
+                      >
+                        Lancia
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -8,97 +8,111 @@
 
 import React, { useCallback } from 'react';
 
-const MissionCard = ({ 
-    mission = null, 
-    index = 0, 
-    status = 'LOCKED', 
-    onSelect = () => {} 
-}) => {
-    const handleInteraction = useCallback((e) => {
-        if (e && typeof e.stopPropagation === 'function') {
-            e.stopPropagation();
+export default function MissionCard({ mission, index, status = 'LOCKED', onSelect }) {
+  const handleInteraction = useCallback(() => {
+    if (!mission) return;
+    if (status === 'LOCKED') return;
+    if (typeof onSelect === 'function') {
+      onSelect(index);
+    }
+  }, [mission, status, index, onSelect]);
+
+  const getStatusStyles = () => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'border-green-500 bg-green-50 text-green-900';
+      case 'AVAILABLE':
+        return 'border-yellow-500 bg-yellow-50 text-yellow-900 cursor-pointer hover:shadow-md hover:border-yellow-600';
+      case 'LOCKED':
+      default:
+        return 'border-gray-300 bg-gray-50 text-gray-500 opacity-60 cursor-not-allowed';
+    }
+  };
+
+  const getButtonStyles = () => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-green-600 hover:bg-green-700 text-white';
+      case 'AVAILABLE':
+        return 'bg-yellow-500 hover:bg-yellow-600 text-white';
+      case 'LOCKED':
+      default:
+        return 'bg-gray-300 text-gray-500 cursor-not-allowed';
+    }
+  };
+
+  const renderIcon = () => {
+    switch (status) {
+      case 'COMPLETED':
+        return (
+          <svg className="w-8 h-8 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'AVAILABLE':
+        return (
+          <svg className="w-8 h-8 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'LOCKED':
+      default:
+        return (
+          <svg className="w-8 h-8 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        );
+    }
+  };
+
+  const getButtonLabel = () => {
+    switch (status) {
+      case 'COMPLETED': return 'Replay';
+      case 'AVAILABLE': return 'Start';
+      case 'LOCKED':
+      default: return 'Locked';
+    }
+  };
+
+  const title = mission?.titolo || 'Unknown Mission';
+  const subtitle = `Mission ${mission?.ordine ?? (index != null ? index + 1 : '?')}`;
+
+  return (
+    <div
+      className={`p-4 rounded-xl shadow-sm border-2 transition-all duration-200 flex flex-col gap-4 ${getStatusStyles()}`}
+      onClick={handleInteraction}
+      role={status !== 'LOCKED' ? 'button' : 'presentation'}
+      tabIndex={status !== 'LOCKED' ? 0 : -1}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleInteraction();
         }
-        
-        if (!mission) return;
-        if (status === 'LOCKED') return;
-        
-        onSelect(index);
-    }, [mission, status, index, onSelect]);
-
-    if (!mission) {
-        return null;
-    }
-
-    const isCompleted = status === 'COMPLETED';
-    const isAvailable = status === 'AVAILABLE';
-    const isLocked = status === 'LOCKED';
-
-    const title = mission?.titolo || 'Unknown Mission';
-    const subtitle = `Mission ${mission?.ordine != null ? mission.ordine : (index + 1)}`;
-
-    let containerClasses = "relative p-5 rounded-xl shadow-md border-2 transition-all duration-200 flex flex-col gap-4 ";
-    let buttonClasses = "w-full py-2.5 px-4 rounded-lg font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ";
-    let icon = null;
-    let buttonText = "";
-
-    if (isCompleted) {
-        containerClasses += "border-green-500 bg-green-50 text-green-900 cursor-pointer hover:shadow-lg hover:bg-green-100";
-        buttonClasses += "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500";
-        buttonText = "Replay";
-        icon = (
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-        );
-    } else if (isAvailable) {
-        containerClasses += "border-yellow-400 bg-yellow-50 text-yellow-900 cursor-pointer hover:shadow-lg hover:bg-yellow-100 shadow-yellow-100/50";
-        buttonClasses += "bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-400";
-        buttonText = "Start";
-        icon = (
-            <svg className="w-8 h-8 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-            </svg>
-        );
-    } else {
-        containerClasses += "border-gray-200 bg-gray-50 text-gray-500 opacity-60 cursor-not-allowed";
-        buttonClasses += "bg-gray-300 text-gray-500 cursor-not-allowed";
-        buttonText = "Locked";
-        icon = (
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-        );
-    }
-
-    return (
-        <div 
-            className={containerClasses} 
-            onClick={handleInteraction}
-            role={isLocked ? "presentation" : "button"}
-            tabIndex={isLocked ? -1 : 0}
-            aria-disabled={isLocked}
-        >
-            <div className="flex items-center gap-4">
-                <div className="flex-shrink-0 flex items-center justify-center">
-                    {icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold truncate leading-tight">{title}</h3>
-                    <p className="text-sm font-medium opacity-75 mt-0.5">{subtitle}</p>
-                </div>
-            </div>
-            <div className="mt-auto pt-2">
-                <button 
-                    className={buttonClasses}
-                    onClick={handleInteraction}
-                    disabled={isLocked}
-                    aria-label={`${buttonText} ${title}`}
-                >
-                    {buttonText}
-                </button>
-            </div>
+      }}
+    >
+      <div className="flex items-center gap-4">
+        {renderIcon()}
+        <div className="flex-1">
+          <h3 className="font-bold text-lg leading-tight">{title}</h3>
+          <p className="text-sm font-medium opacity-80">{subtitle}</p>
         </div>
-    );
-};
-
-export default MissionCard;
+      </div>
+      
+      <button
+        className={`w-full py-2 px-4 rounded-lg font-bold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+          status === 'COMPLETED' ? 'focus:ring-green-500' : 
+          status === 'AVAILABLE' ? 'focus:ring-yellow-500' : ''
+        } ${getButtonStyles()}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleInteraction();
+        }}
+        disabled={status === 'LOCKED'}
+        aria-label={`${getButtonLabel()} ${title}`}
+      >
+        {getButtonLabel()}
+      </button>
+    </div>
+  );
+}

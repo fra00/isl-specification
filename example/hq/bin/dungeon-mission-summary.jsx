@@ -13,7 +13,7 @@ export default function DungeonMissionSummary({
   heroes = [],
   allEquipment = [],
   allItems = [],
-  onClose = () => {}
+  onClose
 }) {
   const handleFinalize = useCallback(() => {
     if (typeof onClose === 'function') {
@@ -25,137 +25,124 @@ export default function DungeonMissionSummary({
     return null;
   }
 
-  // Filter heroes who have not died (currentBody > 0)
-  const survivingHeroes = heroes?.filter(heroState => (heroState?.currentBody ?? 0) > 0) || [];
+  const survivingHeroes = heroes.filter(
+    (h) => h != null && h.currentBody > 0 && h.hero != null
+  );
 
-  // Helper to map Item ID to its name
-  const getItemName = useCallback((id) => {
-    const item = allItems?.find(i => i?.id === id);
-    return item?.nome || `Oggetto Sconosciuto (${id})`;
-  }, [allItems]);
+  const getItemName = (id) => {
+    const item = allItems.find((i) => i?.id === id);
+    return item?.nome || 'Oggetto Sconosciuto';
+  };
 
-  // Helper to map Equipment ID to its name
-  const getEquipmentName = useCallback((id) => {
-    const equipment = allEquipment?.find(e => e?.id === id);
-    return equipment?.nome || `Equipaggiamento Sconosciuto (${id})`;
-  }, [allEquipment]);
+  const getEquipmentName = (id) => {
+    const equip = allEquipment.find((e) => e?.id === id);
+    return equip?.nome || 'Equipaggiamento Sconosciuto';
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 overflow-hidden font-sans">
-      <div className="bg-stone-900 border-double border-8 border-stone-600 rounded-xl p-6 md:p-10 max-w-7xl w-full max-h-[95vh] overflow-y-auto shadow-2xl shadow-black">
+    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-stone-900 border-4 border-yellow-700 rounded-xl p-6 md:p-10 max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(0,0,0,0.8)] text-stone-200">
         
-        {/* Title Section */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-6xl text-yellow-500 font-serif font-bold mb-2 tracking-wider uppercase drop-shadow-md">
+        <div className="text-center mb-10 border-b-2 border-stone-700 pb-6">
+          <h1 className="text-4xl md:text-6xl text-yellow-500 font-extrabold tracking-widest uppercase drop-shadow-md mb-2">
             Missione Compiuta
           </h1>
-          <h2 className="text-xl md:text-2xl text-stone-400 font-serif uppercase tracking-widest">
+          <h2 className="text-xl md:text-2xl text-stone-400 font-serif italic">
             Riepilogo Missione
           </h2>
         </div>
 
-        {/* Hero Grid */}
-        {survivingHeroes.length === 0 ? (
-          <div className="text-center text-red-500 text-2xl font-serif py-12">
-            Nessun eroe è sopravvissuto a questa missione...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {survivingHeroes.map((heroState, index) => {
-              const heroDef = heroState?.hero;
-              // Fallback to classe if nome is not present in the actual signature
-              const heroName = heroDef?.classe || 'Eroe';
-
-              return (
-                <div 
-                  key={heroState?.heroId || index} 
-                  className="bg-stone-800 border border-stone-700 rounded-lg p-5 flex flex-col items-center text-center shadow-inner"
-                >
-                  {/* Portrait */}
-                  <div className="w-28 h-28 mb-4 rounded-full border-4 border-stone-600 overflow-hidden bg-stone-950 flex items-center justify-center">
-                    {heroDef?.portrait ? (
-                      <img
-                        src={heroDef.portrait}
-                        alt={heroName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-stone-500 text-sm">No Image</span>
-                    )}
-                  </div>
-
-                  {/* Name & Class */}
-                  <h3 className="text-2xl text-yellow-400 font-bold mb-1 capitalize tracking-wide">
-                    {heroName}
-                  </h3>
-                  <p className="text-sm text-stone-400 mb-5 uppercase tracking-wider">
-                    {heroDef?.classe}
-                  </p>
-
-                  {/* Gold Section */}
-                  <div className="w-full bg-stone-900 rounded-md p-3 mb-5 flex items-center justify-center gap-3 border border-stone-700 shadow-sm">
-                    <span className="text-yellow-500 text-2xl" aria-hidden="true">💰</span>
-                    <span className="text-yellow-500 font-bold text-xl">
-                      {heroState?.gold || 0} <span className="text-sm font-normal text-yellow-600">Monete</span>
-                    </span>
-                  </div>
-
-                  {/* Loot Section */}
-                  <div className="w-full text-left space-y-5 flex-1">
-                    {/* Items */}
-                    <div>
-                      <h4 className="text-stone-300 font-semibold border-b border-stone-700 pb-1 mb-2 uppercase text-xs tracking-wider">
-                        Oggetti Trovati
-                      </h4>
-                      <ul className="text-sm text-stone-400 space-y-1.5">
-                        {heroState?.inventory?.length > 0 ? (
-                          heroState.inventory.map((itemId, i) => (
-                            <li key={`item-${itemId}-${i}`} className="flex items-start gap-2">
-                              <span className="text-stone-600 mt-0.5">▪</span>
-                              <span>{getItemName(itemId)}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="italic text-stone-600 text-center py-1">Nessun oggetto</li>
-                        )}
-                      </ul>
-                    </div>
-
-                    {/* Equipment */}
-                    <div>
-                      <h4 className="text-stone-300 font-semibold border-b border-stone-700 pb-1 mb-2 uppercase text-xs tracking-wider">
-                        Equipaggiamento
-                      </h4>
-                      <ul className="text-sm text-stone-400 space-y-1.5">
-                        {heroState?.equipment?.length > 0 ? (
-                          heroState.equipment.map((eqId, i) => (
-                            <li key={`eq-${eqId}-${i}`} className="flex items-start gap-2">
-                              <span className="text-stone-600 mt-0.5">▪</span>
-                              <span>{getEquipmentName(eqId)}</span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="italic text-stone-600 text-center py-1">Nessun equipaggiamento</li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {survivingHeroes.map((heroState, index) => (
+            <div 
+              key={index} 
+              className="bg-stone-800 border border-stone-600 rounded-lg p-5 flex flex-col items-center shadow-lg relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-600 to-transparent opacity-50"></div>
+              
+              {heroState.hero?.portrait ? (
+                <img 
+                  src={heroState.hero.portrait} 
+                  alt={heroState.hero.classe || 'Eroe'} 
+                  className="w-28 h-28 object-cover rounded-full border-4 border-stone-500 shadow-inner mb-4 bg-stone-950"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full border-4 border-stone-500 mb-4 bg-stone-700 flex items-center justify-center">
+                  <span className="text-stone-400 text-xs">Nessuna Immagine</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+              
+              <h3 className="text-2xl font-bold text-yellow-400 mb-4 capitalize text-center">
+                {heroState.hero?.classe || 'Eroe Sconosciuto'}
+              </h3>
 
-        {/* Actions */}
-        <div className="mt-12 flex justify-center">
+              <div className="w-full bg-stone-950 rounded-md p-3 mb-4 border border-stone-700 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl" role="img" aria-label="gold">🪙</span>
+                  <span className="text-stone-300 font-semibold">Oro:</span>
+                </div>
+                <span className="text-yellow-500 font-bold text-lg">{heroState.gold ?? 0}</span>
+              </div>
+
+              <div className="w-full flex-1 flex flex-col gap-4">
+                <div>
+                  <h4 className="text-xs text-stone-500 uppercase tracking-widest border-b border-stone-700 pb-1 mb-2">
+                    Oggetti
+                  </h4>
+                  {heroState.inventory && heroState.inventory.length > 0 ? (
+                    <ul className="text-sm text-stone-300 space-y-1 pl-2">
+                      {heroState.inventory.map((itemId, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-stone-500 mt-0.5">•</span>
+                          <span>{getItemName(itemId)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-stone-600 italic pl-2">Nessun oggetto</p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="text-xs text-stone-500 uppercase tracking-widest border-b border-stone-700 pb-1 mb-2">
+                    Equipaggiamento
+                  </h4>
+                  {heroState.equipment && heroState.equipment.length > 0 ? (
+                    <ul className="text-sm text-stone-300 space-y-1 pl-2">
+                      {heroState.equipment.map((equipId, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-stone-500 mt-0.5">•</span>
+                          <span>{getEquipmentName(equipId)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-stone-600 italic pl-2">Nessun equipaggiamento</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {survivingHeroes.length === 0 && (
+            <div className="col-span-full flex flex-col items-center justify-center py-12 bg-stone-800/50 rounded-lg border border-red-900/30">
+              <span className="text-5xl mb-4" role="img" aria-label="skull">💀</span>
+              <p className="text-red-500 text-xl font-bold tracking-wider">
+                Nessun eroe è sopravvissuto a questa missione.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-center mt-6">
           <button
             onClick={handleFinalize}
-            className="bg-gradient-to-b from-yellow-600 to-yellow-800 hover:from-yellow-500 hover:to-yellow-700 text-stone-900 font-bold text-xl py-4 px-12 rounded shadow-[0_0_15px_rgba(202,138,4,0.3)] transition-all duration-200 uppercase tracking-widest border-2 border-yellow-500 hover:scale-105 active:scale-95"
+            className="bg-gradient-to-b from-yellow-600 to-yellow-800 hover:from-yellow-500 hover:to-yellow-700 text-white font-bold py-4 px-10 rounded-lg border-2 border-yellow-500 shadow-[0_0_20px_rgba(202,138,4,0.4)] hover:shadow-[0_0_30px_rgba(202,138,4,0.6)] transition-all duration-300 text-xl uppercase tracking-widest"
           >
             Torna al Villaggio
           </button>
         </div>
-
+        
       </div>
     </div>
   );

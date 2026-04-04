@@ -26,11 +26,11 @@ export function useDungeonMovementRules({ mapQuery }) {
     const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
         if (!mapQuery) return false;
 
+        // Bounds Check
         const dimensions = mapQuery.getMapDimensions();
         if (!dimensions) return false;
 
-        // Bounds Check
-        if (targetX < 1 || targetY < 1 || targetX > dimensions.width || targetY > dimensions.height) {
+        if (targetX < 1 || targetX > dimensions.width || targetY < 1 || targetY > dimensions.height) {
             return false;
         }
 
@@ -42,9 +42,10 @@ export function useDungeonMovementRules({ mapQuery }) {
         // Dynamic Obstacles
         if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
             const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h.id === excludeEntityId || h.heroId === excludeEntityId);
+            const hero = heroes.find(h => h.heroId === excludeEntityId || h.id === excludeEntityId);
+            const activeStatus = hero?.activeStatus || [];
             
-            if (!hero?.activeStatus?.includes("FoggyMist")) {
+            if (!activeStatus.includes("FoggyMist")) {
                 return false;
             }
         }
@@ -55,11 +56,11 @@ export function useDungeonMovementRules({ mapQuery }) {
         }
 
         // Room/Wall Logic
-        const sourceVisibility = mapQuery.getVisibilityCell(sourceX, sourceY);
-        const targetVisibility = mapQuery.getVisibilityCell(targetX, targetY);
+        const sourceCell = mapQuery.getVisibilityCell(sourceX, sourceY);
+        const targetCell = mapQuery.getVisibilityCell(targetX, targetY);
 
-        const sourceValo = sourceVisibility?.valo;
-        const targetValo = targetVisibility?.valo;
+        const sourceValo = sourceCell?.valo;
+        const targetValo = targetCell?.valo;
 
         if (sourceValo == null || targetValo == null) {
             return true;
@@ -76,9 +77,10 @@ export function useDungeonMovementRules({ mapQuery }) {
             }
 
             const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h.id === excludeEntityId || h.heroId === excludeEntityId);
+            const hero = heroes.find(h => h.heroId === excludeEntityId || h.id === excludeEntityId);
+            const activeStatus = hero?.activeStatus || [];
 
-            if (hero?.activeStatus?.includes("WallPass") || hero?.activeStatus?.includes("InvisiblePassage")) {
+            if (activeStatus.includes("WallPass") || activeStatus.includes("InvisiblePassage")) {
                 return true;
             }
 

@@ -6,71 +6,24 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback } from 'react';
 
-export function useDungeonMapQuery({ gameSession, visibilityMap = null }) {
-    const structuresRef = useRef({
-        gridMap: new Map(),
-        visibilityMapData: new Map(),
-        doorsMap: new Map(),
-        isInitialized: false
-    });
-
-    const initialize = useCallback(() => {
-        const gMap = new Map();
-        const vMap = new Map();
-        const dMap = new Map();
-
-        const grid = gameSession?.currentMap?.grid ?? [];
-        for (let i = 0; i < grid.length; i++) {
-            const cell = grid[i];
-            gMap.set(`${cell.x},${cell.y}`, cell);
-        }
-
-        const vData = visibilityMap?.data ?? [];
-        for (let i = 0; i < vData.length; i++) {
-            const cell = vData[i];
-            vMap.set(`${cell.x},${cell.y}`, cell);
-        }
-
-        const doors = gameSession?.currentMap?.porte ?? [];
-        for (let i = 0; i < doors.length; i++) {
-            const door = doors[i];
-            dMap.set(`${door.x},${door.y}`, door);
-        }
-
-        structuresRef.current = {
-            gridMap: gMap,
-            visibilityMapData: vMap,
-            doorsMap: dMap,
-            isInitialized: true
-        };
-    }, [gameSession?.currentMap?.grid, gameSession?.currentMap?.porte, visibilityMap?.data]);
-
-    useEffect(() => {
-        initialize();
-    }, [initialize]);
-
+export function useDungeonMapQuery({ gameSession, visibilityMap }) {
+    
     const getMapCell = useCallback((x, y) => {
-        if (!structuresRef.current.isInitialized) {
-            initialize();
-        }
-        return structuresRef.current.gridMap.get(`${x},${y}`) ?? null;
-    }, [initialize]);
+        if (!gameSession?.currentMap?.grid) return null;
+        return gameSession.currentMap.grid.find(cell => cell.x === x && cell.y === y) || null;
+    }, [gameSession]);
 
     const getVisibilityCell = useCallback((x, y) => {
-        if (!structuresRef.current.isInitialized) {
-            initialize();
-        }
-        return structuresRef.current.visibilityMapData.get(`${x},${y}`) ?? null;
-    }, [initialize]);
+        if (!visibilityMap?.data) return null;
+        return visibilityMap.data.find(cell => cell.x === x && cell.y === y) || null;
+    }, [visibilityMap]);
 
     const isDoor = useCallback((x, y) => {
-        if (!structuresRef.current.isInitialized) {
-            initialize();
-        }
-        return structuresRef.current.doorsMap.has(`${x},${y}`);
-    }, [initialize]);
+        if (!gameSession?.currentMap?.porte) return false;
+        return gameSession.currentMap.porte.some(door => door.x === x && door.y === y);
+    }, [gameSession]);
 
     const isSecretPassage = useCallback((x, y) => {
         const cell = getMapCell(x, y);
@@ -83,26 +36,23 @@ export function useDungeonMapQuery({ gameSession, visibilityMap = null }) {
     }, [getMapCell]);
 
     const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
-        const monsters = gameSession?.monsters ?? [];
-        const monster = monsters.find(m => m.x === x && m.y === y && m.id !== excludeEntityId);
-        
-        if (monster != null && monster.currentBody > 0) {
-            return true;
-        }
-        return false;
-    }, [gameSession?.monsters]);
+        if (!gameSession?.monsters) return false;
+        const monster = gameSession.monsters.find(
+            m => m.x === x && m.y === y && m.id !== excludeEntityId
+        );
+        return !!(monster && monster.currentBody > 0);
+    }, [gameSession]);
 
     const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
-        const heroes = gameSession?.heroes ?? [];
-        return heroes.some(h => h.x === x && h.y === y && h.heroId !== excludeEntityId);
-    }, [gameSession?.heroes]);
+        if (!gameSession?.heroes) return false;
+        return gameSession.heroes.some(
+            h => h.x === x && h.y === y && h.heroId !== excludeEntityId
+        );
+    }, [gameSession]);
 
     const isBlockedByRock = useCallback((x, y) => {
         const cell = getMapCell(x, y);
-        if (cell != null && cell?.arnt?.antroc === true) {
-            return true;
-        }
-        return false;
+        return cell?.arnt?.antroc === true;
     }, [getMapCell]);
 
     const getMapDimensions = useCallback(() => {
@@ -110,7 +60,6 @@ export function useDungeonMapQuery({ gameSession, visibilityMap = null }) {
     }, []);
 
     return {
-        initialize,
         getMapCell,
         getVisibilityCell,
         isDoor,

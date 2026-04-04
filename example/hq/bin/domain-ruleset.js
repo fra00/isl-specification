@@ -7,87 +7,87 @@
  */
 
 export const Hero = (data = {}) => ({
-  id: data.id ?? 0,
-  classe: data.classe ?? "",
-  attacco: data.attacco ?? 0,
-  difesa: data.difesa ?? 0,
-  movimento: data.movimento ?? 0,
-  mente: data.mente ?? 0,
-  corpo: data.corpo ?? 0,
-  miniature: data.miniature ?? "",
-  miniatureDeath: data.miniatureDeath ?? "",
-  portrait: data.portrait ?? ""
+  id: data?.id ?? 0,
+  classe: data?.classe ?? "",
+  attacco: data?.attacco ?? 0,
+  difesa: data?.difesa ?? 0,
+  movimento: data?.movimento ?? 0,
+  mente: data?.mente ?? 0,
+  corpo: data?.corpo ?? 0,
+  miniature: data?.miniature ?? "",
+  miniatureDeath: data?.miniatureDeath ?? "",
+  portrait: data?.portrait ?? ""
 });
 
 export const Monster = (data = {}) => ({
-  id: data.id ?? 0,
-  nome: data.nome ?? "",
-  movimento: data.movimento ?? 0,
-  attacco: data.attacco ?? 0,
-  difesa: data.difesa ?? 0,
-  corpo: data.corpo ?? 0,
-  mente: data.mente ?? 0,
-  immagine: data.immagine ?? "",
-  immalarge: data.immalarge ?? "",
-  nonmorto: data.nonmorto ?? false
+  id: data?.id ?? 0,
+  nome: data?.nome ?? "",
+  movimento: data?.movimento ?? 0,
+  attacco: data?.attacco ?? 0,
+  difesa: data?.difesa ?? 0,
+  corpo: data?.corpo ?? 0,
+  mente: data?.mente ?? 0,
+  immagine: data?.immagine ?? "",
+  immalarge: data?.immalarge ?? "",
+  nonmorto: data?.nonmorto ?? false
 });
 
 export const Equipment = (data = {}) => ({
-  id: data.id ?? 0,
-  nome: data.nome ?? "",
-  dadatt: data.dadatt ?? 0,
-  daddif: data.daddif ?? 0,
-  daddifex: data.daddifex ?? 0,
-  numdadicontr: data.numdadicontr ?? 0,
-  targetMonster: data.targetMonster ?? "",
-  doppioatt: data.doppioatt ?? false,
-  mosdoppio: data.mosdoppio ?? 0,
-  puntimente: data.puntimente ?? 0,
-  doppiamag: data.doppiamag ?? false,
-  movim: data.movim ?? 0,
-  noogg: data.noogg ?? 0,
-  diago: data.diago ?? false,
-  tiro: data.tiro ?? false,
-  tirounavo: data.tirounavo ?? false,
-  disinnesc: data.disinnesc ?? false,
-  nopsg: data.nopsg ?? false,
-  nopsgid: data.nopsgid ?? 0,
-  solopsg: data.solopsg ?? false,
-  solopsgid: data.solopsgid ?? 0,
-  prezzo: data.prezzo ?? 0,
-  immagine: data.immagine ?? ""
+  id: data?.id ?? 0,
+  nome: data?.nome ?? "",
+  dadatt: data?.dadatt ?? 0,
+  daddif: data?.daddif ?? 0,
+  daddifex: data?.daddifex ?? 0,
+  numdadicontr: data?.numdadicontr ?? 0,
+  targetMonster: data?.targetMonster ?? "",
+  doppioatt: data?.doppioatt ?? false,
+  mosdoppio: data?.mosdoppio ?? 0,
+  puntimente: data?.puntimente ?? 0,
+  doppiamag: data?.doppiamag ?? false,
+  movim: data?.movim ?? 0,
+  noogg: data?.noogg ?? 0,
+  diago: data?.diago ?? false,
+  tiro: data?.tiro ?? false,
+  tirounavo: data?.tirounavo ?? false,
+  disinnesc: data?.disinnesc ?? false,
+  nopsg: data?.nopsg ?? false,
+  nopsgid: data?.nopsgid ?? 0,
+  solopsg: data?.solopsg ?? false,
+  solopsgid: data?.solopsgid ?? 0,
+  prezzo: data?.prezzo ?? 0,
+  immagine: data?.immagine ?? ""
 });
 
 export const Item = (data = {}) => ({
-  id: data.id ?? 0,
-  nome: data.nome ?? "",
-  hp: data.hp ?? 0,
-  mp: data.mp ?? 0,
-  targetType: data.targetType ?? "Self",
-  movimento: data.movimento ?? 0,
-  attacco: data.attacco ?? 0,
-  difesa: data.difesa ?? 0,
-  natt: data.natt ?? 0,
-  acqua: data.acqua ?? false,
-  danni: data.danni ?? 0
+  id: data?.id ?? 0,
+  nome: data?.nome ?? "",
+  hp: data?.hp ?? 0,
+  mp: data?.mp ?? 0,
+  targetType: data?.targetType ?? "Self",
+  movimento: data?.movimento ?? 0,
+  attacco: data?.attacco ?? 0,
+  difesa: data?.difesa ?? 0,
+  natt: data?.natt ?? 0,
+  acqua: data?.acqua ?? false,
+  danni: data?.danni ?? 0
 });
 
 export const Spell = (data = {}) => ({
-  id: data.id ?? 0,
-  nome: data.nome ?? "",
-  elemento: data.elemento ?? "Fuoco",
-  descrizione: data.descrizione ?? "",
-  immagine: data.immagine ?? "",
-  dorso: data.dorso ?? "",
-  targetType: data.targetType ?? "Self",
-  effetto: data.effetto ?? "",
-  valore: data.valore ?? 0
+  id: data?.id ?? 0,
+  nome: data?.nome ?? "",
+  elemento: data?.elemento ?? "Fuoco",
+  descrizione: data?.descrizione ?? "",
+  immagine: data?.immagine ?? "",
+  dorso: data?.dorso ?? "",
+  targetType: data?.targetType ?? "Self",
+  effetto: data?.effetto ?? "",
+  valore: data?.valore ?? 0
 });
 
 export const TreasureCard = (data = {}) => ({
-  id: data.id ?? 0,
-  effetto: data.effetto ?? "",
-  azione: data.azione ?? "nessuna",
-  valore: data.valore ?? 0,
-  immagine: data.immagine ?? ""
+  id: data?.id ?? 0,
+  effetto: data?.effetto ?? "",
+  azione: data?.azione ?? "nessuna",
+  valore: data?.valore ?? 0,
+  immagine: data?.immagine ?? ""
 });

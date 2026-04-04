@@ -6,135 +6,137 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 export default function ShopInventory({
   items = [],
   selectedItemId = null,
   canBuy = false,
-  buyReason = "",
-  onSelect,
-  onBuy,
-  onEnterDungeon,
-  onExit
+  buyReason = '',
+  onSelect = () => {},
+  onBuy = () => {},
+  onEnterDungeon = () => {},
+  onExit = () => {}
 }) {
-  const selectedItem = items.find(i => i.id === selectedItemId);
+  const selectedItem = useMemo(() => {
+    if (selectedItemId == null) return null;
+    return items.find(i => i.id === selectedItemId) || null;
+  }, [items, selectedItemId]);
 
   const handleItemClick = useCallback((id) => {
-    const itemExists = items.find(i => i.id === id);
-    if (itemExists == null) {
+    const item = items.find(i => i.id === id);
+    if (item == null) {
       return;
     }
-    if (onSelect) {
-      onSelect(id);
-    }
+    onSelect(id);
   }, [items, onSelect]);
 
   const handleBuyClick = useCallback(() => {
-    if (canBuy && onBuy) {
+    if (canBuy) {
       onBuy();
     }
   }, [canBuy, onBuy]);
 
   const handleEnterDungeonClick = useCallback(() => {
-    if (onEnterDungeon) {
-      onEnterDungeon();
-    }
+    onEnterDungeon();
   }, [onEnterDungeon]);
 
   const handleExitClick = useCallback(() => {
-    if (onExit) {
-      onExit();
-    }
+    onExit();
   }, [onExit]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto bg-slate-900 text-slate-100 p-4 rounded-xl shadow-2xl border border-slate-700">
-      
-      {/* Preview Section */}
-      <div className="h-56 bg-slate-800 rounded-lg mb-4 flex flex-col items-center justify-center p-4 border border-slate-600 shadow-inner relative">
-        {selectedItem ? (
-          <>
-            {selectedItem.immagine ? (
-              <img
-                src={`/img/equip/${selectedItem.immagine}`}
-                alt={selectedItem.nome || 'Oggetto'}
-                className="max-h-full max-w-full object-contain drop-shadow-md"
-              />
-            ) : (
-              <span className="text-slate-500 italic">Nessuna immagine disponibile</span>
-            )}
-            <div className="absolute bottom-2 left-0 right-0 text-center bg-slate-900/80 py-1 px-2 mx-4 rounded">
-              <span className="font-bold text-amber-400">{selectedItem.prezzo || 0} Oro</span>
-            </div>
-          </>
-        ) : (
-          <span className="text-slate-400 font-medium">Seleziona un oggetto per i dettagli</span>
-        )}
-      </div>
-
-      {/* Item List Section */}
-      <div className="flex-1 overflow-y-auto mb-4 border border-slate-600 rounded-lg bg-slate-800 shadow-inner">
-        {items.length === 0 ? (
-          <div className="p-6 text-center text-slate-400">
-            Nessun oggetto disponibile nel negozio.
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-700">
-            {items.map((item) => {
-              const isSelected = item.id === selectedItemId;
-              return (
-                <li
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={`p-3 cursor-pointer flex justify-between items-center transition-all duration-200 ${
-                    isSelected 
-                      ? 'bg-indigo-900/80 text-indigo-100 border-l-4 border-indigo-400' 
-                      : 'hover:bg-slate-700 border-l-4 border-transparent'
-                  }`}
-                >
-                  <span className="font-semibold truncate pr-2">{item.nome}</span>
-                  <span className="text-amber-400 font-bold whitespace-nowrap">
-                    {item.prezzo || 0} <span className="text-amber-600 text-sm">G</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      {/* Actions Section */}
-      <div className="flex flex-col gap-3 mt-auto">
-        <button
-          onClick={handleBuyClick}
-          disabled={!canBuy || !selectedItem}
-          title={!canBuy && selectedItem ? buyReason : ''}
-          className={`w-full py-3 px-4 rounded-lg font-bold text-lg transition-all duration-200 shadow-md ${
-            canBuy && selectedItem
-              ? 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
-              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-          }`}
-        >
-          Acquista
-        </button>
+    <div className="flex flex-col h-full w-full bg-stone-900 text-stone-200 p-4 rounded-lg shadow-xl font-sans">
+      <div className="flex flex-1 overflow-hidden gap-6 mb-6">
         
-        <div className="flex gap-3">
-          <button
-            onClick={handleEnterDungeonClick}
-            className="flex-1 py-2 px-4 bg-rose-800 hover:bg-rose-700 text-rose-100 rounded-lg font-semibold transition-all duration-200 shadow-md active:scale-95"
-          >
-            Entra nel dungeon
-          </button>
-          <button
-            onClick={handleExitClick}
-            className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg font-semibold transition-all duration-200 shadow-md active:scale-95"
-          >
-            Esci
-          </button>
+        {/* Item List */}
+        <div className="flex-1 overflow-y-auto bg-stone-800 rounded-md border border-stone-700 p-2 custom-scrollbar">
+          {items.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-stone-500 italic">
+              Nessun oggetto disponibile nel negozio.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {items.map((item) => {
+                const isSelected = item.id === selectedItemId;
+                return (
+                  <li
+                    key={item.id}
+                    onClick={() => handleItemClick(item.id)}
+                    className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 ${
+                      isSelected 
+                        ? 'bg-amber-800 text-white border border-amber-500 shadow-md' 
+                        : 'bg-stone-700 hover:bg-stone-600 border border-transparent'
+                    }`}
+                  >
+                    <span className="font-semibold text-lg">{item.nome}</span>
+                    <span className="text-amber-400 font-bold">{item.prezzo} M.O.</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* Preview Card */}
+        <div className="w-1/3 min-w-[250px] bg-stone-800 rounded-md border border-stone-700 p-6 flex flex-col items-center justify-center relative">
+          {selectedItem ? (
+            <div className="flex flex-col items-center text-center w-full h-full justify-start pt-4">
+              <div className="h-48 w-full flex items-center justify-center mb-6 bg-stone-900 rounded-md border border-stone-700 p-2 shadow-inner">
+                {selectedItem.immagine ? (
+                  <img 
+                    src={`/img/equip/${selectedItem.immagine}`} 
+                    alt={selectedItem.nome}
+                    className="max-w-full max-h-full object-contain drop-shadow-lg"
+                  />
+                ) : (
+                  <span className="text-stone-600 italic">Immagine non disponibile</span>
+                )}
+              </div>
+              <h3 className="text-2xl font-bold text-amber-500 mb-2">{selectedItem.nome}</h3>
+              <div className="text-lg text-stone-300 bg-stone-900 px-4 py-1 rounded-full border border-stone-700">
+                Prezzo: <span className="text-amber-400 font-bold">{selectedItem.prezzo} M.O.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-stone-500 text-center italic">
+              Seleziona un oggetto dall'elenco per visualizzarne i dettagli.
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Actions */}
+      <div className="flex justify-between items-center pt-4 border-t border-stone-700">
+        <button
+          onClick={handleExitClick}
+          className="px-6 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded-md font-bold transition-colors shadow-md"
+        >
+          Esci
+        </button>
+        
+        <div className="flex gap-4">
+          <button
+            onClick={handleBuyClick}
+            disabled={!canBuy || !selectedItem}
+            className={`px-8 py-3 rounded-md font-bold transition-all shadow-md ${
+              canBuy && selectedItem
+                ? 'bg-green-700 hover:bg-green-600 text-white cursor-pointer'
+                : 'bg-stone-700 text-stone-500 cursor-not-allowed'
+            }`}
+            title={(!canBuy && selectedItem) ? buyReason : ''}
+          >
+            Acquista
+          </button>
+          
+          <button
+            onClick={handleEnterDungeonClick}
+            className="px-8 py-3 bg-amber-700 hover:bg-amber-600 text-white rounded-md font-bold transition-colors shadow-md"
+          >
+            Entra nel dungeon
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

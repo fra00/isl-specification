@@ -1,1 +1,1 @@
-export function useFogOfWar(config: { gameSession: any; staticVisibilityMap: any }): { fogVisibilityMap: any; revealInitialVisibility: () => void; revealFromPoint: (x: number, y: number) => void };
+export function useFogOfWar(config: { gameSession: any; staticVisibilityMap: any }): { fogVisibilityMap: any; revealInitialVisibility: () => any; revealFromPoint: (x: number, y: number) => any; };

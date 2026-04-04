@@ -1,11 +1,5 @@
 export default function TreasureCardModal(props: { 
     isOpen: boolean; 
-    card: { 
-        id: number; 
-        effetto: string; 
-        azione: string; 
-        valore: number; 
-        immagine: string 
-    } | null; 
+    card: { id: number; effetto: string; azione: string; valore: number; immagine: string } | null; 
     onClose: () => void; 
 }): React.ReactElement | null;

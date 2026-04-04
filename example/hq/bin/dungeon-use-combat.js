@@ -22,22 +22,25 @@ export const CombatResult = (data = {}) => ({
   damageDealt: data.damageDealt || 0
 });
 
-export const useCombatLogic = (config = {}) => {
+export function useCombatLogic(config = {}) {
   const resolveCombat = useCallback((attackDiceCount, defenseDiceCount, defenderIsHero) => {
-    const safeAttackCount = Math.max(0, attackDiceCount != null ? attackDiceCount : 0);
-    const safeDefenseCount = Math.max(0, defenseDiceCount != null ? defenseDiceCount : 0);
+    let safeAttackDice = attackDiceCount != null ? attackDiceCount : 0;
+    if (safeAttackDice < 0) safeAttackDice = 0;
+
+    let safeDefenseDice = defenseDiceCount != null ? defenseDiceCount : 0;
+    if (safeDefenseDice < 0) safeDefenseDice = 0;
 
     const attackerDice = [];
     let skulls = 0;
 
-    for (let i = 0; i < safeAttackCount; i++) {
+    for (let i = 0; i < safeAttackDice; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
-      if (roll <= 3) {
+      if (roll >= 1 && roll <= 3) {
         attackerDice.push(CombatDiceResult.SKULL);
         skulls++;
-      } else if (roll <= 5) {
+      } else if (roll >= 4 && roll <= 5) {
         attackerDice.push(CombatDiceResult.WHITE_SHIELD);
-      } else {
+      } else if (roll === 6) {
         attackerDice.push(CombatDiceResult.BLACK_SHIELD);
       }
     }
@@ -45,16 +48,16 @@ export const useCombatLogic = (config = {}) => {
     const defenderDice = [];
     let shields = 0;
 
-    for (let i = 0; i < safeDefenseCount; i++) {
+    for (let i = 0; i < safeDefenseDice; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
-      if (roll <= 3) {
+      if (roll >= 1 && roll <= 3) {
         defenderDice.push(CombatDiceResult.SKULL);
-      } else if (roll <= 5) {
+      } else if (roll >= 4 && roll <= 5) {
         defenderDice.push(CombatDiceResult.WHITE_SHIELD);
         if (defenderIsHero) {
           shields++;
         }
-      } else {
+      } else if (roll === 6) {
         defenderDice.push(CombatDiceResult.BLACK_SHIELD);
         if (!defenderIsHero) {
           shields++;
@@ -76,4 +79,4 @@ export const useCombatLogic = (config = {}) => {
   return {
     resolveCombat
   };
-};
+}

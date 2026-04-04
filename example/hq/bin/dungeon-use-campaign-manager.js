@@ -7,50 +7,57 @@
  */
 
 import { useCallback } from 'react';
+import { HeroState } from './domain-session';
 
 export function useCampaignManager(config = {}) {
-    const STORAGE_KEY = "hq_campaign_data";
-
     const saveCampaign = useCallback((heroes, nextMissionIndex) => {
         const campaignData = {
-            heroes: heroes != null ? heroes : [],
+            heroes: heroes || [],
             nextMissionIndex: nextMissionIndex != null ? nextMissionIndex : 0,
             timestamp: Date.now()
         };
-
+        
         try {
-            const serializedData = JSON.stringify(campaignData);
-            localStorage.setItem(STORAGE_KEY, serializedData);
+            const serialized = JSON.stringify(campaignData);
+            localStorage.setItem("hq_campaign_data", serialized);
         } catch (error) {
             console.error("Error saving campaign:", error);
-            // Fallback UI notification as requested by flow, since no specific notification service is injected
-            alert("Could not save progress");
+            if (typeof config?.notifyError === 'function') {
+                config.notifyError("Could not save progress");
+            } else {
+                alert("Could not save progress");
+            }
         }
-    }, []);
+    }, [config]);
 
     const loadCampaign = useCallback(() => {
-        const item = localStorage.getItem(STORAGE_KEY);
+        const item = localStorage.getItem("hq_campaign_data");
         
-        if (item == null || item === "") {
+        if (item == null || item.trim() === "") {
             return null;
         }
-
+        
         try {
             const campaignData = JSON.parse(item);
+            
+            if (campaignData && Array.isArray(campaignData.heroes)) {
+                campaignData.heroes = campaignData.heroes.map(heroData => HeroState(heroData));
+            }
+            
             return campaignData;
         } catch (error) {
-            console.error("Error parsing campaign data:", error);
+            console.error("Error loading campaign:", error);
             return null;
         }
     }, []);
 
     const hasSavedCampaign = useCallback(() => {
-        const item = localStorage.getItem(STORAGE_KEY);
-        return item != null && item !== "";
+        const item = localStorage.getItem("hq_campaign_data");
+        return item != null && item.trim() !== "";
     }, []);
 
     const resetCampaign = useCallback(() => {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("hq_campaign_data");
     }, []);
 
     return {

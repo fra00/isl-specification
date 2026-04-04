@@ -8,95 +8,87 @@
 
 import { useCallback } from 'react';
 
-export function useItemLogic({ staticItems = [], onUpdateSession, onNotify }) {
+export const useItemLogic = ({ staticItems = [], onUpdateSession, onNotify }) => {
   const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
     if (!gameSession || !gameSession.heroes) return;
 
-    // Find hero
-    const heroIndex = gameSession.heroes.findIndex((h) => h.heroId === heroId);
+    const heroIndex = gameSession.heroes.findIndex(h => h.heroId === heroId);
     if (heroIndex === -1) return;
-    const hero = gameSession.heroes[heroIndex];
 
-    // Find item definition
-    const itemDef = staticItems.find((i) => i.id === itemId);
+    const itemDef = staticItems.find(i => i.id === itemId);
     if (!itemDef) return;
 
-    // Check inventory
+    const hero = gameSession.heroes[heroIndex];
     const inventoryIndex = hero.inventory?.indexOf(itemId);
     if (inventoryIndex == null || inventoryIndex === -1) return;
 
-    // Immutability: clone the session and the specific hero
-    const updatedSession = { ...gameSession };
-    updatedSession.heroes = [...gameSession.heroes];
-    const updatedHero = { ...hero };
-    updatedHero.inventory = [...(hero.inventory || [])];
+    // Deep clone session for immutability
+    const newSession = {
+      ...gameSession,
+      heroes: [...gameSession.heroes],
+      monsters: [...(gameSession.monsters || [])]
+    };
+
+    const updatedHero = { 
+      ...hero, 
+      inventory: [...(hero.inventory || [])] 
+    };
 
     // Apply Effects
-    if (itemDef.hp != null && itemDef.hp !== 0) {
+    if (itemDef.hp !== 0 && itemDef.hp != null) {
       updatedHero.currentBody += itemDef.hp;
-      if (updatedHero.hero?.corpo != null && updatedHero.currentBody > updatedHero.hero.corpo) {
-        updatedHero.currentBody = updatedHero.hero.corpo;
+      const maxBody = updatedHero.hero?.corpo || 0;
+      if (updatedHero.currentBody > maxBody) {
+        updatedHero.currentBody = maxBody;
       }
     }
 
-    if (itemDef.mp != null && itemDef.mp !== 0) {
+    if (itemDef.mp !== 0 && itemDef.mp != null) {
       updatedHero.currentMind += itemDef.mp;
-      if (updatedHero.hero?.mente != null && updatedHero.currentMind > updatedHero.hero.mente) {
-        updatedHero.currentMind = updatedHero.hero.mente;
+      const maxMind = updatedHero.hero?.mente || 0;
+      if (updatedHero.currentMind > maxMind) {
+        updatedHero.currentMind = maxMind;
       }
     }
 
     // Handle Special Items
     if (itemDef.acqua) {
       if (targetMonsterId !== null) {
-        const monsterIndex = updatedSession.monsters?.findIndex((m) => m.id === targetMonsterId);
-        if (monsterIndex != null && monsterIndex !== -1) {
-          const targetMonster = updatedSession.monsters[monsterIndex];
-          
+        const monsterIndex = newSession.monsters.findIndex(m => m.id === targetMonsterId);
+        if (monsterIndex !== -1) {
+          const targetMonster = newSession.monsters[monsterIndex];
           if (targetMonster.monster?.nonmorto) {
-            const updatedMonsters = [...(updatedSession.monsters || [])];
             const updatedMonster = { ...targetMonster };
-            
             const damage = itemDef.danni || 0;
-            updatedMonster.currentBody -= damage;
             
-            if (onNotify) {
-              onNotify("L'Acqua Santa purifica il non-morto infliggendo " + damage + " danni!");
-            }
-
+            updatedMonster.currentBody -= damage;
+            onNotify?.(`L'Acqua Santa purifica il non-morto infliggendo ${damage} danni!`);
+            
             if (updatedMonster.currentBody <= 0) {
-              updatedMonsters.splice(monsterIndex, 1);
+              newSession.monsters.splice(monsterIndex, 1);
             } else {
-              updatedMonsters[monsterIndex] = updatedMonster;
+              newSession.monsters[monsterIndex] = updatedMonster;
             }
-            updatedSession.monsters = updatedMonsters;
           } else {
-            if (onNotify) {
-              onNotify("L'Acqua Santa non ha effetto su questa creatura.");
-            }
+            onNotify?.("L'Acqua Santa non ha effetto su questa creatura.");
           }
         }
       } else {
-        if (onNotify) {
-          onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-        }
+        onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
       }
     }
 
     // Inventory Management
     updatedHero.inventory.splice(inventoryIndex, 1);
-    updatedSession.heroes[heroIndex] = updatedHero;
+    newSession.heroes[heroIndex] = updatedHero;
 
     // Feedback
-    if (onNotify) {
-      onNotify("Hai usato " + itemDef.nome + "!");
-    }
+    onNotify?.(`Hai usato ${itemDef.nome}!`);
 
     // Update
-    if (onUpdateSession) {
-      onUpdateSession(updatedSession);
-    }
+    onUpdateSession?.(newSession);
+
   }, [staticItems, onUpdateSession, onNotify]);
 
   return { useItem };
-}
+};

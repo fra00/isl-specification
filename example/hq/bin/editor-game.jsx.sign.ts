@@ -1,1 +1,1 @@
-export default function EditorGame(): React.ReactElement;
+export default function EditorGame(): React.Element;

@@ -25,49 +25,57 @@ export default function DungeonTurnControls({
   onCancelTargeting,
   onOpenDoor
 }) {
-  const [position, setPosition] = useState(() => {
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const positionRef = useRef({ x: 20, y: 20 });
+
+  // Initialize position from local storage
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem("dungeonTurnControlsPosition");
+      const saved = localStorage.getItem('dungeonTurnControlsPosition');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          setPosition(parsed);
+          positionRef.current = parsed;
+        }
       }
     } catch (e) {
-      console.warn("Failed to parse saved position", e);
+      console.error("Failed to parse dungeonTurnControlsPosition", e);
     }
-    return { x: 20, y: 20 };
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const positionRef = useRef(position);
+  }, []);
 
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
     dragOffset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: e.clientX - positionRef.current.x,
+      y: e.clientY - positionRef.current.y
     };
-  }, [position]);
+  }, []);
 
   useEffect(() => {
-    if (!isDragging) return;
-
     const handleMouseMove = (e) => {
-      const newPos = {
-        x: e.clientX - dragOffset.current.x,
-        y: e.clientY - dragOffset.current.y
-      };
+      if (!isDragging) return;
+      const newX = e.clientX - dragOffset.current.x;
+      const newY = e.clientY - dragOffset.current.y;
+      const newPos = { x: newX, y: newY };
+      
       setPosition(newPos);
       positionRef.current = newPos;
     };
 
     const handleMouseUp = () => {
+      if (!isDragging) return;
       setIsDragging(false);
-      localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
+      localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(positionRef.current));
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -75,129 +83,137 @@ export default function DungeonTurnControls({
     };
   }, [isDragging]);
 
-  if (!currentHero) return null;
-
   const heroClass = currentHero?.hero?.classe || "Unknown";
-  const hasMoved = turnPhase?.HasMoved === true;
-  const hasPerformedAction = turnPhase?.HasPerformedAction === true;
+  const hasMoved = turnPhase?.HasMoved || false;
+  const hasPerformedAction = turnPhase?.HasPerformedAction || false;
   const hasSpells = currentHero?.availableSpells?.length > 0;
 
   return (
     <div
-      className="fixed z-50 w-[250px] bg-gray-800 text-white rounded-lg shadow-xl select-none flex flex-col"
+      className="fixed bg-gray-800 text-white rounded-lg shadow-xl w-[250px] z-50 flex flex-col"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
-      {/* Header / Drag Handle */}
+      {/* Header */}
       <div
-        className={`bg-gray-900 p-3 rounded-t-lg font-bold text-center border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`bg-gray-900 p-3 rounded-t-lg select-none flex justify-between items-center font-bold border-b border-gray-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
       >
-        Turn Controls
+        <span>Turn Controls</span>
+        <span className="text-gray-400 text-xs">☰</span>
       </div>
 
-      <div className="p-3 flex flex-col gap-3">
-        {/* Info Section */}
-        <div className="bg-gray-700/50 rounded p-2 text-sm grid grid-cols-2 gap-x-2 gap-y-1">
-          <div className="text-gray-400">Class:</div>
-          <div className="font-semibold text-right">{heroClass}</div>
-          
-          <div className="text-gray-400">Movement:</div>
-          <div className="font-semibold text-right">{movementPoints ?? "-"}</div>
-          
-          <div className="text-gray-400">Gold:</div>
-          <div className="font-semibold text-right text-yellow-400">{currentHero?.gold ?? 0}</div>
-          
-          <div className="text-gray-400">Health:</div>
-          <div className="font-semibold text-right text-red-400">{currentHero?.currentBody ?? "-"}</div>
-          
-          <div className="text-gray-400">Mind:</div>
-          <div className="font-semibold text-right text-blue-400">{currentHero?.currentMind ?? "-"}</div>
-          
-          <div className="text-gray-400">Attack:</div>
-          <div className="font-semibold text-right">{currentHero?.hero?.attacco ?? "-"}</div>
-          
-          <div className="text-gray-400">Defense:</div>
-          <div className="font-semibold text-right">{currentHero?.hero?.difesa ?? "-"}</div>
+      {/* Info Section */}
+      <div className="p-4 space-y-1 text-sm border-b border-gray-700">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Class:</span>
+          <span className="font-semibold">{heroClass}</span>
         </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Movement:</span>
+          <span className="font-semibold">{movementPoints != null ? movementPoints : '-'}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Gold:</span>
+          <span className="font-semibold text-yellow-400">{currentHero?.gold ?? 0}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Health:</span>
+          <span className="font-semibold text-red-400">
+            {currentHero?.currentBody ?? 0} / {currentHero?.hero?.corpo ?? 0}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Intelligence:</span>
+          <span className="font-semibold text-blue-400">
+            {currentHero?.currentMind ?? 0} / {currentHero?.hero?.mente ?? 0}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Attack:</span>
+          <span className="font-semibold">{currentHero?.hero?.attacco ?? 0}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Defense:</span>
+          <span className="font-semibold">{currentHero?.hero?.difesa ?? 0}</span>
+        </div>
+      </div>
 
-        {/* Inventory Section */}
+      {/* Inventory Section */}
+      <div className="p-4 pb-2">
         <button
           onClick={onOpenInventory}
-          className="w-full py-2 px-4 rounded font-semibold transition-colors bg-blue-600 hover:bg-blue-700"
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white"
         >
           Inventory
         </button>
+      </div>
 
-        <hr className="border-gray-600" />
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-2 p-4 pt-2">
+        <button
+          onClick={onRollMovement}
+          disabled={hasMoved || movementPoints != null}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Roll Movement
+        </button>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2">
+        <button
+          onClick={onSearchPassages}
+          disabled={hasPerformedAction}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Search Passages
+        </button>
+
+        <button
+          onClick={onSearchTreasure}
+          disabled={hasPerformedAction}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Search Treasure
+        </button>
+
+        <button
+          onClick={onSearchTraps}
+          disabled={hasPerformedAction}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Search Traps
+        </button>
+
+        <button
+          onClick={onOpenMagic}
+          disabled={hasPerformedAction || !hasSpells}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Magic
+        </button>
+
+        {isTargeting && (
           <button
-            onClick={onRollMovement}
-            disabled={hasMoved || movementPoints != null || isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onCancelTargeting}
+            className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-gray-600 hover:bg-gray-700 text-white"
           >
-            Roll Movement
+            Cancel Targeting
           </button>
+        )}
 
+        {canOpenDoor && (
           <button
-            onClick={onSearchPassages}
-            disabled={hasPerformedAction || isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onOpenDoor}
+            className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-green-600 hover:bg-green-700 text-white"
           >
-            Search Passages
+            Open Door
           </button>
+        )}
 
-          <button
-            onClick={onSearchTreasure}
-            disabled={hasPerformedAction || isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Search Treasure
-          </button>
-
-          <button
-            onClick={onSearchTraps}
-            disabled={hasPerformedAction || isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Search Trap
-          </button>
-
-          <button
-            onClick={onOpenMagic}
-            disabled={hasPerformedAction || !hasSpells || isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Magic
-          </button>
-
-          {isTargeting && (
-            <button
-              onClick={onCancelTargeting}
-              className="w-full py-2 px-4 rounded font-semibold transition-colors bg-gray-600 hover:bg-gray-700"
-            >
-              Cancel Targeting
-            </button>
-          )}
-
-          {canOpenDoor && (
-            <button
-              onClick={onOpenDoor}
-              className="w-full py-2 px-4 rounded font-semibold transition-colors bg-green-600 hover:bg-green-700"
-            >
-              Open Door
-            </button>
-          )}
-
-          <button
-            onClick={onEndTurn}
-            disabled={isMoving}
-            className="w-full py-2 px-4 rounded font-semibold transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-          >
-            End Turn
-          </button>
-        </div>
+        <button
+          onClick={onEndTurn}
+          className="w-full py-2 px-4 rounded font-bold text-sm transition-colors bg-red-600 hover:bg-red-700 text-white mt-2"
+        >
+          End Turn
+        </button>
       </div>
     </div>
   );

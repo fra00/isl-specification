@@ -6,59 +6,33 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
-
 export default function DungeonGameOver({ isOpen = false, onExit = () => {} }) {
   if (!isOpen) {
     return null;
   }
 
-  const handleExit = () => {
-    onExit?.();
-  };
-
   return (
-    <>
-      <style>{`
-        @keyframes dramaticFadeInScale {
-          0% { 
-            opacity: 0; 
-            transform: scale(0.85); 
-            filter: blur(4px);
-          }
-          100% { 
-            opacity: 1; 
-            transform: scale(1); 
-            filter: blur(0px);
-          }
-        }
-        .animate-dramatic {
-          animation: dramaticFadeInScale 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
-      `}</style>
-      
-      <div className="fixed inset-0 z-[90] bg-black flex items-center justify-center p-4">
-        <div className="text-center animate-dramatic flex flex-col items-center max-w-4xl w-full">
-          <h1 className="text-7xl md:text-9xl font-serif text-red-700 mb-6 tracking-widest drop-shadow-[0_0_20px_rgba(185,28,28,0.6)] uppercase">
-            Game Over
-          </h1>
-          
-          <h2 className="text-3xl md:text-5xl text-gray-200 mb-4 font-medium drop-shadow-md">
-            Tutti gli eroi sono caduti...
-          </h2>
-          
-          <p className="text-xl md:text-2xl text-gray-500 mb-12 italic">
-            Zargon ha trionfato. Il mondo precipita nell'oscurità.
-          </p>
-          
-          <button
-            onClick={handleExit}
-            className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-800 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(185,28,28,0.8)] focus:outline-none focus:ring-4 focus:ring-red-900"
-          >
-            Torna al Menu
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[90] bg-black flex items-center justify-center p-4">
+      <div className="text-center flex flex-col items-center animate-[pulse_4s_ease-in-out_infinite]">
+        <h1 className="text-6xl md:text-8xl text-red-700 font-serif font-black mb-6 tracking-widest drop-shadow-[0_0_20px_rgba(185,28,28,0.8)] uppercase">
+          Game Over
+        </h1>
+        
+        <h2 className="text-2xl md:text-3xl text-gray-200 mb-4 font-serif">
+          Tutti gli eroi sono caduti...
+        </h2>
+        
+        <p className="text-lg md:text-xl text-gray-400 mb-12 italic">
+          Zargon ha trionfato. Il mondo precipita nell'oscurità.
+        </p>
+        
+        <button
+          onClick={onExit}
+          className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-900 hover:border-red-500 transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.7)]"
+        >
+          Torna al Menu
+        </button>
       </div>
-    </>
+    </div>
   );
 }

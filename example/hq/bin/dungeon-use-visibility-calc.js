@@ -6,33 +6,42 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function useVisibilityCalc({ gameSession, visibilityMap }) {
-  const calculateVisibleCells = useCallback((startX, startY) => {
-    const visibleCells = [];
-    const startVisCell = visibilityMap?.data?.find(c => c.x === startX && c.y === startY);
+  // Use ref to keep exposed functions referentially stable while accessing latest state
+  const stateRef = useRef({ gameSession, visibilityMap });
 
-    if (!startVisCell) {
-      return visibleCells;
-    }
+  useEffect(() => {
+    stateRef.current = { gameSession, visibilityMap };
+  }, [gameSession, visibilityMap]);
+
+  const calculateVisibleCells = useCallback((startX, startY) => {
+    const { gameSession: currentSession, visibilityMap: currentVisMap } = stateRef.current;
+    const visibleCells = [];
+    
+    if (!currentVisMap?.data) return visibleCells;
+
+    const startVisCell = currentVisMap.data.find(c => c.x === startX && c.y === startY);
+    if (!startVisCell) return visibleCells;
 
     visibleCells.push({ x: startX, y: startY });
 
     // Phase 1: Room Visibility
     if (startVisCell.valo !== "1") {
-      visibilityMap?.data?.forEach(cell => {
+      for (let i = 0; i < currentVisMap.data.length; i++) {
+        const cell = currentVisMap.data[i];
         if (
           cell.valo === startVisCell.vis1 ||
           cell.valo === startVisCell.vis2 ||
           cell.valo === startVisCell.valo
         ) {
-          // Prevent duplicating the start cell
+          // Prevent duplicate of the start cell
           if (cell.x !== startX || cell.y !== startY) {
             visibleCells.push({ x: cell.x, y: cell.y });
           }
         }
-      });
+      }
       return visibleCells;
     }
 
@@ -44,7 +53,8 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
       { x: 1, y: 0 }   // Right
     ];
 
-    directions.forEach(dir => {
+    for (let i = 0; i < directions.length; i++) {
+      const dir = directions[i];
       let currentX = startX;
       let currentY = startY;
 
@@ -52,11 +62,8 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
         currentX += dir.x;
         currentY += dir.y;
 
-        const visCell = visibilityMap?.data?.find(c => c.x === currentX && c.y === currentY);
-        
-        if (!visCell) {
-          break;
-        }
+        const visCell = currentVisMap.data.find(c => c.x === currentX && c.y === currentY);
+        if (!visCell) break;
 
         // Rule 1: Room Boundary (Stop)
         if (visCell.valo !== "1") {
@@ -64,7 +71,7 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
         }
 
         // Rule 2: Obstacle (Stop)
-        const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === currentX && c.y === currentY);
+        const mapCell = currentSession?.currentMap?.grid?.find(c => c.x === currentX && c.y === currentY);
         if (mapCell?.arnt?.antroc === true) {
           visibleCells.push({ x: currentX, y: currentY });
           break;
@@ -73,13 +80,17 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
         // Rule 3: Corridor (Propagate)
         visibleCells.push({ x: currentX, y: currentY });
       }
-    });
+    }
 
     return visibleCells;
-  }, [gameSession, visibilityMap]);
+  }, []);
 
   const hasLineOfSight = useCallback((startX, startY, targetX, targetY) => {
-    // Trace a direct logical line using Bresenham's line algorithm
+    const { gameSession: currentSession, visibilityMap: currentVisMap } = stateRef.current;
+    
+    if (!currentVisMap?.data || !currentSession?.currentMap?.grid) return false;
+
+    // Bresenham's Line Algorithm to trace the direct logical line
     const points = [];
     let x0 = startX;
     let y0 = startY;
@@ -106,48 +117,41 @@ export function useVisibilityCalc({ gameSession, visibilityMap }) {
       }
     }
 
-    let prevValo = null;
-    let prevX = null;
-    let prevY = null;
+    let previousValo = null;
 
     for (let i = 0; i < points.length; i++) {
       const { x, y } = points[i];
-      const visCell = visibilityMap?.data?.find(c => c.x === x && c.y === y);
-      const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === x && c.y === y);
+      const visCell = currentVisMap.data.find(c => c.x === x && c.y === y);
+      const mapCell = currentSession.currentMap.grid.find(c => c.x === x && c.y === y);
 
-      const currentValo = visCell?.valo;
+      if (!visCell) return false; // Out of bounds
 
-      // Check if transition between cells crosses a wall (Area ID valo changes without an open door)
-      if (prevValo != null && currentValo != null && prevValo !== currentValo) {
-        const currentDoorStr = `${x},${y}`;
-        const prevDoorStr = `${prevX},${prevY}`;
-        const isDoorOpen = gameSession?.openedDoors?.includes(currentDoorStr) || gameSession?.openedDoors?.includes(prevDoorStr);
+      // Check Wall transition (Area ID valo changes without an open door)
+      if (previousValo !== null && previousValo !== visCell.valo) {
+        const isCurrentDoorOpen = currentSession.openedDoors?.includes(`${x},${y}`);
+        const prevPoint = points[i - 1];
+        const isPrevDoorOpen = prevPoint ? currentSession.openedDoors?.includes(`${prevPoint.x},${prevPoint.y}`) : false;
         
-        if (!isDoorOpen) {
+        if (!isCurrentDoorOpen && !isPrevDoorOpen) {
           return false;
         }
       }
 
-      // Skip obstacle checks for the starting cell itself
-      if (i > 0) {
-        // Check if cell contains Furniture
-        if (mapCell?.mobili?.num != null) {
-          return false;
-        }
-        
-        // Check if cell contains a Rock block
-        if (mapCell?.arnt?.antroc === true) {
-          return false;
-        }
+      // Check Furniture
+      if (mapCell?.mobili?.num != null) {
+        return false;
       }
 
-      prevValo = currentValo;
-      prevX = x;
-      prevY = y;
+      // Check Rock block
+      if (mapCell?.arnt?.antroc === true) {
+        return false;
+      }
+
+      previousValo = visCell.valo;
     }
 
     return true;
-  }, [gameSession, visibilityMap]);
+  }, []);
 
   return {
     calculateVisibleCells,

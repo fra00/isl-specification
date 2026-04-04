@@ -8,17 +8,18 @@
 
 import { useMemo } from 'react';
 
-export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
+export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
   const visibleDoors = useMemo(() => {
-    if (!gameSession?.currentMap?.porte || !boardVisibilityMap?.data) {
+    if (!gameSession?.currentMap || !boardVisibilityMap) {
       return [];
     }
 
-    const result = [];
+    const porte = gameSession.currentMap.porte || [];
+    const visibilityData = boardVisibilityMap.data || [];
     const openedDoors = gameSession.openedDoors || [];
-    const visibilityData = boardVisibilityMap.data;
+    const result = [];
 
-    for (const door of gameSession.currentMap.porte) {
+    for (const door of porte) {
       const x = parseInt(door.x, 10);
       const y = parseInt(door.y, 10);
       const doorCoordKey = `${x},${y}`;
@@ -64,4 +65,4 @@ export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
   }, [gameSession, boardVisibilityMap]);
 
   return { visibleDoors };
-};
+}

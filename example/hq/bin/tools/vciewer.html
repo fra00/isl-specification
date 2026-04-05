@@ -112,9 +112,15 @@
     </div>
     <div id="map-container"></div>
 
-    <div id="info">
-      <h3>Dettagli Casella</h3>
-      <div id="details">Seleziona una casella sulla mappa...</div>
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+      <div id="info">
+        <h3>Dettagli Casella</h3>
+        <div id="details">Seleziona una casella sulla mappa...</div>
+      </div>
+      <div id="json-info" style="margin-top: 20px; width: 450px; background: #333; padding: 15px; border-left: 5px solid #00d778;">
+        <h3>JSON Completo</h3>
+        <pre id="json-details" style="font-size: 11px; color: #0f0; overflow: auto; max-height: 500px; margin: 0; white-space: pre-wrap; word-break: break-all;">{}</pre>
+      </div>
     </div>
 
     <script>
@@ -311,6 +317,12 @@
           }
           if (!bCell && !mCell) html += "Cella vuota.";
           details.innerHTML = html;
+
+          // Aggiornamento pannello JSON
+          const jsonDisplay = document.getElementById("json-details");
+          if (jsonDisplay) {
+              jsonDisplay.textContent = JSON.stringify({ board: bCell, grid: mCell }, null, 2);
+          }
       }
 
       function renderBoard(board) {

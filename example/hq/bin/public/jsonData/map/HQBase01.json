@@ -18608,7 +18608,7 @@
       },
       "psgg": {
         "ps": 1,
-        "oriz": false
+        "oriz": true
       },
       "trpl": {
         "tipo": 2,

@@ -44,18 +44,28 @@
 #### initialize
 
 - **Flow**:
-  - Identify Wizard in `heroes`. IF found, set as `currentHeroPicking`. ELSE, set `currentHeroPicking` to null and display 'Nessun mago disponibile'.
+  - Identify hero in `heroes` where `hero.hero.classe` == "Mago".
+  - IF Wizard is found:
+    - Set `currentHeroPicking` to Wizard.
+  - ELSE:
+    - Identify hero in `heroes` where `hero.hero.classe` == "Elfo".
+    - IF Elf is found:
+      - Set `currentHeroPicking` to Elf.
+    - ELSE:
+      - Set `currentHeroPicking` to null.
   - Set `pickedElements` to empty.
 
 #### selectElement
 
 - **Signature**: `(elemento: String)`
 - **Flow**:
+  - IF `currentHeroPicking` is null RETURN.
   - IF `pickedElements` contains `elemento` RETURN.
   - Add `elemento` to `pickedElements`.
-    - IF `currentHeroPicking.hero.classe` == "Mago" AND `pickedElements.length` == 3:
+    - BRANCH:
+      - IF `currentHeroPicking.hero.classe` == "Mago" AND `pickedElements.length` == 3:
       - // Auto-assign remaining element to Elf if present
-      - Let `elf` = Find hero in `heroes` where `hero.classe` == "Elfo".
+        - Let `elf` = Find hero in `heroes` where `hero.hero.classe` == "Elfo".
       - IF `elf` is found:
         - Let `allElements` = ["Fuoco", "Acqua", "Terra", "Aria"].
         - Let `remaining` = Find element in `allElements` NOT IN `pickedElements`.
@@ -69,5 +79,11 @@
         - Let `elfSpells` = Filter `allSpells` where `spell.elemento` is the 4th `pickedElements` -> map to `id`.
         - Add `elf.heroId -> elfSpells` to `selectionMap`.
       - Trigger `onConfirmSelection(selectionMap)`.
+      - IF `currentHeroPicking.hero.classe` == "Elfo" AND `pickedElements.length` == 1:
+        - Let `elfId` = `currentHeroPicking.heroId`.
+        - Let `elfSpells` = Filter `allSpells` where `spell.elemento` == `elemento` -> map to `id`.
+        - Let `selectionMap` = New Map.
+        - Add `elfId -> elfSpells` to `selectionMap`.
+        - Trigger `onConfirmSelection(selectionMap)`.
 
 **💡 Implementation Hint**: The Wizard picks 3 elements, leaving exactly one for the Elf automatically.

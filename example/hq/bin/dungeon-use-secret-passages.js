@@ -6,43 +6,48 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback } from 'react';
-import { useVisibilityCalc } from './dungeon-use-visibility-calc';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 
 export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone }) {
     const [foundPassages, setFoundPassages] = useState([]);
     
-    const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
+    // Use a ref to keep track of foundPassages without causing searchPassages to re-render
+    const foundPassagesRef = useRef(foundPassages);
+    useEffect(() => {
+        foundPassagesRef.current = foundPassages;
+    }, [foundPassages]);
+
+    const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
     const searchPassages = useCallback(() => {
-        if (!gameSession?.heroes || !gameSession?.currentMap?.grid) {
+        if (!gameSession || !gameSession.heroes || !gameSession.currentMap?.grid) {
+            onActionDone?.();
             return;
         }
 
         const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
         if (!currentHero) {
+            onActionDone?.();
             return;
         }
 
-        const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y) || [];
-        
+        const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
         const isCellVisible = (x, y) => visibleCells.some(c => c.x === x && c.y === y);
 
         let foundInThisSearch = false;
         const newPassages = [];
 
         const potentialPassages = gameSession.currentMap.grid.filter(
-            cell => cell.psgg?.ps != null && cell.psgg.ps > 0
+            cell => cell.psgg != null && cell.psgg.ps != null && cell.psgg.ps > 0
         );
 
         potentialPassages.forEach(potentialPassage => {
             const px = potentialPassage.x;
             const py = potentialPassage.y;
-            const oriz = potentialPassage.psgg?.oriz === true;
-
             let isDiscoverable = false;
 
-            if (oriz) {
+            if (potentialPassage.psgg.oriz) {
                 if (isCellVisible(px, py - 1) || isCellVisible(px, py + 1)) {
                     isDiscoverable = true;
                 }
@@ -52,64 +57,62 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
                 }
             }
 
-            const alreadyFound = foundPassages.some(p => p.x === px && p.y === py) || 
-                                 newPassages.some(p => p.x === px && p.y === py);
+            const alreadyFound = foundPassagesRef.current.some(p => p.x === px && p.y === py);
 
             if (isDiscoverable && !alreadyFound) {
-                const img = oriz ? "pso.jpg" : "psv.jpg";
-                newPassages.push({ x: px, y: py, img, oriz });
+                const img = potentialPassage.psgg.oriz ? "pso.jpg" : "psv.jpg";
+                newPassages.push({ 
+                    x: px, 
+                    y: py, 
+                    img, 
+                    oriz: potentialPassage.psgg.oriz 
+                });
                 foundInThisSearch = true;
             }
         });
 
         if (foundInThisSearch) {
             setFoundPassages(prev => [...prev, ...newPassages]);
-            if (typeof onNotify === 'function') {
-                onNotify("Hai trovato un passaggio segreto!");
-            }
-            if (typeof onActionDone === 'function') {
-                onActionDone();
-            }
+            onNotify?.("Hai trovato un passaggio segreto!");
         } else {
-            if (typeof onNotify === 'function') {
-                onNotify("Nessun passaggio segreto trovato.");
-            }
-            if (typeof onActionDone === 'function') {
-                onActionDone();
-            }
+            onNotify?.("Nessun passaggio segreto trovato.");
         }
-    }, [gameSession, foundPassages, visibilityCalc, onNotify, onActionDone]);
+        
+        onActionDone?.();
+
+    }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
 
     const getFoundPassages = useCallback(() => {
         const visiblePassages = [];
         const visData = visibilityMap?.data || [];
 
+        const isCellRevealed = (x, y) => {
+            const cell = visData.find(c => c.x === x && c.y === y);
+            return cell != null && cell.fog === false;
+        };
+
         foundPassages.forEach(passage => {
             let isVisible = false;
-            const { x, y, oriz } = passage;
-            
-            const cellsToCheck = [{ x, y }];
+            const cellsToCheck = [{ x: passage.x, y: passage.y }];
 
-            if (oriz) {
-                cellsToCheck.push({ x, y: y - 1 });
-                cellsToCheck.push({ x, y: y + 1 });
+            if (passage.oriz) {
+                cellsToCheck.push({ x: passage.x, y: passage.y - 1 });
+                cellsToCheck.push({ x: passage.x, y: passage.y + 1 });
             } else {
-                cellsToCheck.push({ x: x - 1, y });
-                cellsToCheck.push({ x: x + 1, y });
+                cellsToCheck.push({ x: passage.x - 1, y: passage.y });
+                cellsToCheck.push({ x: passage.x + 1, y: passage.y });
             }
 
-            for (let i = 0; i < cellsToCheck.length; i++) {
-                const coord = cellsToCheck[i];
-                const visCell = visData.find(c => c.x === coord.x && c.y === coord.y);
-                
-                if (visCell && visCell.fog === false) {
+            for (const coord of cellsToCheck) {
+                if (isCellRevealed(coord.x, coord.y)) {
                     isVisible = true;
                     break;
                 }
             }
 
             if (isVisible) {
-                visiblePassages.push(passage);
+                // Return only the properties requested by the ISL signature
+                visiblePassages.push({ x: passage.x, y: passage.y, img: passage.img });
             }
         });
 

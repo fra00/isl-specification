@@ -15,7 +15,7 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
     const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
 
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (!movementRules?.isValidDestination(targetX, targetY, excludeEntityId)) {
+        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
             return [];
         }
 

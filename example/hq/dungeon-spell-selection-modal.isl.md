@@ -43,17 +43,16 @@
 
 #### initialize
 
-- **Flow**:
-  - Identify hero in `heroes` where `hero.hero.classe` == "Mago".
-  - IF Wizard is found:
-    - Set `currentHeroPicking` to Wizard.
+- Identify hero in `heroes` where `hero.hero.classe.toLowerCase()` == "mago".
+- IF Wizard is found:
+  - Set `currentHeroPicking` to Wizard.
+- ELSE:
+  - Identify hero in `heroes` where `hero.hero.classe.toLowerCase()` == "elfo".
+  - IF Elf is found:
+    - Set `currentHeroPicking` to Elf.
   - ELSE:
-    - Identify hero in `heroes` where `hero.hero.classe` == "Elfo".
-    - IF Elf is found:
-      - Set `currentHeroPicking` to Elf.
-    - ELSE:
-      - Set `currentHeroPicking` to null.
-  - Set `pickedElements` to empty.
+    - Set `currentHeroPicking` to null.
+- Set `pickedElements` to empty.
 
 #### selectElement
 

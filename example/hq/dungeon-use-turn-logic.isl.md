@@ -129,16 +129,19 @@
   - IF `isMoving` is true OR `movementPoints` <= 0 RETURN.
   - Set `isMovingStarted` to true.
   - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
-  - Set `canOpenDoor` to null.
   - Initialize `path` with `hoveredPath`.
   - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
     - Calculate path from `currentHero` to (x, y) using `hooksPathfinding`.
     - IF calculated path is valid (length > 0):
       - Set `path` to [`currentHero` position, ...calculated path].
   - IF `path` length > 1 AND last point of `path` is (x, y):
+    - Set `canOpenDoor` to null.
     - Set `isMoving` to true.
     - Set `activePath` to a copy of `path`.
     - Set `hoveredPath` to empty.
+  - ELSE:
+    - // Restore/re-check door interaction if movement didn't happen
+    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null)`.
 
 #### movementEffect
 
@@ -162,6 +165,9 @@
           - RETURN.
         - ELSE:
           - Trigger `onNotify("Non puoi uscire! Devi prima compiere la missione.")`.
+    - **Update Final Interactive State**:
+      - Let `hero` = find current hero.
+      - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
     - IF `movementPoints` <= 0 No movement left, mark action as done:
       - Set `turnPhase.hasMoved` to true.
     - RETURN.
@@ -178,12 +184,13 @@
     - Let `newVis` = find cell in `visibilityMap.data` matching `nextPos.x` and `nextPos.y`.
     - // Trigger opening only if hero crosses between different Area IDs (valo)
     - IF `oldVis` is NOT null AND `newVis` is NOT null AND `oldVis.valo` != `newVis.valo`:
-      - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(nextPos.x, nextPos.y)`.
+      - // Use old position to determine destination correctly as 'the new area'
+      - // Rule 4.2: Provide the starting valo to correctly identify the new area to reveal
+      - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, oldVis.valo)`.
       - IF `doorCheck.found` is true AND `doorCheck.passageCell` is same as `nextPos`:
         - Call `mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y)`.
         - Set `canOpenDoor` to null.
 
-  - Trigger `onUpdateSession`.
   - **Trap Check**:
     - Find `mapCell` at `nextPos` in grid.
     - IF `mapCell.trpl` exists AND `trapsLogic.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)` is true:
@@ -219,9 +226,10 @@
           - RETURN.
   - Set `activePath` to `activePath` starting from index 1.
   - **Update Manual Door State**:
-    - IF `activePath` length < 2:
-      - Let `hero` = find current hero.
-      - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y)`.
+    - // Rule 4.5: Always update interactive state during movement to enable UI
+    - Let `hero` = find current hero.
+    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
+  - Trigger `onUpdateSession`.
 
 #### handleMonsterClick
 
@@ -273,7 +281,8 @@
       - Set `turnPhase.hasPerformedAction` to true.
     - IF the Hero has started to move before attack set `turnPhase.hasMoved` as true.
     - Set `lastAttack` on session to {hero:@HeroState,monster:@MonsterState,combatResult: @CombatResult} for potential UI display.
-    - Set `canOpenDoor` to null.
+    - // Re-calculate door interaction (Attack doesn't prevent opening doors)
+    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
     - **Handle Weapon Consumption**:
       - Determine if it is a ranged attack: `dist` > 1 OR (`dx` == 1 AND `dy` == 1 AND `stats.canAttackDiagonal` is false).
       - IF it is a ranged attack:
@@ -287,10 +296,10 @@
 #### handleOpenDoor
 
 - **Contract**: Manually opens a door when adjacent.
-- **Flow**:
   - IF `canOpenDoor` is NOT null:
     - Call `mapInteractionLogic.openPassage(canOpenDoor.passageCell.x, canOpenDoor.passageCell.y, canOpenDoor.destination.x, canOpenDoor.destination.y)`.
-    - Set `canOpenDoor` to null.
+    - Let `hero` = find current hero.
+    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
 
 #### markActionDone
 
@@ -299,7 +308,8 @@
 - **Flow**:
   - Set `turnPhase.hasPerformedAction` true.
   - if `isMovingStarted` is true set `turnPhase.hasMoved` as true.
-  - Set `canOpenDoor` to null.
+  - Let `hero` = find current hero.
+  - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
 
 #### endTurn
 
@@ -322,7 +332,8 @@
   - Reset `movementPoints` to null.
   - Set `isMovingStarted` to false.
   - Set `attacksPerformed` to 0.
-  - Set `canOpenDoor` to null.
+  - Let `newHero` = find current hero (the one whose turn just started).
+  - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(newHero.x, newHero.y, null)`.
   - Trigger `onUpdateSession`.
 
 - **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`

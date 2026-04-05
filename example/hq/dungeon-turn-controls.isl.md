@@ -73,7 +73,7 @@
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchTraps`.
   - **Magic**:
-    - Visible IF `currentHero.availableSpells.length` > 0.
+    - Visible IF `currentHero.hero.classe.toLowerCase()` IN ["mago", "elfo"].
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
     - Style: Purple/Indigo button.
     - OnClick: Trigger `onOpenMagic`.

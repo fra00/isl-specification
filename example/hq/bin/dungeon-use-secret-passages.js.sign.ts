@@ -1,1 +1,1 @@
-export function useSecretPassages(config: { gameSession: any; visibilityMap: any; onNotify: (message: string) => void; onActionDone: () => void }): { searchPassages: () => void; getFoundPassages: () => { visiblePassages: Array<{ x: number; y: number; img: string; oriz: boolean }> } };
+export function useSecretPassages(config: { gameSession: any; visibilityMap: any; onNotify: (message: string) => void; onActionDone: () => void }): { searchPassages: () => void; getFoundPassages: () => { visiblePassages: Array<{ x: number; y: number; img: string }> } };

@@ -6,32 +6,32 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import PlayGame from "./play-game";
-import EditorGame from "./editor-game";
-import MainMenu from "./main-menu";
-import Armory from "./armory";
-import Dungeon from "./dungeon";
-import DungeonDescription from "./dungeon-description";
+import React, { useState, useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import PlayGame from './play-game';
+import EditorGame from './editor-game';
+import MainMenu from './main-menu';
+import Armory from './armory';
+import Dungeon from './dungeon';
+import DungeonDescription from './dungeon-description';
 
-export default function PageContent({
-  monsters = [],
-  heroes = [],
-  boardData = null,
-  equipment = [],
-  items = [],
-  spells = [],
-  treasureDeck = [],
-  campaign = null
-}) {
+export default function PageContent(props) {
+  const {
+    monsters = [],
+    heroes = [],
+    boardData = null,
+    equipment = [],
+    items = [],
+    spells = [],
+    treasureDeck = [],
+    campaign = null
+  } = props || {};
+
   const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
   const [gameSession, setGameSession] = useState(null);
 
   const changePageView = useCallback((nextPageView) => {
-    if (nextPageView != null) {
-      setCurrentPageView(nextPageView);
-    }
+    setCurrentPageView(nextPageView);
   }, []);
 
   const updateSession = useCallback((session) => {
@@ -39,18 +39,23 @@ export default function PageContent({
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log("Mission started:", missionIndex);
+    // Placeholder for mission start logic
+    console.log("Starting mission:", missionIndex);
   }, []);
 
   const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
-        return <MainMenu onChangePageView={changePageView} />;
+        return (
+          <MainMenu 
+            onChangePageView={changePageView} 
+          />
+        );
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             campaign={campaign}
             staticHeroes={heroes}
@@ -58,20 +63,22 @@ export default function PageContent({
           />
         );
       case PageNavigationEnum.EDITOR_GAME:
-        return <EditorGame />;
+        return (
+          <EditorGame />
+        );
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -84,13 +91,17 @@ export default function PageContent({
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
       default:
-        return <MainMenu onChangePageView={changePageView} />;
+        return (
+          <MainMenu 
+            onChangePageView={changePageView} 
+          />
+        );
     }
   };
 

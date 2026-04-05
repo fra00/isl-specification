@@ -41,6 +41,7 @@
 - **Contract**: Computes the current visibility state of the board based on hero positions.
 - **Trigger**: When @gameSession.heroes or `staticVisibilityMap` changes.
 - **Flow**:
+  - IF `fogVisibilityMap` is null OR `fogVisibilityMap.data` is null RETURN.
   - IF `gameSession.isHeroOrderConfirmed` is false, RETURN.
   - Find `heroInTurn` in `gameSession.heroes` matching `gameSession.currentTurn`.
   - IF `heroInTurn` is found:
@@ -53,6 +54,7 @@
 #### revealInitialVisibility
 - **Contract**: Clears fog for all positioned heroes at once.
 - **Flow**:
+  - IF `fogVisibilityMap` is null OR `fogVisibilityMap.data` is null RETURN.
   - FOR EACH `hero` IN `gameSession.heroes`:
     - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
     - Iterate through `visibleCells`:

@@ -9,26 +9,24 @@
 import React, { useState, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
+const MENU_ITEMS = [
+  {
+    label: 'Gioca',
+    destination: PageNavigationEnum.PLAY_GAME,
+    image: '/img/main-menu/nuova.jpg'
+  },
+  {
+    label: 'Editor',
+    destination: PageNavigationEnum.EDITOR_GAME,
+    image: '/img/main-menu/editor.jpg'
+  }
+];
+
 export default function MainMenu({ onChangePageView = () => {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hoverImage, setHoverImage] = useState(null);
 
-  const menuItems = [
-    {
-      id: 'play',
-      label: 'Gioca',
-      destination: PageNavigationEnum.PLAY_GAME,
-      hoverImg: '/img/main-menu/nuova.jpg'
-    },
-    {
-      id: 'editor',
-      label: 'Editor',
-      destination: PageNavigationEnum.EDITOR_GAME,
-      hoverImg: '/img/main-menu/editor.jpg'
-    }
-  ];
-
-  const handleMenuClick = useCallback((destination) => {
+  const clickMenuItems = useCallback((destination) => {
     if (isProcessing) return;
     
     setIsProcessing(true);
@@ -39,8 +37,8 @@ export default function MainMenu({ onChangePageView = () => {} }) {
     }
   }, [isProcessing, onChangePageView]);
 
-  const handleMouseEnter = useCallback((imgUrl) => {
-    setHoverImage(imgUrl);
+  const mouseOverMenuItems = useCallback((image) => {
+    setHoverImage(image);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
@@ -64,25 +62,25 @@ export default function MainMenu({ onChangePageView = () => {} }) {
         className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax"
       />
 
-      {/* MouseOverImage Layer */}
+      {/* MouseOverImage */}
       {hoverImage && (
         <img 
           src={hoverImage} 
-          alt="Menu Hover Preview" 
-          className="absolute top-0 right-0 h-[30%] w-auto object-contain border-none z-20 pointer-events-none"
+          alt="Menu Preview" 
+          className="absolute top-0 right-0 h-[30%] w-auto border-none z-20 object-contain"
         />
       )}
 
       {/* Content Layer */}
-      <div className="relative z-10 flex flex-col items-center gap-8">
-        {menuItems.map((item) => (
+      <div className="relative z-10 flex flex-col items-center justify-center gap-8">
+        {MENU_ITEMS.map((item) => (
           <button
-            key={item.id}
-            onClick={() => handleMenuClick(item.destination)}
-            onMouseEnter={() => handleMouseEnter(item.hoverImg)}
+            key={item.label}
+            onClick={() => clickMenuItems(item.destination)}
+            onMouseEnter={() => mouseOverMenuItems(item.image)}
             onMouseLeave={handleMouseLeave}
             disabled={isProcessing}
-            className="bg-transparent border-none text-white text-5xl font-bold blur-sm hover:blur-none transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-transparent font-bold text-white text-5xl md:text-7xl transition-all duration-300 blur-sm hover:blur-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {item.label}
           </button>

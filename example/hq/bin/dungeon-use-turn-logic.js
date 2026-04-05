@@ -6,457 +6,499 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { TurnPhase } from "./domain-session";
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function useTurnLogic(config) {
-    const {
-        gameSession,
-        visibilityMap,
-        onUpdateSession,
-        onNotify,
-        trapsLogic,
-        heroStatsLogic,
-        hooksPathfinding,
-        combatLogic,
-        mapInteractionLogic,
-        visibilityCalc
-    } = config;
+  const {
+    gameSession,
+    visibilityMap,
+    onUpdateSession,
+    onNotify,
+    trapsLogic,
+    heroStatsLogic,
+    hooksPathfinding,
+    combatLogic,
+    mapInteractionLogic,
+    visibilityCalc
+  } = config;
 
-    const [turnPhase, setTurnPhase] = useState(() => TurnPhase());
-    const [movementPoints, setMovementPoints] = useState(null);
-    const [hoveredPath, setHoveredPath] = useState([]);
-    const [canAttack, setCanAttack] = useState(false);
-    const [attacksPerformed, setAttacksPerformed] = useState(0);
-    const [isMoving, setIsMoving] = useState(false);
-    const [isMovingStarted, setIsMovingStarted] = useState(false);
-    const [canOpenDoor, setCanOpenDoor] = useState(null);
-    const [activePath, setActivePath] = useState([]);
+  const [turnPhase, setTurnPhase] = useState({
+    HasMoved: false,
+    HasPerformedAction: false,
+    IsTurnFinished: false
+  });
+  const [movementPoints, setMovementPoints] = useState(null);
+  const [hoveredPath, setHoveredPath] = useState([]);
+  const [canAttack, setCanAttack] = useState(false);
+  const [attacksPerformed, setAttacksPerformed] = useState(0);
+  const [isMoving, setIsMoving] = useState(false);
+  const [isMovingStarted, setIsMovingStarted] = useState(false);
+  const [canOpenDoor, setCanOpenDoor] = useState(null);
+  const [activePath, setActivePath] = useState([]);
 
-    const checkMissionObjective = useCallback(() => {
-        const header = gameSession?.currentMap?.header;
-        if (!header) return true;
+  const stateRef = useRef({
+    turnPhase,
+    movementPoints,
+    hoveredPath,
+    canAttack,
+    attacksPerformed,
+    isMoving,
+    isMovingStarted,
+    canOpenDoor,
+    activePath,
+    gameSession,
+    visibilityMap
+  });
 
-        if (header.mostro_uscita) {
-            const bossAlive = gameSession.monsters?.some(m => m.monster?.id === header.mostro_uscita);
-            if (bossAlive) return false;
-            return true;
+  useEffect(() => {
+    stateRef.current = {
+      turnPhase,
+      movementPoints,
+      hoveredPath,
+      canAttack,
+      attacksPerformed,
+      isMoving,
+      isMovingStarted,
+      canOpenDoor,
+      activePath,
+      gameSession,
+      visibilityMap
+    };
+  });
+
+  const checkMissionObjective = useCallback(() => {
+    const state = stateRef.current;
+    const header = state.gameSession?.currentMap?.header;
+    if (!header) return true;
+
+    if (header.mostro_uscita) {
+      const bossAlive = state.gameSession.monsters?.some(m => m.monster?.id?.toString() === header.mostro_uscita.toString());
+      if (bossAlive) return false;
+      else return true;
+    }
+
+    if (header.nfine !== undefined && header.nfine !== null) {
+      return true;
+    }
+
+    return true;
+  }, []);
+
+  const endTurn = useCallback((sessionOverride = null) => {
+    const state = stateRef.current;
+    if (state.isMoving) return;
+
+    const sessionToUse = sessionOverride || state.gameSession;
+    if (!sessionToUse) return;
+
+    const currentHero = sessionToUse.heroes?.find(h => h.turnOrder === sessionToUse.currentTurn);
+    let updatedHeroes = sessionToUse.heroes ? [...sessionToUse.heroes] : [];
+
+    if (currentHero && currentHero.activeStatus?.includes("FoggyMist")) {
+      updatedHeroes = updatedHeroes.map(h => {
+        if (h.heroId === currentHero.heroId) {
+          return { ...h, activeStatus: h.activeStatus.filter(s => s !== "FoggyMist") };
         }
+        return h;
+      });
+      onNotify("L'effetto di Nebbia Caliginosa svanisce.");
+    }
 
-        if (header.nfine != null) {
-            return true;
-        }
+    const newTurn = (sessionToUse.currentTurn || 0) + 1;
 
-        return true;
-    }, [gameSession]);
+    setTurnPhase({ HasMoved: false, HasPerformedAction: false, IsTurnFinished: false });
+    setMovementPoints(null);
+    setIsMovingStarted(false);
+    setAttacksPerformed(0);
 
-    useEffect(() => {
-        if (!gameSession) return;
+    const newHero = updatedHeroes.find(h => h.turnOrder === newTurn);
+    if (newHero) {
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(newHero.x, newHero.y, null));
+    } else {
+      setCanOpenDoor(null);
+    }
 
-        const hero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-        if (!hero) return;
+    onUpdateSession({ ...sessionToUse, heroes: updatedHeroes, currentTurn: newTurn });
+  }, [mapInteractionLogic, onNotify, onUpdateSession]);
 
-        let newCanAttack = false;
+  useEffect(() => {
+    const state = stateRef.current;
+    if (!gameSession) return;
+    
+    let newCanAttack = false;
+    const hero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!hero) return;
 
-        if (!turnPhase.HasPerformedAction) {
-            const stats = heroStatsLogic?.calculateStats(hero);
-            const monsters = gameSession.monsters || [];
-
-            for (const monster of monsters) {
-                const dx = Math.abs(hero.x - monster.x);
-                const dy = Math.abs(hero.y - monster.y);
-                const dist = dx + dy;
-
-                if (dist <= 1) {
-                    newCanAttack = true;
-                    break;
-                } else if (dx === 1 && dy === 1 && stats?.canAttackDiagonal) {
-                    if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
-                        newCanAttack = true;
-                        break;
-                    }
-                } else if (stats?.canAttackRanged) {
-                    if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
-                        newCanAttack = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        setCanAttack(newCanAttack);
-
-        const visibleMonsters = (gameSession.monsters || []).filter(m => {
-            const cell = visibilityMap?.data?.find(c => c.x === m.x && c.y === m.y);
-            return cell && cell.fog === false;
-        });
-
-        if (visibleMonsters.length === 0) {
-            let courageRemoved = false;
-            const updatedHeroes = gameSession.heroes.map(h => {
-                if (h.activeStatus?.includes("Courage")) {
-                    courageRemoved = true;
-                    return { ...h, activeStatus: h.activeStatus.filter(s => s !== "Courage") };
-                }
-                return h;
-            });
-
-            if (courageRemoved) {
-                onNotify?.("L'effetto di Coraggio svanisce: non ci sono più mostri in vista.");
-                onUpdateSession?.({ ...gameSession, heroes: updatedHeroes });
-            }
-        }
-    }, [gameSession, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, visibilityMap, onNotify, onUpdateSession]);
-
-    const rollMovement = useCallback(() => {
-        const hero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-        if (!hero) return;
-
-        const stats = heroStatsLogic?.calculateStats(hero);
-        let diceCount = stats?.movimento || 1;
-        if (diceCount < 1) diceCount = 1;
-
-        let total = 0;
-        for (let i = 0; i < diceCount; i++) {
-            total += Math.floor(Math.random() * 6) + 1;
-        }
-
-        setMovementPoints(total);
-    }, [gameSession, heroStatsLogic]);
-
-    const handleBoardHover = useCallback((x, y) => {
-        if (movementPoints == null || movementPoints <= 0 || isMoving) {
-            setHoveredPath([]);
-            return;
-        }
-
-        const hero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-        if (!hero) return;
-
-        const path = hooksPathfinding?.calculatePath(hero.x, hero.y, x, y, movementPoints, hero.heroId);
-        if (path && path.length > 0) {
-            setHoveredPath([{ x: hero.x, y: hero.y }, ...path]);
-        } else {
-            setHoveredPath([]);
-        }
-    }, [movementPoints, isMoving, gameSession, hooksPathfinding]);
-
-    const handleBoardClick = useCallback((x, y) => {
-        if (isMoving || movementPoints == null || movementPoints <= 0) return;
-
-        setIsMovingStarted(true);
-        const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-        if (!currentHero) return;
-
-        setCanOpenDoor(null);
-        let path = [...hoveredPath];
-
-        if (path.length === 0 || path[path.length - 1].x !== x || path[path.length - 1].y !== y) {
-            const calcPath = hooksPathfinding?.calculatePath(currentHero.x, currentHero.y, x, y, movementPoints, currentHero.heroId);
-            if (calcPath && calcPath.length > 0) {
-                path = [{ x: currentHero.x, y: currentHero.y }, ...calcPath];
-            }
-        }
-
-        if (path.length > 1 && path[path.length - 1].x === x && path[path.length - 1].y === y) {
-            setIsMoving(true);
-            setActivePath([...path]);
-            setHoveredPath([]);
-        }
-    }, [isMoving, movementPoints, gameSession, hoveredPath, hooksPathfinding]);
-
-    const endTurn = useCallback(() => {
-        if (isMoving) return;
-
-        const currentHeroIndex = gameSession?.heroes?.findIndex(h => h.turnOrder === gameSession.currentTurn);
-        let updatedHeroes = gameSession ? [...gameSession.heroes] : [];
-
-        if (currentHeroIndex !== -1 && currentHeroIndex != null) {
-            const currentHero = updatedHeroes[currentHeroIndex];
-            if (currentHero.activeStatus?.includes("FoggyMist")) {
-                updatedHeroes[currentHeroIndex] = {
-                    ...currentHero,
-                    activeStatus: currentHero.activeStatus.filter(s => s !== "FoggyMist")
-                };
-                onNotify?.("L'effetto di Nebbia Caliginosa svanisce.");
-            }
-        }
-
-        let nextTurn = (gameSession?.currentTurn || 1) + 1;
-        const maxTurn = Math.max(...(gameSession?.heroes?.map(h => h.turnOrder) || [1]));
-
-        while (nextTurn <= maxTurn) {
-            const nextHero = updatedHeroes.find(h => h.turnOrder === nextTurn);
-            if (nextHero && !nextHero.isEscaped && nextHero.currentBody > 0) {
-                break;
-            }
-            nextTurn++;
-        }
-
-        setTurnPhase(TurnPhase());
-        setMovementPoints(null);
-        setIsMovingStarted(false);
-        setAttacksPerformed(0);
-        setCanOpenDoor(null);
-
-        if (gameSession) {
-            onUpdateSession?.({
-                ...gameSession,
-                heroes: updatedHeroes,
-                currentTurn: nextTurn
-            });
-        }
-    }, [isMoving, gameSession, onNotify, onUpdateSession]);
-
-    useEffect(() => {
-        if (!activePath || activePath.length === 0) return;
-
-        const currentHeroIndex = gameSession?.heroes?.findIndex(h => h.turnOrder === gameSession.currentTurn);
-        if (currentHeroIndex === -1 || currentHeroIndex == null) return;
-        const currentHero = gameSession.heroes[currentHeroIndex];
-
-        if (activePath.length < 2) {
-            if (isMoving) {
-                setIsMoving(false);
-                setActivePath([]);
-            }
-
-            const mapCell = gameSession.currentMap?.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
-            if (mapCell?.fine) {
-                if (checkMissionObjective()) {
-                    const updatedHeroes = [...gameSession.heroes];
-                    updatedHeroes[currentHeroIndex] = { ...currentHero, isEscaped: true };
-                    
-                    setTurnPhase(prev => ({ ...prev, IsTurnFinished: true }));
-                    onNotify?.(`${currentHero.hero?.classe || 'L\'eroe'} è uscito dal dungeon!`);
-                    onUpdateSession?.({ ...gameSession, heroes: updatedHeroes });
-                    
-                    endTurn();
-                    return;
-                } else {
-                    onNotify?.("Non puoi uscire! Devi prima compiere la missione.");
-                }
-            }
-
-            if (movementPoints != null && movementPoints <= 0) {
-                setTurnPhase(prev => ({ ...prev, HasMoved: true }));
-            }
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            const nextPos = activePath[1];
-            const oldPos = { x: currentHero.x, y: currentHero.y };
-
-            const updatedHeroes = [...gameSession.heroes];
-            updatedHeroes[currentHeroIndex] = { ...currentHero, x: nextPos.x, y: nextPos.y };
-            let updatedSession = { ...gameSession, heroes: updatedHeroes };
-
-            setCanOpenDoor(null);
-            setMovementPoints(prev => (prev != null ? prev - 1 : 0));
-
-            const oldVis = visibilityMap?.data?.find(c => c.x === oldPos.x && c.y === oldPos.y);
-            const newVis = visibilityMap?.data?.find(c => c.x === nextPos.x && c.y === nextPos.y);
-
-            if (oldVis && newVis && oldVis.valo !== newVis.valo) {
-                const doorCheck = mapInteractionLogic?.isFrontOfDoor(nextPos.x, nextPos.y);
-                if (doorCheck?.found && doorCheck.passageCell?.x === nextPos.x && doorCheck.passageCell?.y === nextPos.y) {
-                    mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y);
-                    setCanOpenDoor(null);
-                }
-            }
-
-            const mapCell = updatedSession.currentMap?.grid?.find(c => c.x === nextPos.x && c.y === nextPos.y);
-            let trapTriggered = false;
-
-            if (mapCell?.trpl && trapsLogic?.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)) {
-                let jumpSuccess = false;
-                
-                if (mapCell.trpl.tipo === 1 && trapsLogic.isTrapVisible(nextPos.x, nextPos.y)) {
-                    onNotify?.("Tenti di saltare l'abisso...");
-                    const roll = Math.floor(Math.random() * 6) + 1;
-                    if (roll > 1) {
-                        jumpSuccess = true;
-                        onNotify?.("Salto riuscito! L'eroe supera l'abisso.");
-                    }
-                }
-
-                if (!jumpSuccess) {
-                    trapTriggered = true;
-                    let newBody = updatedHeroes[currentHeroIndex].currentBody - 1;
-                    let newStatus = [...(updatedHeroes[currentHeroIndex].activeStatus || [])];
-
-                    if (newStatus.includes("RockSkin")) {
-                        newStatus = newStatus.filter(s => s !== "RockSkin");
-                        onNotify?.("La pelle di pietra si frantuma per l'impatto!");
-                    }
-
-                    updatedHeroes[currentHeroIndex] = { ...updatedHeroes[currentHeroIndex], currentBody: newBody, activeStatus: newStatus };
-                    updatedSession = { ...updatedSession, heroes: updatedHeroes };
-
-                    trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo);
-
-                    if (mapCell.trpl.tipo === 3) {
-                        const gridCopy = [...(updatedSession.currentMap?.grid || [])];
-                        const rockCellIndex = gridCopy.findIndex(c => c.x === mapCell.trpl.rccadex && c.y === mapCell.trpl.rccadey);
-                        if (rockCellIndex !== -1) {
-                            gridCopy[rockCellIndex] = {
-                                ...gridCopy[rockCellIndex],
-                                arnt: { ...gridCopy[rockCellIndex].arnt, antroc: true }
-                            };
-                            updatedSession = { ...updatedSession, currentMap: { ...updatedSession.currentMap, grid: gridCopy } };
-                        }
-                    }
-
-                    switch (mapCell.trpl.tipo) {
-                        case 1: onNotify?.("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce."); break;
-                        case 2: onNotify?.("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce."); break;
-                        case 3: onNotify?.("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce."); break;
-                        default: onNotify?.("TRAPPOLA! Hai interrotto il movimento."); break;
-                    }
-
-                    setIsMoving(false);
-                    setTurnPhase(prev => ({ ...prev, HasMoved: true, HasPerformedAction: true }));
-                    setActivePath([]);
-                }
-            }
-
-            onUpdateSession?.(updatedSession);
-
-            if (!trapTriggered) {
-                const newActivePath = activePath.slice(1);
-                setActivePath(newActivePath);
-
-                if (newActivePath.length < 2) {
-                    const doorCheck = mapInteractionLogic?.isFrontOfDoor(nextPos.x, nextPos.y);
-                    setCanOpenDoor(doorCheck || null);
-                }
-            }
-
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [activePath, gameSession, isMoving, checkMissionObjective, onNotify, onUpdateSession, visibilityMap, mapInteractionLogic, trapsLogic, endTurn]);
-
-    const handleMonsterClick = useCallback((monsterId) => {
-        const monsterIndex = gameSession?.monsters?.findIndex(m => m.id === monsterId);
-        if (monsterIndex === -1 || monsterIndex == null) return;
-        const monster = gameSession.monsters[monsterIndex];
-
-        const heroIndex = gameSession?.heroes?.findIndex(h => h.turnOrder === gameSession.currentTurn);
-        if (heroIndex === -1 || heroIndex == null) return;
-        const hero = gameSession.heroes[heroIndex];
-
-        const stats = heroStatsLogic?.calculateStats(hero);
+    if (turnPhase.HasPerformedAction) {
+      newCanAttack = false;
+    } else {
+      const stats = heroStatsLogic.calculateStats(hero);
+      for (const monster of (gameSession.monsters || [])) {
         const dx = Math.abs(hero.x - monster.x);
         const dy = Math.abs(hero.y - monster.y);
         const dist = dx + dy;
 
-        let isValidTarget = false;
         if (dist <= 1) {
-            isValidTarget = true;
+          newCanAttack = true;
+          break;
         } else if (dx === 1 && dy === 1 && stats?.canAttackDiagonal) {
-            if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) isValidTarget = true;
+          if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
+            newCanAttack = true;
+            break;
+          }
         } else if (stats?.canAttackRanged) {
-            if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) isValidTarget = true;
+          if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
+            newCanAttack = true;
+            break;
+          }
+        }
+      }
+    }
+    setCanAttack(newCanAttack);
+
+    const visibleMonsters = (gameSession.monsters || []).filter(m => {
+      const cell = visibilityMap?.data?.find(c => c.x === m.x && c.y === m.y);
+      return cell && cell.fog === false;
+    });
+
+    if (visibleMonsters.length === 0) {
+      let courageRemoved = false;
+      const newHeroes = gameSession.heroes.map(h => {
+        if (h.activeStatus?.includes("Courage")) {
+          courageRemoved = true;
+          return { ...h, activeStatus: h.activeStatus.filter(s => s !== "Courage") };
+        }
+        return h;
+      });
+
+      if (courageRemoved) {
+        onNotify("L'effetto di Coraggio svanisce: non ci sono più mostri in vista.");
+        onUpdateSession({ ...gameSession, heroes: newHeroes });
+      }
+    }
+  }, [gameSession, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, visibilityMap, onNotify, onUpdateSession]);
+
+  const rollMovement = useCallback(() => {
+    const state = stateRef.current;
+    const hero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+    if (!hero) return;
+    const stats = heroStatsLogic.calculateStats(hero);
+    let diceCount = stats?.movimento || 1;
+    if (diceCount < 1) diceCount = 1;
+
+    let total = 0;
+    for (let i = 0; i < diceCount; i++) {
+      total += Math.floor(Math.random() * 6) + 1;
+    }
+    setMovementPoints(total);
+  }, [heroStatsLogic]);
+
+  const handleBoardHover = useCallback((x, y) => {
+    const state = stateRef.current;
+    if (state.movementPoints == null || state.movementPoints <= 0 || state.isMoving) {
+      setHoveredPath([]);
+      return;
+    }
+    const hero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+    if (!hero) return;
+
+    const path = hooksPathfinding.calculatePath(hero.x, hero.y, x, y, state.movementPoints, hero.heroId);
+    if (path && path.length > 0) {
+      setHoveredPath([{ x: hero.x, y: hero.y }, ...path]);
+    } else {
+      setHoveredPath([]);
+    }
+  }, [hooksPathfinding]);
+
+  const handleBoardClick = useCallback((x, y) => {
+    const state = stateRef.current;
+    if (state.isMoving || state.movementPoints == null || state.movementPoints <= 0) return;
+    setIsMovingStarted(true);
+
+    const currentHero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+    if (!currentHero) return;
+
+    let path = [...state.hoveredPath];
+
+    if (path.length === 0 || path[path.length - 1].x !== x || path[path.length - 1].y !== y) {
+      const calcPath = hooksPathfinding.calculatePath(currentHero.x, currentHero.y, x, y, state.movementPoints, currentHero.heroId);
+      if (calcPath && calcPath.length > 0) {
+        path = [{ x: currentHero.x, y: currentHero.y }, ...calcPath];
+      }
+    }
+
+    if (path.length > 1 && path[path.length - 1].x === x && path[path.length - 1].y === y) {
+      setCanOpenDoor(null);
+      setIsMoving(true);
+      setActivePath([...path]);
+      setHoveredPath([]);
+    } else {
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null));
+    }
+  }, [hooksPathfinding, mapInteractionLogic]);
+
+  useEffect(() => {
+    const state = stateRef.current;
+    if (activePath.length < 2) {
+      if (state.isMoving) {
+        setIsMoving(false);
+        setActivePath([]);
+      }
+      
+      const currentHero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+      if (!currentHero) return;
+
+      const mapCell = state.gameSession?.currentMap?.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
+      if (mapCell && mapCell.fine) {
+        if (checkMissionObjective()) {
+          const updatedHeroes = state.gameSession.heroes.map(h => 
+            h.heroId === currentHero.heroId ? { ...h, isEscaped: true } : h
+          );
+          setTurnPhase(prev => ({ ...prev, IsTurnFinished: true }));
+          onNotify(`${currentHero.hero?.classe || 'Eroe'} è uscito dal dungeon!`);
+          const updatedSession = { ...state.gameSession, heroes: updatedHeroes };
+          onUpdateSession(updatedSession);
+          endTurn(updatedSession);
+          return;
+        } else {
+          onNotify("Non puoi uscire! Devi prima compiere la missione.");
+        }
+      }
+
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null));
+
+      if (state.movementPoints !== null && state.movementPoints <= 0) {
+        setTurnPhase(prev => ({ ...prev, HasMoved: true }));
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const state = stateRef.current;
+      const currentHero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+      if (!currentHero) return;
+
+      const nextPos = activePath[1];
+      const oldPos = { x: currentHero.x, y: currentHero.y };
+
+      const updatedHero = { ...currentHero, x: nextPos.x, y: nextPos.y };
+      let updatedHeroes = state.gameSession.heroes.map(h => h.heroId === currentHero.heroId ? updatedHero : h);
+      let updatedSession = { ...state.gameSession, heroes: updatedHeroes };
+
+      setCanOpenDoor(null);
+      setMovementPoints(prev => (prev !== null ? prev - 1 : 0));
+
+      const oldVis = state.visibilityMap?.data?.find(c => c.x === oldPos.x && c.y === oldPos.y);
+      const newVis = state.visibilityMap?.data?.find(c => c.x === nextPos.x && c.y === nextPos.y);
+
+      if (oldVis && newVis && oldVis.valo !== newVis.valo) {
+        const doorCheck = mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, oldVis.valo);
+        if (doorCheck?.found && doorCheck.passageCell?.x === nextPos.x && doorCheck.passageCell?.y === nextPos.y) {
+          mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y);
+          setCanOpenDoor(null);
+        }
+      }
+
+      const mapCell = updatedSession.currentMap?.grid?.find(c => c.x === nextPos.x && c.y === nextPos.y);
+      if (mapCell?.trpl && trapsLogic.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)) {
+        let jumpSuccess = false;
+        if (mapCell.trpl.tipo === 1 && trapsLogic.isTrapVisible(nextPos.x, nextPos.y)) {
+          onNotify("Tenti di saltare l'abisso...");
+          const roll = Math.floor(Math.random() * 6) + 1;
+          if (roll > 1) {
+            jumpSuccess = true;
+            onNotify("Salto riuscito! L'eroe supera l'abisso.");
+          }
         }
 
-        if (isValidTarget && !isMoving && !turnPhase.HasPerformedAction) {
-            const attackDice = heroStatsLogic?.calculateAttackDice(hero, monster.monster) || 0;
-            let defenseDice = monster.monster?.difesa || 0;
+        if (!jumpSuccess) {
+          updatedHero.currentBody -= 1;
+          if (updatedHero.activeStatus?.includes("RockSkin")) {
+            updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
+            onNotify("La pelle di pietra si frantuma per l'impatto!");
+          }
+          trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo);
 
-            if (monster.monster?.nome === "Gargoyle") {
-                defenseDice += 2;
-                onNotify?.("Il Gargoyle ha una difesa di pietra! (+2 dadi)");
-            }
-
-            let updatedMonsterStatus = [...(monster.activeStatus || [])];
-            if (updatedMonsterStatus.includes("Tempest")) {
-                defenseDice = 0;
-                updatedMonsterStatus = updatedMonsterStatus.filter(s => s !== "Tempest");
-                onNotify?.(`${monster.monster?.nome || 'Il mostro'} è travolto dalla tempesta e non può difendersi!`);
-            }
-
-            const combatResult = combatLogic?.resolveCombat(attackDice, defenseDice, false);
-            const newBody = monster.currentBody - (combatResult?.damageDealt || 0);
-
-            let updatedMonsters = [...gameSession.monsters];
-
-            if (newBody <= 0) {
-                updatedMonsters.splice(monsterIndex, 1);
-            } else {
-                if (updatedMonsterStatus.includes("Sleep")) {
-                    updatedMonsterStatus = updatedMonsterStatus.filter(s => s !== "Sleep");
-                    onNotify?.(`${monster.monster?.nome || 'Il mostro'} si è svegliato!`);
+          if (mapCell.trpl.tipo === 3) {
+            updatedSession.currentMap = {
+              ...updatedSession.currentMap,
+              grid: updatedSession.currentMap.grid.map(c => {
+                if (c.x === mapCell.trpl.rccadex && c.y === mapCell.trpl.rccadey) {
+                  return { ...c, arnt: { ...c.arnt, antroc: true } };
                 }
-                updatedMonsters[monsterIndex] = { ...monster, currentBody: newBody, activeStatus: updatedMonsterStatus };
-            }
+                return c;
+              })
+            };
+          }
 
-            const newAttacksPerformed = attacksPerformed + 1;
-            setAttacksPerformed(newAttacksPerformed);
+          switch (mapCell.trpl.tipo) {
+            case 1: onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce."); break;
+            case 2: onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce."); break;
+            case 3: onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce."); break;
+            default: onNotify("TRAPPOLA! Hai interrotto il movimento."); break;
+          }
 
-            const canDouble = heroStatsLogic?.canAttackTwice(hero, monster.monster);
-            if (canDouble && newAttacksPerformed < 2) {
-                onNotify?.("Doppio attacco! Puoi attaccare ancora.");
-            } else {
-                setTurnPhase(prev => ({ ...prev, HasPerformedAction: true }));
-            }
-
-            if (isMovingStarted) {
-                setTurnPhase(prev => ({ ...prev, HasMoved: true }));
-            }
-
-            setCanOpenDoor(null);
-
-            let updatedHeroes = [...gameSession.heroes];
-            const isRanged = dist > 1 || (dx === 1 && dy === 1 && !stats?.canAttackDiagonal);
-            
-            if (isRanged) {
-                const consumedId = heroStatsLogic?.getConsumableWeaponId(hero);
-                if (consumedId != null) {
-                    updatedHeroes[heroIndex] = {
-                        ...hero,
-                        equipped: hero.equipped.filter(id => id !== consumedId),
-                        equipment: hero.equipment.filter(id => id !== consumedId)
-                    };
-                    onNotify?.("Hai lanciato l'arma e l'hai persa!");
-                }
-            }
-
-            onUpdateSession?.({
-                ...gameSession,
-                monsters: updatedMonsters,
-                heroes: updatedHeroes,
-                lastAttack: { hero, monster, combatResult }
-            });
+          setIsMoving(false);
+          setTurnPhase(prev => ({ ...prev, HasMoved: true, HasPerformedAction: true }));
+          
+          updatedHeroes = updatedSession.heroes.map(h => h.heroId === updatedHero.heroId ? updatedHero : h);
+          updatedSession = { ...updatedSession, heroes: updatedHeroes };
+          onUpdateSession(updatedSession);
+          setActivePath([]);
+          return;
         }
-    }, [gameSession, heroStatsLogic, visibilityCalc, isMoving, turnPhase.HasPerformedAction, combatLogic, attacksPerformed, isMovingStarted, onNotify, onUpdateSession]);
+      }
 
-    const handleOpenDoor = useCallback(() => {
-        if (canOpenDoor) {
-            mapInteractionLogic?.openPassage(canOpenDoor.passageCell.x, canOpenDoor.passageCell.y, canOpenDoor.destination.x, canOpenDoor.destination.y);
-            setCanOpenDoor(null);
+      setActivePath(prev => prev.slice(1));
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(updatedHero.x, updatedHero.y, null));
+      onUpdateSession(updatedSession);
+
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activePath, checkMissionObjective, endTurn, mapInteractionLogic, onNotify, onUpdateSession, trapsLogic]);
+
+  const handleMonsterClick = useCallback((monsterId) => {
+    const state = stateRef.current;
+    const monster = state.gameSession?.monsters?.find(m => m.id === monsterId);
+    const hero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+
+    if (!monster || !hero) return;
+
+    const stats = heroStatsLogic.calculateStats(hero);
+    const dx = Math.abs(hero.x - monster.x);
+    const dy = Math.abs(hero.y - monster.y);
+    const dist = dx + dy;
+
+    let isValidTarget = false;
+    if (dist <= 1) {
+      isValidTarget = true;
+    } else if (dx === 1 && dy === 1 && stats?.canAttackDiagonal) {
+      if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
+        isValidTarget = true;
+      }
+    } else if (stats?.canAttackRanged) {
+      if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) {
+        isValidTarget = true;
+      }
+    }
+
+    if (isValidTarget && !state.isMoving && !state.turnPhase.HasPerformedAction) {
+      const attackDice = heroStatsLogic.calculateAttackDice(hero, monster.monster);
+      let defenseDice = monster.monster?.difesa || 0;
+
+      if (monster.monster?.nome === "Gargoyle") {
+        defenseDice += 2;
+        onNotify("Il Gargoyle ha una difesa di pietra! (+2 dadi)");
+      }
+
+      let updatedMonsterStatus = monster.activeStatus || [];
+      if (updatedMonsterStatus.includes("Tempest")) {
+        defenseDice = 0;
+        updatedMonsterStatus = updatedMonsterStatus.filter(s => s !== "Tempest");
+        onNotify(`${monster.monster?.nome || 'Il mostro'} è travolto dalla tempesta e non può difendersi!`);
+      }
+
+      const combatResult = combatLogic.resolveCombat(attackDice, defenseDice, false);
+      const newBody = (monster.currentBody || 0) - combatResult.damageDealt;
+
+      let updatedMonsters = [...state.gameSession.monsters];
+      if (newBody <= 0) {
+        updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
+      } else {
+        if (updatedMonsterStatus.includes("Sleep")) {
+          updatedMonsterStatus = updatedMonsterStatus.filter(s => s !== "Sleep");
+          onNotify(`${monster.monster?.nome || 'Il mostro'} si è svegliato!`);
         }
-    }, [canOpenDoor, mapInteractionLogic]);
+        updatedMonsters = updatedMonsters.map(m => 
+          m.id === monsterId ? { ...m, currentBody: newBody, activeStatus: updatedMonsterStatus } : m
+        );
+      }
 
-    const markActionDone = useCallback(() => {
-        setTurnPhase(prev => ({ ...prev, HasPerformedAction: true, HasMoved: isMovingStarted ? true : prev.HasMoved }));
-        setCanOpenDoor(null);
-    }, [isMovingStarted]);
+      const newAttacksPerformed = state.attacksPerformed + 1;
+      setAttacksPerformed(newAttacksPerformed);
 
-    return {
-        turnPhase,
-        movementPoints,
-        hoveredPath,
-        canAttack,
-        isMoving,
-        canOpenDoor,
-        handleOpenDoor,
-        rollMovement,
-        handleBoardHover,
-        handleBoardClick,
-        handleMonsterClick,
-        markActionDone,
-        endTurn
-    };
+      const canDouble = heroStatsLogic.canAttackTwice(hero, monster.monster);
+      let newTurnPhase = { ...state.turnPhase };
+      if (canDouble && newAttacksPerformed < 2) {
+        onNotify("Doppio attacco! Puoi attaccare ancora.");
+      } else {
+        newTurnPhase.HasPerformedAction = true;
+      }
+
+      if (state.isMovingStarted) {
+        newTurnPhase.HasMoved = true;
+      }
+      setTurnPhase(newTurnPhase);
+
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null));
+
+      let updatedHero = { ...hero };
+      const isRanged = dist > 1 || (dx === 1 && dy === 1 && !stats?.canAttackDiagonal);
+      if (isRanged) {
+        const consumedId = heroStatsLogic.getConsumableWeaponId(hero);
+        if (consumedId !== null) {
+          updatedHero.equipped = updatedHero.equipped.filter(id => id !== consumedId);
+          updatedHero.equipment = updatedHero.equipment.filter(id => id !== consumedId);
+          onNotify("Hai lanciato l'arma e l'hai persa!");
+        }
+      }
+
+      const updatedHeroes = state.gameSession.heroes.map(h => h.heroId === updatedHero.heroId ? updatedHero : h);
+
+      const updatedSession = {
+        ...state.gameSession,
+        monsters: updatedMonsters,
+        heroes: updatedHeroes,
+        lastAttack: { hero: updatedHero, monster: { ...monster, currentBody: newBody, activeStatus: updatedMonsterStatus }, combatResult }
+      };
+
+      onUpdateSession(updatedSession);
+    }
+  }, [combatLogic, heroStatsLogic, mapInteractionLogic, onNotify, onUpdateSession, visibilityCalc]);
+
+  const handleOpenDoor = useCallback(() => {
+    const state = stateRef.current;
+    if (state.canOpenDoor) {
+      mapInteractionLogic.openPassage(
+        state.canOpenDoor.passageCell.x, 
+        state.canOpenDoor.passageCell.y, 
+        state.canOpenDoor.destination.x, 
+        state.canOpenDoor.destination.y
+      );
+      const hero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+      if (hero) {
+        setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null));
+      }
+    }
+  }, [mapInteractionLogic]);
+
+  const markActionDone = useCallback(() => {
+    const state = stateRef.current;
+    let newTurnPhase = { ...state.turnPhase, HasPerformedAction: true };
+    if (state.isMovingStarted) {
+      newTurnPhase.HasMoved = true;
+    }
+    setTurnPhase(newTurnPhase);
+
+    const hero = state.gameSession?.heroes?.find(h => h.turnOrder === state.gameSession.currentTurn);
+    if (hero) {
+      setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null));
+    }
+  }, [mapInteractionLogic]);
+
+  return {
+    turnPhase,
+    movementPoints,
+    hoveredPath,
+    isMoving,
+    canOpenDoor,
+    handleOpenDoor,
+    rollMovement,
+    handleBoardHover,
+    handleBoardClick,
+    handleMonsterClick,
+    markActionDone,
+    endTurn
+  };
 }

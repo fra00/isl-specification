@@ -6,86 +6,103 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
-import { GameSession } from './domain-session';
+import { useCallback, useEffect, useRef } from 'react';
 
-export const useMapInteraction = ({
+export function useMapInteraction({
   gameSession,
   foundPassages = [],
   onUpdateSession,
   onNotify,
   fogOfWarLogic
-}) => {
+}) {
+  const stateRef = useRef({
+    gameSession,
+    foundPassages,
+    onUpdateSession,
+    onNotify,
+    fogOfWarLogic
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      gameSession,
+      foundPassages,
+      onUpdateSession,
+      onNotify,
+      fogOfWarLogic
+    };
+  }, [gameSession, foundPassages, onUpdateSession, onNotify, fogOfWarLogic]);
 
   const isFrontOfDoor = useCallback((x, y) => {
-    if (!gameSession?.currentMap) return null;
-
-    const neighbors = [
-      { nx: x, ny: y },
-      { nx: x, ny: y - 1 },
-      { nx: x, ny: y + 1 },
-      { nx: x - 1, ny: y },
-      { nx: x + 1, ny: y }
-    ];
+    const { gameSession, foundPassages } = stateRef.current;
+    
+    if (!gameSession?.currentMap) {
+      return null;
+    }
 
     let foundPassage = null;
-    let isHorizontal = false;
+    let passageOriz = null;
 
-    for (const { nx, ny } of neighbors) {
-      const coordKey = `${nx},${ny}`;
+    const coordsToCheck = [
+      { cx: x, cy: y },
+      { cx: x, cy: y - 1 },
+      { cx: x, cy: y + 1 },
+      { cx: x - 1, cy: y },
+      { cx: x + 1, cy: y }
+    ];
+
+    for (const { cx, cy } of coordsToCheck) {
+      const coordKey = `${cx},${cy}`;
       
       if (gameSession.openedDoors?.includes(coordKey)) {
         continue;
       }
 
-      const door = gameSession.currentMap.porte?.find(p => p.x === nx && p.y === ny);
+      const door = gameSession.currentMap.porte?.find(p => p.x === cx && p.y === cy);
       if (door) {
-        foundPassage = { x: nx, y: ny };
-        isHorizontal = door.oriz;
+        foundPassage = { x: cx, y: cy };
+        passageOriz = door.oriz;
         break;
       }
 
-      const secretPassage = foundPassages.find(p => p.x === nx && p.y === ny);
-      if (secretPassage) {
-        const cell = gameSession.currentMap.grid?.find(c => c.x === nx && c.y === ny);
-        if (cell?.psgg) {
-          foundPassage = { x: nx, y: ny };
-          isHorizontal = cell.psgg.oriz;
+      const isSecret = foundPassages?.some(p => p.x === cx && p.y === cy);
+      if (isSecret) {
+        const cell = gameSession.currentMap.grid?.find(c => c.x === cx && c.y === cy);
+        if (cell?.psgg && cell.psgg.ps != null) {
+          foundPassage = { x: cx, y: cy };
+          passageOriz = cell.psgg.oriz;
           break;
         }
       }
     }
 
-    if (!foundPassage) return null;
-
-    const { x: px, y: py } = foundPassage;
-
-    if (isHorizontal) {
-      if (!(x === px && (y === py || y === py - 1 || y === py + 1))) {
-        return null;
-      }
-    } else {
-      if (!(y === py && (x === px || x === px - 1 || x === px + 1))) {
-        return null;
-      }
+    if (!foundPassage || passageOriz == null) {
+      return null;
     }
 
-    const heroCell = gameSession.currentMap.grid?.find(c => c.x === x && c.y === y);
-    const heroArea = heroCell?.valo;
+    if (passageOriz === true) {
+      const isValid = (x === foundPassage.x && y === foundPassage.y) ||
+                      (x === foundPassage.x && y === foundPassage.y - 1) ||
+                      (x === foundPassage.x && y === foundPassage.y + 1);
+      if (!isValid) return null;
+    } else {
+      const isValid = (x === foundPassage.x && y === foundPassage.y) ||
+                      (x === foundPassage.x - 1 && y === foundPassage.y) ||
+                      (x === foundPassage.x + 1 && y === foundPassage.y);
+      if (!isValid) return null;
+    }
 
     let sideA, sideB;
-    if (isHorizontal) {
-      sideA = { x: px, y: py - 1 };
-      sideB = { x: px, y: py };
+    if (passageOriz === true) {
+      sideA = { x: foundPassage.x, y: foundPassage.y - 1 };
+      sideB = { x: foundPassage.x, y: foundPassage.y };
     } else {
-      sideA = { x: px - 1, y: py };
-      sideB = { x: px, y: py };
+      sideA = { x: foundPassage.x - 1, y: foundPassage.y };
+      sideB = { x: foundPassage.x, y: foundPassage.y };
     }
 
-    const sideACell = gameSession.currentMap.grid?.find(c => c.x === sideA.x && c.y === sideA.y);
-
     let destination;
-    if (sideACell?.valo === heroArea) {
+    if (x === sideA.x && y === sideA.y) {
       destination = sideB;
     } else {
       destination = sideA;
@@ -96,45 +113,50 @@ export const useMapInteraction = ({
       destination,
       passageCell: foundPassage
     };
-  }, [gameSession, foundPassages]);
+  }, []);
 
   const openPassage = useCallback((passageX, passageY, destinationX, destinationY) => {
-    if (!gameSession?.currentMap) return;
+    const { gameSession, foundPassages, fogOfWarLogic, onNotify, onUpdateSession } = stateRef.current;
+    
+    if (!gameSession?.currentMap) {
+      return;
+    }
 
     const coordKey = `${passageX},${passageY}`;
 
     const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
-    const isSecretPassage = foundPassages?.some(p => p.x === passageX && p.y === passageY);
+    const isSecret = foundPassages?.some(p => p.x === passageX && p.y === passageY);
 
-    if (!isDoor && !isSecretPassage) return;
+    if (!isDoor && !isSecret) {
+      return;
+    }
 
     if (!gameSession.openedDoors?.includes(coordKey)) {
       try {
         if (fogOfWarLogic?.revealFromPoint) {
           fogOfWarLogic.revealFromPoint(destinationX, destinationY);
         }
-
-        const updatedOpenedDoors = [...(gameSession.openedDoors || []), coordKey];
+        
+        const updatedSession = {
+          ...gameSession,
+          openedDoors: [...(gameSession.openedDoors || []), coordKey]
+        };
         
         if (onNotify) {
           onNotify("Porta aperta.");
         }
-
+        
         if (onUpdateSession) {
-          const updatedSession = GameSession({
-            ...gameSession,
-            openedDoors: updatedOpenedDoors
-          });
           onUpdateSession(updatedSession);
         }
       } catch (error) {
         console.error("Errore durante l'apertura della porta o rivelazione nebbia.", error);
       }
     }
-  }, [gameSession, foundPassages, fogOfWarLogic, onNotify, onUpdateSession]);
+  }, []);
 
   return {
     isFrontOfDoor,
     openPassage
   };
-};
+}

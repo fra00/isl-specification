@@ -181,7 +181,6 @@
 - **Contract**: Initializes hero positions and map vision once the mission starts.
 - **Trigger**: On Mount (after `gameSession` is available).
 - **Flow**:
-  - SET `staticVisibilityMap` from `gameSession.currentMap`.
   - **Hero Initialization**:
     - Create `placedHeroes` by mapping `gameSession.heroes`.
     - FOR EACH `heroState` in `placedHeroes`:
@@ -206,7 +205,7 @@
   - **Trigger Initial Visibility**:
     - Call `hooksFogOfWar.revealInitialVisibility()`.
   - **Magic Check**:
-    - IF any `hero` in `gameSession.heroes` has `hero.hero.classe` matching "Mago" or "Elfo":
+    - IF any `hero` in `gameSession.heroes` has `hero.hero.classe.toLowerCase()` matching "mago" or "elfo":
       - Set `isSpellSelectionRequired` to true.
   - Trigger `onUpdateSession`.
 
@@ -215,11 +214,12 @@
 - **Contract**: Updates heroes with selected spells and closes the selection modal.
 - **Signature**: `(selection: Map<Integer, List<Integer>>)`
 - **Flow**:
-  - For each `hero` in `gameSession.heroes`:
-    - IF `selection` contains `hero.heroId`:
-      - Set `hero.availableSpells` to the corresponding list from `selection`.
+  - Create a deep copy of `gameSession.heroes` as `updatedHeroes`.
+  - For each `hero` in `updatedHeroes`:
+    - IF `selection` has a value for key `hero.heroId`:
+      - Set `hero.availableSpells` to `selection.get(hero.heroId)`.
   - Set `isSpellSelectionRequired` to false.
-  - Trigger `onUpdateSession`.
+  - Trigger `onUpdateSession` with updated `gameSession` containing `updatedHeroes`.
 
 #### closeCombatResult
 

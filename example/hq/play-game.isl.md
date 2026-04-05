@@ -104,6 +104,7 @@
       - Set `heroes` to `savedData.heroes`.
       - Set `currentMap` to the loaded map.
       - Set `currentMissionIndex` to `index`.
+      - Set `isHeroOrderConfirmed` to false.
     - Trigger `onUpdateSession(updatedSession)`.
     - onChangePageView to @PageNavigationEnum.DUNGEON_DESCRIPTION
   - ELSE:

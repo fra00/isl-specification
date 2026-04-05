@@ -179,6 +179,7 @@
 #### initializeMission
 
 - **Contract**: Initializes hero positions and map vision once the mission starts.
+- **Guard**: IF `isMissionInitialized` is true RETURN.
 - **Trigger**: On Mount (after `gameSession` is available).
 - **Flow**:
   - **Hero Initialization**:
@@ -197,6 +198,7 @@
 #### confirmHeroOrder
 
 - **Contract**: Before start show a `DungeonHeroOrder`` when user can select the order turn of Heroes
+- **Guard**: IF `gameSession.isHeroOrderConfirmed` is true RETURN.
 - **Signature**: `(orderedHeroIds: List<Integer>) -> void`
 - **Flow**:
   - For each `hero` in `gameSession.heroes`:

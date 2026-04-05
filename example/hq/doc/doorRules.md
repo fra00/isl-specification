@@ -60,11 +60,12 @@ I passaggi segreti sono inizialmente invisibili e agiscono come muri invalicabil
 ### A. Azione "Cerca Passaggi"
 
 - **Trigger**: Pressione del pulsante "Search Passages" nel pannello di controllo.
-- **Logica di Rilevamento**:
+- **Logica di Rilevamento (Esclusiva per Elementi Nascosti)**:
+  - **Nota**: Le porte standard NON vengono considerate da questa ricerca poiché sono sempre visibili una volta rimossa la nebbia.
   - Il sistema calcola le celle attualmente visibili all'eroe:
     - se dentro una stanza (`valo` != "1") l'area visibile sarà la stanza stessa.
     - se in un corridoio (`valo` == "1") utilizza la Logica Ray Tracing
-  - Un passaggio segreto viene scoperto se almeno una delle sue celle di confine (sopra/sotto per orizzontali, sinistra/destra per verticali useMapInteraction.isFrontOfDoor return true) fa parte dell'area rivelata (non coperta da nebbia).
+  - Un passaggio segreto viene scoperto se il passaggio è nell'area di ricerca (vedi **Logica di Rilevamento**) o se la destinazione del passaggio lo è (useMapInteraction.isFrontOfDoor return true) fa parte dell'area rivelata (non coperta da nebbia).
 - **Consumo**: Questa operazione **consuma l'azione** del turno (`HasPerformedAction: true`).
 - **Stato**: Una volta scoperto, il passaggio viene aggiunto alla lista `foundPassages` e viene renderizzato sul tabellone (`pso.jpg` o `psv.jpg`).
 

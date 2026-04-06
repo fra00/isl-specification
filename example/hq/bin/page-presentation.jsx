@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
+import { PageNavigationEnum, NavigationStatus } from './domain-core';
 import PlayGame from './play-game';
 import EditorGame from './editor-game';
 import MainMenu from './main-menu';
@@ -15,70 +15,73 @@ import Armory from './armory';
 import Dungeon from './dungeon';
 import DungeonDescription from './dungeon-description';
 
-export default function PageContent(props) {
-  const {
-    monsters = [],
-    heroes = [],
-    boardData = null,
-    equipment = [],
-    items = [],
-    spells = [],
-    treasureDeck = [],
-    campaign = null
-  } = props || {};
-
-  const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
+export default function PageContent({
+  monsters = [],
+  heroes = [],
+  boardData = null,
+  equipment = [],
+  items = [],
+  spells = [],
+  treasureDeck = [],
+  campaign = null
+}) {
+  // FirstLoad capability: Initialize with default page view
+  const [navStatus, setNavStatus] = useState(() => 
+    NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU })
+  );
+  
   const [gameSession, setGameSession] = useState(null);
 
+  // changePageView capability
   const changePageView = useCallback((nextPageView) => {
-    setCurrentPageView(nextPageView);
+    setNavStatus(NavigationStatus({ currentPageView: nextPageView }));
   }, []);
 
+  // updateSession capability
   const updateSession = useCallback((session) => {
     setGameSession(session);
   }, []);
 
+  // startMission capability
   const startMission = useCallback((missionIndex) => {
-    // Placeholder for mission start logic
-    console.log("Starting mission:", missionIndex);
+    console.log("Mission started with index:", missionIndex);
   }, []);
 
+  // showPageView capability
   const renderPageView = () => {
-    switch (currentPageView) {
+    switch (navStatus?.currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
-        return (
-          <MainMenu 
-            onChangePageView={changePageView} 
-          />
-        );
+        return <MainMenu onChangePageView={changePageView} />;
+        
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             campaign={campaign}
             staticHeroes={heroes}
             staticEquipment={equipment}
           />
         );
+        
       case PageNavigationEnum.EDITOR_GAME:
-        return (
-          <EditorGame />
-        );
+        return <EditorGame />;
+        
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
+        
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -88,25 +91,23 @@ export default function PageContent(props) {
             treasureDeck={treasureDeck}
           />
         );
+        
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
+        
       default:
-        return (
-          <MainMenu 
-            onChangePageView={changePageView} 
-          />
-        );
+        return null;
     }
   };
 
   return (
-    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto">
+    <div className="w-full md:w-2/3 mx-auto h-screen bg-black overflow-hidden">
       {renderPageView()}
     </div>
   );

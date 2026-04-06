@@ -6,84 +6,166 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { PageNavigationEnum } from './domain-core';
-
-const MENU_ITEMS = [
-  {
-    label: 'Gioca',
-    destination: PageNavigationEnum.PLAY_GAME,
-    image: '/img/main-menu/nuova.jpg'
-  },
-  {
-    label: 'Editor',
-    destination: PageNavigationEnum.EDITOR_GAME,
-    image: '/img/main-menu/editor.jpg'
-  }
-];
 
 export default function MainMenu({ onChangePageView = () => {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hoverImage, setHoverImage] = useState(null);
+  const [hoveredImage, setHoveredImage] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState(null);
 
-  const clickMenuItems = useCallback((destination) => {
-    if (isProcessing) return;
-    
-    setIsProcessing(true);
-    try {
+  // Generazione delle 80 particelle di pulviscolo all'inizializzazione
+  const dustParticles = useMemo(() => {
+    return Array.from({ length: 80 }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 2 + 1, // Dimensione random 1-3px
+      left: Math.random() * 100, // Posizione X random 0-100%
+      duration: Math.random() * 10 + 15, // Durata random 15-25s
+      delay: -(Math.random() * 25), // Delay negativo per pre-caricamento
+    }));
+  }, []);
+
+  const menuItems = useMemo(() => [
+    { 
+      label: "GIOCA", 
+      destination: PageNavigationEnum.PLAY_GAME, 
+      image: "/img/main-menu/nuova.jpg" 
+    },
+    { 
+      label: "EDITOR", 
+      destination: PageNavigationEnum.EDITOR_GAME, 
+      image: "/img/main-menu/editor.jpg" 
+    }
+  ], []);
+
+  const handleClick = useCallback((destination) => {
+    if (!isProcessing) {
+      setIsProcessing(true);
       onChangePageView(destination);
-    } finally {
       setIsProcessing(false);
     }
   }, [isProcessing, onChangePageView]);
 
-  const mouseOverMenuItems = useCallback((image) => {
-    setHoverImage(image);
+  const handleMouseEnter = useCallback((image, label) => {
+    setHoveredImage(image);
+    setHoveredItem(label);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    setHoverImage(null);
+    setHoveredImage(null);
+    setHoveredItem(null);
   }, []);
+
+  const customStyles = `
+    @keyframes respiro {
+      0% { transform: scale(1.0); }
+      100% { transform: scale(1.08); }
+    }
+    @keyframes derivaNebbia {
+      0% { background-position-x: 0%; }
+      100% { background-position-x: 100%; }
+    }
+    @keyframes floatY {
+      0% { top: 110%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: -10%; opacity: 0; }
+    }
+    @keyframes driftX {
+      0% { transform: translateX(-20px); }
+      100% { transform: translateX(20px); }
+    }
+    @keyframes baglioreVivo {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.02); }
+    }
+  `;
 
   return (
     <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
-      <style>{`
-        @keyframes zoomParallax {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.1); }
-        }
-        .animate-zoom-parallax {
-          animation: zoomParallax 50s ease-in-out infinite alternate;
-        }
-      `}</style>
-      
-      {/* Background Layer */}
-      <div 
-        className="absolute inset-0 bg-[url('/img/menusfondo.jpg')] bg-cover bg-center animate-zoom-parallax"
-      />
+      <style>{customStyles}</style>
 
-      {/* MouseOverImage */}
-      {hoverImage && (
-        <img 
-          src={hoverImage} 
-          alt="Menu Preview" 
-          className="absolute top-0 right-0 h-[30%] w-auto border-none z-20 object-contain"
+      {/* BackgroundLayer - z-index 0 */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div
+          className="w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(/img/menusfondo.jpg)',
+            animation: 'respiro 30s ease-in-out infinite alternate'
+          }}
+        />
+      </div>
+
+      {/* MouseOverImageLayer - z-index 2 */}
+      {hoveredImage && (
+        <img
+          src={hoveredImage}
+          alt="Menu Preview"
+          className="absolute top-0 right-0 h-[30%] w-auto opacity-80 z-[2] object-contain border-none transition-opacity duration-300"
         />
       )}
 
-      {/* Content Layer */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-8">
-        {MENU_ITEMS.map((item) => (
-          <button
+      {/* MistOverlay - z-index 5 */}
+      <div
+        className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"
+        style={{
+          backgroundImage: 'url(/img/mist.jpeg)',
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '200% 100%',
+          filter: 'blur(5px)',
+          animation: 'derivaNebbia 60s linear infinite'
+        }}
+      />
+
+      {/* DustOverlay - z-index 8 */}
+      <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen">
+        {dustParticles.map(p => (
+          <div
+            key={p.id}
+            className="absolute rounded-full"
+            style={{
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              backgroundColor: '#FFD700',
+              left: `${p.left}%`,
+              animation: `floatY ${p.duration}s linear infinite ${p.delay}s, driftX 4s ease-in-out infinite alternate ${p.delay}s`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* CandleLightOverlay - z-index 10 */}
+      <div
+        className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"
+        style={{
+          background: 'radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)',
+          animation: 'baglioreVivo 4s ease-in-out infinite'
+        }}
+      />
+
+      {/* UIContent - z-index 20 */}
+      <div className="relative z-[20] flex flex-col items-center gap-12">
+        {menuItems.map(item => (
+          <div
             key={item.label}
-            onClick={() => clickMenuItems(item.destination)}
-            onMouseEnter={() => mouseOverMenuItems(item.image)}
+            onClick={() => handleClick(item.destination)}
+            onMouseEnter={() => handleMouseEnter(item.image, item.label)}
             onMouseLeave={handleMouseLeave}
-            disabled={isProcessing}
-            className="bg-transparent font-bold text-white text-5xl md:text-7xl transition-all duration-300 blur-sm hover:blur-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer select-none"
+            style={{
+              fontFamily: 'fantasy',
+              fontWeight: 'bold',
+              fontSize: '4rem',
+              background: 'linear-gradient(to bottom, #FFD700 0%, #B8860B 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              WebkitTextStroke: '2px #2a2a2a',
+              filter: `drop-shadow(4px 4px 2px rgba(0,0,0,1)) blur(${hoveredItem === item.label ? '0px' : '4px'})`,
+              transition: 'filter 0.4s ease-in-out'
+            }}
           >
             {item.label}
-          </button>
+          </div>
         ))}
       </div>
     </div>

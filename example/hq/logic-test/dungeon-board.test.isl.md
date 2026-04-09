@@ -7,10 +7,13 @@
 - **Assert (Expected Outcomes)**:
   - The cell at (2, 2) MUST render a black background overlay.
   - The board MUST also render two global mist image layers across the whole board instead of clipping them to fogged cells.
+  - The global mist layers MUST be rendered above the per-cell black fog overlays, not below them.
   - Each mist image layer MUST render at 10% opacity.
   - Each mist image layer MUST be expanded by 100px beyond each board edge and remain hidden outside the board by container clipping.
   - The second mist image layer MUST be rotated by 180 degrees.
+  - The cell at (2, 2) MUST show moving mist above the black fog overlay and MUST NOT appear as flat black only.
   - The cell at (3, 3) MUST render with full transparency for the black fog overlay, while the global mist overlay remains visible above it.
+  - The visual stack MUST be, from back to front: board background, black fog overlays, global mist overlay, entities, targeting tracer, debug panel.
   - The `fog` state must be strictly derived from the `boardVisibilityMap` prop.
 
 ## Scenario: Mist Animation Matches Runtime

@@ -6,14 +6,14 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
-import PlayGame from './play-game';
-import EditorGame from './editor-game';
-import MainMenu from './main-menu';
-import Armory from './armory';
-import Dungeon from './dungeon';
-import DungeonDescription from './dungeon-description';
+import React, { useState, useCallback, useEffect } from "react";
+import { PageNavigationEnum } from "./domain-core";
+import PlayGame from "./play-game";
+import EditorGame from "./editor-game";
+import MainMenu from "./main-menu";
+import Armory from "./armory";
+import Dungeon from "./dungeon";
+import DungeonDescription from "./dungeon-description";
 
 export default function PageContent({
   monsters = [],
@@ -28,48 +28,71 @@ export default function PageContent({
   const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);
   const [gameSession, setGameSession] = useState(null);
 
+  // Capability: FirstLoad
+  useEffect(() => {
+    if (!currentPageView) {
+      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
+    }
+  }, [currentPageView]);
+
+  // Capability: changePageView
   const changePageView = useCallback((nextPageView) => {
-    setCurrentPageView(nextPageView);
+    if (nextPageView) {
+      setCurrentPageView(nextPageView);
+    }
   }, []);
 
-  const updateSession = useCallback((session) => {
-    setGameSession(session);
+  // Capability: updateSession
+  const updateSession = useCallback((sessionOrUpdater) => {
+    setGameSession((prevSession) => {
+      if (typeof sessionOrUpdater === "function") {
+        return sessionOrUpdater(prevSession);
+      }
+      return sessionOrUpdater;
+    });
   }, []);
 
+  // Capability: startMission
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission: ${missionIndex}`);
+    console.log(`Starting mission index: ${missionIndex}`);
+    // Mission start logic handled by child components, logged here as per contract
   }, []);
 
-  const showPageView = () => {
+  // Capability: showPageView
+  const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
+        
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             campaign={campaign}
             staticHeroes={heroes}
             staticEquipment={equipment}
           />
         );
+        
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
+        
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
+        
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -79,22 +102,26 @@ export default function PageContent({
             treasureDeck={treasureDeck}
           />
         );
+        
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            onChangePageView={changePageView}
             gameSession={gameSession}
+            onChangePageView={changePageView}
             onUpdateSession={updateSession}
           />
         );
+        
       default:
-        return <MainMenu onChangePageView={changePageView} />;
+        return null;
     }
   };
 
   return (
-    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto">
-      {showPageView()}
+    <div className="w-full h-screen bg-black overflow-hidden flex justify-center items-center">
+      <div className="w-full lg:w-2/3 h-full relative">
+        {renderPageView()}
+      </div>
     </div>
   );
 }

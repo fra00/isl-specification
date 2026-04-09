@@ -1,6 +1,6 @@
 # Project: Heroquest React
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 **ISL Version**: 1.6.1
 **Created**: 2026-02-09
 **Implementation**: ./dungeon-board
@@ -58,6 +58,12 @@
       - ELSE `cursor-pointer`.
     - **Fog of War Layer**: Each cell MUST render a black background overlay by default.
     - **Mist Effect**: The board MUST render two global `/img/mist.jpeg` layers over the entire board area.
+    - **Mist Layering**:
+      - The mist layers MUST be rendered as a dedicated global overlay and MUST NOT be rendered inside individual cells.
+      - The mist layers MUST be stacked ABOVE the per-cell black fog overlays.
+      - The mist layers MUST remain visible on top of both fogged and revealed cells.
+      - A fogged cell MUST appear as black fog with moving mist above it, never as flat black only.
+      - The mist layers SHOULD remain BELOW entity tokens, interaction highlights, and the targeting tracer unless a more specific visual rule overrides this order.
     - **Mist Geometry**:
       - Each mist layer MUST be positioned with `top: -100px` and `left: -100px`.
       - Each mist layer MUST use `width: calc(100% + 200px)` and `height: calc(100% + 200px)`.
@@ -70,6 +76,7 @@
       - The first mist layer MUST animate with keyframes `translate3d(-28px, -18px, 0)` to `translate3d(16px, 12px, 0)` to `translate3d(34px, -20px, 0)` over `14s` with `ease-in-out`, `infinite`, and `alternate`.
       - The second mist layer MUST animate with keyframes `rotate(180deg) translate3d(-32px, 18px, 0)` to `rotate(180deg) translate3d(14px, -12px, 0)` to `rotate(180deg) translate3d(30px, 22px, 0)` over `18s` with `ease-in-out`, `infinite`, and `alternate`.
     - **Unfogging Logic**: The black overlay MUST disappear ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`. The mist layers remain global and visible across both revealed and fogged areas.
+    - **Layer Order**: The visual stack MUST be, from back to front: board background, per-cell black fog overlays, global mist overlay, board entities, targeting tracer, debug panel.
     - **Path Highlight**: If cell {x+1, y+1} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
     - **Targeting Highlight**:
       - IF `targetingSpell` is NOT null:

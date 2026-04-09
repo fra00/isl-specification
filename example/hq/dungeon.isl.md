@@ -83,7 +83,7 @@
   - `boardVisibilityMap`: `boardVisibilityMap`.
   - `secretPassages`: `hooksSecretPassages.foundPassages`.
   - `treasures`: `hooksTreasure.foundTreasures`.
-  - `triggeredTraps`: `hooksTraps.triggeredTraps`.
+  - `triggeredTraps`: `hooksTraps.getTriggeredTraps()`.
   - `targetingSpell`: `targetingSpell`.
   - `visibilityCalc`: `hooksVisibilityCalc`.
 - **Turn Controls**:
@@ -173,7 +173,7 @@
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
 - `hooksVisibilityCalc`: @useVisibilityCalc passing gameSession and visibilityMap: staticVisibilityMap.
-- `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
+- `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
 - `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.foundPassages`, and `hooksSessionManager`.
 - `hooksHeroStats`: @useHeroStats passing `staticEquipment`.

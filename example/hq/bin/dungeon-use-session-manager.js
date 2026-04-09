@@ -7,591 +7,574 @@
  */
 
 import { useCallback } from "react";
+import { GameSession } from "./domain-session";
 
 export function useDungeonSessionManager(config) {
-  const { gameSession, onUpdateSession, onNotify, fogOfWarLogic } = config || {};
+    const { gameSession, onUpdateSession, onNotify, fogOfWarLogic } = config || {};
 
-  const commitSessionUpdate = useCallback((updater) => {
-    if (!onUpdateSession) return false;
-    onUpdateSession((previousSession) => {
-      const baseSession = previousSession != null ? previousSession : gameSession;
-      if (baseSession == null) return previousSession;
-      return updater(baseSession);
-    });
-    return true;
-  }, [onUpdateSession, gameSession]);
-
-  const initializeMission = useCallback((treasureDeck) => {
-    if (gameSession == null || gameSession.currentMap == null) return;
-    
-    const placedHeroes = gameSession.heroes?.map(heroState => {
-      const spawnPoint = gameSession.currentMap.eroi_start?.find(p => p.id === heroState.heroId);
-      if (spawnPoint) {
-        return {
-          ...heroState,
-          x: spawnPoint.x,
-          y: spawnPoint.y,
-          isEscaped: false
-        };
-      }
-      return heroState;
-    }) || [];
-    
-    const updatedSession = {
-      ...gameSession,
-      heroes: placedHeroes,
-      treasureDeck: treasureDeck
-    };
-    
-    onUpdateSession(updatedSession);
-  }, [gameSession, onUpdateSession]);
-
-  const confirmHeroOrder = useCallback((orderedHeroIds) => {
-    if (gameSession == null || gameSession.isHeroOrderConfirmed === true) return;
-    
-    const updatedHeroes = gameSession.heroes?.map(hero => {
-      const nextTurnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
-      if (nextTurnOrder > 0) {
-        return { ...hero, turnOrder: nextTurnOrder };
-      }
-      return hero;
-    }) || [];
-    
-    const updatedSession = {
-      ...gameSession,
-      heroes: updatedHeroes,
-      isHeroOrderConfirmed: true
-    };
-    
-    if (fogOfWarLogic?.revealInitialVisibility) {
-      fogOfWarLogic.revealInitialVisibility();
-    }
-    onUpdateSession(updatedSession);
-  }, [gameSession, fogOfWarLogic, onUpdateSession]);
-
-  const clearLastAttack = useCallback(() => {
-    if (gameSession == null || gameSession.lastAttack == null) return;
-    
-    const updatedSession = {
-      ...gameSession,
-      lastAttack: null
-    };
-    
-    onUpdateSession(updatedSession);
-  }, [gameSession, onUpdateSession]);
-
-  const openPassage = useCallback((passageX, passageY, destinationX, destinationY, foundPassages) => {
-    if (gameSession == null || gameSession.currentMap == null) return false;
-    
-    const coordKey = passageX + "," + passageY;
-    const isKnownDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
-    const isKnownPassage = foundPassages?.some(p => p.x === passageX && p.y === passageY);
-    
-    if (!isKnownDoor && !isKnownPassage) return false;
-    if (gameSession.openedDoors?.includes(coordKey)) return false;
-    
-    try {
-      if (fogOfWarLogic?.revealFromPoint) {
-        fogOfWarLogic.revealFromPoint(destinationX, destinationY);
-      }
-      
-      const updatedSession = {
-        ...gameSession,
-        openedDoors: [...(gameSession.openedDoors || []), coordKey]
-      };
-      
-      if (onNotify) onNotify("Porta aperta.");
-      onUpdateSession(updatedSession);
-      return true;
-    } catch (e) {
-      console.error("Errore durante l'apertura della porta o rivelazione nebbia.", e);
-      return false;
-    }
-  }, [gameSession, fogOfWarLogic, onNotify, onUpdateSession]);
-
-  const toggleEquipItem = useCallback((heroId, itemId, staticEquipment) => {
-    if (gameSession == null || gameSession.heroes == null) return false;
-    
-    const hero = gameSession.heroes.find(h => h.heroId === heroId);
-    const item = staticEquipment?.find(i => i.id === itemId);
-    
-    if (hero == null) return false;
-    if (item == null) {
-      if (onNotify) onNotify("Oggetto non trovato.");
-      return false;
-    }
-    
-    let updatedEquipped = [...(hero.equipped || [])];
-    
-    if (updatedEquipped.includes(itemId)) {
-      updatedEquipped = updatedEquipped.filter(id => id !== itemId);
-    } else {
-      if (item.solopsg === true && item.solopsgid !== hero.heroId) {
-        if (onNotify) onNotify("La tua classe non può equipaggiare questo oggetto.");
-        return false;
-      }
-      if (item.nopsg === true && item.nopsgid === hero.heroId) {
-        if (onNotify) onNotify("La tua classe non può equipaggiare questo oggetto.");
-        return false;
-      }
-      if (item.noogg > 0) {
-        updatedEquipped = updatedEquipped.filter(id => id !== item.noogg);
-      }
-      
-      const itemsToRemove = [];
-      for (const equippedId of updatedEquipped) {
-        const equippedItem = staticEquipment.find(i => i.id === equippedId);
-        if (equippedItem && equippedItem.noogg === itemId) {
-          itemsToRemove.push(equippedId);
-          if (onNotify) onNotify("Hai rimosso " + equippedItem.nome + " perché incompatibile.");
-        }
-      }
-      updatedEquipped = updatedEquipped.filter(id => !itemsToRemove.includes(id));
-      updatedEquipped.push(itemId);
-    }
-    
-    const updatedHeroes = gameSession.heroes.map(h => 
-      h.heroId === heroId ? { ...h, equipped: updatedEquipped } : h
-    );
-    
-    const updatedSession = {
-      ...gameSession,
-      heroes: updatedHeroes
-    };
-    
-    onUpdateSession(updatedSession);
-    return true;
-  }, [gameSession, onNotify, onUpdateSession]);
-
-  const useItem = useCallback((heroId, itemId, staticItems, targetMonsterId) => {
-    if (gameSession == null || gameSession.heroes == null) return false;
-    
-    const hero = gameSession.heroes.find(h => h.heroId === heroId);
-    const itemDef = staticItems?.find(i => i.id === itemId);
-    
-    if (hero == null || itemDef == null) return false;
-    
-    const itemIndex = hero.inventory?.indexOf(itemId) ?? -1;
-    if (itemIndex < 0) return false;
-    
-    const updatedHero = { ...hero };
-    let updatedMonsters = [...(gameSession.monsters || [])];
-    
-    if (itemDef.hp !== 0) {
-      updatedHero.currentBody += itemDef.hp;
-      if (updatedHero.hero && updatedHero.currentBody > updatedHero.hero.corpo) {
-        updatedHero.currentBody = updatedHero.hero.corpo;
-      }
-    }
-    
-    if (itemDef.mp !== 0) {
-      updatedHero.currentMind += itemDef.mp;
-      if (updatedHero.hero && updatedHero.currentMind > updatedHero.hero.mente) {
-        updatedHero.currentMind = updatedHero.hero.mente;
-      }
-    }
-    
-    if (itemDef.acqua === true) {
-      if (targetMonsterId != null) {
-        const targetMonster = updatedMonsters.find(m => m.id === targetMonsterId);
-        if (targetMonster) {
-          if (targetMonster.monster && targetMonster.monster.nonmorto === true) {
-            const updatedTargetMonster = { ...targetMonster };
-            updatedTargetMonster.currentBody -= itemDef.danni;
-            if (onNotify) onNotify("L'Acqua Santa purifica il non-morto infliggendo " + itemDef.danni + " danni!");
-            
-            if (updatedTargetMonster.currentBody <= 0) {
-              updatedMonsters = updatedMonsters.filter(m => m.id !== targetMonsterId);
-            } else {
-              updatedMonsters = updatedMonsters.map(m => m.id === targetMonsterId ? updatedTargetMonster : m);
-            }
-          } else {
-            if (onNotify) onNotify("L'Acqua Santa non ha effetto su questa creatura.");
-          }
-        } else {
-          if (onNotify) onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-        }
-      } else {
-        if (onNotify) onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-      }
-    }
-    
-    updatedHero.inventory = [...(updatedHero.inventory || [])];
-    updatedHero.inventory.splice(itemIndex, 1);
-    
-    if (onNotify) onNotify("Hai usato " + itemDef.nome + "!");
-    
-    const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
-    
-    const updatedSession = {
-      ...gameSession,
-      heroes: updatedHeroes,
-      monsters: updatedMonsters
-    };
-    
-    onUpdateSession(updatedSession);
-    return true;
-  }, [gameSession, onNotify, onUpdateSession]);
-
-  const collectTreasureAtCell = useCallback((heroId, treasureX, treasureY) => {
-    if (gameSession == null || gameSession.currentMap == null) return false;
-    
-    const hero = gameSession.heroes?.find(h => h.heroId === heroId);
-    const mapCell = gameSession.currentMap.grid?.find(c => c.x === treasureX && c.y === treasureY);
-    
-    if (hero == null || mapCell == null || mapCell.tes == null) return false;
-    
-    const treasure = mapCell.tes;
-    if (treasure.mon === 0 && treasure.ogg === 0 && treasure.arma === 0 && treasure.trp === 0) return false;
-    
-    const updatedHero = { ...hero };
-    const notificationParts = [];
-    
-    if (treasure.mon > 0) {
-      updatedHero.gold += treasure.mon;
-      notificationParts.push("Hai trovato " + treasure.mon + " monete d'oro!");
-    }
-    if (treasure.ogg > 0) {
-      updatedHero.inventory = [...(updatedHero.inventory || []), treasure.ogg];
-      notificationParts.push("Hai trovato un oggetto!");
-    }
-    if (treasure.arma > 0) {
-      updatedHero.equipment = [...(updatedHero.equipment || []), treasure.arma];
-      notificationParts.push("Hai trovato un'arma!");
-    }
-    if (treasure.trp > 0) {
-      updatedHero.currentBody -= treasure.trp;
-      notificationParts.push("È una trappola! Subisci " + treasure.trp + " danni.");
-    }
-    
-    const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
-    
-    const updatedGrid = gameSession.currentMap.grid.map(c => {
-      if (c.x === treasureX && c.y === treasureY) {
-        return {
-          ...c,
-          tes: { ...c.tes, mon: 0, ogg: 0, arma: 0, trp: 0 }
-        };
-      }
-      return c;
-    });
-    
-    const updatedMap = {
-      ...gameSession.currentMap,
-      grid: updatedGrid
-    };
-    
-    const updatedSession = {
-      ...gameSession,
-      heroes: updatedHeroes,
-      currentMap: updatedMap
-    };
-    
-    if (onNotify && notificationParts.length > 0) {
-      onNotify(notificationParts.join("\n"));
-    }
-    onUpdateSession(updatedSession);
-    return true;
-  }, [gameSession, onNotify, onUpdateSession]);
-
-  const drawTreasureCard = useCallback(() => {
-    if (gameSession == null || gameSession.treasureDeck == null || gameSession.treasureDeck.length === 0) return null;
-    
-    const drawnCard = gameSession.treasureDeck[0];
-    const updatedSession = {
-      ...gameSession,
-      treasureDeck: gameSession.treasureDeck.slice(1)
-    };
-    
-    onUpdateSession(updatedSession);
-    return drawnCard;
-  }, [gameSession, onUpdateSession]);
-
-  const applyTreasureCardEffect = useCallback((heroId, card, onWanderingMonster) => {
-    if (gameSession == null) return false;
-    
-    const hero = gameSession.heroes?.find(h => h.heroId === heroId);
-    if (hero == null) return false;
-    
-    const updatedHero = { ...hero };
-    const updatedSession = { ...gameSession };
-    
-    switch (card.azione) {
-      case "aggiungi_oro":
-        updatedHero.gold += card.valore;
-        if (onNotify) onNotify("Hai trovato " + card.valore + " monete d'oro!");
-        break;
-      case "aggiungi_oggetto":
-        updatedHero.inventory = [...(updatedHero.inventory || []), card.valore];
-        if (onNotify) onNotify("Hai trovato un oggetto: " + card.valore);
-        break;
-      case "modifica_hp":
-        updatedHero.currentBody += card.valore;
-        if (onNotify) onNotify("Punti Corpo modificati!");
-        break;
-      case "trappola_e_fine":
-        updatedHero.currentBody += card.valore;
-        if (onNotify) onNotify("Trappola! Subisci danni.");
-        break;
-      case "mostro_errante":
-        onUpdateSession(updatedSession);
-        if (onWanderingMonster) onWanderingMonster(updatedHero.x, updatedHero.y);
-        return true;
-    }
-    
-    const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
-    updatedSession.heroes = updatedHeroes;
-    
-    onUpdateSession(updatedSession);
-    return true;
-  }, [gameSession, onNotify, onUpdateSession]);
-
-  const updateMonsterState = useCallback((monsterId, nextX, nextY, statusesToRemove) => {
-    return commitSessionUpdate((currentSession) => {
-      const monster = currentSession.monsters?.find(m => m.id === monsterId);
-      if (monster == null) return currentSession;
-      
-      const updatedMonster = { ...monster };
-      if (nextX != null) updatedMonster.x = nextX;
-      if (nextY != null) updatedMonster.y = nextY;
-      
-      if (statusesToRemove && statusesToRemove.length > 0) {
-        updatedMonster.activeStatus = updatedMonster.activeStatus?.filter(s => !statusesToRemove.includes(s)) || [];
-      }
-      
-      const updatedMonsters = currentSession.monsters.map(m => m.id === monsterId ? updatedMonster : m);
-      
-      return {
-        ...currentSession,
-        monsters: updatedMonsters
-      };
-    });
-  }, [commitSessionUpdate]);
-
-  const resolveMonsterAttack = useCallback((monsterId, heroId, combatResult) => {
-    return commitSessionUpdate((currentSession) => {
-      const monster = currentSession.monsters?.find(m => m.id === monsterId);
-      const hero = currentSession.heroes?.find(h => h.heroId === heroId);
-      
-      if (monster == null || hero == null) return currentSession;
-      
-      const updatedHero = { ...hero };
-      updatedHero.currentBody -= combatResult.damageDealt;
-      
-      if (combatResult.damageDealt > 0 && updatedHero.activeStatus?.includes("RockSkin")) {
-        updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
-      }
-      
-      const updatedHeroes = currentSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes,
-        lastAttack: { hero: updatedHero, monster: monster, combatResult: combatResult }
-      };
-    });
-  }, [commitSessionUpdate]);
-
-  const startNextHeroRound = useCallback(() => {
-    return commitSessionUpdate((currentSession) => {
-      const updatedHeroes = currentSession.heroes?.map(hero => ({
-        ...hero,
-        turnPhase: {
-          ...(hero.turnPhase || {}),
-          HasMoved: false,
-          HasPerformedAction: false,
-          IsTurnFinished: false
-        }
-      })) || [];
-      
-      return {
-        ...currentSession,
-        currentTurn: 1,
-        heroes: updatedHeroes
-      };
-    });
-  }, [commitSessionUpdate]);
-
-  const clearHeroStatusEverywhere = useCallback((statusName) => {
-    return commitSessionUpdate((currentSession) => {
-      let didChange = false;
-      const updatedHeroes = currentSession.heroes?.map(hero => {
-        if (hero.activeStatus?.includes(statusName)) {
-          didChange = true;
-          return {
-            ...hero,
-            activeStatus: hero.activeStatus.filter(s => s !== statusName)
-          };
-        }
-        return hero;
-      }) || [];
-      
-      if (!didChange) return currentSession;
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes
-      };
-    });
-  }, [commitSessionUpdate]);
-
-  const moveCurrentHeroTo = useCallback((nextX, nextY) => {
-    return commitSessionUpdate((currentSession) => {
-      const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-      if (hero == null) return currentSession;
-      
-      const updatedHero = { ...hero, x: nextX, y: nextY };
-      const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes
-      };
-    });
-  }, [commitSessionUpdate]);
-
-  const resolveMovementTrap = useCallback((nextX, nextY, trapType, rockFallX, rockFallY) => {
-    return commitSessionUpdate((currentSession) => {
-      if (currentSession.currentMap == null) return currentSession;
-      
-      const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-      if (hero == null) return currentSession;
-      
-      const updatedHero = { ...hero, x: nextX, y: nextY };
-      updatedHero.currentBody -= 1;
-      
-      if (updatedHero.activeStatus?.includes("RockSkin")) {
-        updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
-      }
-      
-      const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
-      
-      const updatedMap = { ...currentSession.currentMap };
-      let updatedGrid = [...(currentSession.currentMap.grid || [])];
-      
-      if (trapType === 3 && rockFallX != null && rockFallY != null) {
-        updatedGrid = updatedGrid.map(c => {
-          if (c.x === rockFallX && c.y === rockFallY) {
-            return {
-              ...c,
-              arnt: { ...(c.arnt || {}), antroc: true }
-            };
-          }
-          return c;
+    const commitSessionUpdate = useCallback((updater) => {
+        if (!onUpdateSession) return false;
+        onUpdateSession((previousSession) => {
+            const baseSession = previousSession != null ? previousSession : gameSession;
+            if (baseSession == null) return previousSession;
+            return updater(baseSession);
         });
-      }
-      
-      updatedMap.grid = updatedGrid;
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes,
-        currentMap: updatedMap
-      };
-    });
-  }, [commitSessionUpdate]);
+        return true;
+    }, [onUpdateSession, gameSession]);
 
-  const markCurrentHeroEscaped = useCallback(() => {
-    return commitSessionUpdate((currentSession) => {
-      const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-      if (hero == null) return currentSession;
-      
-      const updatedHero = { 
-        ...hero, 
-        isEscaped: true,
-        turnPhase: {
-          ...(hero.turnPhase || {}),
-          IsTurnFinished: true
+    const initializeMission = useCallback((treasureDeck) => {
+        if (gameSession == null || gameSession.currentMap == null) return;
+        
+        const placedHeroes = (gameSession.heroes || []).map(heroState => {
+            const spawnPoint = gameSession.currentMap.eroi_start?.find(p => p.id === heroState.heroId);
+            if (spawnPoint) {
+                return { ...heroState, x: spawnPoint.x, y: spawnPoint.y, isEscaped: false };
+            }
+            return heroState;
+        });
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: placedHeroes,
+            treasureDeck: treasureDeck || []
+        });
+        
+        onUpdateSession?.(updatedSession);
+    }, [gameSession, onUpdateSession]);
+
+    const confirmHeroOrder = useCallback((orderedHeroIds) => {
+        if (gameSession == null || gameSession.isHeroOrderConfirmed) return;
+        
+        const updatedHeroes = (gameSession.heroes || []).map(hero => {
+            const nextTurnOrder = (orderedHeroIds || []).indexOf(hero.heroId) + 1;
+            if (nextTurnOrder > 0) {
+                return { ...hero, turnOrder: nextTurnOrder };
+            }
+            return hero;
+        });
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: updatedHeroes,
+            isHeroOrderConfirmed: true
+        });
+        
+        fogOfWarLogic?.revealInitialVisibility();
+        onUpdateSession?.(updatedSession);
+    }, [gameSession, fogOfWarLogic, onUpdateSession]);
+
+    const clearLastAttack = useCallback(() => {
+        if (gameSession == null || gameSession.lastAttack == null) return;
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            lastAttack: null
+        });
+        
+        onUpdateSession?.(updatedSession);
+    }, [gameSession, onUpdateSession]);
+
+    const openPassage = useCallback((passageX, passageY, destinationX, destinationY, foundPassages) => {
+        if (gameSession == null || gameSession.currentMap == null) return false;
+        
+        const coordKey = `${passageX},${passageY}`;
+        const isKnownDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
+        const isKnownPassage = foundPassages?.some(p => p.x === passageX && p.y === passageY);
+        
+        if (!isKnownDoor && !isKnownPassage) return false;
+        if (gameSession.openedDoors?.includes(coordKey)) return false;
+        
+        try {
+            fogOfWarLogic?.revealFromPoint(destinationX, destinationY);
+            
+            const updatedSession = GameSession({
+                ...gameSession,
+                openedDoors: [...(gameSession.openedDoors || []), coordKey]
+            });
+            
+            onNotify?.("Porta aperta.");
+            onUpdateSession?.(updatedSession);
+            return true;
+        } catch (error) {
+            console.error("Errore durante l'apertura della porta o rivelazione nebbia.", error);
+            return false;
         }
-      };
-      
-      const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes
-      };
-    });
-  }, [commitSessionUpdate]);
+    }, [gameSession, fogOfWarLogic, onNotify, onUpdateSession]);
 
-  const resolveHeroAttack = useCallback((monsterId, combatResult, statusesToRemove, consumedWeaponId) => {
-    return commitSessionUpdate((currentSession) => {
-      const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-      const monster = currentSession.monsters?.find(m => m.id === monsterId);
-      
-      if (hero == null || monster == null) return currentSession;
-      
-      const updatedHero = { ...hero };
-      if (consumedWeaponId != null) {
-        updatedHero.equipped = updatedHero.equipped?.filter(id => id !== consumedWeaponId) || [];
-        updatedHero.equipment = updatedHero.equipment?.filter(id => id !== consumedWeaponId) || [];
-      }
-      
-      const updatedMonster = { ...monster };
-      updatedMonster.currentBody -= combatResult.damageDealt;
-      
-      if (statusesToRemove && statusesToRemove.length > 0) {
-        updatedMonster.activeStatus = updatedMonster.activeStatus?.filter(s => !statusesToRemove.includes(s)) || [];
-      }
-      
-      const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
-      
-      let updatedMonsters = [...(currentSession.monsters || [])];
-      if (updatedMonster.currentBody <= 0) {
-        updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
-      } else {
-        updatedMonsters = updatedMonsters.map(m => m.id === monsterId ? updatedMonster : m);
-      }
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes,
-        monsters: updatedMonsters,
-        lastAttack: { hero: updatedHero, monster: updatedMonster, combatResult: combatResult }
-      };
-    });
-  }, [commitSessionUpdate]);
+    const toggleEquipItem = useCallback((heroId, itemId, staticEquipment) => {
+        if (gameSession == null || gameSession.heroes == null) return false;
+        
+        const hero = gameSession.heroes.find(h => h.heroId === heroId);
+        const item = staticEquipment?.find(i => i.id === itemId);
+        
+        if (!hero) return false;
+        if (!item) {
+            onNotify?.("Oggetto non trovato.");
+            return false;
+        }
+        
+        let updatedEquipped = [...(hero.equipped || [])];
+        
+        if (updatedEquipped.includes(itemId)) {
+            updatedEquipped = updatedEquipped.filter(id => id !== itemId);
+        } else {
+            if (item.solopsg && item.solopsgid !== hero.heroId) {
+                onNotify?.("La tua classe non può equipaggiare questo oggetto.");
+                return false;
+            }
+            if (item.nopsg && item.nopsgid === hero.heroId) {
+                onNotify?.("La tua classe non può equipaggiare questo oggetto.");
+                return false;
+            }
+            if (item.noogg > 0) {
+                updatedEquipped = updatedEquipped.filter(id => id !== item.noogg);
+            }
+            
+            updatedEquipped = updatedEquipped.filter(equippedId => {
+                const equippedItem = staticEquipment?.find(i => i.id === equippedId);
+                if (equippedItem?.noogg === itemId) {
+                    onNotify?.(`Hai rimosso ${equippedItem.nome} perché incompatibile.`);
+                    return false;
+                }
+                return true;
+            });
+            
+            updatedEquipped.push(itemId);
+        }
+        
+        const updatedHeroes = gameSession.heroes.map(h => 
+            h.heroId === heroId ? { ...h, equipped: updatedEquipped } : h
+        );
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: updatedHeroes
+        });
+        
+        onUpdateSession?.(updatedSession);
+        return true;
+    }, [gameSession, onNotify, onUpdateSession]);
 
-  const advanceTurn = useCallback((nextTurn, clearStatusName) => {
-    return commitSessionUpdate((currentSession) => {
-      const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-      let updatedHeroes = [...(currentSession.heroes || [])];
-      
-      if (hero != null && clearStatusName != null && hero.activeStatus?.includes(clearStatusName)) {
-        const updatedHero = {
-          ...hero,
-          activeStatus: hero.activeStatus.filter(s => s !== clearStatusName)
-        };
-        updatedHeroes = updatedHeroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
-      }
-      
-      return {
-        ...currentSession,
-        heroes: updatedHeroes,
-        currentTurn: nextTurn
-      };
-    });
-  }, [commitSessionUpdate]);
+    const useItem = useCallback((heroId, itemId, staticItems, targetMonsterId) => {
+        if (gameSession == null || gameSession.heroes == null) return false;
+        
+        const hero = gameSession.heroes.find(h => h.heroId === heroId);
+        const itemDef = staticItems?.find(i => i.id === itemId);
+        
+        if (!hero || !itemDef) return false;
+        
+        const itemIndex = (hero.inventory || []).indexOf(itemId);
+        if (itemIndex < 0) return false;
+        
+        const updatedHero = { ...hero };
+        let updatedMonsters = [...(gameSession.monsters || [])];
+        
+        if (itemDef.hp !== 0) {
+            updatedHero.currentBody += itemDef.hp;
+            if (updatedHero.hero?.corpo != null && updatedHero.currentBody > updatedHero.hero.corpo) {
+                updatedHero.currentBody = updatedHero.hero.corpo;
+            }
+        }
+        
+        if (itemDef.mp !== 0) {
+            updatedHero.currentMind += itemDef.mp;
+            if (updatedHero.hero?.mente != null && updatedHero.currentMind > updatedHero.hero.mente) {
+                updatedHero.currentMind = updatedHero.hero.mente;
+            }
+        }
+        
+        if (itemDef.acqua) {
+            if (targetMonsterId != null) {
+                const targetMonster = updatedMonsters.find(m => m.id === targetMonsterId);
+                if (targetMonster) {
+                    if (targetMonster.monster?.nonmorto) {
+                        targetMonster.currentBody -= itemDef.danni;
+                        onNotify?.(`L'Acqua Santa purifica il non-morto infliggendo ${itemDef.danni} danni!`);
+                        if (targetMonster.currentBody <= 0) {
+                            updatedMonsters = updatedMonsters.filter(m => m.id !== targetMonsterId);
+                        }
+                    } else {
+                        onNotify?.("L'Acqua Santa non ha effetto su questa creatura.");
+                    }
+                } else {
+                    onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
+                }
+            } else {
+                onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
+            }
+        }
+        
+        updatedHero.inventory = [...(updatedHero.inventory || [])];
+        updatedHero.inventory.splice(itemIndex, 1);
+        
+        onNotify?.(`Hai usato ${itemDef.nome}!`);
+        
+        const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: updatedHeroes,
+            monsters: updatedMonsters
+        });
+        
+        onUpdateSession?.(updatedSession);
+        return true;
+    }, [gameSession, onNotify, onUpdateSession]);
 
-  return {
-    commitSessionUpdate,
-    initializeMission,
-    confirmHeroOrder,
-    clearLastAttack,
-    openPassage,
-    toggleEquipItem,
-    useItem,
-    collectTreasureAtCell,
-    drawTreasureCard,
-    applyTreasureCardEffect,
-    updateMonsterState,
-    resolveMonsterAttack,
-    startNextHeroRound,
-    clearHeroStatusEverywhere,
-    moveCurrentHeroTo,
-    resolveMovementTrap,
-    markCurrentHeroEscaped,
-    resolveHeroAttack,
-    advanceTurn
-  };
+    const collectTreasureAtCell = useCallback((heroId, treasureX, treasureY) => {
+        if (gameSession == null || gameSession.currentMap == null) return false;
+        
+        const hero = gameSession.heroes?.find(h => h.heroId === heroId);
+        const mapCell = gameSession.currentMap.grid?.find(c => c.x === treasureX && c.y === treasureY);
+        
+        if (!hero || !mapCell || !mapCell.tes) return false;
+        
+        const treasure = mapCell.tes;
+        if (!treasure.mon && !treasure.ogg && !treasure.arma && !treasure.trp) return false;
+        
+        const updatedHero = { ...hero };
+        const notificationParts = [];
+        
+        if (treasure.mon > 0) {
+            updatedHero.gold = (updatedHero.gold || 0) + treasure.mon;
+            notificationParts.push(`Hai trovato ${treasure.mon} monete d'oro!`);
+        }
+        if (treasure.ogg > 0) {
+            updatedHero.inventory = [...(updatedHero.inventory || []), treasure.ogg];
+            notificationParts.push("Hai trovato un oggetto!");
+        }
+        if (treasure.arma > 0) {
+            updatedHero.equipment = [...(updatedHero.equipment || []), treasure.arma];
+            notificationParts.push("Hai trovato un'arma!");
+        }
+        if (treasure.trp > 0) {
+            updatedHero.currentBody -= treasure.trp;
+            notificationParts.push(`È una trappola! Subisci ${treasure.trp} danni.`);
+        }
+        
+        const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+        
+        const updatedGrid = gameSession.currentMap.grid.map(c => 
+            c.x === treasureX && c.y === treasureY 
+                ? { ...c, tes: { ...c.tes, mon: 0, ogg: 0, arma: 0, trp: 0 } }
+                : c
+        );
+        
+        const updatedMap = { ...gameSession.currentMap, grid: updatedGrid };
+        
+        const updatedSession = GameSession({
+            ...gameSession,
+            heroes: updatedHeroes,
+            currentMap: updatedMap
+        });
+        
+        if (notificationParts.length > 0) {
+            onNotify?.(notificationParts.join("\n"));
+        }
+        
+        onUpdateSession?.(updatedSession);
+        return true;
+    }, [gameSession, onNotify, onUpdateSession]);
+
+    const drawTreasureCard = useCallback(() => {
+        if (gameSession == null || !gameSession.treasureDeck || gameSession.treasureDeck.length === 0) return null;
+        
+        const drawnCard = gameSession.treasureDeck[0];
+        const updatedSession = GameSession({
+            ...gameSession,
+            treasureDeck: gameSession.treasureDeck.slice(1)
+        });
+        
+        onUpdateSession?.(updatedSession);
+        return drawnCard;
+    }, [gameSession, onUpdateSession]);
+
+    const applyTreasureCardEffect = useCallback((heroId, card, onWanderingMonster) => {
+        if (gameSession == null) return false;
+        
+        const hero = gameSession.heroes?.find(h => h.heroId === heroId);
+        if (!hero) return false;
+        
+        const updatedHero = { ...hero };
+        let updatedSession = GameSession({ ...gameSession });
+        
+        switch (card.azione) {
+            case "aggiungi_oro":
+                updatedHero.gold = (updatedHero.gold || 0) + card.valore;
+                onNotify?.(`Hai trovato ${card.valore} monete d'oro!`);
+                break;
+            case "aggiungi_oggetto":
+                updatedHero.inventory = [...(updatedHero.inventory || []), card.valore];
+                onNotify?.(`Hai trovato un oggetto: ${card.valore}`);
+                break;
+            case "modifica_hp":
+                updatedHero.currentBody += card.valore;
+                onNotify?.("Punti Corpo modificati!");
+                break;
+            case "trappola_e_fine":
+                updatedHero.currentBody += card.valore;
+                onNotify?.("Trappola! Subisci danni.");
+                break;
+            case "mostro_errante":
+                onUpdateSession?.(updatedSession);
+                onWanderingMonster?.(updatedHero.x, updatedHero.y);
+                return true;
+            default:
+                break;
+        }
+        
+        const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+        updatedSession = GameSession({
+            ...updatedSession,
+            heroes: updatedHeroes
+        });
+        
+        onUpdateSession?.(updatedSession);
+        return true;
+    }, [gameSession, onNotify, onUpdateSession]);
+
+    const updateMonsterState = useCallback((monsterId, nextX, nextY, statusesToRemove) => {
+        return commitSessionUpdate((currentSession) => {
+            const monster = currentSession.monsters?.find(m => m.id === monsterId);
+            if (!monster) return currentSession;
+            
+            const updatedMonster = { ...monster };
+            if (nextX != null) updatedMonster.x = nextX;
+            if (nextY != null) updatedMonster.y = nextY;
+            
+            if (statusesToRemove && statusesToRemove.length > 0) {
+                updatedMonster.activeStatus = (updatedMonster.activeStatus || []).filter(s => !statusesToRemove.includes(s));
+            }
+            
+            const updatedMonsters = currentSession.monsters.map(m => m.id === monsterId ? updatedMonster : m);
+            
+            return GameSession({
+                ...currentSession,
+                monsters: updatedMonsters
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const resolveMonsterAttack = useCallback((monsterId, heroId, combatResult) => {
+        return commitSessionUpdate((currentSession) => {
+            const monster = currentSession.monsters?.find(m => m.id === monsterId);
+            const hero = currentSession.heroes?.find(h => h.heroId === heroId);
+            
+            if (!monster || !hero) return currentSession;
+            
+            const updatedHero = { ...hero };
+            updatedHero.currentBody -= combatResult.damageDealt;
+            
+            if (combatResult.damageDealt > 0 && updatedHero.activeStatus?.includes("RockSkin")) {
+                updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
+            }
+            
+            const updatedHeroes = currentSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes,
+                lastAttack: { hero: updatedHero, monster, combatResult }
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const startNextHeroRound = useCallback(() => {
+        return commitSessionUpdate((currentSession) => {
+            const updatedHeroes = (currentSession.heroes || []).map(hero => ({
+                ...hero,
+                turnPhase: {
+                    ...(hero.turnPhase || {}),
+                    HasMoved: false,
+                    HasPerformedAction: false,
+                    IsTurnFinished: false
+                }
+            }));
+            
+            return GameSession({
+                ...currentSession,
+                currentTurn: 1,
+                heroes: updatedHeroes
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const clearHeroStatusEverywhere = useCallback((statusName) => {
+        return commitSessionUpdate((currentSession) => {
+            let didChange = false;
+            
+            const updatedHeroes = (currentSession.heroes || []).map(hero => {
+                if (hero.activeStatus?.includes(statusName)) {
+                    didChange = true;
+                    return {
+                        ...hero,
+                        activeStatus: hero.activeStatus.filter(s => s !== statusName)
+                    };
+                }
+                return hero;
+            });
+            
+            if (!didChange) return currentSession;
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const moveCurrentHeroTo = useCallback((nextX, nextY) => {
+        return commitSessionUpdate((currentSession) => {
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            if (!hero) return currentSession;
+            
+            const updatedHero = { ...hero, x: nextX, y: nextY };
+            const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const resolveMovementTrap = useCallback((nextX, nextY, trapType, rockFallX, rockFallY) => {
+        return commitSessionUpdate((currentSession) => {
+            if (currentSession.currentMap == null) return currentSession;
+            
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            if (!hero) return currentSession;
+            
+            const updatedHero = { ...hero, x: nextX, y: nextY };
+            updatedHero.currentBody -= 1;
+            
+            if (updatedHero.activeStatus?.includes("RockSkin")) {
+                updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
+            }
+            
+            const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+            
+            let updatedMap = { ...currentSession.currentMap };
+            
+            if (trapType === 3 && rockFallX != null && rockFallY != null) {
+                const updatedGrid = currentSession.currentMap.grid.map(c => {
+                    if (c.x === rockFallX && c.y === rockFallY) {
+                        return { ...c, arnt: { ...(c.arnt || {}), antroc: true } };
+                    }
+                    return c;
+                });
+                updatedMap.grid = updatedGrid;
+            }
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes,
+                currentMap: updatedMap
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const markCurrentHeroEscaped = useCallback(() => {
+        return commitSessionUpdate((currentSession) => {
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            if (!hero) return currentSession;
+            
+            const updatedHero = { 
+                ...hero, 
+                isEscaped: true,
+                turnPhase: {
+                    ...(hero.turnPhase || {}),
+                    IsTurnFinished: true
+                }
+            };
+            
+            const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const resolveHeroAttack = useCallback((monsterId, combatResult, statusesToRemove, consumedWeaponId) => {
+        return commitSessionUpdate((currentSession) => {
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            const monster = currentSession.monsters?.find(m => m.id === monsterId);
+            
+            if (!hero || !monster) return currentSession;
+            
+            const updatedHero = { ...hero };
+            if (consumedWeaponId != null) {
+                updatedHero.equipped = (updatedHero.equipped || []).filter(id => id !== consumedWeaponId);
+                updatedHero.equipment = (updatedHero.equipment || []).filter(id => id !== consumedWeaponId);
+            }
+            
+            const updatedMonster = { ...monster };
+            updatedMonster.currentBody -= combatResult.damageDealt;
+            
+            if (statusesToRemove && statusesToRemove.length > 0) {
+                updatedMonster.activeStatus = (updatedMonster.activeStatus || []).filter(s => !statusesToRemove.includes(s));
+            }
+            
+            const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+            
+            let updatedMonsters = [...(currentSession.monsters || [])];
+            if (updatedMonster.currentBody <= 0) {
+                updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
+            } else {
+                updatedMonsters = updatedMonsters.map(m => m.id === monsterId ? updatedMonster : m);
+            }
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes,
+                monsters: updatedMonsters,
+                lastAttack: { hero: updatedHero, monster: updatedMonster, combatResult }
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    const advanceTurn = useCallback((nextTurn, clearStatusName) => {
+        return commitSessionUpdate((currentSession) => {
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            let updatedHeroes = [...(currentSession.heroes || [])];
+            
+            if (hero != null && clearStatusName != null && hero.activeStatus?.includes(clearStatusName)) {
+                const updatedHero = {
+                    ...hero,
+                    activeStatus: hero.activeStatus.filter(s => s !== clearStatusName)
+                };
+                updatedHeroes = updatedHeroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+            }
+            
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes,
+                currentTurn: nextTurn
+            });
+        });
+    }, [commitSessionUpdate]);
+
+    return {
+        commitSessionUpdate,
+        initializeMission,
+        confirmHeroOrder,
+        clearLastAttack,
+        openPassage,
+        toggleEquipItem,
+        useItem,
+        collectTreasureAtCell,
+        drawTreasureCard,
+        applyTreasureCardEffect,
+        updateMonsterState,
+        resolveMonsterAttack,
+        startNextHeroRound,
+        clearHeroStatusEverywhere,
+        moveCurrentHeroTo,
+        resolveMovementTrap,
+        markCurrentHeroEscaped,
+        resolveHeroAttack,
+        advanceTurn
+    };
 }

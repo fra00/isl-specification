@@ -21,6 +21,15 @@
   - `activePath` is cleared immediately.
   - The hero stops moving, ensuring no further movement points are consumed.
 
+## Scenario: Trap Rendering Integration Uses Hook Getter
+
+- **Given**: `hooksTraps` contains one detected or triggered trap at (6, 5).
+- **When**: `Dungeon` prepares props for `DungeonBoard`.
+- **Assert (Expected Outcomes)**:
+  - `Dungeon` MUST pass trap markers to `DungeonBoard` using `hooksTraps.getTriggeredTraps()`.
+  - `Dungeon` MUST NOT rely on a non-guaranteed `hooksTraps.triggeredTraps` property unless the hook contract explicitly exposes it.
+  - The board receives a list containing the trap marker and can render `/img/cell/lancia.jpg`, `/img/cell/rocciacad.jpg`, or `/img/cell/abisso.jpg` according to `tipo`.
+
 ## Scenario: Combat Resolution - Gargoyle Defense
 
 - **Given**: A hero attacks a "Gargoyle" monster.

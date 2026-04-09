@@ -6,15 +6,14 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import PageContent from "./page-presentation";
+import { Monster, Hero, Equipment, Item, TreasureCard } from "./domain-ruleset";
+import { Campaign, VisibilityMap, VisibilityCell } from "./domain-map";
 import { getAllSpells } from "./domain-spells-data";
-import { VisibilityMap } from './domain-map';
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
-  const [error, setError] = useState(null);
-  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalHeroes, setGlobalHeroes] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
@@ -23,54 +22,85 @@ export default function MainContent() {
   const [globalSpells, setGlobalSpells] = useState([]);
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const bootstrap = async () => {
       try {
-        const responses = await Promise.all([
-          fetch('/jsonData/monsters.json'),
-          fetch('/jsonData/heroes.json'),
-          fetch('/jsonData/tabellone/default.json'),
-          fetch('/jsonData/equipment.json'),
-          fetch('/jsonData/items.json'),
-          fetch('/jsonData/treasure-card.json'),
-          fetch('/jsonData/campagne.json')
+        const [
+          monstersRes,
+          heroesRes,
+          boardDataRes,
+          equipmentRes,
+          itemsRes,
+          treasureRes,
+          campaignRes
+        ] = await Promise.all([
+          fetch("/jsonData/monsters.json"),
+          fetch("/jsonData/heroes.json"),
+          fetch("/jsonData/tabellone/default.json"),
+          fetch("/jsonData/equipment.json"),
+          fetch("/jsonData/items.json"),
+          fetch("/jsonData/treasure-card.json"),
+          fetch("/jsonData/campagne.json")
         ]);
 
-        for (const res of responses) {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status} on ${res.url}`);
-          }
+        if (
+          !monstersRes.ok ||
+          !heroesRes.ok ||
+          !boardDataRes.ok ||
+          !equipmentRes.ok ||
+          !itemsRes.ok ||
+          !treasureRes.ok ||
+          !campaignRes.ok
+        ) {
+          throw new Error("Network response was not ok");
         }
 
-        const [
-          monsters,
-          heroes,
-          boardData,
-          equipment,
-          items,
-          treasureDeck,
-          campaign
-        ] = await Promise.all(responses.map(res => res.json()));
+        const rawMonsters = await monstersRes.json();
+        const rawHeroes = await heroesRes.json();
+        const rawBoardData = await boardDataRes.json();
+        const rawEquipment = await equipmentRes.json();
+        const rawItems = await itemsRes.json();
+        const rawTreasure = await treasureRes.json();
+        const rawCampaign = await campaignRes.json();
 
-        if (isMounted) {
-          setGlobalMonsters(monsters || []);
-          setGlobalHeroes(heroes || []);
-          setGlobalBoardData(boardData ? VisibilityMap(boardData) : null);
-          setGlobalEquipment(equipment || []);
-          setGlobalItems(items || []);
-          setGlobalTreasureDeck(treasureDeck || []);
-          setGlobalCampaign(campaign || null);
-          
-          setGlobalSpells(getAllSpells());
-          
-          setIsAppReady(true);
-        }
+        if (!isMounted) return;
+
+        const monsters = (Array.isArray(rawMonsters) ? rawMonsters : []).map(m => Monster(m));
+        const heroes = (Array.isArray(rawHeroes) ? rawHeroes : []).map(h => Hero(h));
+        const equipment = (Array.isArray(rawEquipment) ? rawEquipment : []).map(e => Equipment(e));
+        const items = (Array.isArray(rawItems) ? rawItems : []).map(i => Item(i));
+        const treasureDeck = (Array.isArray(rawTreasure) ? rawTreasure : []).map(t => TreasureCard(t));
+        const campaign = Campaign(rawCampaign);
+
+        const normalizedBoardData = VisibilityMap({
+          ...(rawBoardData || {}),
+          data: (rawBoardData?.data || []).map(cell =>
+            VisibilityCell({
+              ...(cell || {}),
+              fog: cell?.fog !== undefined ? cell.fog : true
+            })
+          )
+        });
+
+        const spells = getAllSpells();
+
+        setGlobalMonsters(monsters);
+        setGlobalHeroes(heroes);
+        setGlobalEquipment(equipment);
+        setGlobalItems(items);
+        setGlobalTreasureDeck(treasureDeck);
+        setGlobalCampaign(campaign);
+        setGlobalBoardData(normalizedBoardData);
+        setGlobalSpells(spells);
+
+        setIsAppReady(true);
       } catch (err) {
         if (isMounted) {
-          setError(err);
+          setError("Errore durante il caricamento degli asset: " + (err?.message || "Errore sconosciuto"));
         }
       }
     };
@@ -82,26 +112,24 @@ export default function MainContent() {
     };
   }, []);
 
-  if (error != null) {
+  if (error) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p className="text-red-500 text-xl font-bold">
-          Errore durante il caricamento degli asset: {error.message}
-        </p>
+      <div className="w-full h-screen flex items-center justify-center bg-black">
+        <div className="text-red-500 text-xl font-bold">{error}</div>
       </div>
     );
   }
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <h1 className="text-2xl font-bold animate-pulse">Inizializzazione Sistema...</h1>
+      <div className="w-full h-screen flex items-center justify-center bg-black">
+        <div className="text-white text-2xl font-bold animate-pulse">Inizializzazione Sistema...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-neutral-900">
+    <div className="w-full h-screen flex items-center justify-center bg-black overflow-hidden">
       <PageContent
         monsters={globalMonsters}
         heroes={globalHeroes}

@@ -77,7 +77,7 @@ export default function DungeonBoard({
         const cy = y + 1;
         
         const visCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
-        const isFogged = visCell ? visCell.fog : true;
+        const isFogged = visCell?.fog !== false;
         
         let cellCursor = 'cursor-pointer';
         if (targetingSpell) {

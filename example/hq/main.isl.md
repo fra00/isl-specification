@@ -10,7 +10,12 @@
 > **Reference**: PagePresentation are defined in `./page-presentation.isl.md`.
 > **Reference**: @Monster, @Equipment, @Item, @Spell, @TreasureCard in `./domain-ruleset.isl.md`.
 > **Reference**: @Campaign in `./domain-map.isl.md`.
+> **Reference**: @VisibilityMap in `./domain-map.isl.md`.
 > **Reference**: @GameSpellsData in `./domain-spells-data.isl.md`.
+
+## Domain Concepts
+
+- `globalBoardData`: Application-wide visibility map normalized before gameplay starts so fog-of-war logic can rely on explicit boolean `fog` values.
 
 ## Component: MainContent
 
@@ -54,7 +59,8 @@ IF `isAppReady` is false:
 - **Flow**:
   - TRY:
     - Fetch in parallel: `/jsonData/monsters.json`, `/jsonData/heroes.json`, `/jsonData/tabellone/default.json`, `/jsonData/equipment.json`, `/jsonData/items.json`, `/jsonData/treasure-card.json`, `/jsonData/campagne.json`.
-    - Parse and update `globalMonsters`, `globalHeroes`, `globalBoardData`, `globalEquipment`, `globalItems`, `globalTreasureDeck`, `globalCampaign`.
+    - Parse and update `globalMonsters`, `globalHeroes`, `globalEquipment`, `globalItems`, `globalTreasureDeck`, `globalCampaign`.
+    - Normalize `boardData` through `@VisibilityMap` before assigning it to `globalBoardData`, so every visibility cell starts with `fog: true` unless explicitly revealed.
     - Initialize `globalSpells` using the static data from `@GameSpellsData.getAllSpells()`.
     - SET `isAppReady` to true.
   - CATCH Error:

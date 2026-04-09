@@ -9,6 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import PageContent from "./page-presentation";
 import { getAllSpells } from "./domain-spells-data";
+import { VisibilityMap } from './domain-map';
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -57,7 +58,7 @@ export default function MainContent() {
         if (isMounted) {
           setGlobalMonsters(monsters || []);
           setGlobalHeroes(heroes || []);
-          setGlobalBoardData(boardData || null);
+          setGlobalBoardData(boardData ? VisibilityMap(boardData) : null);
           setGlobalEquipment(equipment || []);
           setGlobalItems(items || []);
           setGlobalTreasureDeck(treasureDeck || []);

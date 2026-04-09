@@ -9,6 +9,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
+function normalizeVisibilityMap(staticVisibilityMap) {
+  if (!staticVisibilityMap) {
+    return null;
+  }
+
+  return {
+    ...staticVisibilityMap,
+    data: Array.isArray(staticVisibilityMap.data)
+      ? staticVisibilityMap.data.map((cell) => ({
+          ...cell,
+          fog: cell?.fog === false ? false : true
+        }))
+      : []
+  };
+}
+
 export const useFogOfWar = ({ gameSession, staticVisibilityMap }) => {
   const [fogVisibilityMap, setFogVisibilityMap] = useState(null);
   
@@ -21,7 +37,7 @@ export const useFogOfWar = ({ gameSession, staticVisibilityMap }) => {
     if (!staticVisibilityMap) {
       setFogVisibilityMap(null);
     } else {
-      setFogVisibilityMap(JSON.parse(JSON.stringify(staticVisibilityMap)));
+      setFogVisibilityMap(normalizeVisibilityMap(staticVisibilityMap));
     }
   }, [staticVisibilityMap]);
 

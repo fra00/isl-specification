@@ -12,6 +12,10 @@
 > **Reference**: @MapCell in `./domain-map.isl.md`
 > **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
 
+## Domain Concepts
+
+- `fogVisibilityMap`: Runtime visibility state that MUST preserve previously revealed cells and treat missing `fog` values from static JSON as still fogged.
+
 ## Component: useFogOfWar
 
 ### Role: Business Logic
@@ -25,6 +29,8 @@
 
 #### internal state
 
+- **Contract**: Stores the mutable fog-of-war map and the visibility calculator used to reveal cells.
+
 - `fogVisibilityMap`: @VisibilityMap (The static visibility map loaded from the mission data, used as reference for calculations).
 - `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
 
@@ -34,7 +40,8 @@
 - **Trigger**: On component mount and when `staticVisibilityMap` changes.
 - **Flow**:
   - IF `staticVisibilityMap` is null, set `fogVisibilityMap` to null.
-  - ELSE, create a deep copy of `staticVisibilityMap` and set it as the initial state for `fogVisibilityMap`.
+  - ELSE, create a deep copy of `staticVisibilityMap` and normalize every visibility cell so `fog` is `true` unless the source cell explicitly contains `fog: false`.
+  - Set the normalized copy as the initial state for `fogVisibilityMap`.
 
 #### calculateFog
 
@@ -72,6 +79,6 @@
 
 **🚨 Constraint**:
 
-- When fog is removed from a cell, it should remain permanently visible for the rest of the session. This means that once a cell's `fog` is set to `false`, it should never revert back to `true` even if all heroes move away from it.
+- When fog is removed from a cell, it MUST remain permanently visible for the rest of the session. This means that once a cell's `fog` is set to `false`, it must never revert back to `true` even if all heroes move away from it.
 
 - **Return**: `fogVisibilityMap` (The map data with updated fog status).

@@ -8,6 +8,14 @@
     - All cells in `fogVisibilityMap` maintain `fog: true`.
     - The system does not mutate the original `staticVisibilityMap` reference.
 
+## Scenario: Legacy Visibility Map Defaults To Fogged
+- **Given**: A `staticVisibilityMap` is provided from JSON and some cells omit the `fog` property entirely.
+- **When**: The `useFogOfWar` component mounts.
+- **Assert (Expected Outcomes)**:
+    - Every visibility cell without an explicit `fog: false` MUST be normalized to `fog: true`.
+    - The board MUST NOT treat omitted `fog` values as already visible cells.
+    - Only cells explicitly revealed later by fog-of-war logic may become `fog: false`.
+
 ## Scenario: Fog Removal on Hero Movement
 - **Given**: A `gameSession` with a hero at position (5, 5). `fogVisibilityMap` has `fog: true` for all cells.
 - **When**: `calculateFog` is triggered for the hero at (5, 5).

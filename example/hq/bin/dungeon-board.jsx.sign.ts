@@ -1,6 +1,6 @@
 export default function DungeonBoard(props: {
-  gameSession?: any;
-  boardVisibilityMap?: any;
+  gameSession: any;
+  boardVisibilityMap: any;
   onCellClick?: (x: number, y: number) => void;
   onCellHover?: (x: number, y: number) => void;
   onMonsterClick?: (monsterId: number) => void;
@@ -10,7 +10,7 @@ export default function DungeonBoard(props: {
   triggeredTraps?: Array<{ x: number; y: number; tipo: number }>;
   targetingSpell?: any;
   visibilityCalc?: {
-    hasLineOfSight: (startX: number, startY: number, targetX: number, targetY: number) => boolean;
     calculateVisibleCells: (startX: number, startY: number) => Array<{ x: number; y: number }>;
+    hasLineOfSight: (startX: number, startY: number, targetX: number, targetY: number) => boolean;
   };
 }): React.ReactElement;

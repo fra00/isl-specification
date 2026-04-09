@@ -18,6 +18,10 @@
 > **Reference**: @useDungeonVisibleMonsters in `./dungeon-use-visible-monsters.isl.md`
 > **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
 
+## Domain Concepts
+
+- `triggeredTraps`: Visible trap markers already revealed on the board, including detected traps that remain active until disarmed or triggered.
+
 ## Component: DungeonBoard
 
 ### Role: Presentation
@@ -91,7 +95,10 @@
   - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
 - **Activated Traps**: Visual elements for triggered traps.
   - **Data Source**: `triggeredTraps` prop.
-  - **Render**: IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`.
+  - **Render**:
+    - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`.
+    - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`.
+    - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)
@@ -126,6 +133,8 @@
 ### ⚡ Capabilities
 
 #### internalState
+
+- **Contract**: Tracks local hover state used by board interactions and targeting preview.
 
 - `hoveredCell`: {x: Integer, y: Integer} | null (Coordinates of the cell currently under the mouse for targeting preview).
 

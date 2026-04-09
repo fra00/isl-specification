@@ -24,7 +24,14 @@ Contenitore delle pagine, al suo interno vengono visualizzate le varie `PageView
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component owns the top-level `gameSession` state and exposes `updateSession` as the single session update entrypoint shared by page-level children.
+
 **Signature**:
+
 - `monsters`: List<@Monster>
 - `heroes`: List<@Hero>
 - `boardData`: @VisibilityMap
@@ -67,10 +74,14 @@ Setta in `NavigationStatus` nextPageView la valore passato in input
 
 #### updateSession
 
-- **Contract**: Updates the global game session state.
-- **Signature**: `(session: GameSession) -> void`
+- **Contract**: Updates the global game session state, accepting either a complete session snapshot or a functional updater when child flows need to commit against the latest available state.
+- **Signature**: `(session: GameSession | ((previousSession: GameSession) -> GameSession)) -> void`
 - **Flow**:
-  - Update local `gameSession` with the provided session.
+  - IF the provided argument is a function:
+    - Invoke it with the latest local `gameSession`.
+    - Replace local `gameSession` with the returned value.
+  - ELSE:
+    - Replace local `gameSession` with the provided session.
 
 #### startMission
 

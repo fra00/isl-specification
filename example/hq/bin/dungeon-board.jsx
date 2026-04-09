@@ -6,10 +6,10 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useDungeonFurniture } from './dungeon-use-furniture';
-import { useDungeonDoors } from './dungeon-use-doors';
-import { useDungeonVisibleMonsters } from './dungeon-use-visible-monsters';
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { useDungeonFurniture } from "./dungeon-use-furniture";
+import { useDungeonDoors } from "./dungeon-use-doors";
+import { useDungeonVisibleMonsters } from "./dungeon-use-visible-monsters";
 
 export default function DungeonBoard({
   gameSession = null,
@@ -22,15 +22,24 @@ export default function DungeonBoard({
   treasures = [],
   triggeredTraps = [],
   targetingSpell = null,
-  visibilityCalc = { hasLineOfSight: () => false, calculateVisibleCells: () => [] }
+  visibilityCalc = {
+    hasLineOfSight: () => false,
+    calculateVisibleCells: () => [],
+  },
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredCell, setHoveredCell] = useState(null);
   const [hoveredMonsterId, setHoveredMonsterId] = useState(null);
 
-  const { visibleFurniture } = useDungeonFurniture({ gameSession, boardVisibilityMap });
+  const { visibleFurniture } = useDungeonFurniture({
+    gameSession,
+    boardVisibilityMap,
+  });
   const { visibleDoors } = useDungeonDoors({ gameSession, boardVisibilityMap });
-  const { visibleMonsters } = useDungeonVisibleMonsters({ gameSession, boardVisibilityMap });
+  const { visibleMonsters } = useDungeonVisibleMonsters({
+    gameSession,
+    boardVisibilityMap,
+  });
 
   useEffect(() => {
     if (boardVisibilityMap) {
@@ -39,7 +48,11 @@ export default function DungeonBoard({
   }, [boardVisibilityMap]);
 
   const activeHero = useMemo(() => {
-    return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn) || null;
+    return (
+      gameSession?.heroes?.find(
+        (h) => h.turnOrder === gameSession?.currentTurn,
+      ) || null
+    );
   }, [gameSession?.heroes, gameSession?.currentTurn]);
 
   const gridCells = useMemo(() => {
@@ -52,14 +65,20 @@ export default function DungeonBoard({
     return cells;
   }, []);
 
-  const handleCellClick = useCallback((x, y) => {
-    onCellClick(x + 1, y + 1);
-  }, [onCellClick]);
+  const handleCellClick = useCallback(
+    (x, y) => {
+      onCellClick(x + 1, y + 1);
+    },
+    [onCellClick],
+  );
 
-  const handleCellHover = useCallback((x, y) => {
-    setHoveredCell({ x, y });
-    onCellHover(x + 1, y + 1);
-  }, [onCellHover]);
+  const handleCellHover = useCallback(
+    (x, y) => {
+      setHoveredCell({ x, y });
+      onCellHover(x + 1, y + 1);
+    },
+    [onCellHover],
+  );
 
   const handleMouseLeaveBoard = useCallback(() => {
     setHoveredCell(null);
@@ -69,38 +88,67 @@ export default function DungeonBoard({
     <div className="flex items-center justify-center w-full h-full">
       <div className="relative w-[884px] h-[646px] m-0 p-0 border-none">
         {/* Board Background */}
-        <img 
-          src="/img/tabellone/default.bmp" 
-          alt="Game Board" 
+        <img
+          src="/img/tabellone/default.bmp"
+          alt="Game Board"
           className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
         />
 
         {/* Grid and Fog of War */}
-        <div className="absolute top-0 left-0 w-full h-full" onMouseLeave={handleMouseLeaveBoard}>
+        <div
+          className="absolute top-0 left-0 w-full h-full"
+          onMouseLeave={handleMouseLeaveBoard}
+        >
           {gridCells.map(({ x, y }) => {
             const cx = x + 1;
             const cy = y + 1;
-            const visCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
+            const visCell = boardVisibilityMap?.data?.find(
+              (c) => c.x === cx && c.y === cy,
+            );
             const isFog = visCell ? visCell.fog : true;
-            const isPath = hoveredPath?.some(p => p.x === cx && p.y === cy);
-            
+            const isPath = hoveredPath?.some((p) => p.x === cx && p.y === cy);
+
             let cellHighlightClass = "";
             let cursorClass = "cursor-pointer";
 
             if (targetingSpell) {
-              if (["Point", "Door"].includes(targetingSpell.targetType) || targetingSpell.effetto === "Genio") {
+              if (
+                ["Point", "Door"].includes(targetingSpell.targetType) ||
+                targetingSpell.effetto === "Genio"
+              ) {
                 cursorClass = "cursor-crosshair";
               } else {
                 cursorClass = "cursor-default";
               }
 
-              const hasLOS = activeHero ? visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, cx, cy) : false;
-              const hasMonster = gameSession?.monsters?.some(m => m.x === cx && m.y === cy);
-              const hasClosedDoor = gameSession?.currentMap?.porte?.some(d => d.x === cx && d.y === cy && !gameSession?.openedDoors?.includes(`${cx},${cy}`));
-              
-              if (targetingSpell.effetto === "Genio" && (hasMonster || hasClosedDoor)) {
+              const hasLOS = activeHero
+                ? visibilityCalc?.hasLineOfSight(
+                    activeHero.x,
+                    activeHero.y,
+                    cx,
+                    cy,
+                  )
+                : false;
+              const hasMonster = gameSession?.monsters?.some(
+                (m) => m.x === cx && m.y === cy,
+              );
+              const hasClosedDoor = gameSession?.currentMap?.porte?.some(
+                (d) =>
+                  d.x === cx &&
+                  d.y === cy &&
+                  !gameSession?.openedDoors?.includes(`${cx},${cy}`),
+              );
+
+              if (
+                targetingSpell.effetto === "Genio" &&
+                (hasMonster || hasClosedDoor)
+              ) {
                 cellHighlightClass = "bg-blue-500/30 animate-pulse";
-              } else if (hoveredCell && hoveredCell.x === x && hoveredCell.y === y) {
+              } else if (
+                hoveredCell &&
+                hoveredCell.x === x &&
+                hoveredCell.y === y
+              ) {
                 if (hasLOS) {
                   cellHighlightClass = "bg-blue-400/50";
                 } else {
@@ -112,7 +160,7 @@ export default function DungeonBoard({
             }
 
             return (
-              <div 
+              <div
                 key={`cell-${x}-${y}`}
                 className={`absolute w-[34px] h-[34px] ${cursorClass}`}
                 style={{ left: x * 34, top: y * 34 }}
@@ -120,9 +168,15 @@ export default function DungeonBoard({
                 onMouseEnter={() => handleCellHover(x, y)}
               >
                 {/* Fog of War Layer */}
-                <div className={`absolute inset-0 bg-black transition-opacity duration-300 pointer-events-none ${isFog ? 'opacity-70' : 'opacity-0'}`}></div>
+                <div
+                  className={`absolute inset-0 bg-black transition-opacity duration-300 pointer-events-none ${isFog ? "opacity-70" : "opacity-0"}`}
+                ></div>
                 {/* Highlight Layer */}
-                {cellHighlightClass && <div className={`absolute inset-0 ${cellHighlightClass} pointer-events-none`}></div>}
+                {cellHighlightClass && (
+                  <div
+                    className={`absolute inset-0 ${cellHighlightClass} pointer-events-none`}
+                  ></div>
+                )}
               </div>
             );
           })}
@@ -130,99 +184,120 @@ export default function DungeonBoard({
 
         {/* Furniture */}
         {visibleFurniture?.map((f, i) => (
-          <img 
-            key={`furn-${i}`} 
-            src={`/img/mobili/${f.img}`} 
+          <img
+            key={`furn-${i}`}
+            src={`/img/mobili/${f.img}`}
             alt="Furniture"
             className="absolute pointer-events-none"
-            style={{ left: (f.x - 1) * 34, top: (f.y - 1) * 34 }} 
+            style={{ left: (f.x - 1) * 34, top: (f.y - 1) * 34 }}
           />
         ))}
 
         {/* Doors */}
         {visibleDoors?.map((d, i) => (
-          <img 
-            key={`door-${i}`} 
-            src={`/img/cell/${d.img}`} 
+          <img
+            key={`door-${i}`}
+            src={`/img/cell/${d.img}`}
             alt="Door"
             className="absolute pointer-events-none"
-            style={{ left: (d.x - 1) * 34, top: (d.y - 1) * 34 }} 
+            style={{ left: (d.x - 1) * 34, top: (d.y - 1) * 34 }}
           />
         ))}
 
         {/* Secret Passages */}
         {secretPassages?.map((sp, i) => (
-          <img 
-            key={`sp-${i}`} 
-            src={`/img/cell/${sp.img}`} 
+          <img
+            key={`sp-${i}`}
+            src={`/img/cell/${sp.img}`}
             alt="Secret Passage"
             className="absolute pointer-events-none"
-            style={{ left: (sp.x - 1) * 34, top: (sp.y - 1) * 34 }} 
+            style={{ left: (sp.x - 1) * 34, top: (sp.y - 1) * 34 }}
           />
         ))}
 
         {/* Treasures */}
         {treasures?.map((t, i) => (
-          <img 
-            key={`tr-${i}`} 
-            src={`/img/cell/${t.img}`} 
+          <img
+            key={`tr-${i}`}
+            src={`/img/cell/${t.img}`}
             alt="Treasure"
             className="absolute pointer-events-none"
-            style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }} 
+            style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }}
           />
         ))}
 
         {/* Triggered Traps */}
-        {triggeredTraps?.filter(t => t.tipo === 1).map((t, i) => (
-          <img 
-            key={`tp-${i}`} 
-            src="/img/cell/abisso.jpg" 
-            alt="Trap"
-            className="absolute pointer-events-none"
-            style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }} 
-          />
-        ))}
+        {triggeredTraps
+          ?.filter((t) => t.tipo === 1)
+          .map((t, i) => (
+            <img
+              key={`tp-${i}`}
+              src="/img/cell/abisso.jpg"
+              alt="Trap"
+              className="absolute pointer-events-none"
+              style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }}
+            />
+          ))}
 
         {/* Monsters */}
-        {visibleMonsters?.map(m => {
+        {visibleMonsters?.map((m) => {
           let mCursor = "cursor-pointer";
           if (targetingSpell) {
-            if (targetingSpell.targetType === "Monster" || targetingSpell.effetto === "Genio") mCursor = "cursor-crosshair";
+            if (
+              targetingSpell.targetType === "Monster" ||
+              targetingSpell.effetto === "Genio"
+            )
+              mCursor = "cursor-crosshair";
             else mCursor = "cursor-default";
           }
-          
+
           let statusClasses = "";
           let statusOverlay = null;
           if (m.activeStatus?.includes("Sleep")) {
-            statusClasses += " shadow-[0_0_10px_5px_rgba(59,130,246,0.7)] animate-pulse";
-            statusOverlay = <div className="absolute top-0 right-0 text-xs text-blue-300 font-bold pointer-events-none">Zzz</div>;
+            statusClasses +=
+              " shadow-[0_0_10px_5px_rgba(59,130,246,0.7)] animate-pulse";
+            statusOverlay = (
+              <div className="absolute top-0 right-0 text-xs text-blue-300 font-bold pointer-events-none">
+                Zzz
+              </div>
+            );
           }
           if (m.activeStatus?.includes("Tempest")) {
-            statusClasses += " shadow-[0_0_10px_5px_rgba(156,163,175,0.7)] animate-pulse";
+            statusClasses +=
+              " shadow-[0_0_10px_5px_rgba(156,163,175,0.7)] animate-pulse";
           }
           if (m.activeStatus?.includes("Entangled")) {
-            statusOverlay = <div className="absolute inset-0 bg-green-500/30 border border-green-500 rounded-full pointer-events-none"></div>;
+            statusOverlay = (
+              <div className="absolute inset-0 bg-green-500/30 border border-green-500 rounded-full pointer-events-none"></div>
+            );
           }
 
           return (
-            <div 
-              key={`monster-${m.id}`} 
+            <div
+              key={`monster-${m.id}`}
               className={`absolute flex items-center justify-center ${mCursor}`}
-              style={{ left: (m.x - 1) * 34, top: (m.y - 1) * 34, width: 34, height: 34 }}
+              style={{
+                left: (m.x - 1) * 34,
+                top: (m.y - 1) * 34,
+                width: 34,
+                height: 34,
+              }}
               onClick={() => onMonsterClick(m.id)}
               onMouseEnter={() => setHoveredMonsterId(m.id)}
               onMouseLeave={() => setHoveredMonsterId(null)}
             >
-              <img 
-                src={`/img/mostri/${m.monster?.immagine}`} 
-                className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`} 
-                alt={m.monster?.nome || 'Monster'} 
+              <img
+                src={`/img/mostri/${m.monster?.immagine}`}
+                className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`}
+                alt={m.monster?.nome || "Monster"}
               />
               {statusOverlay}
               {hoveredMonsterId === m.id && !targetingSpell && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-black/90 text-white text-xs p-2 rounded whitespace-nowrap z-50 pointer-events-none">
                   <div className="font-bold">{m.monster?.nome}</div>
-                  <div>BP: {m.currentBody} | MP: {m.currentMind}</div>
+                  <div>
+                    BP: {m.currentBody} | MP: {m.currentMind}
+                  </div>
                   <div className="text-red-400 font-bold mt-1">Attackable</div>
                 </div>
               )}
@@ -231,36 +306,47 @@ export default function DungeonBoard({
         })}
 
         {/* Heroes */}
-        {gameSession?.heroes?.map(h => {
+        {gameSession?.heroes?.map((h) => {
           let hCursor = "cursor-default";
-          if (targetingSpell && targetingSpell.targetType === "Hero") hCursor = "cursor-crosshair";
-          
+          if (targetingSpell && targetingSpell.targetType === "Hero")
+            hCursor = "cursor-crosshair";
+
           let statusClasses = "";
           let opacityClass = "opacity-100";
           if (h.activeStatus?.includes("FoggyMist")) {
             opacityClass = "opacity-50";
-            statusClasses += " shadow-[0_0_10px_5px_rgba(255,255,255,0.7)] animate-pulse";
+            statusClasses +=
+              " shadow-[0_0_10px_5px_rgba(255,255,255,0.7)] animate-pulse";
           }
           if (h.activeStatus?.includes("RockSkin")) {
-            statusClasses += " shadow-[0_0_10px_5px_rgba(120,113,108,0.7)] animate-pulse";
+            statusClasses +=
+              " shadow-[0_0_10px_5px_rgba(120,113,108,0.7)] animate-pulse";
           }
           if (h.activeStatus?.includes("Courage")) {
-            statusClasses += " shadow-[0_0_10px_5px_rgba(239,68,68,0.7)] animate-pulse";
+            statusClasses +=
+              " shadow-[0_0_10px_5px_rgba(239,68,68,0.7)] animate-pulse";
           }
 
           const isCurrentTurn = gameSession?.currentTurn === h.turnOrder;
-          const selectionClass = isCurrentTurn ? "ring-2 ring-yellow-400 z-10" : "z-0";
+          const selectionClass = isCurrentTurn
+            ? "ring-2 ring-yellow-400 z-10"
+            : "z-0";
 
           return (
-            <div 
+            <div
               key={`hero-${h.heroId}`}
               className={`absolute flex items-center justify-center transition-all duration-300 ease-linear pointer-events-none ${hCursor} ${opacityClass} ${selectionClass}`}
-              style={{ left: (h.x - 1) * 34, top: (h.y - 1) * 34, width: 34, height: 34 }}
+              style={{
+                left: (h.x - 1) * 34,
+                top: (h.y - 1) * 34,
+                width: 34,
+                height: 34,
+              }}
             >
-              <img 
-                src={`/img/eroi/${h.hero?.miniature}`} 
-                className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`} 
-                alt={h.hero?.classe || 'Hero'} 
+              <img
+                src={`/img/eroi/${h.hero?.miniature}`}
+                className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`}
+                alt={h.hero?.classe || "Hero"}
               />
             </div>
           );
@@ -268,24 +354,38 @@ export default function DungeonBoard({
 
         {/* Targeting Tracer */}
         {targetingSpell && hoveredCell && activeHero && (
-          <svg className="absolute inset-0 pointer-events-none z-40" width="884" height="646">
+          <svg
+            className="absolute inset-0 pointer-events-none z-40"
+            width="884"
+            height="646"
+          >
             {(() => {
               const startX = (activeHero.x - 1) * 34 + 17;
               const startY = (activeHero.y - 1) * 34 + 17;
               const endX = hoveredCell.x * 34 + 17;
               const endY = hoveredCell.y * 34 + 17;
-              const hasLOS = visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1);
-              
+              const hasLOS = visibilityCalc?.hasLineOfSight(
+                activeHero.x,
+                activeHero.y,
+                hoveredCell.x + 1,
+                hoveredCell.y + 1,
+              );
+
               let strokeColor = "#3b82f6"; // magic-blue
               if (targetingSpell.effetto !== "Genio" && !hasLOS) {
                 strokeColor = "#ef4444"; // red
               }
 
               return (
-                <line 
-                  x1={startX} y1={startY} x2={endX} y2={endY} 
-                  stroke={strokeColor} strokeWidth="2" strokeDasharray="5,5" 
-                  className="animate-pulse drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]" 
+                <line
+                  x1={startX}
+                  y1={startY}
+                  x2={endX}
+                  y2={endY}
+                  stroke={strokeColor}
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                  className="animate-pulse drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]"
                 />
               );
             })()}
@@ -295,23 +395,44 @@ export default function DungeonBoard({
 
       {/* Debug Panel */}
       <div className="fixed right-0 top-0 w-[250px] h-full bg-black/80 text-white p-4 z-50 overflow-y-auto text-sm">
-        <h3 className="font-bold mb-2 text-lg border-b border-gray-600 pb-1">Debug Panel</h3>
-        <p><strong>Current Turn:</strong> {gameSession?.currentTurn}</p>
-        {hoveredCell ? (() => {
-          const cx = hoveredCell.x + 1;
-          const cy = hoveredCell.y + 1;
-          const visCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
-          return (
-            <div className="mt-4 space-y-1">
-              <p><strong>Mouse Pos:</strong> {cx}, {cy}</p>
-              <p><strong>vis1:</strong> {visCell?.vis1 || 'N/A'}</p>
-              <p><strong>vis2:</strong> {visCell?.vis2 || 'N/A'}</p>
-              <p><strong>viso (valo):</strong> {visCell?.valo || 'N/A'}</p>
-              <p><strong>fog:</strong> {visCell ? (visCell.fog ? 'true' : 'false') : 'N/A'}</p>
-            </div>
-          );
-        })() : (
-          <p className="mt-4 text-gray-400">Hover over a cell to see details.</p>
+        <h3 className="font-bold mb-2 text-lg border-b border-gray-600 pb-1">
+          Debug Panel
+        </h3>
+        <p>
+          <strong>Current Turn:</strong> {gameSession?.currentTurn}
+        </p>
+        {hoveredCell ? (
+          (() => {
+            const cx = hoveredCell.x + 1;
+            const cy = hoveredCell.y + 1;
+            const visCell = boardVisibilityMap?.data?.find(
+              (c) => c.x === cx && c.y === cy,
+            );
+            return (
+              <div className="mt-4 space-y-1">
+                <p>
+                  <strong>Mouse Pos:</strong> {cx}, {cy}
+                </p>
+                <p>
+                  <strong>vis1:</strong> {visCell?.vis1 || "N/A"}
+                </p>
+                <p>
+                  <strong>vis2:</strong> {visCell?.vis2 || "N/A"}
+                </p>
+                <p>
+                  <strong>viso (valo):</strong> {visCell?.valo || "N/A"}
+                </p>
+                <p>
+                  <strong>fog:</strong>{" "}
+                  {visCell ? (visCell.fog ? "true" : "false") : "N/A"}
+                </p>
+              </div>
+            );
+          })()
+        ) : (
+          <p className="mt-4 text-gray-400">
+            Hover over a cell to see details.
+          </p>
         )}
       </div>
     </div>

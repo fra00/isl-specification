@@ -6,11 +6,11 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
-import { GameSession, HeroState } from './domain-session';
-import { MapDefinition } from './domain-map';
-import { useCampaignManager } from './dungeon-use-campaign-manager';
+import React, { useState, useEffect, useCallback } from "react";
+import { PageNavigationEnum } from "./domain-core";
+import { GameSession, HeroState } from "./domain-session";
+import { MapDefinition } from "./domain-map";
+import { useCampaignManager } from "./dungeon-use-campaign-manager";
 
 export default function PlayGame({
   gameSession = null,
@@ -18,7 +18,7 @@ export default function PlayGame({
   onUpdateSession = () => {},
   campaign = null,
   staticHeroes = [],
-  staticEquipment = []
+  staticEquipment = [],
 }) {
   const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
   const { loadCampaign, saveCampaign } = useCampaignManager({});
@@ -30,7 +30,7 @@ export default function PlayGame({
     if (savedData != null) {
       setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
     } else {
-      const defaultHeroes = staticHeroes.map(hero => {
+      const defaultHeroes = staticHeroes.map((hero) => {
         let initialEquipmentIds = [];
         if (hero.classe === "Barbaro") initialEquipmentIds = [13];
         else if (hero.classe === "Nano") initialEquipmentIds = [2];
@@ -38,8 +38,8 @@ export default function PlayGame({
         else if (hero.classe === "Mago") initialEquipmentIds = [4];
 
         const validEquipment = staticEquipment
-          .filter(eq => initialEquipmentIds.includes(eq.id))
-          .map(eq => eq.id);
+          .filter((eq) => initialEquipmentIds.includes(eq.id))
+          .map((eq) => eq.id);
 
         return HeroState({
           heroId: hero.id,
@@ -55,7 +55,7 @@ export default function PlayGame({
           isEscaped: false,
           x: 0,
           y: 0,
-          turnOrder: 0
+          turnOrder: 0,
         });
       });
 
@@ -64,37 +64,47 @@ export default function PlayGame({
     }
   }, [campaign, staticHeroes, staticEquipment, loadCampaign, saveCampaign]);
 
-  const selectMission = useCallback(async (index) => {
-    const savedData = loadCampaign();
-    const maxAccessibleIndex = maxUnlockedMissionIndex;
+  const selectMission = useCallback(
+    async (index) => {
+      const savedData = loadCampaign();
+      const maxAccessibleIndex = maxUnlockedMissionIndex;
 
-    if (index <= maxAccessibleIndex && savedData != null) {
-      try {
-        const filename = campaign?.missioni?.[index]?.file;
-        if (!filename) return;
+      if (index <= maxAccessibleIndex && savedData != null) {
+        try {
+          const filename = campaign?.missioni?.[index]?.file;
+          if (!filename) return;
 
-        const response = await fetch(`/jsonData/map/${filename}`);
-        if (!response.ok) throw new Error("Failed to load map");
-        const mapData = await response.json();
+          const response = await fetch(`/jsonData/map/${filename}`);
+          if (!response.ok) throw new Error("Failed to load map");
+          const mapData = await response.json();
 
-        const currentMap = MapDefinition(mapData);
+          const currentMap = MapDefinition(mapData);
 
-        const updatedSession = GameSession({
-          ...(gameSession || {}),
-          campaignName: campaign?.nome_campagna || "",
-          heroes: savedData.heroes,
-          currentMap: currentMap,
-          currentMissionIndex: index,
-          isHeroOrderConfirmed: false
-        });
+          const updatedSession = GameSession({
+            ...(gameSession || {}),
+            campaignName: campaign?.nome_campagna || "",
+            heroes: savedData.heroes,
+            currentMap: currentMap,
+            currentMissionIndex: index,
+            isHeroOrderConfirmed: false,
+          });
 
-        onUpdateSession(updatedSession);
-        onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-      } catch (error) {
-        console.error("Error loading mission:", error);
+          onUpdateSession(updatedSession);
+          onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+        } catch (error) {
+          console.error("Error loading mission:", error);
+        }
       }
-    }
-  }, [campaign, maxUnlockedMissionIndex, loadCampaign, gameSession, onUpdateSession, onChangePageView]);
+    },
+    [
+      campaign,
+      maxUnlockedMissionIndex,
+      loadCampaign,
+      gameSession,
+      onUpdateSession,
+      onChangePageView,
+    ],
+  );
 
   const goBack = useCallback(() => {
     onChangePageView(PageNavigationEnum.MAIN_MENU);
@@ -113,39 +123,48 @@ export default function PlayGame({
       <h1 className="text-4xl font-bold mb-8 text-yellow-500 drop-shadow-md text-center">
         {campaign.nome_campagna}
       </h1>
-      
+
       <div className="flex flex-col gap-4 w-full max-w-3xl mb-8">
         {campaign.missioni?.map((mission, index) => {
           const isLocked = index > maxUnlockedMissionIndex;
           const isCompleted = index < maxUnlockedMissionIndex;
           const isAvailable = index === maxUnlockedMissionIndex;
 
-          let statusClass = "bg-gray-800 border-gray-600 opacity-60 cursor-not-allowed";
+          let statusClass =
+            "bg-gray-800 border-gray-600 opacity-60 cursor-not-allowed";
           let statusText = "Locked";
           let statusTextColor = "text-gray-400";
 
           if (isCompleted) {
-            statusClass = "bg-green-900 border-green-600 hover:bg-green-800 cursor-pointer";
+            statusClass =
+              "bg-green-900 border-green-600 hover:bg-green-800 cursor-pointer";
             statusText = "Completed";
             statusTextColor = "text-green-300";
           } else if (isAvailable) {
-            statusClass = "bg-blue-900 border-blue-500 hover:bg-blue-800 cursor-pointer shadow-[0_0_15px_rgba(59,130,246,0.5)]";
+            statusClass =
+              "bg-blue-900 border-blue-500 hover:bg-blue-800 cursor-pointer shadow-[0_0_15px_rgba(59,130,246,0.5)]";
             statusText = "Next Mission";
             statusTextColor = "text-blue-300";
           }
 
           return (
-            <div 
+            <div
               key={index}
               className={`p-6 rounded-xl border-2 transition-all duration-300 ${statusClass}`}
               onClick={() => !isLocked && selectMission(index)}
             >
               <div className="flex justify-between items-center">
                 <div className="flex flex-col">
-                  <span className="text-sm text-gray-400 mb-1">Mission {index + 1}</span>
-                  <span className="text-2xl font-semibold tracking-wide">{mission.titolo}</span>
+                  <span className="text-sm text-gray-400 mb-1">
+                    Mission {index + 1}
+                  </span>
+                  <span className="text-2xl font-semibold tracking-wide">
+                    {mission.titolo}
+                  </span>
                 </div>
-                <div className={`px-4 py-2 rounded-full bg-black bg-opacity-40 font-bold tracking-wider uppercase text-sm ${statusTextColor}`}>
+                <div
+                  className={`px-4 py-2 rounded-full bg-black bg-opacity-40 font-bold tracking-wider uppercase text-sm ${statusTextColor}`}
+                >
                   {statusText}
                 </div>
               </div>
@@ -154,7 +173,7 @@ export default function PlayGame({
         })}
       </div>
 
-      <button 
+      <button
         onClick={goBack}
         className="mt-auto px-8 py-3 bg-red-900 hover:bg-red-800 border-2 border-red-700 text-white font-bold rounded-lg shadow-lg transition-colors uppercase tracking-widest"
       >

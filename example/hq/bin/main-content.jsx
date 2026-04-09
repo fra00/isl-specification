@@ -6,9 +6,9 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from 'react';
-import PageContent from './page-presentation';
-import { getAllSpells } from './domain-spells-data';
+import React, { useState, useEffect } from "react";
+import PageContent from "./page-presentation";
+import { getAllSpells } from "./domain-spells-data";
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -28,13 +28,13 @@ export default function MainContent() {
     const bootstrap = async () => {
       try {
         const responses = await Promise.all([
-          fetch('/jsonData/monsters.json'),
-          fetch('/jsonData/heroes.json'),
-          fetch('/jsonData/tabellone/default.json'),
-          fetch('/jsonData/equipment.json'),
-          fetch('/jsonData/items.json'),
-          fetch('/jsonData/treasure-card.json'),
-          fetch('/jsonData/campagne.json')
+          fetch("/jsonData/monsters.json"),
+          fetch("/jsonData/heroes.json"),
+          fetch("/jsonData/tabellone/default.json"),
+          fetch("/jsonData/equipment.json"),
+          fetch("/jsonData/items.json"),
+          fetch("/jsonData/treasure-card.json"),
+          fetch("/jsonData/campagne.json"),
         ]);
 
         for (const res of responses) {
@@ -50,8 +50,8 @@ export default function MainContent() {
           equipment,
           items,
           treasureDeck,
-          campaign
-        ] = await Promise.all(responses.map(res => res.json()));
+          campaign,
+        ] = await Promise.all(responses.map((res) => res.json()));
 
         if (isMounted) {
           setGlobalMonsters(monsters || []);

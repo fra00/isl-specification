@@ -5,9 +5,24 @@
 - **Given**: A `boardVisibilityMap` where `data` contains a cell at (x: 2, y: 2) with `fog: true`, and a cell at (x: 3, y: 3) with `fog: false`.
 - **When**: The `DungeonBoard` component renders the grid.
 - **Assert (Expected Outcomes)**:
-  - The cell at (2, 2) MUST render a black background overlay with 70% opacity.
-  - The cell at (3, 3) MUST render with full transparency (no black overlay).
+  - The cell at (2, 2) MUST render a black background overlay.
+  - The board MUST also render two global mist image layers across the whole board instead of clipping them to fogged cells.
+  - Each mist image layer MUST render at 10% opacity.
+  - Each mist image layer MUST be expanded by 100px beyond each board edge and remain hidden outside the board by container clipping.
+  - The second mist image layer MUST be rotated by 180 degrees.
+  - The cell at (3, 3) MUST render with full transparency for the black fog overlay, while the global mist overlay remains visible above it.
   - The `fog` state must be strictly derived from the `boardVisibilityMap` prop.
+
+## Scenario: Mist Animation Matches Runtime
+
+- **Given**: The `DungeonBoard` component renders the global mist effect.
+- **When**: The board is observed over time during normal gameplay.
+- **Assert (Expected Outcomes)**:
+  - The first mist layer MUST animate over `14s` with `ease-in-out`, `infinite`, and `alternate`.
+  - The second mist layer MUST animate over `18s` with `ease-in-out`, `infinite`, and `alternate`.
+  - The first mist layer MUST move between `translate3d(-28px, -18px, 0)`, `translate3d(16px, 12px, 0)`, and `translate3d(34px, -20px, 0)`.
+  - The second mist layer MUST move between `rotate(180deg) translate3d(-32px, 18px, 0)`, `rotate(180deg) translate3d(14px, -12px, 0)`, and `rotate(180deg) translate3d(30px, 22px, 0)`.
+  - During this motion, no border of the mist texture MUST become visible inside the board area.
 
 ## Scenario: Targeting Tracer Logic (Line of Sight)
 

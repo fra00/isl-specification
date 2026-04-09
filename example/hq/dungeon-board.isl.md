@@ -42,9 +42,9 @@
 
 ### 🔍 Appearance
 
-- **Layout**: Relative container width 884px and height 646px of the board dimensions center content vertically and horizzontaly (no padding, no border, no margin).
+- **Layout**: Relative container width 884px and height 646px of the board dimensions center content vertically and horizzontaly (no padding, no border, no margin). The board container MUST use hidden overflow so any mist content extending beyond the board edges stays clipped.
 - **Board**: The board image `/img/tabellone/default.bmp` (884x646px) as the bottom background layer.
-- **Fog of war**: no border
+- **Fog of war**: no border. Fogged cells stay black, while two slow mist image layers drift over the entire board, with the second image rotated by 180 degrees. The mist layers MUST extend beyond the board bounds so the moving image borders never become visible.
 
 ### 📦 Content
 
@@ -56,8 +56,20 @@
       - IF `targetingSpell` is NOT null AND (`targetingSpell.targetType` IN ["Point", "Door"] OR `targetingSpell.effetto` == "Genio") THEN `cursor-crosshair`.
       - ELSE IF `targetingSpell` is NOT null THEN `cursor-default`.
       - ELSE `cursor-pointer`.
-    - **Fog of War Layer**: Each cell MUST render a black background overlay (70% opacity) by default.
-    - **Unfogging Logic**: The black overlay MUST become fully transparent ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`.
+    - **Fog of War Layer**: Each cell MUST render a black background overlay by default.
+    - **Mist Effect**: The board MUST render two global `/img/mist.jpeg` layers over the entire board area.
+    - **Mist Geometry**:
+      - Each mist layer MUST be positioned with `top: -100px` and `left: -100px`.
+      - Each mist layer MUST use `width: calc(100% + 200px)` and `height: calc(100% + 200px)`.
+      - Each mist layer MUST use `background-repeat: no-repeat`, `background-position: center`, and `background-size: 100% 100%`.
+      - Each mist layer MUST remain clipped by the board container hidden overflow so the image borders stay outside the visible board area.
+    - **Mist Opacity**: Both mist layers MUST use opacity `0.1`.
+    - **Mist Rotation**: The second mist layer MUST be rotated by 180 degrees.
+    - **Mist Motion**: Both mist layers MUST move slowly but remain visibly animated during normal gameplay.
+    - **Mist Animation Parameters**:
+      - The first mist layer MUST animate with keyframes `translate3d(-28px, -18px, 0)` to `translate3d(16px, 12px, 0)` to `translate3d(34px, -20px, 0)` over `14s` with `ease-in-out`, `infinite`, and `alternate`.
+      - The second mist layer MUST animate with keyframes `rotate(180deg) translate3d(-32px, 18px, 0)` to `rotate(180deg) translate3d(14px, -12px, 0)` to `rotate(180deg) translate3d(30px, 22px, 0)` over `18s` with `ease-in-out`, `infinite`, and `alternate`.
+    - **Unfogging Logic**: The black overlay MUST disappear ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`. The mist layers remain global and visible across both revealed and fogged areas.
     - **Path Highlight**: If cell {x+1, y+1} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
     - **Targeting Highlight**:
       - IF `targetingSpell` is NOT null:

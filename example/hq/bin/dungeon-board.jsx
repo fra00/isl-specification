@@ -6,10 +6,10 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useDungeonFurniture } from './dungeon-use-furniture';
-import { useDungeonDoors } from './dungeon-use-doors';
-import { useDungeonVisibleMonsters } from './dungeon-use-visible-monsters';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useDungeonFurniture } from "./dungeon-use-furniture";
+import { useDungeonDoors } from "./dungeon-use-doors";
+import { useDungeonVisibleMonsters } from "./dungeon-use-visible-monsters";
 
 export default function DungeonBoard({
   gameSession,
@@ -22,7 +22,7 @@ export default function DungeonBoard({
   treasures = [],
   triggeredTraps = [],
   targetingSpell = null,
-  visibilityCalc
+  visibilityCalc,
 }) {
   const [hoveredCell, setHoveredCell] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -34,40 +34,63 @@ export default function DungeonBoard({
     }
   }, [boardVisibilityMap]);
 
-  const { visibleFurniture } = useDungeonFurniture({ gameSession, boardVisibilityMap });
+  const { visibleFurniture } = useDungeonFurniture({
+    gameSession,
+    boardVisibilityMap,
+  });
   const { visibleDoors } = useDungeonDoors({ gameSession, boardVisibilityMap });
-  const { visibleMonsters } = useDungeonVisibleMonsters({ gameSession, boardVisibilityMap });
+  const { visibleMonsters } = useDungeonVisibleMonsters({
+    gameSession,
+    boardVisibilityMap,
+  });
 
   const activeHero = useMemo(() => {
-    return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
+    return gameSession?.heroes?.find(
+      (h) => h.turnOrder === gameSession?.currentTurn,
+    );
   }, [gameSession?.heroes, gameSession?.currentTurn]);
 
-  const handleCellClick = useCallback((x, y) => {
-    if (onCellClick) onCellClick(x + 1, y + 1);
-  }, [onCellClick]);
+  const handleCellClick = useCallback(
+    (x, y) => {
+      if (onCellClick) onCellClick(x + 1, y + 1);
+    },
+    [onCellClick],
+  );
 
-  const handleCellHover = useCallback((x, y) => {
-    setHoveredCell({ x, y });
-    if (onCellHover) onCellHover(x + 1, y + 1);
-  }, [onCellHover]);
+  const handleCellHover = useCallback(
+    (x, y) => {
+      setHoveredCell({ x, y });
+      if (onCellHover) onCellHover(x + 1, y + 1);
+    },
+    [onCellHover],
+  );
 
   const handleMouseLeaveBoard = useCallback(() => {
     setHoveredCell(null);
   }, []);
 
-  const handleMonsterClick = useCallback((e, monsterId) => {
-    e.stopPropagation();
-    if (onMonsterClick) onMonsterClick(monsterId);
-  }, [onMonsterClick]);
+  const handleMonsterClick = useCallback(
+    (e, monsterId) => {
+      e.stopPropagation();
+      if (onMonsterClick) onMonsterClick(monsterId);
+    },
+    [onMonsterClick],
+  );
 
-  const isValidTarget = useCallback((cx, cy) => {
-    if (!targetingSpell) return false;
-    if (targetingSpell.targetType === 'Point') return true;
-    if (targetingSpell.targetType === 'Monster') return visibleMonsters?.some(m => m.x === cx && m.y === cy);
-    if (targetingSpell.targetType === 'Hero') return gameSession?.heroes?.some(h => h.x === cx && h.y === cy);
-    if (targetingSpell.targetType === 'Door') return visibleDoors?.some(d => d.x === cx && d.y === cy);
-    return false;
-  }, [targetingSpell, visibleMonsters, gameSession?.heroes, visibleDoors]);
+  const isValidTarget = useCallback(
+    (cx, cy) => {
+      if (!targetingSpell) return false;
+      if (targetingSpell.targetType === "Point") return true;
+      if (targetingSpell.targetType === "Monster")
+        return visibleMonsters?.some((m) => m.x === cx && m.y === cy);
+      if (targetingSpell.targetType === "Hero")
+        return gameSession?.heroes?.some((h) => h.x === cx && h.y === cy);
+      if (targetingSpell.targetType === "Door")
+        return visibleDoors?.some((d) => d.x === cx && d.y === cy);
+      return false;
+    },
+    [targetingSpell, visibleMonsters, gameSession?.heroes, visibleDoors],
+  );
 
   const renderGrid = () => {
     const cells = [];
@@ -75,41 +98,53 @@ export default function DungeonBoard({
       for (let x = 0; x < 26; x++) {
         const cx = x + 1;
         const cy = y + 1;
-        
-        const visCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
+
+        const visCell = boardVisibilityMap?.data?.find(
+          (c) => c.x === cx && c.y === cy,
+        );
         const isFogged = visCell?.fog !== false;
-        
-        let cellCursor = 'cursor-pointer';
+
+        let cellCursor = "cursor-pointer";
         if (targetingSpell) {
-          if (['Point', 'Door'].includes(targetingSpell.targetType) || targetingSpell.effetto === 'Genio') {
-            cellCursor = 'cursor-crosshair';
+          if (
+            ["Point", "Door"].includes(targetingSpell.targetType) ||
+            targetingSpell.effetto === "Genio"
+          ) {
+            cellCursor = "cursor-crosshair";
           } else {
-            cellCursor = 'cursor-default';
+            cellCursor = "cursor-default";
           }
         }
 
-        let highlightClass = '';
-        if (hoveredPath?.some(p => p.x === cx && p.y === cy)) {
-          highlightClass += ' bg-green-500/50';
+        let highlightClass = "";
+        if (hoveredPath?.some((p) => p.x === cx && p.y === cy)) {
+          highlightClass += " bg-green-500/50";
         }
 
         if (targetingSpell && hoveredCell?.x === x && hoveredCell?.y === y) {
-          const hasLOS = activeHero && visibilityCalc?.hasLineOfSight 
-            ? visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, cx, cy) 
-            : false;
-            
-          const isGenioTarget = targetingSpell.effetto === 'Genio' && (
-            visibleMonsters?.some(m => m.x === cx && m.y === cy) ||
-            visibleDoors?.some(d => d.x === cx && d.y === cy)
-          );
+          const hasLOS =
+            activeHero && visibilityCalc?.hasLineOfSight
+              ? visibilityCalc.hasLineOfSight(
+                  activeHero.x,
+                  activeHero.y,
+                  cx,
+                  cy,
+                )
+              : false;
+
+          const isGenioTarget =
+            targetingSpell.effetto === "Genio" &&
+            (visibleMonsters?.some((m) => m.x === cx && m.y === cy) ||
+              visibleDoors?.some((d) => d.x === cx && d.y === cy));
 
           if (isGenioTarget) {
-            highlightClass += ' bg-blue-500/30 animate-pulse border-2 border-blue-500';
+            highlightClass +=
+              " bg-blue-500/30 animate-pulse border-2 border-blue-500";
           } else if (isValidTarget(cx, cy)) {
             if (hasLOS) {
-              highlightClass += ' bg-blue-400/50';
+              highlightClass += " bg-blue-400/50";
             } else {
-              highlightClass += ' bg-red-500/40';
+              highlightClass += " bg-red-500/40";
             }
           }
         }
@@ -117,11 +152,11 @@ export default function DungeonBoard({
         cells.push(
           <div
             key={`${x}-${y}`}
-            className={`absolute w-[34px] h-[34px] ${cellCursor} ${isFogged ? 'bg-black/70' : 'bg-transparent'} ${highlightClass}`}
+            className={`absolute w-[34px] h-[34px] ${cellCursor} ${isFogged ? "bg-black" : "bg-transparent"} ${highlightClass}`}
             style={{ left: x * 34, top: y * 34 }}
             onClick={() => handleCellClick(x, y)}
             onMouseEnter={() => handleCellHover(x, y)}
-          />
+          />,
         );
       }
     }
@@ -135,12 +170,22 @@ export default function DungeonBoard({
     const startY = (activeHero.y - 1) * 34 + 17;
     const endX = hoveredCell.x * 34 + 17;
     const endY = hoveredCell.y * 34 + 17;
-    
-    const hasLOS = visibilityCalc?.hasLineOfSight 
-      ? visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1)
+
+    const hasLOS = visibilityCalc?.hasLineOfSight
+      ? visibilityCalc.hasLineOfSight(
+          activeHero.x,
+          activeHero.y,
+          hoveredCell.x + 1,
+          hoveredCell.y + 1,
+        )
       : false;
-      
-    const tracerColor = targetingSpell.effetto === 'Genio' ? '#3b82f6' : (hasLOS ? '#3b82f6' : '#ef4444');
+
+    const tracerColor =
+      targetingSpell.effetto === "Genio"
+        ? "#3b82f6"
+        : hasLOS
+          ? "#3b82f6"
+          : "#ef4444";
 
     return (
       <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-40">
@@ -162,35 +207,89 @@ export default function DungeonBoard({
     if (!hoveredCell) return null;
     const cx = hoveredCell.x + 1;
     const cy = hoveredCell.y + 1;
-    const debugCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
+    const debugCell = boardVisibilityMap?.data?.find(
+      (c) => c.x === cx && c.y === cy,
+    );
 
     return (
       <div className="fixed right-0 top-0 w-[250px] bg-black/80 text-white p-4 z-50 text-sm font-mono">
-        <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Debug Info</h3>
-        <p>X, Y: {cx}, {cy}</p>
-        <p>Vis1: {debugCell?.vis1 || 'N/A'}</p>
-        <p>Vis2: {debugCell?.vis2 || 'N/A'}</p>
-        <p>Valo: {debugCell?.valo || 'N/A'}</p>
-        <p>Fog: {debugCell?.fog ? 'true' : 'false'}</p>
+        <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">
+          Debug Info
+        </h3>
+        <p>
+          X, Y: {cx}, {cy}
+        </p>
+        <p>Vis1: {debugCell?.vis1 || "N/A"}</p>
+        <p>Vis2: {debugCell?.vis2 || "N/A"}</p>
+        <p>Valo: {debugCell?.valo || "N/A"}</p>
+        <p>Fog: {debugCell?.fog ? "true" : "false"}</p>
         <p>Current Turn: {gameSession?.currentTurn}</p>
       </div>
     );
   };
 
   return (
-    <div 
-      className="relative w-[884px] h-[646px] mx-auto my-auto select-none"
+    <div
+      className="relative w-[884px] h-[646px] mx-auto my-auto select-none overflow-hidden"
       onMouseLeave={handleMouseLeaveBoard}
     >
-      <img 
-        src="/img/tabellone/default.bmp" 
-        alt="Game Board" 
+      <style>
+        {`
+          @keyframes dungeon-fog-drift-a {
+            0% { transform: translate3d(-28px, -18px, 0); }
+            50% { transform: translate3d(16px, 12px, 0); }
+            100% { transform: translate3d(34px, -20px, 0); }
+          }
+
+          @keyframes dungeon-fog-drift-b {
+            0% { transform: rotate(180deg) translate3d(-32px, 18px, 0); }
+            50% { transform: rotate(180deg) translate3d(14px, -12px, 0); }
+            100% { transform: rotate(180deg) translate3d(30px, 22px, 0); }
+          }
+
+          .dungeon-fog-image-a,
+          .dungeon-fog-image-b {
+            pointer-events: none;
+            top: -100px;
+            left: -100px;
+            width: calc(100% + 200px);
+            height: calc(100% + 200px);
+            background-image: url('/img/mist.jpeg');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 100% 100%;
+            transform-origin: center;
+            will-change: transform;
+          }
+
+          .dungeon-fog-image-a {
+            animation: dungeon-fog-drift-a 14s ease-in-out infinite alternate;
+          }
+
+          .dungeon-fog-image-b {
+            animation: dungeon-fog-drift-b 18s ease-in-out infinite alternate;
+          }
+        `}
+      </style>
+
+      <img
+        src="/img/tabellone/default.bmp"
+        alt="Game Board"
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
       />
 
       <div className="absolute top-0 left-0 w-full h-full z-10">
         {renderGrid()}
       </div>
+
+      <div
+        className="absolute inset-0 pointer-events-none dungeon-fog-image-a"
+        style={{ zIndex: 15, opacity: 0.1 }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none dungeon-fog-image-b"
+        style={{ zIndex: 16, opacity: 0.1 }}
+      />
 
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-20">
         {visibleFurniture?.map((furn, idx) => (
@@ -234,11 +333,11 @@ export default function DungeonBoard({
         ))}
 
         {triggeredTraps?.map((trap, idx) => {
-          let trapImg = '';
-          if (trap.tipo === 1) trapImg = 'abisso.jpg';
-          else if (trap.tipo === 2) trapImg = 'lancia.jpg';
-          else if (trap.tipo === 3) trapImg = 'rocciacad.jpg';
-          
+          let trapImg = "";
+          if (trap.tipo === 1) trapImg = "abisso.jpg";
+          else if (trap.tipo === 2) trapImg = "lancia.jpg";
+          else if (trap.tipo === 3) trapImg = "rocciacad.jpg";
+
           if (!trapImg) return null;
           return (
             <img
@@ -252,40 +351,60 @@ export default function DungeonBoard({
         })}
 
         {visibleMonsters?.map((mState) => {
-          let monsterCursor = 'cursor-pointer';
+          let monsterCursor = "cursor-pointer";
           if (targetingSpell) {
-            if (targetingSpell.targetType === 'Monster' || targetingSpell.effetto === 'Genio') {
-              monsterCursor = 'cursor-crosshair';
+            if (
+              targetingSpell.targetType === "Monster" ||
+              targetingSpell.effetto === "Genio"
+            ) {
+              monsterCursor = "cursor-crosshair";
             } else {
-              monsterCursor = 'cursor-default';
+              monsterCursor = "cursor-default";
             }
           }
 
-          let statusClasses = '';
+          let statusClasses = "";
           let statusOverlay = null;
-          
-          if (mState.activeStatus?.includes('Sleep')) {
-            statusClasses += ' ring-4 ring-blue-500 animate-pulse';
-            statusOverlay = <div className="absolute -top-2 -right-2 text-blue-300 font-bold text-xs drop-shadow-md">Zzz</div>;
-          } else if (mState.activeStatus?.includes('Tempest')) {
-            statusClasses += ' ring-4 ring-gray-400 animate-pulse';
-          } else if (mState.activeStatus?.includes('Entangled')) {
-            statusOverlay = <div className="absolute inset-0 bg-green-500/50 rounded-full flex items-center justify-center text-xs">🕸️</div>;
+
+          if (mState.activeStatus?.includes("Sleep")) {
+            statusClasses += " ring-4 ring-blue-500 animate-pulse";
+            statusOverlay = (
+              <div className="absolute -top-2 -right-2 text-blue-300 font-bold text-xs drop-shadow-md">
+                Zzz
+              </div>
+            );
+          } else if (mState.activeStatus?.includes("Tempest")) {
+            statusClasses += " ring-4 ring-gray-400 animate-pulse";
+          } else if (mState.activeStatus?.includes("Entangled")) {
+            statusOverlay = (
+              <div className="absolute inset-0 bg-green-500/50 rounded-full flex items-center justify-center text-xs">
+                🕸️
+              </div>
+            );
           }
 
           return (
             <div
               key={`monster-${mState.id}`}
               className={`absolute pointer-events-auto ${monsterCursor} transition-all duration-300 ease-linear`}
-              style={{ left: (mState.x - 1) * 34, top: (mState.y - 1) * 34, width: 34, height: 34 }}
+              style={{
+                left: (mState.x - 1) * 34,
+                top: (mState.y - 1) * 34,
+                width: 34,
+                height: 34,
+              }}
               onClick={(e) => handleMonsterClick(e, mState.id)}
               onMouseEnter={() => setHoveredMonsterId(mState.id)}
               onMouseLeave={() => setHoveredMonsterId(null)}
-              title={hoveredMonsterId === mState.id && !targetingSpell ? `Attackable: ${mState.monster?.nome} (HP: ${mState.currentBody})` : undefined}
+              title={
+                hoveredMonsterId === mState.id && !targetingSpell
+                  ? `Attackable: ${mState.monster?.nome} (HP: ${mState.currentBody})`
+                  : undefined
+              }
             >
               <img
                 src={`/img/mostri/${mState.monster?.immagine}`}
-                alt={mState.monster?.nome || 'Monster'}
+                alt={mState.monster?.nome || "Monster"}
                 className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`}
               />
               {statusOverlay}
@@ -294,31 +413,36 @@ export default function DungeonBoard({
         })}
 
         {gameSession?.heroes?.map((hState) => {
-          let heroCursor = 'cursor-default';
-          if (targetingSpell && targetingSpell.targetType === 'Hero') {
-            heroCursor = 'cursor-crosshair';
+          let heroCursor = "cursor-default";
+          if (targetingSpell && targetingSpell.targetType === "Hero") {
+            heroCursor = "cursor-crosshair";
           }
 
           const isCurrentTurn = gameSession.currentTurn === hState.turnOrder;
-          let statusClasses = isCurrentTurn ? ' ring-2 ring-yellow-400' : '';
-          
-          if (hState.activeStatus?.includes('FoggyMist')) {
-            statusClasses += ' opacity-50 ring-4 ring-white animate-pulse';
-          } else if (hState.activeStatus?.includes('RockSkin')) {
-            statusClasses += ' ring-4 ring-stone-500 animate-pulse';
-          } else if (hState.activeStatus?.includes('Courage')) {
-            statusClasses += ' ring-4 ring-orange-500 animate-pulse';
+          let statusClasses = isCurrentTurn ? " ring-2 ring-yellow-400" : "";
+
+          if (hState.activeStatus?.includes("FoggyMist")) {
+            statusClasses += " opacity-50 ring-4 ring-white animate-pulse";
+          } else if (hState.activeStatus?.includes("RockSkin")) {
+            statusClasses += " ring-4 ring-stone-500 animate-pulse";
+          } else if (hState.activeStatus?.includes("Courage")) {
+            statusClasses += " ring-4 ring-orange-500 animate-pulse";
           }
 
           return (
             <div
               key={`hero-${hState.heroId}`}
               className={`absolute pointer-events-auto ${heroCursor} transition-all duration-300 ease-linear`}
-              style={{ left: (hState.x - 1) * 34, top: (hState.y - 1) * 34, width: 34, height: 34 }}
+              style={{
+                left: (hState.x - 1) * 34,
+                top: (hState.y - 1) * 34,
+                width: 34,
+                height: 34,
+              }}
             >
               <img
                 src={`/img/eroi/${hState.hero?.miniature}`}
-                alt={hState.hero?.classe || 'Hero'}
+                alt={hState.hero?.classe || "Hero"}
                 className={`max-w-[34px] max-h-[34px] object-contain ${statusClasses}`}
               />
             </div>

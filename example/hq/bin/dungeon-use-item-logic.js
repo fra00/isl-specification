@@ -6,23 +6,30 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 export function useItemLogic({ staticItems = [], sessionManager }) {
-    
-    const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
-        if (gameSession == null) {
-            return false;
-        }
+  const useItem = useCallback(
+    (heroId, itemId, gameSession, targetMonsterId = null) => {
+      if (gameSession == null) {
+        return false;
+      }
 
-        if (sessionManager == null || typeof sessionManager.useItem !== 'function') {
-            return false;
-        }
+      if (sessionManager?.useItem == null) {
+        return false;
+      }
 
-        return sessionManager.useItem(heroId, itemId, staticItems, targetMonsterId);
-    }, [sessionManager, staticItems]);
+      return sessionManager.useItem(
+        heroId,
+        itemId,
+        staticItems,
+        targetMonsterId
+      );
+    },
+    [sessionManager, staticItems]
+  );
 
-    return {
-        useItem
-    };
+  return {
+    useItem,
+  };
 }

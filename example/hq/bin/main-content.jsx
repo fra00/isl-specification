@@ -6,12 +6,14 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import PageContent from "./page-presentation";
 import { getAllSpells } from "./domain-spells-data";
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
+  const [error, setError] = useState(null);
+  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalHeroes, setGlobalHeroes] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
@@ -20,7 +22,6 @@ export default function MainContent() {
   const [globalSpells, setGlobalSpells] = useState([]);
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,13 +29,13 @@ export default function MainContent() {
     const bootstrap = async () => {
       try {
         const responses = await Promise.all([
-          fetch("/jsonData/monsters.json"),
-          fetch("/jsonData/heroes.json"),
-          fetch("/jsonData/tabellone/default.json"),
-          fetch("/jsonData/equipment.json"),
-          fetch("/jsonData/items.json"),
-          fetch("/jsonData/treasure-card.json"),
-          fetch("/jsonData/campagne.json"),
+          fetch('/jsonData/monsters.json'),
+          fetch('/jsonData/heroes.json'),
+          fetch('/jsonData/tabellone/default.json'),
+          fetch('/jsonData/equipment.json'),
+          fetch('/jsonData/items.json'),
+          fetch('/jsonData/treasure-card.json'),
+          fetch('/jsonData/campagne.json')
         ]);
 
         for (const res of responses) {
@@ -50,8 +51,8 @@ export default function MainContent() {
           equipment,
           items,
           treasureDeck,
-          campaign,
-        ] = await Promise.all(responses.map((res) => res.json()));
+          campaign
+        ] = await Promise.all(responses.map(res => res.json()));
 
         if (isMounted) {
           setGlobalMonsters(monsters || []);
@@ -61,7 +62,9 @@ export default function MainContent() {
           setGlobalItems(items || []);
           setGlobalTreasureDeck(treasureDeck || []);
           setGlobalCampaign(campaign || null);
-          setGlobalSpells(getAllSpells() || []);
+          
+          setGlobalSpells(getAllSpells());
+          
           setIsAppReady(true);
         }
       } catch (err) {
@@ -80,36 +83,34 @@ export default function MainContent() {
 
   if (error != null) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="text-red-500">
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <p className="text-red-500 text-xl font-bold">
           Errore durante il caricamento degli asset: {error.message}
-        </div>
+        </p>
       </div>
     );
   }
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div>Inizializzazione Sistema...</div>
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <h1 className="text-2xl font-bold animate-pulse">Inizializzazione Sistema...</h1>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen flex items-center justify-center">
-      {globalBoardData != null && globalCampaign != null && (
-        <PageContent
-          monsters={globalMonsters}
-          heroes={globalHeroes}
-          boardData={globalBoardData}
-          equipment={globalEquipment}
-          items={globalItems}
-          spells={globalSpells}
-          treasureDeck={globalTreasureDeck}
-          campaign={globalCampaign}
-        />
-      )}
+    <div className="w-full h-screen flex items-center justify-center bg-neutral-900">
+      <PageContent
+        monsters={globalMonsters}
+        heroes={globalHeroes}
+        boardData={globalBoardData}
+        equipment={globalEquipment}
+        items={globalItems}
+        spells={globalSpells}
+        treasureDeck={globalTreasureDeck}
+        campaign={globalCampaign}
+      />
     </div>
   );
 }

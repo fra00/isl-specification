@@ -6,14 +6,14 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useEffect } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import PlayGame from "./play-game";
-import EditorGame from "./editor-game";
-import MainMenu from "./main-menu";
-import Armory from "./armory";
-import Dungeon from "./dungeon";
-import DungeonDescription from "./dungeon-description";
+import React, { useState, useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import PlayGame from './play-game';
+import EditorGame from './editor-game';
+import MainMenu from './main-menu';
+import Armory from './armory';
+import Dungeon from './dungeon';
+import DungeonDescription from './dungeon-description';
 
 export default function PageContent({
   monsters = [],
@@ -23,41 +23,27 @@ export default function PageContent({
   items = [],
   spells = [],
   treasureDeck = [],
-  campaign = null,
+  campaign = null
 }) {
-  const [currentPageView, setCurrentPageView] = useState(
-    PageNavigationEnum.MAIN_MENU,
-  );
+  const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);
   const [gameSession, setGameSession] = useState(null);
-
-  // FirstLoad capability: Ensure a default page view is set if empty
-  useEffect(() => {
-    if (!currentPageView) {
-      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
-    }
-  }, [currentPageView]);
 
   const changePageView = useCallback((nextPageView) => {
     setCurrentPageView(nextPageView);
   }, []);
 
-  const updateSession = useCallback((sessionOrUpdater) => {
-    if (typeof sessionOrUpdater === "function") {
-      setGameSession((previousSession) => sessionOrUpdater(previousSession));
-      return;
-    }
-    setGameSession(sessionOrUpdater);
+  const updateSession = useCallback((session) => {
+    setGameSession(session);
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission index: ${missionIndex}`);
+    console.log(`Starting mission: ${missionIndex}`);
   }, []);
 
-  const renderPageView = () => {
+  const showPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
-
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
@@ -69,10 +55,8 @@ export default function PageContent({
             staticEquipment={equipment}
           />
         );
-
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
-
       case PageNavigationEnum.SHOP:
         return (
           <Armory
@@ -81,7 +65,6 @@ export default function PageContent({
             onUpdateSession={updateSession}
           />
         );
-
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
@@ -96,7 +79,6 @@ export default function PageContent({
             treasureDeck={treasureDeck}
           />
         );
-
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
@@ -105,15 +87,14 @@ export default function PageContent({
             onUpdateSession={updateSession}
           />
         );
-
       default:
         return <MainMenu onChangePageView={changePageView} />;
     }
   };
 
   return (
-    <div className="w-full md:w-2/3 mx-auto h-screen bg-black overflow-hidden relative">
-      {renderPageView()}
+    <div className="w-2/3 h-screen bg-black overflow-hidden mx-auto">
+      {showPageView()}
     </div>
   );
 }

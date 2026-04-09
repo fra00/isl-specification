@@ -8,72 +8,63 @@
 
 import { useCallback } from "react";
 
-export function useMapInteraction({ gameSession, foundPassages = [], sessionManager } = {}) {
+export function useMapInteraction({ gameSession, foundPassages = [], sessionManager }) {
   const isFrontOfDoor = useCallback((x, y) => {
     if (!gameSession?.currentMap) return null;
 
-    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
-    if (!currentHero) return null;
-
-    const getPassageAt = (px, py) => {
-      const coordKey = `${px},${py}`;
-      if (gameSession.openedDoors?.includes(coordKey)) {
-        return null;
-      }
-
-      const door = gameSession.currentMap.porte?.find(p => p.x === px && p.y === py);
-      if (door) {
-        return { x: px, y: py, oriz: door.oriz };
-      }
-
-      const secret = foundPassages?.find(p => p.x === px && p.y === py);
-      if (secret) {
-        const cell = gameSession.currentMap.grid?.find(c => c.x === px && c.y === py);
-        if (cell?.psgg?.ps != null) {
-          return { x: px, y: py, oriz: cell.psgg.oriz };
-        }
-      }
-
-      return null;
-    };
-
     const coordsToCheck = [
-      { px: x, py: y },
-      { px: x, py: y - 1 },
-      { px: x, py: y + 1 },
-      { px: x - 1, py: y },
-      { px: x + 1, py: y }
+      { cx: x, cy: y },
+      { cx: x, cy: y - 1 },
+      { cx: x, cy: y + 1 },
+      { cx: x - 1, cy: y },
+      { cx: x + 1, cy: y }
     ];
 
     let foundPassage = null;
-    for (const coord of coordsToCheck) {
-      const passage = getPassageAt(coord.px, coord.py);
-      if (passage) {
-        foundPassage = passage;
+    let isHorizontal = false;
+
+    for (const { cx, cy } of coordsToCheck) {
+      const coordKey = `${cx},${cy}`;
+      if (gameSession.openedDoors?.includes(coordKey)) continue;
+
+      const door = gameSession.currentMap.porte?.find(p => p.x === cx && p.y === cy);
+      if (door) {
+        foundPassage = { x: cx, y: cy };
+        isHorizontal = door.oriz;
         break;
+      }
+
+      const secretPassage = foundPassages.find(p => p.x === cx && p.y === cy);
+      if (secretPassage) {
+        const gridCell = gameSession.currentMap.grid?.find(c => c.x === cx && c.y === cy);
+        if (gridCell?.psgg) {
+          foundPassage = { x: cx, y: cy };
+          isHorizontal = gridCell.psgg.oriz;
+          break;
+        }
       }
     }
 
     if (!foundPassage) return null;
 
-    let isValidOrientation = false;
-    if (foundPassage.oriz) {
-      if (currentHero.x === foundPassage.x && (currentHero.y === foundPassage.y || currentHero.y === foundPassage.y - 1 || currentHero.y === foundPassage.y + 1)) {
-        isValidOrientation = true;
+    if (isHorizontal) {
+      if (x !== foundPassage.x || (y !== foundPassage.y && y !== foundPassage.y - 1 && y !== foundPassage.y + 1)) {
+        return null;
       }
     } else {
-      if (currentHero.y === foundPassage.y && (currentHero.x === foundPassage.x || currentHero.x === foundPassage.x - 1 || currentHero.x === foundPassage.x + 1)) {
-        isValidOrientation = true;
+      if (y !== foundPassage.y || (x !== foundPassage.x && x !== foundPassage.x - 1 && x !== foundPassage.x + 1)) {
+        return null;
       }
     }
 
-    if (!isValidOrientation) return null;
+    const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!currentHero) return null;
 
     const heroCell = gameSession.currentMap.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
     const heroArea = heroCell?.valo;
 
     let sideA, sideB;
-    if (foundPassage.oriz) {
+    if (isHorizontal) {
       sideA = { x: foundPassage.x, y: foundPassage.y - 1 };
       sideB = { x: foundPassage.x, y: foundPassage.y };
     } else {
@@ -82,9 +73,9 @@ export function useMapInteraction({ gameSession, foundPassages = [], sessionMana
     }
 
     const cellA = gameSession.currentMap.grid?.find(c => c.x === sideA.x && c.y === sideA.y);
-
+    
     let destination;
-    if (cellA && cellA.valo === heroArea) {
+    if (cellA?.valo === heroArea) {
       destination = sideB;
     } else {
       destination = sideA;
@@ -92,8 +83,8 @@ export function useMapInteraction({ gameSession, foundPassages = [], sessionMana
 
     return {
       found: true,
-      destination: destination,
-      passageCell: { x: foundPassage.x, y: foundPassage.y }
+      destination,
+      passageCell: foundPassage
     };
   }, [gameSession, foundPassages]);
 
@@ -101,13 +92,15 @@ export function useMapInteraction({ gameSession, foundPassages = [], sessionMana
     if (!gameSession?.currentMap) return false;
 
     const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
-    const isSecret = foundPassages?.some(p => p.x === passageX && p.y === passageY);
+    const isSecretPassage = foundPassages.some(p => p.x === passageX && p.y === passageY);
 
-    if (!isDoor && !isSecret) {
-      return false;
+    if (!isDoor && !isSecretPassage) return false;
+
+    if (sessionManager?.openPassage) {
+      return sessionManager.openPassage(passageX, passageY, destinationX, destinationY, foundPassages);
     }
 
-    return sessionManager?.openPassage(passageX, passageY, destinationX, destinationY, foundPassages) ?? false;
+    return false;
   }, [gameSession, foundPassages, sessionManager]);
 
   return {

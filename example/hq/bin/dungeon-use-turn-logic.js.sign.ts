@@ -13,9 +13,9 @@ export declare function useTurnLogic(config: {
     turnPhase: { HasMoved: boolean; HasPerformedAction: boolean; IsTurnFinished: boolean };
     movementPoints: number | null;
     hoveredPath: Array<{ x: number; y: number }>;
+    canAttack: boolean;
     isMoving: boolean;
     canOpenDoor: { found: boolean; destination: { x: number; y: number }; passageCell: { x: number; y: number } } | null;
-    canAttack: boolean;
     handleOpenDoor: () => void;
     rollMovement: () => void;
     handleBoardHover: (x: number, y: number) => void;

@@ -39,6 +39,13 @@
 > **Reference**: @useCampaignManager in `./dungeon-use-campaign-manager.isl.md`
 > **Reference**: @DungeonSpellCastModal in `./dungeon-spell-cast-modal.isl.md`
 > **Reference**: @useMonsterAI in `./dungeon-use-monster-ai.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component composes transient dungeon UI state with domain hooks and delegates persistent session writes to the dungeon session boundary.
 
 ## Component: Dungeon
 
@@ -147,6 +154,8 @@
 
 #### internal state
 
+- **Contract**: Declares the transient UI state and hook instances required to orchestrate dungeon gameplay without directly owning persistent session mutations.
+
 - `isMissionInitialized`: Boolean (Tracks if hero placement is done. Default false).
 - `isInventoryOpen`: Boolean (Tracks if inventory modal is visible. Default false).
 - `isSpellSelectionRequired`: Boolean (Tracks if spell selection is needed. Default false).
@@ -159,21 +168,22 @@
 - `drawnTreasureCard`: @TreasureCard (The currently displayed treasure card, null if none).
 - `notificationMessage`: String (Current message to display to the user, null if none).
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
-- `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment`, `onUpdateSession`, and `setNotificationMessage`.
-- `hooksItemLogic`: @useItemLogic passing `staticItems`, `onUpdateSession`, and `setNotificationMessage`.
+- `hooksSessionManager`: @useDungeonSessionManager passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, and `hooksFogOfWar`.
+- `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment` and `hooksSessionManager`.
+- `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
 - `hooksVisibilityCalc`: @useVisibilityCalc passing gameSession and visibilityMap: staticVisibilityMap.
 - `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
-- `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.foundPassages`, `onUpdateSession`, `setNotificationMessage`, and `hooksFogOfWar`.
+- `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.foundPassages`, and `hooksSessionManager`.
 - `hooksHeroStats`: @useHeroStats passing `staticEquipment`.
 - `hooksPathfinding`: @usePathfinding passing `gameSession`, `staticVisibilityMap`, and `hooksSecretPassages.foundPassages`.
 - `hooksCombatLogic`: @useCombatLogic.
-- `hooksTurnLogic`: @useTurnLogic passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, `hooksTraps`, `hooksHeroStats`, `hooksPathfinding`, `hooksCombatLogic`, `hooksMapInteraction`, and `hooksVisibilityCalc`.
+- `hooksTurnLogic`: @useTurnLogic passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTraps`, `hooksHeroStats`, `hooksPathfinding`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksVisibilityCalc`, and `hooksSessionManager`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, and `staticMonsters`.
-- `hooksMonsterAI`: @useMonsterAI passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, `hooksPathfinding`, `hooksCombatLogic`, and `hooksHeroStats`.
+- `hooksMonsterAI`: @useMonsterAI passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksPathfinding`, `hooksCombatLogic`, `hooksHeroStats`, and `hooksSessionManager`.
 - `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
-- `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `onUpdateSession`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
+- `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksSessionManager`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
 - `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
 
 #### initializeMission
@@ -182,17 +192,7 @@
 - **Guard**: IF `isMissionInitialized` is true RETURN.
 - **Trigger**: On Mount (after `gameSession` is available).
 - **Flow**:
-  - **Hero Initialization**:
-    - Create `placedHeroes` by mapping `gameSession.heroes`.
-    - FOR EACH `heroState` in `placedHeroes`:
-      - Find `spawnPoint` in `gameSession.currentMap.eroi_start` where `id` == `heroState.heroId`.
-      - IF `spawnPoint` exists:
-        - Set `heroState.x` to `spawnPoint.x`.
-        - Set `heroState.y` to `spawnPoint.y`.
-  - **Finalize Session**:
-    - Create `newSession` as a shallow copy of `gameSession` (to preserve currentMap).
-    - Update `newSession.heroes` with `placedHeroes` and `newSession.treasureDeck` with `treasureDeck` (already shuffled).
-    - Trigger `onUpdateSession(newSession)`.
+  - Call `hooksSessionManager.initializeMission(treasureDeck)`.
     - SET `isMissionInitialized` to true.
 
 #### confirmHeroOrder
@@ -201,15 +201,10 @@
 - **Guard**: IF `gameSession.isHeroOrderConfirmed` is true RETURN.
 - **Signature**: `(orderedHeroIds: List<Integer>) -> void`
 - **Flow**:
-  - For each `hero` in `gameSession.heroes`:
-    - Set `turnOrder` matching the position of `hero.heroId` in `orderedHeroIds`.
-  - Set `gameSession.isHeroOrderConfirmed` to true.
-  - **Trigger Initial Visibility**:
-    - Call `hooksFogOfWar.revealInitialVisibility()`.
+  - Call `hooksSessionManager.confirmHeroOrder(orderedHeroIds)`.
   - **Magic Check**:
     - IF any `hero` in `gameSession.heroes` has `hero.hero.classe.toLowerCase()` matching "mago" or "elfo":
       - Set `isSpellSelectionRequired` to true.
-  - Trigger `onUpdateSession`.
 
 #### confirmSpellSelection
 
@@ -228,8 +223,7 @@
 - **Contract**: Clears the last attack state to close the combat result modal.
 - **Trigger**: `onClose` from `CombatResultModal`.
 - **Flow**:
-  - Create updated `gameSession` with `lastAttack` set to `null`.
-  - Trigger `onUpdateSession`.
+  - Call `hooksSessionManager.clearLastAttack()`.
 
 #### handleTreasureCardDrawn
 

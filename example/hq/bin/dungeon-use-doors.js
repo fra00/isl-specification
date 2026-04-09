@@ -9,60 +9,59 @@
 import { useMemo } from 'react';
 
 export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
-  const visibleDoors = useMemo(() => {
-    if (!gameSession?.currentMap || !boardVisibilityMap) {
-      return [];
-    }
-
-    const porte = gameSession.currentMap.porte || [];
-    const visibilityData = boardVisibilityMap.data || [];
-    const openedDoors = gameSession.openedDoors || [];
-    const result = [];
-
-    for (const door of porte) {
-      const x = parseInt(door.x, 10);
-      const y = parseInt(door.y, 10);
-      const doorCoordKey = `${x},${y}`;
-      let isVisible = false;
-
-      // Check Persisted Visibility
-      if (openedDoors.includes(doorCoordKey)) {
-        isVisible = true;
-      }
-
-      // Check Dynamic Visibility (Fog of War)
-      if (!isVisible) {
-        const cellsToCheck = [{ x, y }];
-        
-        if (door.oriz) {
-          cellsToCheck.push({ x, y: y - 1 });
-          cellsToCheck.push({ x, y: y + 1 });
-        } else {
-          cellsToCheck.push({ x: x - 1, y });
-          cellsToCheck.push({ x: x + 1, y });
+    const visibleDoors = useMemo(() => {
+        if (!gameSession?.currentMap || !boardVisibilityMap) {
+            return [];
         }
 
-        for (const coord of cellsToCheck) {
-          const visCell = visibilityData.find(
-            (cell) => cell.x === coord.x && cell.y === coord.y
-          );
-          
-          if (visCell && visCell.fog === false) {
-            isVisible = true;
-            break;
-          }
+        const porte = gameSession.currentMap.porte || [];
+        const openedDoors = gameSession.openedDoors || [];
+        const visibilityData = boardVisibilityMap.data || [];
+        const result = [];
+
+        for (let i = 0; i < porte.length; i++) {
+            const door = porte[i];
+            const x = parseInt(door.x, 10);
+            const y = parseInt(door.y, 10);
+            const doorCoordKey = `${x},${y}`;
+            let isVisible = false;
+
+            if (openedDoors.includes(doorCoordKey)) {
+                isVisible = true;
+            }
+
+            if (!isVisible) {
+                const cellsToCheck = [{ x, y }];
+                
+                if (door.oriz) {
+                    cellsToCheck.push({ x, y: y - 1 });
+                    cellsToCheck.push({ x, y: y + 1 });
+                } else {
+                    cellsToCheck.push({ x: x - 1, y });
+                    cellsToCheck.push({ x: x + 1, y });
+                }
+
+                for (let j = 0; j < cellsToCheck.length; j++) {
+                    const coord = cellsToCheck[j];
+                    const visCell = visibilityData.find(
+                        (cell) => cell.x === coord.x && cell.y === coord.y
+                    );
+                    
+                    if (visCell && visCell.fog === false) {
+                        isVisible = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isVisible) {
+                const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+                result.push({ x, y, img });
+            }
         }
-      }
 
-      // Add to Render List
-      if (isVisible) {
-        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
-        result.push({ x, y, img });
-      }
-    }
+        return result;
+    }, [gameSession, boardVisibilityMap]);
 
-    return result;
-  }, [gameSession, boardVisibilityMap]);
-
-  return { visibleDoors };
+    return { visibleDoors };
 }

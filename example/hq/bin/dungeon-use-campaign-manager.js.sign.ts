@@ -1,6 +1,6 @@
-export function useCampaignManager(config?: { notifyError?: (message: string) => void }): {
-    saveCampaign: (heroes: Array<any>, nextMissionIndex: number) => void;
-    loadCampaign: () => { heroes: Array<any>; nextMissionIndex: number; timestamp?: number } | null;
-    hasSavedCampaign: () => boolean;
-    resetCampaign: () => void;
+export function useCampaignManager(config?: any): {
+  saveCampaign: (heroes: any[], nextMissionIndex: number) => void;
+  loadCampaign: () => { heroes: any[]; nextMissionIndex: number; timestamp: number } | null;
+  hasSavedCampaign: () => boolean;
+  resetCampaign: () => void;
 };

@@ -15,6 +15,13 @@
 > **Reference**: @useTraps in `./dungeon-use-traps.isl.md`
 > **Reference**: @useHeroStats in `./dungeon-use-hero-stats.isl.md`
 > **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component owns turn orchestration and tactical validation while delegating all persisted `@GameSession` mutations to the dungeon session boundary.
 
 ## Component: useTurnLogic
 
@@ -24,7 +31,6 @@
 
 - `gameSession`: @GameSession (Current session state).
 - `visibilityMap`: @VisibilityMap (The static board configuration).
-- `onUpdateSession`: (session: @GameSession) -> void (Callback to update session).
 - `onNotify`: (message: String) -> void (Callback to show notification).
 - `trapsLogic`: @useTraps (Hook instance for trap management).
 - `heroStatsLogic`: @useHeroStats (Hook instance for stat calculations).
@@ -32,11 +38,13 @@
 - `combatLogic`: @useCombatLogic (Hook instance for combat resolution).
 - `mapInteractionLogic`: @useMapInteraction (Hook instance for door/passage interaction).
 - `visibilityCalc`: @useVisibilityCalc (Hook instance for LOS calculation).
+- `sessionManager`: @useDungeonSessionManager (Dungeon boundary for persisted session mutations).
 
 ### ⚡ Capabilities
 
 #### internalState
 
+- **Contract**: Tracks transient turn UI state for movement, attack availability, and interaction affordances.
 - `turnPhase`: @TurnPhase (Current phase of the turn).
 - `movementPoints`: Integer (Remaining movement steps) Default: null.
 - `hoveredPath`: List of {x, y} (The valid path to the hovered cell, empty if invalid).
@@ -85,14 +93,10 @@
   - **Courage Check**:
     - Let `visibleMonsters` = Filter `gameSession.monsters` where the corresponding cell in `visibilityMap.data` has `fog` set to false.
     - IF `visibleMonsters` is empty:
-      - Let `courageRemoved` = false.
-      - FOR EACH `h` IN `gameSession.heroes`:
-        - IF `h.activeStatus` contains "Courage":
-          - Remove "Courage" from `h.activeStatus`.
-          - Set `courageRemoved` to true.
+      - Let `courageRemoved` = any hero in `gameSession.heroes` whose `activeStatus` contains "Courage".
       - IF `courageRemoved` is true:
         - Trigger `onNotify("L'effetto di Coraggio svanisce: non ci sono più mostri in vista.")`.
-        - Trigger `onUpdateSession`.
+        - Call `sessionManager.clearHeroStatusEverywhere("Courage")`.
 
 #### rollMovement
 
@@ -156,10 +160,9 @@
       - Find `mapCell` at current hero position.
       - IF `mapCell.fine` is NOT null AND NOT empty:
         - IF `checkMissionObjective()` is true:
-          - Set `currentHero.isEscaped` to true.
+          - Call `sessionManager.markCurrentHeroEscaped()`.
           - Set `turnPhase.IsTurnFinished` to true.
           - Trigger `onNotify(currentHero.hero.classe + " è uscito dal dungeon!")`.
-          - Trigger `onUpdateSession`.
           - // Important: The hero should no longer be selectable for turns.
           - Trigger `endTurn()`.
           - RETURN.
@@ -175,7 +178,6 @@
   - Get next step `nextPos` = `activePath[1]`.
   - // Store old position to check for Area ID (valo) transition
   - Let `oldPos` = {x: currentHero.x, y: currentHero.y}.
-  - Update hero position to `nextPos`.
   - // Reset manual door interaction flag during each step of movement
   - Set `canOpenDoor` to null.
   - Decrement `movementPoints` by 1.
@@ -204,14 +206,10 @@
             - Trigger `onNotify("Salto riuscito! L'eroe supera l'abisso.")`.
       - IF `jumpSuccess` is false:
         - **Trigger Trap**:
-          - Apply Danni: `currentHero.currentBody -= 1` (or specific value based on type).
           - IF `currentHero.activeStatus` contains "RockSkin":
-            - Remove "RockSkin" from `currentHero.activeStatus`.
             - Trigger `onNotify("La pelle di pietra si frantuma per l'impatto!")`.
           - Register Trigger: `trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo)`.
-          - IF `mapCell.trpl.tipo` == 3 (Roccia che cade):
-            - Find cell in `gameSession.currentMap.grid` at coordinates (`mapCell.trpl.rccadex`, `mapCell.trpl.rccadey`).
-            - Set `arnt.antroc` to true for that cell (permanently blocks the path).
+          - Call `sessionManager.resolveMovementTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo, mapCell.trpl.rccadex, mapCell.trpl.rccadey)`.
           - SWITCH `mapCell.trpl.tipo`:
             - CASE 1: Trigger `onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.")`.
             - CASE 2: Trigger `onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.")`.
@@ -221,15 +219,14 @@
           - **End Turn Activity**:
             - Set `turnPhase.hasMoved` to true.
             - Set `turnPhase.hasPerformedAction` to true.
-          - Trigger `onUpdateSession`.
           - End Movement: Set `activePath` to empty list.
           - RETURN.
+    - Call `sessionManager.moveCurrentHeroTo(nextPos.x, nextPos.y)`.
   - Set `activePath` to `activePath` starting from index 1.
   - **Update Manual Door State**:
     - // Rule 4.5: Always update interactive state during movement to enable UI
     - Let `hero` = find current hero.
     - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
-  - Trigger `onUpdateSession`.
 
 #### handleMonsterClick
 
@@ -259,19 +256,16 @@
         - Trigger `onNotify("Il Gargoyle ha una difesa di pietra! (+2 dadi)")`.
     - IF `monster.activeStatus` contains "Tempest":
       - Set `defenseDice` to 0.
-      - Remove "Tempest" from `monster.activeStatus`.
       - Trigger `onNotify(monster.monster.nome + " è travolto dalla tempesta e non può difendersi!")`.
 
     - Call `combatLogic.resolveCombat(attackDice, defenseDice, false)` to get `combatResult`.
     - Calculate `newBody` = `monster.currentBody` - `combatResult.damageDealt`.
-    - Update monster's `currentBody` to `newBody`.
-    - IF `newBody` <= 0:
-      - Remove monster from `@GameSession.monsters`.
-        ELSE IF `newBody` > 0:
-      - IF `monster.activeStatus` contains "Sleep":
-        - Remove "Sleep" from `monster.activeStatus`.
-        - Trigger `onNotify(monster.monster.nome + " si è svegliato!")`.
-      - Update monster's state in `@GameSession.monsters` with new `currentBody`.
+    - Initialize `statusesToRemove` as an empty list.
+    - IF `monster.activeStatus` contains "Sleep" AND `newBody` > 0:
+      - Add "Sleep" to `statusesToRemove`.
+      - Trigger `onNotify(monster.monster.nome + " si è svegliato!")`.
+    - IF `monster.activeStatus` contains "Tempest":
+      - Add "Tempest" to `statusesToRemove`.
     - Increment `attacksPerformed`.
     - Let `canDouble` = `heroStatsLogic.canAttackTwice(hero, monster.monster)`.
     - IF `canDouble` is true AND `attacksPerformed` < 2:
@@ -288,10 +282,8 @@
       - IF it is a ranged attack:
         - Request `consumedId` from `heroStatsLogic.getConsumableWeaponId(hero)`.
         - IF `consumedId` is NOT null:
-          - Remove `consumedId` from `hero.equipped`.
-          - Remove `consumedId` from `hero.equipment`.
           - Trigger `onNotify("Hai lanciato l'arma e l'hai persa!")`.
-    - Trigger `onUpdateSession`.
+          - Call `sessionManager.resolveHeroAttack(monsterId, combatResult, statusesToRemove, consumedId)`.
 
 #### handleOpenDoor
 
@@ -319,21 +311,25 @@
   - IF `isMoving` is true RETURN.
   - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
   - IF `currentHero` is found AND `currentHero.activeStatus` contains "FoggyMist":
-    - Remove "FoggyMist" from `currentHero.activeStatus`.
     - Trigger `onNotify("L'effetto di Nebbia Caliginosa svanisce.")`.
 
   - **Next Hero Selection**:
+    - Let `nextTurn` = `gameSession.currentTurn`.
     - Find the next hero in turn order who has NOT escaped AND is NOT dead (currentBody > 0).
     - IF no such hero exists:
       - // All heroes escaped or died, Dungeon component handles global win/loss.
-    - Increment `gameSession.currentTurn`.
+    - Increment `nextTurn`.
   - // Note: If currentTurn > heroes.length, Dungeon component will trigger hooksMonsterAI.runMonsterTurn().
   - Reset all the prop in the object `turnPhase` (@TurnPhase) to false.
   - Reset `movementPoints` to null.
   - Set `isMovingStarted` to false.
   - Set `attacksPerformed` to 0.
-  - Let `newHero` = find current hero (the one whose turn just started).
-  - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(newHero.x, newHero.y, null)`.
-  - Trigger `onUpdateSession`.
+  - Let `nextHero` = find hero in `gameSession.heroes` where `turnOrder` == `nextTurn`.
+  - IF `nextHero` is found:
+    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(nextHero.x, nextHero.y, null)`.
+  - IF `currentHero` is found AND `currentHero.activeStatus` contains "FoggyMist":
+    - Call `sessionManager.advanceTurn(nextTurn, "FoggyMist")`.
+  - ELSE:
+    - Call `sessionManager.advanceTurn(nextTurn, null)`.
 
 - **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`

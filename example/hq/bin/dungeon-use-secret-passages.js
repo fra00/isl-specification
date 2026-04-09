@@ -6,90 +6,79 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
+import { useState, useCallback } from 'react';
+import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone }) {
     const [foundPassages, setFoundPassages] = useState([]);
-    
-    // Use a ref to keep track of foundPassages without causing searchPassages to re-render
-    const foundPassagesRef = useRef(foundPassages);
-    useEffect(() => {
-        foundPassagesRef.current = foundPassages;
-    }, [foundPassages]);
 
-    const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
+    const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
     const searchPassages = useCallback(() => {
         if (!gameSession || !gameSession.heroes || !gameSession.currentMap?.grid) {
-            onActionDone?.();
             return;
         }
 
         const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
         if (!currentHero) {
-            onActionDone?.();
             return;
         }
 
-        const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
-        const isCellVisible = (x, y) => visibleCells.some(c => c.x === x && c.y === y);
-
+        const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y) || [];
         let foundInThisSearch = false;
         const newPassages = [];
 
-        const potentialPassages = gameSession.currentMap.grid.filter(
-            cell => cell.psgg != null && cell.psgg.ps != null && cell.psgg.ps > 0
-        );
+        gameSession.currentMap.grid.forEach(cell => {
+            if (cell.psgg && cell.psgg.ps != null && cell.psgg.ps > 0) {
+                const px = cell.x;
+                const py = cell.y;
+                let isDiscoverable = false;
 
-        potentialPassages.forEach(potentialPassage => {
-            const px = potentialPassage.x;
-            const py = potentialPassage.y;
-            let isDiscoverable = false;
-
-            if (potentialPassage.psgg.oriz) {
-                if (isCellVisible(px, py - 1) || isCellVisible(px, py + 1)) {
-                    isDiscoverable = true;
+                if (cell.psgg.oriz) {
+                    isDiscoverable = visibleCells.some(vc => 
+                        (vc.x === px && vc.y === py - 1) || 
+                        (vc.x === px && vc.y === py + 1)
+                    );
+                } else {
+                    isDiscoverable = visibleCells.some(vc => 
+                        (vc.x === px - 1 && vc.y === py) || 
+                        (vc.x === px + 1 && vc.y === py)
+                    );
                 }
-            } else {
-                if (isCellVisible(px - 1, py) || isCellVisible(px + 1, py)) {
-                    isDiscoverable = true;
+
+                if (isDiscoverable) {
+                    const alreadyFound = foundPassages.some(fp => fp.x === px && fp.y === py);
+                    const alreadyInNew = newPassages.some(np => np.x === px && np.y === py);
+                    
+                    if (!alreadyFound && !alreadyInNew) {
+                        const img = cell.psgg.oriz ? "pso.jpg" : "psv.jpg";
+                        newPassages.push({ x: px, y: py, img, oriz: cell.psgg.oriz });
+                        foundInThisSearch = true;
+                    }
                 }
-            }
-
-            const alreadyFound = foundPassagesRef.current.some(p => p.x === px && p.y === py);
-
-            if (isDiscoverable && !alreadyFound) {
-                const img = potentialPassage.psgg.oriz ? "pso.jpg" : "psv.jpg";
-                newPassages.push({ 
-                    x: px, 
-                    y: py, 
-                    img, 
-                    oriz: potentialPassage.psgg.oriz 
-                });
-                foundInThisSearch = true;
             }
         });
 
         if (foundInThisSearch) {
             setFoundPassages(prev => [...prev, ...newPassages]);
-            onNotify?.("Hai trovato un passaggio segreto!");
+            if (onNotify) {
+                onNotify("Hai trovato un passaggio segreto!");
+            }
         } else {
-            onNotify?.("Nessun passaggio segreto trovato.");
+            if (onNotify) {
+                onNotify("Nessun passaggio segreto trovato.");
+            }
         }
-        
-        onActionDone?.();
 
-    }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
+        if (onActionDone) {
+            onActionDone();
+        }
+
+    }, [gameSession, visibilityCalc, foundPassages, onNotify, onActionDone]);
 
     const getFoundPassages = useCallback(() => {
         const visiblePassages = [];
         const visData = visibilityMap?.data || [];
-
-        const isCellRevealed = (x, y) => {
-            const cell = visData.find(c => c.x === x && c.y === y);
-            return cell != null && cell.fog === false;
-        };
 
         foundPassages.forEach(passage => {
             let isVisible = false;
@@ -103,16 +92,17 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
                 cellsToCheck.push({ x: passage.x + 1, y: passage.y });
             }
 
-            for (const coord of cellsToCheck) {
-                if (isCellRevealed(coord.x, coord.y)) {
+            for (let i = 0; i < cellsToCheck.length; i++) {
+                const coord = cellsToCheck[i];
+                const visCell = visData.find(vc => vc.x === coord.x && vc.y === coord.y);
+                if (visCell && visCell.fog === false) {
                     isVisible = true;
                     break;
                 }
             }
 
             if (isVisible) {
-                // Return only the properties requested by the ISL signature
-                visiblePassages.push({ x: passage.x, y: passage.y, img: passage.img });
+                visiblePassages.push(passage);
             }
         });
 

@@ -8,26 +8,26 @@
 
 import { useMemo } from 'react';
 
-export const useDungeonVisibleMonsters = ({ gameSession, boardVisibilityMap }) => {
-    const visibleMonsters = useMemo(() => {
-        if (!gameSession?.monsters || !boardVisibilityMap?.data) {
-            return [];
-        }
+export function useDungeonVisibleMonsters({ gameSession = null, boardVisibilityMap = null } = {}) {
+  const visibleMonsters = useMemo(() => {
+    if (!gameSession?.monsters || !boardVisibilityMap?.data) {
+      return [];
+    }
 
-        return gameSession.monsters.filter((monster) => {
-            const cell = boardVisibilityMap.data.find(
-                (c) => c.x === monster.x && c.y === monster.y
-            );
+    return gameSession.monsters.filter((monster) => {
+      if (!monster) return false;
 
-            if (!cell || cell.fog === true) {
-                return false;
-            }
+      const cell = boardVisibilityMap.data.find(
+        (c) => c?.x === monster.x && c?.y === monster.y
+      );
 
-            return true;
-        });
-    }, [gameSession?.monsters, boardVisibilityMap?.data]);
+      if (!cell || cell.fog === true) {
+        return false;
+      }
 
-    return {
-        visibleMonsters
-    };
-};
+      return true;
+    });
+  }, [gameSession, boardVisibilityMap]);
+
+  return { visibleMonsters };
+}

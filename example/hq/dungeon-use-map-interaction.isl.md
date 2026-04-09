@@ -8,6 +8,13 @@
 ---
 
 > **Reference**: @GameSession in `./domain-session.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component resolves passage geometry and delegates any persistent door mutation to the dungeon session boundary.
 
 ## Component: useMapInteraction
 
@@ -17,9 +24,7 @@
 
 - `gameSession`: @GameSession
 - `foundPassages`: List of {x: Integer, y: Integer} (Discovered secret passages from useSecretPassages).
-- `onUpdateSession`: (session: @GameSession) -> void
-- `onNotify`: (message: String) -> void
-- `fogOfWarLogic`: @useFogOfWar
+- `sessionManager`: @useDungeonSessionManager
 
 ### ⚡ Capabilities
 
@@ -54,16 +59,9 @@
 
 #### openPassage
 
-- **Contract**: Marks a door as open and reveals the area behind it.
-- **Signature**: `(passageX: Integer, passageY: Integer, destinationX: Integer, destinationY: Integer)`
+- **Contract**: Validates the requested passage opening and delegates the session mutation to the dungeon session boundary.
+- **Signature**: `(passageX: Integer, passageY: Integer, destinationX: Integer, destinationY: Integer) -> Boolean`
 - **Flow**:
-  - Let `coordKey` = `passageX + "," + passageY`.
-  - IF NOT (gameSession.currentMap.porte.exists(p => p.x == passageX AND p.y == passageY) OR foundPassages.exists(p => p.x == passageX AND p.y == passageY)) THEN RETURN.
-  - IF `gameSession.openedDoors` does NOT contain `coordKey`:
-    - TRY:
-      - Call `fogOfWarLogic.revealFromPoint(destinationX, destinationY)`.
-      - Add `coordKey` to `gameSession.openedDoors`.
-      - Trigger `onNotify("Porta aperta.")`.
-      - Trigger `onUpdateSession` with updated session.
-    - CATCH:
-      - LOG "Errore durante l'apertura della porta o rivelazione nebbia."
+  - IF `gameSession` is null OR `gameSession.currentMap` is null RETURN false.
+  - IF NOT (gameSession.currentMap.porte.exists(p => p.x == passageX AND p.y == passageY) OR foundPassages.exists(p => p.x == passageX AND p.y == passageY)) THEN RETURN false.
+  - RETURN `sessionManager.openPassage(passageX, passageY, destinationX, destinationY, foundPassages)`.

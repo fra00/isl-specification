@@ -1,6 +1,7 @@
 <!-- LOGIC TEST SCENARIOS FOR: dungeon.isl.md -->
 
 ## Scenario: Movement Through Fog of War
+
 - **Given**: A hero is at (5, 5). A monster is at (5, 7). The cell (5, 6) is currently under `fog: true` in `boardVisibilityMap`.
 - **When**: The hero attempts to move to (5, 7) via `handleBoardClick`.
 - **Assert (Expected Outcomes)**:
@@ -10,6 +11,7 @@
   - `onNotify` is triggered with "Percorso non valido" or similar.
 
 ## Scenario: Deterministic Trap Trigger and Turn End
+
 - **Given**: A hero has `movementPoints: 3`. The hero moves to a cell containing a Trap (tipo: 2).
 - **When**: The hero enters the trap cell during `movementEffect`.
 - **Assert (Expected Outcomes)**:
@@ -20,6 +22,7 @@
   - The hero stops moving, ensuring no further movement points are consumed.
 
 ## Scenario: Combat Resolution - Gargoyle Defense
+
 - **Given**: A hero attacks a "Gargoyle" monster.
 - **When**: `handleMonsterClick` is triggered.
 - **Assert (Expected Outcomes)**:
@@ -28,6 +31,7 @@
   - If `newBody` <= 0, the monster is removed from `gameSession.monsters`.
 
 ## Scenario: Spell Targeting - Genie vs Line of Sight
+
 - **Given**: `targetingSpell` is "Genio". A monster is behind a wall (Line of Sight is blocked).
 - **When**: The user clicks the monster.
 - **Assert (Expected Outcomes)**:
@@ -36,6 +40,7 @@
   - `targetingSpell` is reset to `null`.
 
 ## Scenario: Inventory Integrity - Two-Handed Weapon Conflict
+
 - **Given**: Hero has a "Shield" (ID 11) equipped.
 - **When**: User calls `hooksInventoryLogic.toggleEquipItem` for a "Great Axe" (ID 20, `noogg: 11`).
 - **Assert (Expected Outcomes)**:
@@ -44,24 +49,39 @@
   - `onNotify` is triggered confirming the removal of the Shield.
 
 ## Scenario: Deterministic Completion - Monster Turn
+
 - **Given**: `gameSession.currentTurn` > `gameSession.heroes.length`.
 - **When**: `Dungeon` component triggers `hooksMonsterAI.runMonsterTurn()`.
 - **Assert (Expected Outcomes)**:
   - `isMonsterTurnInProgress` is set to `true` at start and `false` at completion.
-  - `gameSession.currentTurn` is reset to 1.
-  - All `turnPhase` flags are reset to `false`.
+  - `hooksMonsterAI` delegates persisted master-phase updates to `hooksSessionManager`.
+  - `gameSession.currentTurn` is reset to 1 through the boundary.
+  - All `turnPhase` flags are reset through the boundary.
   - The system never hangs; even if no heroes are visible, the loop completes and returns control to the hero phase.
 
 ## Scenario: Treasure Search - Wandering Monster
+
 - **Given**: A hero searches for treasure in a room with no treasures.
 - **When**: `hooksTreasure.searchTreasure` is called and the deck contains a "Mostro Errante" card.
 - **Assert (Expected Outcomes)**:
+  - `hooksTreasure` delegates deck persistence and treasure-card effects to `hooksSessionManager`.
   - `drawnTreasureCard` is set to the "Mostro Errante" card.
   - `onTreasureCardDrawn` is triggered.
   - Upon `closeTreasureCardModal`, `hooksTreasure.applyTreasureEffect` triggers `handleWanderingMonster`.
   - A new monster is spawned adjacent to the hero and `performInstantAttack` is executed.
 
+## Scenario: Dungeon Delegates Turn And Combat Persistence
+
+- **Given**: A hero moves onto a trap cell and later attacks a monster with a consumable ranged weapon.
+- **When**: `hooksTurnLogic.movementEffect` and `hooksTurnLogic.handleMonsterClick` are triggered.
+- **Assert (Expected Outcomes)**:
+  - `hooksTurnLogic` delegates trap persistence to `hooksSessionManager.resolveMovementTrap(...)`.
+  - `hooksTurnLogic` delegates movement step persistence to `hooksSessionManager.moveCurrentHeroTo(...)`.
+  - `hooksTurnLogic` delegates monster damage and thrown-weapon removal to `hooksSessionManager.resolveHeroAttack(...)`.
+  - `Dungeon` does not patch `gameSession.heroes`, `gameSession.monsters`, or `gameSession.currentMap` directly for these flows.
+
 ## Scenario: Spell Selection - Wizard/Elf Logic
+
 - **Given**: `isSpellSelectionRequired` is `true`.
 - **When**: The Wizard selects 3 elements.
 - **Assert (Expected Outcomes)**:
@@ -69,3 +89,21 @@
   - The UI updates to "Turno dell'Elfo".
   - The 4th element is automatically assigned to the Elf upon selection.
   - `onConfirmSelection` is triggered with the complete map of spells.
+
+## Scenario: Dungeon Delegates Session Bootstrap
+
+- **Given**: `Dungeon` mounts with a valid `gameSession`, a shuffled `treasureDeck`, and `isMissionInitialized = false`.
+- **When**: `initializeMission` is triggered.
+- **Assert (Expected Outcomes)**:
+  - `hooksSessionManager.initializeMission(treasureDeck)` is called exactly once.
+  - `Dungeon` does not directly mutate `gameSession.heroes` or `gameSession.treasureDeck`.
+  - `isMissionInitialized` becomes `true` only after the boundary action is requested.
+
+## Scenario: Dungeon Delegates Combat Result Cleanup
+
+- **Given**: `gameSession.lastAttack` is populated and the combat modal is visible.
+- **When**: `closeCombatResult` is triggered.
+- **Assert (Expected Outcomes)**:
+  - `hooksSessionManager.clearLastAttack()` is called.
+  - `Dungeon` does not directly patch `gameSession.lastAttack`.
+  - The modal can close without mutating unrelated session branches.

@@ -6,19 +6,44 @@
  * Edit the ISL file instead.
  */
 
+import React, { useState, useEffect } from 'react';
+
 export default function DungeonGameOver({ isOpen = false, onExit = () => {} }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Breve ritardo per permettere al browser di renderizzare lo stato iniziale
+      // prima di applicare le classi di transizione per l'animazione
+      const timer = setTimeout(() => setIsMounted(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsMounted(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
 
+  const handleExit = () => {
+    if (typeof onExit === 'function') {
+      onExit();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[90] bg-black flex items-center justify-center p-4">
-      <div className="text-center flex flex-col items-center animate-[pulse_4s_ease-in-out_infinite]">
-        <h1 className="text-6xl md:text-8xl text-red-700 font-serif font-black mb-6 tracking-widest drop-shadow-[0_0_20px_rgba(185,28,28,0.8)] uppercase">
-          Game Over
+    <div className="fixed inset-0 z-[90] bg-black flex flex-col items-center justify-center p-4">
+      <div 
+        className={`flex flex-col items-center justify-center text-center transition-all duration-1000 ease-out transform ${
+          isMounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+        }`}
+      >
+        <h1 className="text-6xl md:text-9xl font-serif font-bold text-red-700 mb-6 tracking-widest uppercase drop-shadow-[0_0_25px_rgba(185,28,28,0.8)]">
+          GAME OVER
         </h1>
         
-        <h2 className="text-2xl md:text-3xl text-gray-200 mb-4 font-serif">
+        <h2 className="text-2xl md:text-4xl text-gray-200 mb-4 font-serif">
           Tutti gli eroi sono caduti...
         </h2>
         
@@ -27,8 +52,8 @@ export default function DungeonGameOver({ isOpen = false, onExit = () => {} }) {
         </p>
         
         <button
-          onClick={onExit}
-          className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-900 hover:border-red-500 transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.7)]"
+          onClick={handleExit}
+          className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-900 shadow-[0_0_15px_rgba(153,27,27,0.4)] transition-all duration-300 hover:scale-105"
         >
           Torna al Menu
         </button>

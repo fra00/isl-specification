@@ -6,294 +6,343 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
 export function useMagicLogic(config) {
-  const {
-    gameSession,
-    onUpdateSession,
-    onNotify,
-    onActionDone,
-    staticSpells = [],
-    combatLogic,
-    mapInteractionLogic,
-    fogOfWarLogic,
-    heroStatsLogic
-  } = config || {};
+    const {
+        gameSession,
+        onUpdateSession,
+        onNotify,
+        onActionDone,
+        staticSpells,
+        combatLogic,
+        mapInteractionLogic,
+        fogOfWarLogic,
+        heroStatsLogic
+    } = config || {};
 
-  const castSpell = useCallback((spellId, targetHeroId, targetMonsterId, targetX, targetY) => {
-    if (!gameSession) return;
-    
-    const newSession = JSON.parse(JSON.stringify(gameSession));
-    const currentHero = newSession.heroes.find(h => h.turnOrder === newSession.currentTurn);
-    
-    if (!currentHero) return;
-    
-    const spell = staticSpells.find(s => s.id === spellId);
-    if (!spell) {
-      onActionDone?.();
-      return;
-    }
+    const castSpell = useCallback((spellId, targetHeroId, targetMonsterId, targetX, targetY) => {
+        if (!gameSession) return;
 
-    let wasCastSuccessful = false;
-    let targetCoord = null;
+        const currentHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+        if (!currentHero) return;
 
-    if (targetMonsterId != null) {
-      const m = newSession.monsters.find(m => m.id === targetMonsterId);
-      if (m) targetCoord = { x: m.x, y: m.y };
-    } else if (targetHeroId != null) {
-      const h = newSession.heroes.find(h => h.heroId === targetHeroId);
-      if (h) targetCoord = { x: h.x, y: h.y };
-    } else if (targetX != null && targetY != null) {
-      targetCoord = { x: targetX, y: targetY };
-    }
+        const spell = staticSpells?.find(s => s.id === spellId);
+        if (!spell) {
+            onActionDone?.();
+            return;
+        }
 
-    let hasLOS = true;
-    if (spell.effetto !== "Genio" && spell.targetType !== "Self" && targetCoord != null) {
-      hasLOS = fogOfWarLogic?.visibilityCalc?.hasLineOfSight?.(currentHero.x, currentHero.y, targetCoord.x, targetCoord.y) ?? true;
-    }
+        let wasCastSuccessful = false;
+        let targetCoord = null;
 
-    if (hasLOS) {
-      switch (spell.effetto) {
-        case "Palla di Fuoco": {
-          const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-          if (targetMonster) {
-            const damage = 2;
-            targetMonster.currentBody -= damage;
-            onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} subisce ${damage} danni!`);
-            
-            if (targetMonster.currentBody <= 0) {
-              newSession.monsters = newSession.monsters.filter(m => m.id !== targetMonsterId);
-            } else {
-              if (targetMonster.activeStatus.includes("Sleep")) {
-                targetMonster.activeStatus = targetMonster.activeStatus.filter(s => s !== "Sleep");
-                onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} si è svegliato!`);
-              }
-            }
-            wasCastSuccessful = true;
-          }
-          break;
+        if (targetMonsterId != null) {
+            const m = gameSession.monsters?.find(m => m.id === targetMonsterId);
+            if (m) targetCoord = { x: m.x, y: m.y };
+        } else if (targetHeroId != null) {
+            const h = gameSession.heroes?.find(h => h.heroId === targetHeroId);
+            if (h) targetCoord = { x: h.x, y: h.y };
+        } else if (targetX != null && targetY != null) {
+            targetCoord = { x: targetX, y: targetY };
         }
-        case "Frecce di Fuoco": {
-          const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-          if (targetMonster) {
-            const damage = 1;
-            targetMonster.currentBody -= damage;
-            onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} subisce ${damage} danni!`);
-            
-            if (targetMonster.currentBody <= 0) {
-              newSession.monsters = newSession.monsters.filter(m => m.id !== targetMonsterId);
-            } else {
-              if (targetMonster.activeStatus.includes("Sleep")) {
-                targetMonster.activeStatus = targetMonster.activeStatus.filter(s => s !== "Sleep");
-                onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} si è svegliato!`);
-              }
-            }
-            wasCastSuccessful = true;
-          }
-          break;
+
+        let hasLOS = true;
+        if (spell.effetto !== "Genio" && spell.targetType !== "Self" && targetCoord != null) {
+            hasLOS = fogOfWarLogic?.visibilityCalc?.hasLineOfSight?.(currentHero.x, currentHero.y, targetCoord.x, targetCoord.y) ?? true;
         }
-        case "Coraggio": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            if (!targetHero.activeStatus.includes("Courage")) {
-              targetHero.activeStatus.push("Courage");
-            }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} si sente più coraggioso!`);
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-        case "Acqua Guaritrice": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            const healAmount = spell.valore || 4;
-            targetHero.currentBody += healAmount;
-            if (targetHero.currentBody > (targetHero.hero?.corpo || 0)) {
-              targetHero.currentBody = targetHero.hero?.corpo || 0;
-            }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} recupera ${healAmount} Punti Corpo!`);
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-        case "Nebbia Caliginosa": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            if (!targetHero.activeStatus.includes("FoggyMist")) {
-              targetHero.activeStatus.push("FoggyMist");
-            }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} può attraversare i mostri!`);
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-        case "Sonno": {
-          const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-          if (targetMonster) {
-            if (targetMonster.monster?.nonmorto) {
-              onNotify?.("I non-morti non possono dormire!");
-              onActionDone?.();
-              return;
-            }
-            
-            let resisted = false;
-            for (let i = 0; i < (targetMonster.currentMind || 0); i++) {
-              if (Math.floor(Math.random() * 6) + 1 === 6) {
-                resisted = true;
-                break;
-              }
-            }
-            
-            if (resisted) {
-              onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} ha resistito all'incantesimo Sonno!`);
-            } else {
-              if (!targetMonster.activeStatus.includes("Sleep")) {
-                targetMonster.activeStatus.push("Sleep");
-              }
-              onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} cade in un sonno profondo!`);
-            }
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-        case "Genio": {
-          if (targetMonsterId != null) {
-            const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-            if (targetMonster) {
-              const genieAttackDice = 5;
-              let monsterDefenseDice = targetMonster.monster?.difesa || 0;
-              
-              if (targetMonster.activeStatus.includes("Tempest")) {
-                monsterDefenseDice = 0;
-                targetMonster.activeStatus = targetMonster.activeStatus.filter(s => s !== "Tempest");
-                onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} è travolto dalla tempesta e non può difendersi!`);
-              }
-              
-              const combatResult = combatLogic?.resolveCombat?.(genieAttackDice, monsterDefenseDice, false);
-              if (combatResult) {
-                targetMonster.currentBody -= combatResult.damageDealt;
-                newSession.lastAttack = { hero: currentHero, monster: targetMonster, combatResult };
-                onNotify?.(`Il Genio attacca ${targetMonster.monster?.nome || 'Mostro'}!`);
-                
-                if (targetMonster.currentBody <= 0) {
-                  newSession.monsters = newSession.monsters.filter(m => m.id !== targetMonsterId);
-                } else {
-                  if (targetMonster.activeStatus.includes("Sleep")) {
-                    targetMonster.activeStatus = targetMonster.activeStatus.filter(s => s !== "Sleep");
-                    onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} si è svegliato!`);
-                  }
+
+        if (hasLOS) {
+            const nextSession = {
+                ...gameSession,
+                heroes: gameSession.heroes ? [...gameSession.heroes] : [],
+                monsters: gameSession.monsters ? [...gameSession.monsters] : []
+            };
+
+            switch (spell.effetto) {
+                case "Palla di Fuoco": {
+                    const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                    if (idx !== -1) {
+                        const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                        const damage = 2;
+                        m.currentBody -= damage;
+                        onNotify?.(`${m.monster?.nome} subisce ${damage} danni!`);
+                        if (m.currentBody <= 0) {
+                            nextSession.monsters.splice(idx, 1);
+                        } else {
+                            if (m.activeStatus.includes("Sleep")) {
+                                m.activeStatus = m.activeStatus.filter(s => s !== "Sleep");
+                                onNotify?.(`${m.monster?.nome} si è svegliato!`);
+                            }
+                            nextSession.monsters[idx] = m;
+                        }
+                        wasCastSuccessful = true;
+                    }
+                    break;
                 }
-              }
-              wasCastSuccessful = true;
+                case "Frecce di Fuoco": {
+                    const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                    if (idx !== -1) {
+                        const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                        const damage = 1;
+                        m.currentBody -= damage;
+                        onNotify?.(`${m.monster?.nome} subisce ${damage} danni!`);
+                        if (m.currentBody <= 0) {
+                            nextSession.monsters.splice(idx, 1);
+                        } else {
+                            if (m.activeStatus.includes("Sleep")) {
+                                m.activeStatus = m.activeStatus.filter(s => s !== "Sleep");
+                                onNotify?.(`${m.monster?.nome} si è svegliato!`);
+                            }
+                            nextSession.monsters[idx] = m;
+                        }
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Coraggio": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        if (!h.activeStatus.includes("Courage")) {
+                            h.activeStatus.push("Courage");
+                        }
+                        onNotify?.(`${h.hero?.classe} si sente più coraggioso!`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Acqua Guaritrice": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        const healAmount = spell.valore || 4;
+                        h.currentBody += healAmount;
+                        if (h.currentBody > (h.hero?.corpo || 0)) {
+                            h.currentBody = h.hero?.corpo || 0;
+                        }
+                        onNotify?.(`${h.hero?.classe} recupera ${healAmount} Punti Corpo!`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Nebbia Caliginosa": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        if (!h.activeStatus.includes("FoggyMist")) {
+                            h.activeStatus.push("FoggyMist");
+                        }
+                        onNotify?.(`${h.hero?.classe} può attraversare i mostri!`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Sonno": {
+                    const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                    if (idx !== -1) {
+                        const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                        if (m.monster?.nonmorto) {
+                            onNotify?.("I non-morti non possono dormire!");
+                            onActionDone?.();
+                            return;
+                        }
+                        let resisted = false;
+                        for (let i = 0; i < (m.currentMind || 0); i++) {
+                            if (Math.floor(Math.random() * 6) + 1 === 6) {
+                                resisted = true;
+                                break;
+                            }
+                        }
+                        if (resisted) {
+                            onNotify?.(`${m.monster?.nome} ha resistito all'incantesimo Sonno!`);
+                        } else {
+                            if (!m.activeStatus.includes("Sleep")) {
+                                m.activeStatus.push("Sleep");
+                            }
+                            onNotify?.(`${m.monster?.nome} cade in un sonno profondo!`);
+                        }
+                        nextSession.monsters[idx] = m;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Genio": {
+                    if (targetMonsterId != null) {
+                        const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                        if (idx !== -1) {
+                            const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                            const genieAttackDice = 5;
+                            let monsterDefenseDice = m.monster?.difesa || 0;
+                            if (m.activeStatus.includes("Tempest")) {
+                                monsterDefenseDice = 0;
+                                m.activeStatus = m.activeStatus.filter(s => s !== "Tempest");
+                                onNotify?.(`${m.monster?.nome} è travolto dalla tempesta e non può difendersi!`);
+                            }
+                            const combatResult = combatLogic?.resolveCombat?.(genieAttackDice, monsterDefenseDice, false);
+                            const damageDealt = combatResult?.damageDealt || 0;
+                            m.currentBody -= damageDealt;
+                            nextSession.lastAttack = { hero: currentHero, monster: m, combatResult };
+                            onNotify?.(`Il Genio attacca ${m.monster?.nome}!`);
+                            
+                            if (m.currentBody <= 0) {
+                                nextSession.monsters.splice(idx, 1);
+                            } else {
+                                if (m.activeStatus.includes("Sleep")) {
+                                    m.activeStatus = m.activeStatus.filter(s => s !== "Sleep");
+                                    onNotify?.(`${m.monster?.nome} si è svegliato!`);
+                                }
+                                nextSession.monsters[idx] = m;
+                            }
+                            wasCastSuccessful = true;
+                        }
+                    } else if (targetX != null && targetY != null) {
+                        const doorCheck = mapInteractionLogic?.isFrontOfDoor?.(targetX, targetY);
+                        if (doorCheck?.found) {
+                            mapInteractionLogic?.openPassage?.(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y);
+                            onNotify?.("Il Genio apre la porta!");
+                            wasCastSuccessful = true;
+                        } else {
+                            onNotify?.("Il Genio non trova alcuna porta da aprire qui.");
+                        }
+                    }
+                    break;
+                }
+                case "Tempesta": {
+                    const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                    if (idx !== -1) {
+                        const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                        if (!m.activeStatus.includes("Tempest")) {
+                            m.activeStatus.push("Tempest");
+                        }
+                        onNotify?.(`${m.monster?.nome} è bloccato dalla tempesta!`);
+                        nextSession.monsters[idx] = m;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Passaggio Invisibile": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        if (!h.activeStatus.includes("InvisiblePassage")) {
+                            h.activeStatus.push("InvisiblePassage");
+                        }
+                        onNotify?.(`${h.hero?.classe} può attraversare i muri!`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Pelle di Pietra": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        if (!h.activeStatus.includes("RockSkin")) {
+                            h.activeStatus.push("RockSkin");
+                        }
+                        onNotify?.(`${h.hero?.classe} ha la pelle dura come roccia! (+1 dado difesa)`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Passapareti": {
+                    const idx = nextSession.heroes.findIndex(h => h.heroId === targetHeroId);
+                    if (idx !== -1) {
+                        const h = { ...nextSession.heroes[idx], activeStatus: [...(nextSession.heroes[idx].activeStatus || [])] };
+                        if (!h.activeStatus.includes("WallPass")) {
+                            h.activeStatus.push("WallPass");
+                        }
+                        onNotify?.(`${h.hero?.classe} può passare attraverso i muri!`);
+                        nextSession.heroes[idx] = h;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                case "Intralcio": {
+                    const idx = nextSession.monsters.findIndex(m => m.id === targetMonsterId);
+                    if (idx !== -1) {
+                        const m = { ...nextSession.monsters[idx], activeStatus: [...(nextSession.monsters[idx].activeStatus || [])] };
+                        if (!m.activeStatus.includes("Entangled")) {
+                            m.activeStatus.push("Entangled");
+                        }
+                        onNotify?.(`${m.monster?.nome} è intralciato!`);
+                        nextSession.monsters[idx] = m;
+                        wasCastSuccessful = true;
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
-          } else if (targetX != null && targetY != null) {
-            const doorCheck = mapInteractionLogic?.isFrontOfDoor?.(targetX, targetY);
-            if (doorCheck?.found) {
-              mapInteractionLogic?.openPassage?.(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y);
-              onNotify?.("Il Genio apre la porta!");
-              wasCastSuccessful = true;
+
+            if (wasCastSuccessful) {
+                const currentHeroIdx = nextSession.heroes.findIndex(h => h.turnOrder === gameSession.currentTurn);
+                if (currentHeroIdx !== -1) {
+                    const updatedCurrentHero = { 
+                        ...nextSession.heroes[currentHeroIdx],
+                        availableSpells: (nextSession.heroes[currentHeroIdx].availableSpells || []).filter(id => id !== spellId)
+                    };
+                    nextSession.heroes[currentHeroIdx] = updatedCurrentHero;
+                }
+                
+                onNotify?.(`${currentHero.hero?.classe} lancia ${spell.nome}!`);
+                onUpdateSession?.(nextSession);
+                onActionDone?.();
             } else {
-              onNotify?.("Il Genio non trova alcuna porta da aprire qui.");
+                if (spell.effetto !== "Sonno" || !targetMonsterId) {
+                    onNotify?.('Bersaglio non valido.');
+                    onActionDone?.();
+                }
             }
-          }
-          break;
+        } else {
+            onNotify?.('Bersaglio non valido.');
+            onActionDone?.();
         }
-        case "Tempesta": {
-          const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-          if (targetMonster) {
-            if (!targetMonster.activeStatus.includes("Tempest")) {
-              targetMonster.activeStatus.push("Tempest");
+    }, [gameSession, staticSpells, combatLogic, mapInteractionLogic, fogOfWarLogic, onUpdateSession, onNotify, onActionDone]);
+
+    const removeExpiredEffects = useCallback((heroId, monsterId, effect) => {
+        if (!gameSession) return;
+
+        let updated = false;
+        const nextSession = {
+            ...gameSession,
+            heroes: gameSession.heroes ? [...gameSession.heroes] : [],
+            monsters: gameSession.monsters ? [...gameSession.monsters] : []
+        };
+
+        if (heroId != null) {
+            const idx = nextSession.heroes.findIndex(h => h.heroId === heroId);
+            if (idx !== -1 && nextSession.heroes[idx].activeStatus?.includes(effect)) {
+                nextSession.heroes[idx] = {
+                    ...nextSession.heroes[idx],
+                    activeStatus: nextSession.heroes[idx].activeStatus.filter(e => e !== effect)
+                };
+                updated = true;
             }
-            onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} è bloccato dalla tempesta!`);
-            wasCastSuccessful = true;
-          }
-          break;
         }
-        case "Passaggio Invisibile": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            if (!targetHero.activeStatus.includes("InvisiblePassage")) {
-              targetHero.activeStatus.push("InvisiblePassage");
+
+        if (monsterId != null) {
+            const idx = nextSession.monsters.findIndex(m => m.id === monsterId);
+            if (idx !== -1 && nextSession.monsters[idx].activeStatus?.includes(effect)) {
+                nextSession.monsters[idx] = {
+                    ...nextSession.monsters[idx],
+                    activeStatus: nextSession.monsters[idx].activeStatus.filter(e => e !== effect)
+                };
+                updated = true;
             }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} può attraversare i muri!`);
-            wasCastSuccessful = true;
-          }
-          break;
         }
-        case "Pelle di Pietra": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            if (!targetHero.activeStatus.includes("RockSkin")) {
-              targetHero.activeStatus.push("RockSkin");
-            }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} ha la pelle dura come roccia! (+1 dado difesa)`);
-            wasCastSuccessful = true;
-          }
-          break;
+
+        if (updated) {
+            onUpdateSession?.(nextSession);
         }
-        case "Passapareti": {
-          const targetHero = newSession.heroes.find(h => h.heroId === targetHeroId);
-          if (targetHero) {
-            if (!targetHero.activeStatus.includes("WallPass")) {
-              targetHero.activeStatus.push("WallPass");
-            }
-            onNotify?.(`${targetHero.hero?.classe || 'Eroe'} può passare attraverso i muri!`);
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-        case "Intralcio": {
-          const targetMonster = newSession.monsters.find(m => m.id === targetMonsterId);
-          if (targetMonster) {
-            if (!targetMonster.activeStatus.includes("Entangled")) {
-              targetMonster.activeStatus.push("Entangled");
-            }
-            onNotify?.(`${targetMonster.monster?.nome || 'Mostro'} è intralciato!`);
-            wasCastSuccessful = true;
-          }
-          break;
-        }
-      }
-    }
+    }, [gameSession, onUpdateSession]);
 
-    if (wasCastSuccessful) {
-      currentHero.availableSpells = currentHero.availableSpells.filter(id => id !== spellId);
-      onNotify?.(`${currentHero.hero?.classe || 'Eroe'} lancia ${spell.nome}!`);
-      onUpdateSession?.(newSession);
-      onActionDone?.();
-    } else {
-      onNotify?.('Bersaglio non valido.');
-      onActionDone?.();
-    }
-  }, [gameSession, staticSpells, combatLogic, mapInteractionLogic, fogOfWarLogic, onNotify, onUpdateSession, onActionDone]);
-
-  const removeExpiredEffects = useCallback((heroId, monsterId, effect) => {
-    if (!gameSession) return;
-    
-    let updated = false;
-    const newSession = JSON.parse(JSON.stringify(gameSession));
-
-    if (heroId != null) {
-      const hero = newSession.heroes.find(h => h.heroId === heroId);
-      if (hero && hero.activeStatus.includes(effect)) {
-        hero.activeStatus = hero.activeStatus.filter(e => e !== effect);
-        updated = true;
-      }
-    }
-
-    if (monsterId != null) {
-      const monster = newSession.monsters.find(m => m.id === monsterId);
-      if (monster && monster.activeStatus.includes(effect)) {
-        monster.activeStatus = monster.activeStatus.filter(e => e !== effect);
-        updated = true;
-      }
-    }
-
-    if (updated) {
-      onUpdateSession?.(newSession);
-    }
-  }, [gameSession, onUpdateSession]);
-
-  return { castSpell, removeExpiredEffects };
+    return {
+        castSpell,
+        removeExpiredEffects
+    };
 }

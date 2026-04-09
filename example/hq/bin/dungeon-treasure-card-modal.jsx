@@ -6,35 +6,33 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 export default function TreasureCardModal({ 
     isOpen = false, 
     card = null, 
     onClose = () => {} 
 }) {
-    const [isClosing, setIsClosing] = useState(false);
+    const [modalState, setModalState] = useState('open');
 
-    // Reset closing state when modal is opened
     useEffect(() => {
         if (isOpen) {
-            setIsClosing(false);
+            setModalState('open');
         }
     }, [isOpen]);
 
     const handleClose = useCallback(() => {
-        if (!isClosing) {
-            setIsClosing(true);
+        if (modalState !== 'closing') {
+            setModalState('closing');
             onClose();
         }
-    }, [isClosing, onClose]);
+    }, [modalState, onClose]);
 
     const handleImageError = useCallback((e) => {
-        e.currentTarget.src = '/img/placeholder.png';
+        e.target.src = '/img/placeholder.png';
     }, []);
 
-    // Guard: IF card IS NULL, return null to prevent runtime crash
-    if (!isOpen || !card) {
+    if (!isOpen || card == null) {
         return null;
     }
 
@@ -54,7 +52,7 @@ export default function TreasureCardModal({
                     alt={card.effetto || 'Treasure Card'}
                     onError={handleImageError}
                     onClick={handleClose}
-                    className="max-w-full max-h-[90vh] object-contain cursor-pointer rounded-lg shadow-2xl"
+                    className="max-w-full max-h-[90vh] object-contain cursor-pointer rounded-xl shadow-2xl"
                 />
             </div>
         </div>

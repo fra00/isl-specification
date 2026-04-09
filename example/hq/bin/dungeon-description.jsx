@@ -9,71 +9,50 @@
 import React, { useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function DungeonDescription({ 
-  gameSession, 
-  onChangePageView, 
-  onUpdateSession 
-}) {
-  // Null safety and default initialization for the description text
-  const descriptionText = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
-
-  // Capability: handleInteraction - Enter Dungeon
-  const handleEnterDungeon = useCallback(() => {
-    if (onChangePageView) {
+export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
+  const handleInteraction = useCallback((action) => {
+    if (!onChangePageView) return;
+    
+    if (action === 'ENTER') {
       onChangePageView(PageNavigationEnum.DUNGEON);
-    }
-  }, [onChangePageView]);
-
-  // Capability: handleInteraction - Shop
-  const handleShop = useCallback(() => {
-    if (onChangePageView) {
+    } else if (action === 'SHOP') {
       onChangePageView(PageNavigationEnum.SHOP);
-    }
-  }, [onChangePageView]);
-
-  // Capability: handleInteraction - Back
-  const handleBack = useCallback(() => {
-    if (onChangePageView) {
+    } else if (action === 'BACK') {
       onChangePageView(PageNavigationEnum.PLAY_GAME);
     }
   }, [onChangePageView]);
 
+  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4 font-serif">
-      {/* Parchment Theme Container */}
-      <div className="max-w-3xl w-full bg-[#f4e4bc] text-gray-900 rounded-sm shadow-2xl border-4 border-[#8b5a2b] p-8 flex flex-col max-h-[90vh]">
-        
-        {/* Title */}
-        <h1 className="text-4xl font-bold text-center mb-6 border-b-2 border-[#8b5a2b] pb-4 text-[#5c3a21] uppercase tracking-wider">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-serif">
+      <div className="bg-[#2a1f1a] text-[#e8dcc4] p-8 rounded-lg shadow-2xl max-w-3xl w-full border-4 border-[#5c4033]">
+        <h1 className="text-4xl font-bold mb-6 text-center border-b-2 border-[#5c4033] pb-4 text-[#d4af37]">
           Mission Description
         </h1>
         
-        {/* Scrollable Description Text */}
-        <div className="flex-1 overflow-y-auto mb-8 pr-4 custom-scrollbar">
-          <p className="text-xl leading-relaxed whitespace-pre-wrap text-[#3e2723]">
-            {descriptionText}
-          </p>
+        <div className="max-h-96 overflow-y-auto mb-8 pr-4 whitespace-pre-wrap text-lg leading-relaxed">
+          {description}
         </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row justify-center gap-6 mt-auto pt-4 border-t-2 border-[#8b5a2b]/30">
-          <button 
-            onClick={handleEnterDungeon}
-            className="px-8 py-3 bg-red-800 text-[#f4e4bc] font-bold rounded hover:bg-red-700 transition-colors shadow-md border-2 border-red-950 uppercase tracking-wide"
+        
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-t-2 border-[#5c4033] pt-6">
+          <button
+            onClick={() => handleInteraction('ENTER')}
+            className="w-full sm:w-auto px-8 py-3 bg-red-900 hover:bg-red-800 text-white font-bold rounded shadow-lg transition-colors border-2 border-red-950"
           >
             Entra nel dungeon
           </button>
           
-          <button 
-            onClick={handleShop}
-            className="px-8 py-3 bg-blue-800 text-[#f4e4bc] font-bold rounded hover:bg-blue-700 transition-colors shadow-md border-2 border-blue-950 uppercase tracking-wide"
+          <button
+            onClick={() => handleInteraction('SHOP')}
+            className="w-full sm:w-auto px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded shadow-lg transition-colors border-2 border-blue-950"
           >
             Armeria
           </button>
           
-          <button 
-            onClick={handleBack}
-            className="px-8 py-3 bg-gray-700 text-[#f4e4bc] font-bold rounded hover:bg-gray-600 transition-colors shadow-md border-2 border-gray-900 uppercase tracking-wide"
+          <button
+            onClick={() => handleInteraction('BACK')}
+            className="w-full sm:w-auto px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded shadow-lg transition-colors border-2 border-gray-800"
           >
             Indietro
           </button>

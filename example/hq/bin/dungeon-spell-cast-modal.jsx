@@ -6,109 +6,137 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
+
+const getTargetLabel = (targetType) => {
+  switch (targetType) {
+    case 'Self':
+      return 'Su se stessi';
+    case 'Hero':
+      return 'Personaggio';
+    case 'Monster':
+      return 'Mostro';
+    case 'Point':
+      return 'Punto sulla mappa';
+    case 'Door':
+      return 'Porta';
+    default:
+      return targetType || 'Sconosciuto';
+  }
+};
 
 export default function DungeonSpellCastModal({
   isOpen = false,
   hero = null,
   allSpells = [],
-  onCastSpell = () => {},
-  onClose = () => {}
+  onCastSpell,
+  onClose
 }) {
   const handleClose = useCallback(() => {
-    onClose();
+    if (onClose) {
+      onClose();
+    }
   }, [onClose]);
 
-  const handleCast = useCallback((spellId) => {
-    onCastSpell(spellId);
-  }, [onCastSpell]);
+  const handleCast = useCallback(
+    (spellId) => {
+      if (onCastSpell) {
+        onCastSpell(spellId);
+      }
+    },
+    [onCastSpell]
+  );
 
-  if (!isOpen || !hero) {
+  const availableSpellsData = useMemo(() => {
+    if (!hero?.availableSpells || !Array.isArray(hero.availableSpells)) {
+      return [];
+    }
+    if (!allSpells || !Array.isArray(allSpells)) {
+      return [];
+    }
+    return hero.availableSpells
+      .map((spellId) => allSpells.find((s) => s?.id === spellId))
+      .filter(Boolean);
+  }, [hero?.availableSpells, allSpells]);
+
+  if (!isOpen) {
     return null;
   }
 
-  const getTargetText = (targetType) => {
-    switch (targetType) {
-      case 'Self': return 'Bersaglio: Su se stessi';
-      case 'Hero': return 'Bersaglio: Personaggio';
-      case 'Monster': return 'Bersaglio: Mostro';
-      case 'Point': return 'Bersaglio: Punto nella mappa';
-      case 'Door': return 'Bersaglio: Porta';
-      default: return `Bersaglio: ${targetType || 'Sconosciuto'}`;
-    }
-  };
-
-  const availableSpells = hero.availableSpells || [];
-  const heroClass = hero.hero?.classe || 'Eroe';
+  const heroClassName = hero?.hero?.classe || 'Eroe';
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/85 z-[65] flex items-center justify-center p-4"
       onClick={handleClose}
     >
-      <div 
-        className="bg-gray-900 border-2 border-yellow-600 rounded-lg w-[90%] max-w-[1000px] max-h-[90vh] overflow-y-auto p-6 text-white relative shadow-2xl"
+      <div
+        className="bg-gray-900 w-[90%] max-w-[1000px] max-h-[90vh] rounded-xl p-6 text-white border border-gray-700 flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button 
-          onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none"
-          aria-label="Chiudi"
-        >
-          &times;
-        </button>
+        <div className="flex justify-between items-center mb-6 shrink-0">
+          <h2 className="text-2xl font-bold text-yellow-500">
+            Lancia Incantesimo - {heroClassName}
+          </h2>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-white text-2xl font-bold leading-none p-2"
+            aria-label="Chiudi"
+          >
+            &times;
+          </button>
+        </div>
 
-        <h2 className="text-2xl font-bold text-yellow-500 mb-6 border-b border-gray-700 pb-2">
-          Lancia Incantesimo - {heroClass}
-        </h2>
-
-        {availableSpells.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 italic text-lg">
-            Non hai più incantesimi disponibili per questa missione.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {availableSpells.map((spellId) => {
-              const spell = allSpells.find(s => s.id === spellId);
-              if (!spell) return null;
-
-              return (
-                <div key={`spell-${spell.id}`} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-lg">
-                  <div className="w-full h-48 bg-black flex items-center justify-center p-2">
+        <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+          {availableSpellsData.length === 0 ? (
+            <div className="flex items-center justify-center h-40">
+              <p className="text-center text-gray-400 italic text-lg">
+                Non hai più incantesimi disponibili per questa missione.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {availableSpellsData.map((spell) => (
+                <div
+                  key={spell.id}
+                  className="bg-gray-800 rounded-lg border border-gray-600 p-4 flex flex-col shadow-lg hover:border-yellow-600 transition-colors"
+                >
+                  <div className="w-full h-48 bg-gray-950 rounded-md mb-4 flex items-center justify-center overflow-hidden">
                     {spell.immagine ? (
-                      <img 
-                        src={`/img/cinc/${spell.immagine}`} 
-                        alt={spell.nome} 
+                      <img
+                        src={`/img/cinc/${spell.immagine}`}
+                        alt={spell.nome}
                         className="max-w-full max-h-full object-contain"
                       />
                     ) : (
-                      <div className="text-gray-600 italic">Nessuna immagine</div>
+                      <span className="text-gray-600 italic">Nessuna immagine</span>
                     )}
                   </div>
-                  
-                  <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-lg font-bold text-yellow-400 mb-2">{spell.nome}</h3>
-                    
-                    <span className="text-xs font-semibold text-blue-300 bg-blue-900/30 px-2 py-1 rounded inline-block mb-3 self-start">
-                      {getTargetText(spell.targetType)}
-                    </span>
-                    
-                    <p className="text-sm text-gray-300 italic mb-4 flex-grow">
-                      {spell.descrizione}
-                    </p>
-                    
-                    <button
-                      onClick={() => handleCast(spell.id)}
-                      className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded transition-colors mt-auto"
-                    >
-                      Lancia
-                    </button>
+
+                  <h3 className="text-xl font-bold text-yellow-400 mb-2">
+                    {spell.nome}
+                  </h3>
+
+                  <p className="text-sm text-gray-300 italic mb-4 flex-grow">
+                    {spell.descrizione}
+                  </p>
+
+                  <div className="text-xs text-gray-400 mb-4 bg-gray-900 p-2 rounded flex items-center gap-2 border border-gray-700">
+                    <span className="font-semibold text-gray-300">Bersaglio:</span>
+                    <span>{getTargetLabel(spell.targetType)}</span>
                   </div>
+
+                  <button
+                    onClick={() => handleCast(spell.id)}
+                    className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded transition-colors shadow-md"
+                  >
+                    Lancia
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

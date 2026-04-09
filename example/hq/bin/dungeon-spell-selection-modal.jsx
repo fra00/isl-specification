@@ -8,126 +8,147 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-const ALL_ELEMENTS = ["Fuoco", "Acqua", "Terra", "Aria"];
-
-export default function DungeonSpellSelectionModal({
-  heroes = [],
-  allSpells = [],
-  onConfirmSelection
+export default function DungeonSpellSelectionModal({ 
+    heroes = [], 
+    allSpells = [], 
+    onConfirmSelection = () => {} 
 }) {
-  const [pickedElements, setPickedElements] = useState([]);
-  const [currentHeroPicking, setCurrentHeroPicking] = useState(null);
+    const [pickedElements, setPickedElements] = useState([]);
+    const [currentHeroPicking, setCurrentHeroPicking] = useState(null);
 
-  useEffect(() => {
-    const wizard = heroes?.find(h => h?.hero?.classe?.toLowerCase() === "mago");
-    if (wizard) {
-      setCurrentHeroPicking(wizard);
-    } else {
-      const elf = heroes?.find(h => h?.hero?.classe?.toLowerCase() === "elfo");
-      if (elf) {
-        setCurrentHeroPicking(elf);
-      } else {
-        setCurrentHeroPicking(null);
-      }
-    }
-    setPickedElements([]);
-  }, [heroes]);
+    const allElements = ["Fuoco", "Acqua", "Terra", "Aria"];
 
-  const selectElement = useCallback((elemento) => {
-    if (!currentHeroPicking) return;
-    if (pickedElements.includes(elemento)) return;
-
-    const newPickedElements = [...pickedElements, elemento];
-    setPickedElements(newPickedElements);
-
-    const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();
-
-    if (heroClass === "mago" && newPickedElements.length === 3) {
-      const elf = heroes?.find(h => h?.hero?.classe?.toLowerCase() === "elfo");
-      
-      const selectionMap = new Map();
-      
-      const wizardId = currentHeroPicking.heroId;
-      const wizardSpells = allSpells
-        ?.filter(spell => newPickedElements.includes(spell?.elemento))
-        ?.map(spell => spell?.id) || [];
-        
-      selectionMap.set(wizardId, wizardSpells);
-
-      if (elf) {
-        const remaining = ALL_ELEMENTS.find(el => !newPickedElements.includes(el));
-        if (remaining) {
-          const elfSpells = allSpells
-            ?.filter(spell => spell?.elemento === remaining)
-            ?.map(spell => spell?.id) || [];
-          selectionMap.set(elf.heroId, elfSpells);
+    useEffect(() => {
+        const wizard = heroes.find(h => h?.hero?.classe?.toLowerCase() === "mago");
+        if (wizard) {
+            setCurrentHeroPicking(wizard);
+        } else {
+            const elf = heroes.find(h => h?.hero?.classe?.toLowerCase() === "elfo");
+            if (elf) {
+                setCurrentHeroPicking(elf);
+            } else {
+                setCurrentHeroPicking(null);
+            }
         }
-      }
+        setPickedElements([]);
+    }, [heroes]);
 
-      if (typeof onConfirmSelection === 'function') {
-        onConfirmSelection(selectionMap);
-      }
-    } else if (heroClass === "elfo" && newPickedElements.length === 1) {
-      const elfId = currentHeroPicking.heroId;
-      const elfSpells = allSpells
-        ?.filter(spell => spell?.elemento === elemento)
-        ?.map(spell => spell?.id) || [];
-      
-      const selectionMap = new Map();
-      selectionMap.set(elfId, elfSpells);
-      
-      if (typeof onConfirmSelection === 'function') {
-        onConfirmSelection(selectionMap);
-      }
-    }
-  }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);
+    const selectElement = useCallback((elemento) => {
+        if (!currentHeroPicking) return;
+        if (pickedElements.includes(elemento)) return;
 
-  if (!currentHeroPicking) {
-    return null;
-  }
+        const newPicked = [...pickedElements, elemento];
+        setPickedElements(newPicked);
 
-  return (
-    <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4">
-      <h2 className="text-4xl font-bold text-white mb-4 text-center">Selezione Incantesimi</h2>
-      <p className="text-xl text-gray-200 mb-8 text-center">
-        Turno di selezione: <span className="font-bold text-yellow-400">{currentHeroPicking?.hero?.classe || "Sconosciuto"}</span>
-      </p>
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl w-full justify-items-center">
-        {ALL_ELEMENTS.map(elemento => {
-          const isPicked = pickedElements.includes(elemento);
-          return (
-            <button
-              key={elemento}
-              onClick={() => selectElement(elemento)}
-              disabled={isPicked}
-              className={`relative transition-transform duration-200 ${
-                isPicked 
-                  ? 'opacity-40 grayscale cursor-not-allowed' 
-                  : 'hover:scale-105 hover:shadow-xl cursor-pointer'
-              }`}
-              aria-label={`Seleziona elemento ${elemento}`}
-            >
-              <img 
-                src={`/img/cinc/${elemento}00_Dorso.jpg`} 
-                alt={`Dorso carta ${elemento}`}
-                className="w-48 h-auto rounded-lg shadow-lg border-2 border-transparent hover:border-yellow-500 transition-colors"
-              />
-              {isPicked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-                  <span className="text-red-600 text-7xl font-black drop-shadow-md">X</span>
+        const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();
+        const isWizard = heroClass === "mago";
+        const isElf = heroClass === "elfo";
+
+        if (isWizard && newPicked.length === 3) {
+            const elf = heroes.find(h => h?.hero?.classe?.toLowerCase() === "elfo");
+            let remainingElement = null;
+
+            if (elf) {
+                remainingElement = allElements.find(el => !newPicked.includes(el));
+            }
+
+            const selectionMap = new Map();
+            const wizardId = currentHeroPicking.heroId;
+            
+            const wizardSpells = allSpells
+                .filter(spell => newPicked.includes(spell?.elemento))
+                .map(spell => spell?.id);
+            
+            selectionMap.set(wizardId, wizardSpells);
+
+            if (elf && remainingElement) {
+                const elfSpells = allSpells
+                    .filter(spell => spell?.elemento === remainingElement)
+                    .map(spell => spell?.id);
+                selectionMap.set(elf.heroId, elfSpells);
+            }
+
+            onConfirmSelection(selectionMap);
+        } else if (isElf && newPicked.length === 1) {
+            const elfId = currentHeroPicking.heroId;
+            const elfSpells = allSpells
+                .filter(spell => spell?.elemento === elemento)
+                .map(spell => spell?.id);
+            
+            const selectionMap = new Map();
+            selectionMap.set(elfId, elfSpells);
+            
+            onConfirmSelection(selectionMap);
+        }
+    }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);
+
+    return (
+        <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4">
+            <div className="max-w-4xl w-full flex flex-col items-center">
+                <h1 className="text-4xl md:text-5xl text-white font-bold mb-6 text-center drop-shadow-lg">
+                    Selezione Incantesimi
+                </h1>
+                
+                {currentHeroPicking ? (
+                    <div className="flex flex-col items-center mb-8">
+                        <p className="text-xl md:text-2xl text-amber-400 text-center">
+                            Tocca a: <span className="font-bold uppercase">{currentHeroPicking?.hero?.classe}</span>
+                        </p>
+                        {currentHeroPicking?.hero?.classe?.toLowerCase() === "mago" && (
+                            <span className="block text-md text-gray-300 mt-2">
+                                Scegli ancora {3 - pickedElements.length} elementi
+                            </span>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-xl text-gray-400 mb-8 text-center">
+                        Nessun eroe idoneo alla selezione.
+                    </p>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full justify-items-center">
+                    {allElements.map((elemento) => {
+                        const isPicked = pickedElements.includes(elemento);
+                        return (
+                            <div 
+                                key={elemento}
+                                onClick={() => selectElement(elemento)}
+                                className={`
+                                    relative transition-all duration-300 transform
+                                    ${isPicked 
+                                        ? 'opacity-30 grayscale scale-95 cursor-not-allowed' 
+                                        : 'cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 hover:-translate-y-2'
+                                    }
+                                `}
+                            >
+                                <img 
+                                    src={`/img/cinc/${elemento}00_Dorso.jpg`} 
+                                    alt={`Dorso ${elemento}`}
+                                    className="w-48 h-auto rounded-xl shadow-lg border-2 border-transparent hover:border-amber-400 object-cover"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                />
+                                <div 
+                                    className="hidden w-48 h-72 bg-gray-800 rounded-xl border-2 border-gray-600 flex-col items-center justify-center text-white shadow-lg"
+                                >
+                                    <span className="text-xl font-bold mb-2">{elemento}</span>
+                                    <span className="text-xs text-gray-400 text-center px-2">Immagine non trovata</span>
+                                </div>
+                                
+                                {isPicked && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className="bg-black/80 text-white px-4 py-2 rounded-full font-bold border border-white/20 shadow-md">
+                                            Selezionato
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-      
-      {currentHeroPicking?.hero?.classe?.toLowerCase() === "mago" && (
-        <p className="mt-8 text-gray-400 text-lg">
-          Seleziona {3 - pickedElements.length} element{3 - pickedElements.length === 1 ? 'o' : 'i'} rimanent{3 - pickedElements.length === 1 ? 'e' : 'i'}.
-        </p>
-      )}
-    </div>
-  );
+            </div>
+        </div>
+    );
 }

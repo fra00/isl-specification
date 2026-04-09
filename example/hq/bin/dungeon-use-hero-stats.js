@@ -6,12 +6,24 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 export function useHeroStats({ staticEquipment = [] }) {
     
     const calculateStats = useCallback((heroState) => {
-        if (!heroState?.hero) return null;
+        if (!heroState?.hero) {
+            return {
+                attacco: 0,
+                difesa: 0,
+                movimento: 0,
+                mente: 0,
+                corpo: 0,
+                canAttackDiagonal: false,
+                canAttackRanged: false,
+                canDisarmTraps: false,
+                hasDoubleAttack: false
+            };
+        }
 
         const hero = heroState.hero;
         const stats = {
@@ -30,45 +42,43 @@ export function useHeroStats({ staticEquipment = [] }) {
         const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
 
         equippedItems.forEach(item => {
-            // Attack
             if (item.dadatt != null && item.dadatt > 0) {
                 stats.attacco = item.dadatt;
             }
             
-            // Defense
             if (item.daddif != null && item.daddif > 0) {
                 stats.difesa += item.daddif;
             }
+            
             if (item.daddifex != null && item.daddifex > 0) {
                 stats.difesa += item.daddifex;
             }
             
-            // Movement
             if (item.movim != null) {
                 stats.movimento += item.movim;
             }
             
-            // Mind
             if (item.puntimente != null) {
                 stats.mente += item.puntimente;
             }
             
-            // Capabilities
             if (item.diago) {
                 stats.canAttackDiagonal = true;
             }
+            
             if (item.tiro || item.tirounavo) {
                 stats.canAttackRanged = true;
             }
+            
             if (item.disinnesc) {
                 stats.canDisarmTraps = true;
             }
+            
             if (item.doppioatt) {
                 stats.hasDoubleAttack = true;
             }
         });
 
-        // Status Modifiers
         const activeStatus = heroState.activeStatus || [];
         if (activeStatus.includes("RockSkin")) {
             stats.difesa += 1;
@@ -84,9 +94,7 @@ export function useHeroStats({ staticEquipment = [] }) {
         if (!heroState || !monster) return 0;
 
         const baseStats = calculateStats(heroState);
-        if (!baseStats) return 0;
-
-        let dice = baseStats.attacco;
+        let dice = baseStats?.attacco || 0;
 
         const equippedIds = heroState.equipped || [];
         const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
@@ -94,7 +102,7 @@ export function useHeroStats({ staticEquipment = [] }) {
         equippedItems.forEach(item => {
             if (item.numdadicontr != null && item.numdadicontr > 0 && item.targetMonster != null) {
                 let isTarget = false;
-
+                
                 if (typeof item.targetMonster === 'number' && item.targetMonster === monster.id) {
                     isTarget = true;
                 } else if (typeof item.targetMonster === 'string') {
@@ -130,7 +138,7 @@ export function useHeroStats({ staticEquipment = [] }) {
                 }
             }
         }
-
+        
         return false;
     }, [staticEquipment]);
 
@@ -145,7 +153,7 @@ export function useHeroStats({ staticEquipment = [] }) {
                 return item.id;
             }
         }
-
+        
         return null;
     }, [staticEquipment]);
 

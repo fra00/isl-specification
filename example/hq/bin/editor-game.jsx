@@ -10,8 +10,10 @@ import React from 'react';
 
 export default function EditorGame() {
   return (
-    <div className="flex items-center justify-center w-full h-full p-4 bg-gray-100 text-gray-800">
-      <h1 className="text-2xl font-bold">Editor Game</h1>
+    <div className="flex items-center justify-center w-full h-full min-h-screen bg-gray-100 p-4">
+      <h1 className="text-3xl font-bold text-gray-800">
+        Editor Game
+      </h1>
     </div>
   );
 }

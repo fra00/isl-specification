@@ -9,159 +9,149 @@
 import React, { useState, useEffect } from 'react';
 import { CombatDiceResult } from './dungeon-use-combat';
 
-export default function CombatResultModal({
-  isOpen = false,
-  onClose = () => {},
-  combatResult = null,
-  attacker = null,
-  defender = null
-}) {
-  const [animationActive, setAnimationActive] = useState(false);
+const getPortraitUrl = (entity) => {
+    if (entity?.hero?.portrait) return `/img/eroi/${entity.hero.portrait}`;
+    if (entity?.monster?.immalarge) return `/img/mostri/${entity.monster.immalarge}`;
+    return '';
+};
 
-  useEffect(() => {
-    if (isOpen) {
-      // Small delay to ensure the DOM is ready before triggering CSS transitions
-      const timer = setTimeout(() => setAnimationActive(true), 50);
-      return () => clearTimeout(timer);
-    } else {
-      setAnimationActive(false);
+const getDiceImageUrl = (diceFace) => {
+    if (diceFace === CombatDiceResult.SKULL) return '/img/altro/teschio.jpg';
+    if (diceFace === CombatDiceResult.WHITE_SHIELD) return '/img/altro/scudo.jpg';
+    if (diceFace === CombatDiceResult.BLACK_SHIELD) return '/img/altro/scudo-nero.png';
+    return '';
+};
+
+export default function CombatResultModal({ isOpen, onClose, combatResult, attacker, defender }) {
+    const [animationActive, setAnimationActive] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Small delay to ensure the CSS transition triggers after the component mounts
+            const timer = setTimeout(() => setAnimationActive(true), 50);
+            return () => clearTimeout(timer);
+        } else {
+            setAnimationActive(false);
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    if (!combatResult) {
+        return (
+            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+                <div className="bg-gray-800 p-8 rounded-xl shadow-2xl text-center">
+                    <p className="text-white text-xl mb-4">No combat data available</p>
+                    <button 
+                        onClick={onClose} 
+                        className="bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500 font-bold"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+        );
     }
-  }, [isOpen]);
 
-  if (!isOpen) return null;
+    const attackerImg = getPortraitUrl(attacker);
+    const defenderImg = getPortraitUrl(defender);
+    const isAttackerBarbarian = attacker?.hero?.classe?.toLowerCase().includes('barbar');
 
-  if (!combatResult) {
     return (
-      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-        <div className="bg-gray-800 p-8 rounded-xl shadow-2xl flex flex-col items-center">
-          <p className="text-white text-xl mb-4">No combat data available</p>
-          <button
-            onClick={onClose}
-            className="bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500 font-bold"
-          >
-            OK
-          </button>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="w-[800px] h-[500px] relative overflow-hidden rounded-xl shadow-2xl bg-gray-900">
+                
+                {/* Right Panel (Defender) - Background */}
+                <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0">
+                    {defenderImg && (
+                        <img 
+                            src={defenderImg} 
+                            alt="Defender" 
+                            className="absolute top-1/2 -translate-y-1/2 right-0 h-full object-cover opacity-50 mix-blend-luminosity"
+                        />
+                    )}
+                </div>
+
+                {/* Left Panel (Attacker) - Foreground with clip-path */}
+                <div 
+                    className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10"
+                    style={{ clipPath: 'polygon(0 0, 60% 0, 40% 100%, 0% 100%)' }}
+                >
+                    {attackerImg && (
+                        <img 
+                            src={attackerImg} 
+                            alt="Attacker" 
+                            className={`absolute top-1/2 -translate-y-1/2 left-0 h-full object-cover opacity-50 mix-blend-luminosity ${isAttackerBarbarian ? '-ml-16' : ''}`}
+                        />
+                    )}
+                </div>
+
+                {/* Center Info */}
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-between py-8 pointer-events-none">
+                    
+                    {/* VS Text */}
+                    <div className="text-center mt-2">
+                        <h2 className="text-6xl font-bold italic text-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+                            VS
+                        </h2>
+                    </div>
+
+                    {/* Dice Container */}
+                    <div className="flex flex-col items-center gap-6 w-full px-12">
+                        
+                        {/* Attacker Dice Row */}
+                        <div className="flex flex-col items-center w-full">
+                            <span className="text-red-300 font-bold mb-2 text-lg uppercase tracking-widest drop-shadow-md">
+                                Attacker
+                            </span>
+                            <div className="flex gap-2 justify-center min-h-[60px]">
+                                {combatResult.attackerDice?.map((dice, idx) => (
+                                    <img 
+                                        key={`att-${idx}`}
+                                        src={getDiceImageUrl(dice)}
+                                        alt={dice}
+                                        className={`w-14 h-14 rounded shadow-lg transition-all duration-500 ease-out ${animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-16'}`}
+                                        style={{ transitionDelay: `${idx * 100}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Defender Dice Row */}
+                        <div className="flex flex-col items-center w-full">
+                            <span className="text-blue-300 font-bold mb-2 text-lg uppercase tracking-widest drop-shadow-md">
+                                Defender
+                            </span>
+                            <div className="flex gap-2 justify-center min-h-[60px]">
+                                {combatResult.defenderDice?.map((dice, idx) => (
+                                    <img 
+                                        key={`def-${idx}`}
+                                        src={getDiceImageUrl(dice)}
+                                        alt={dice}
+                                        className={`w-14 h-14 rounded shadow-lg transition-all duration-500 ease-out ${animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-16'}`}
+                                        style={{ transitionDelay: `${idx * 100}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Result Text & Close Button */}
+                    <div className="flex flex-col items-center gap-4 mt-2 pointer-events-auto">
+                        <div className={`text-3xl font-bold text-white drop-shadow-lg transition-all duration-700 ${animationActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} style={{ transitionDelay: '600ms' }}>
+                            Damage Dealt: <span className="text-red-500 text-4xl ml-2">{combatResult.damageDealt}</span>
+                        </div>
+                        
+                        <button 
+                            onClick={onClose}
+                            className={`bg-yellow-600 text-black font-bold px-10 py-3 rounded hover:bg-yellow-500 transition-all duration-300 shadow-[0_0_15px_rgba(202,138,4,0.4)] hover:shadow-[0_0_25px_rgba(202,138,4,0.7)] ${animationActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                            style={{ transitionDelay: '900ms' }}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     );
-  }
-
-  const getEntityImage = (entity) => {
-    if (!entity) return "";
-    if (entity.hero?.portrait) return `/img/eroi/${entity.hero.portrait}`;
-    if (entity.monster?.immalarge) return `/img/mostri/${entity.monster.immalarge}`;
-    return "";
-  };
-
-  const getDiceImage = (face) => {
-    if (face === CombatDiceResult.SKULL) return "/img/altro/teschio.jpg";
-    if (face === CombatDiceResult.WHITE_SHIELD) return "/img/altro/scudo.jpg";
-    if (face === CombatDiceResult.BLACK_SHIELD) return "/img/altro/scudo-nero.png";
-    return "";
-  };
-
-  const isAttackerBarbarian = attacker?.hero?.classe?.toLowerCase().includes('barbar');
-
-  return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-      <div className="w-[800px] h-[500px] relative overflow-hidden rounded-xl shadow-2xl bg-gray-900">
-        
-        {/* Right Panel (Defender) - Base background */}
-        <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0"></div>
-
-        {/* Left Panel (Attacker) - Clipped */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10"
-          style={{ clipPath: "polygon(0 0, 60% 0, 40% 100%, 0% 100%)" }}
-        ></div>
-
-        {/* Attacker Portrait */}
-        <div className="absolute left-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-start p-4 pointer-events-none">
-          <img
-            src={getEntityImage(attacker)}
-            alt="Attacker"
-            className={`h-full object-contain opacity-80 drop-shadow-2xl ${isAttackerBarbarian ? '-ml-16' : ''}`}
-          />
-        </div>
-
-        {/* Defender Portrait */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-end p-4 pointer-events-none">
-          <img
-            src={getEntityImage(defender)}
-            alt="Defender"
-            className="h-full object-contain opacity-80 drop-shadow-2xl"
-          />
-        </div>
-
-        {/* Center Info */}
-        <div className="absolute inset-0 z-30 pointer-events-none">
-          
-          {/* VS Text */}
-          <div className="absolute top-[20%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl font-bold italic text-white drop-shadow-[0_0_10px_rgba(255,215,0,0.8)]">
-            VS
-          </div>
-
-          {/* Dice Container */}
-          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 w-full">
-            
-            {/* Attacker Dice Row */}
-            <div className="flex flex-col items-center">
-              <span className="text-white font-bold mb-2 drop-shadow-md bg-black/40 px-3 py-1 rounded">Attacker</span>
-              <div className="flex gap-2">
-                {combatResult.attackerDice?.map((face, idx) => (
-                  <img
-                    key={`att-${idx}`}
-                    src={getDiceImage(face)}
-                    alt="Attacker Die"
-                    className={`w-12 h-12 rounded shadow-lg transition-all duration-500 ease-out ${
-                      animationActive ? 'translate-x-0 opacity-100' : '-translate-x-24 opacity-0'
-                    }`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Defender Dice Row */}
-            <div className="flex flex-col items-center">
-              <span className="text-white font-bold mb-2 drop-shadow-md bg-black/40 px-3 py-1 rounded">Defender</span>
-              <div className="flex gap-2">
-                {combatResult.defenderDice?.map((face, idx) => (
-                  <img
-                    key={`def-${idx}`}
-                    src={getDiceImage(face)}
-                    alt="Defender Die"
-                    className={`w-12 h-12 rounded shadow-lg transition-all duration-500 ease-out ${
-                      animationActive ? 'translate-x-0 opacity-100' : 'translate-x-24 opacity-0'
-                    }`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
-                  />
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Result Text & Close Button */}
-          <div 
-            className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 transition-all duration-700 ease-out ${
-              animationActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            } pointer-events-auto`}
-            style={{ transitionDelay: '800ms' }}
-          >
-            <div className="text-3xl font-bold text-white drop-shadow-lg bg-black/50 px-6 py-2 rounded-lg">
-              Damage Dealt: <span className="text-red-400 ml-2">{combatResult.damageDealt}</span>
-            </div>
-            <button
-              onClick={onClose}
-              className="bg-yellow-600 text-black font-bold px-10 py-3 rounded hover:bg-yellow-500 shadow-[0_0_15px_rgba(202,138,4,0.5)] transition-all active:scale-95"
-            >
-              OK
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
 }

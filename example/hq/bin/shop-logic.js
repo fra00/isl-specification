@@ -6,49 +6,45 @@
  * Edit the ISL file instead.
  */
 
-/**
- * Component: ShopLogic
- * Role: Business Logic
- */
+import { Hero, Equipment } from './domain-ruleset';
+import { GameSession, HeroState } from './domain-session';
 
-/**
- * Loads static data for Heroes and Equipment.
- * @returns {Promise<{ heroes: Array<Object>, items: Array<Object> }>}
- */
 export const loadShopData = async () => {
     try {
-        const heroesResponse = await fetch('/jsonData/heroes.json');
-        const heroes = await heroesResponse.json();
+        const [heroesResponse, equipmentResponse] = await Promise.all([
+            fetch('/jsonData/heroes.json'),
+            fetch('/jsonData/equipment.json')
+        ]);
 
-        const equipmentResponse = await fetch('/jsonData/equipment.json');
-        const equipment = await equipmentResponse.json();
+        const heroesJson = await heroesResponse.json();
+        const equipmentJson = await equipmentResponse.json();
 
-        // Filter items to include only those with prezzo > 0
-        const items = (equipment || []).filter(item => item?.prezzo != null && item.prezzo > 0);
+        const heroes = (Array.isArray(heroesJson) ? heroesJson : []).map(heroData => Hero(heroData));
+        
+        const items = (Array.isArray(equipmentJson) ? equipmentJson : [])
+            .map(itemData => Equipment(itemData))
+            .filter(item => item?.prezzo != null && item.prezzo > 0);
 
         return { heroes, items };
     } catch (error) {
-        console.error("Failed to load shop data:", error);
+        console.error("Error loading shop data:", error);
         return { heroes: [], items: [] };
     }
 };
 
-/**
- * Checks if a hero is allowed to buy a specific item.
- * @param {Object} heroState - The current state of the hero
- * @param {Object} item - The equipment item to validate
- * @returns {{ allowed: boolean, reason: string }}
- */
 export const validatePurchase = (heroState, item) => {
-    if (heroState == null || item == null) {
-        return { allowed: false, reason: "Invalid data provided" };
+    if (!heroState || !item) {
+        return { allowed: false, reason: "Invalid data" };
     }
 
-    if ((heroState.gold || 0) < (item.prezzo || 0)) {
+    const currentGold = heroState.gold != null ? heroState.gold : 0;
+    const itemPrice = item.prezzo != null ? item.prezzo : 0;
+
+    if (currentGold < itemPrice) {
         return { allowed: false, reason: "Not enough gold" };
     }
 
-    if (heroState.equipment != null && heroState.equipment.includes(item.id)) {
+    if (heroState.equipment && heroState.equipment.includes(item.id)) {
         return { allowed: false, reason: "Already owned" };
     }
 
@@ -63,43 +59,31 @@ export const validatePurchase = (heroState, item) => {
     return { allowed: true, reason: "" };
 };
 
-/**
- * Performs the purchase transaction and returns the updated game session.
- * @param {Object} session - The current game session
- * @param {number} heroIndex - The index of the hero making the purchase
- * @param {Object} item - The equipment item being purchased
- * @returns {Object} The updated game session
- */
 export const executePurchase = (session, heroIndex, item) => {
-    if (session == null || session.heroes == null) {
+    if (!session || !session.heroes) {
         return session;
     }
 
     if (heroIndex < 0 || heroIndex >= session.heroes.length) {
-        console.error("Invalid hero index");
         return session;
     }
 
     const currentHeroState = session.heroes[heroIndex];
+    const currentGold = currentHeroState.gold != null ? currentHeroState.gold : 0;
+    const currentEquipment = currentHeroState.equipment || [];
+    const itemPrice = item?.prezzo != null ? item.prezzo : 0;
 
-    if (currentHeroState == null || item == null) {
-        return session;
-    }
-
-    // Create a new HeroState by spreading all current properties and updating gold and equipment
-    const updatedHeroState = {
+    const updatedHeroState = HeroState({
         ...currentHeroState,
-        gold: (currentHeroState.gold || 0) - (item.prezzo || 0),
-        equipment: [...(currentHeroState.equipment || []), item.id]
-    };
+        gold: currentGold - itemPrice,
+        equipment: [...currentEquipment, item.id]
+    });
 
-    // Clone the heroes array and replace the updated hero
     const updatedHeroes = [...session.heroes];
     updatedHeroes[heroIndex] = updatedHeroState;
 
-    // Return the updated session
-    return {
+    return GameSession({
         ...session,
         heroes: updatedHeroes
-    };
+    });
 };

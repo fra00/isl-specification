@@ -8,91 +8,103 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-export default function DungeonHeroOrder({ heroes = [], onConfirmOrder = () => {} }) {
+export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
   const [selectedOrder, setSelectedOrder] = useState([]);
-  const [availableHeroes, setAvailableHeroes] = useState(() => heroes || []);
+  const [availableHeroes, setAvailableHeroes] = useState([]);
 
   useEffect(() => {
     setSelectedOrder([]);
-    setAvailableHeroes(heroes || []);
+    setAvailableHeroes([...heroes]);
   }, [heroes]);
 
   const selectHero = useCallback((heroId) => {
-    setSelectedOrder((prev) => {
-      if (!prev.includes(heroId) && prev.length < heroes.length) {
-        return [...prev, heroId];
+    setSelectedOrder((prevOrder) => {
+      if (!prevOrder.includes(heroId) && prevOrder.length < heroes.length) {
+        return [...prevOrder, heroId];
       }
-      return prev;
+      return prevOrder;
     });
-    setAvailableHeroes((prev) => prev.filter((h) => h.heroId !== heroId));
+    
+    setAvailableHeroes((prevAvailable) => 
+      prevAvailable.filter((h) => h.heroId !== heroId)
+    );
   }, [heroes.length]);
 
   const removeHero = useCallback((heroId) => {
-    setSelectedOrder((prev) => prev.filter((id) => id !== heroId));
+    setSelectedOrder((prevOrder) => 
+      prevOrder.filter((id) => id !== heroId)
+    );
     
-    const heroToAdd = heroes.find((h) => h.heroId === heroId);
-    if (heroToAdd) {
-      setAvailableHeroes((prev) => {
-        const newAvailable = [...prev, heroToAdd];
-        return newAvailable.sort((a, b) => a.heroId - b.heroId);
-      });
-    }
+    setAvailableHeroes((prevAvailable) => {
+      if (prevAvailable.some((h) => h.heroId === heroId)) {
+        return prevAvailable;
+      }
+      const heroToAdd = heroes.find((h) => h.heroId === heroId);
+      if (!heroToAdd) {
+        return prevAvailable;
+      }
+      const newAvailable = [...prevAvailable, heroToAdd];
+      return newAvailable.sort((a, b) => a.heroId - b.heroId);
+    });
   }, [heroes]);
 
   const confirm = useCallback(() => {
-    if (selectedOrder.length === heroes.length && heroes.length > 0) {
+    if (selectedOrder.length === heroes.length && onConfirmOrder) {
       onConfirmOrder(selectedOrder);
     }
   }, [selectedOrder, heroes.length, onConfirmOrder]);
 
   const isConfirmEnabled = selectedOrder.length === heroes.length && heroes.length > 0;
-  const slots = Array.from({ length: heroes.length }, (_, i) => i);
 
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-white">
-        <h2 className="text-2xl font-bold mb-2 text-center">Select Hero Turn Order</h2>
-        <p className="text-gray-300 mb-6 text-center">
-          Click heroes below to set their turn order (1st, 2nd, etc.)
-        </p>
+      <div className="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-4xl text-white border border-gray-700">
+        
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-2">Select Hero Turn Order</h2>
+          <p className="text-gray-400">Click heroes below to set their turn order (1st, 2nd, etc.)</p>
+        </div>
 
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3 text-gray-400 border-b border-gray-700 pb-1">
-            Current Order
-          </h3>
-          <div className="grid grid-cols-4 gap-4">
-            {slots.map((index) => {
+          <h3 className="text-xl font-bold mb-4 text-gray-300 border-b border-gray-700 pb-2">Current Order</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: heroes.length }).map((_, index) => {
               const heroId = selectedOrder[index];
-              const heroState = heroId != null ? heroes.find((h) => h.heroId === heroId) : null;
+              const heroState = heroId != null ? heroes.find(h => h.heroId === heroId) : null;
+              const heroDef = heroState?.hero;
+
+              if (heroState && heroDef) {
+                return (
+                  <div 
+                    key={`selected-${heroId}`}
+                    onClick={() => removeHero(heroId)}
+                    className="bg-gray-700 rounded-lg p-4 flex flex-col items-center cursor-pointer hover:bg-gray-600 transition-colors border-2 border-transparent hover:border-red-500 relative group"
+                  >
+                    <div className="absolute -top-3 -left-3 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-gray-800 shadow-md">
+                      {index + 1}
+                    </div>
+                    <img 
+                      src={`img/eroi/${heroDef.portrait}`} 
+                      alt={heroDef.classe}
+                      className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-gray-500 bg-gray-900"
+                    />
+                    <span className="text-sm font-semibold uppercase tracking-wider">{heroDef.classe}</span>
+                    <div className="absolute inset-0 bg-red-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white font-bold bg-red-600 px-2 py-1 rounded text-xs">Remove</span>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
-                <div
-                  key={`slot-${index}`}
-                  className={`border-2 rounded-lg p-2 flex flex-col items-center justify-center min-h-[140px] transition-all ${
-                    heroState
-                      ? 'border-blue-500 bg-gray-700 cursor-pointer hover:ring-2 hover:ring-red-500'
-                      : 'border-dashed border-gray-600 bg-gray-800/50'
-                  }`}
-                  onClick={() => (heroState ? removeHero(heroId) : undefined)}
-                  title={heroState ? "Click to remove" : ""}
+                <div 
+                  key={`empty-${index}`}
+                  className="bg-gray-900/50 rounded-lg p-4 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 h-40 relative"
                 >
-                  <span className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">
-                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}
-                  </span>
-                  {heroState ? (
-                    <>
-                      <img
-                        src={`img/eroi/${heroState.hero?.portrait}`}
-                        alt={heroState.hero?.classe || 'Hero'}
-                        className="w-16 h-16 object-cover rounded-full mb-2 border-2 border-gray-500"
-                      />
-                      <span className="text-sm font-bold text-center">
-                        {heroState.hero?.classe}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-gray-500 text-sm">Empty Slot</span>
-                  )}
+                  <div className="absolute -top-3 -left-3 bg-gray-700 text-gray-400 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-gray-800">
+                    {index + 1}
+                  </div>
+                  <span className="text-gray-500 text-sm">Empty Slot</span>
                 </div>
               );
             })}
@@ -100,45 +112,51 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder = () => {
         </div>
 
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3 text-gray-400 border-b border-gray-700 pb-1">
-            Available Heroes
-          </h3>
+          <h3 className="text-xl font-bold mb-4 text-gray-300 border-b border-gray-700 pb-2">Available Heroes</h3>
           {availableHeroes.length > 0 ? (
-            <div className="grid grid-cols-4 gap-4">
-              {availableHeroes.map((heroState) => (
-                <div
-                  key={heroState.heroId}
-                  onClick={() => selectHero(heroState.heroId)}
-                  className="bg-gray-700 rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-600 hover:ring-2 hover:ring-blue-400 transition-all"
-                  title="Click to add to order"
-                >
-                  <img
-                    src={`img/eroi/${heroState.hero?.portrait}`}
-                    alt={heroState.hero?.classe || 'Hero'}
-                    className="w-16 h-16 object-cover rounded-full mb-2 border-2 border-gray-500"
-                  />
-                  <span className="text-sm font-bold text-center">
-                    {heroState.hero?.classe}
-                  </span>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {availableHeroes.map((heroState) => {
+                const heroDef = heroState?.hero;
+                if (!heroDef) return null;
+
+                return (
+                  <div 
+                    key={`available-${heroState.heroId}`}
+                    onClick={() => selectHero(heroState.heroId)}
+                    className="bg-gray-700 rounded-lg p-4 flex flex-col items-center cursor-pointer hover:bg-gray-600 transition-colors border-2 border-transparent hover:border-green-500 group relative"
+                  >
+                    <img 
+                      src={`img/eroi/${heroDef.portrait}`} 
+                      alt={heroDef.classe}
+                      className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-gray-500 bg-gray-900"
+                    />
+                    <span className="text-sm font-semibold uppercase tracking-wider">{heroDef.classe}</span>
+                    <div className="absolute inset-0 bg-green-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white font-bold bg-green-600 px-2 py-1 rounded text-xs">Select</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <p className="text-gray-500 italic text-center py-4">All heroes assigned.</p>
+            <div className="bg-gray-900/30 rounded-lg p-8 flex items-center justify-center border border-gray-700">
+              <span className="text-gray-400 italic">All heroes assigned.</span>
+            </div>
           )}
         </div>
 
         <button
-          onClick={isConfirmEnabled ? confirm : undefined}
+          onClick={confirm}
           disabled={!isConfirmEnabled}
-          className={`w-full py-3 rounded font-bold text-lg transition-colors ${
-            isConfirmEnabled
-              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg'
+          className={`w-full py-4 rounded-lg font-bold text-lg uppercase tracking-wider transition-all duration-200 ${
+            isConfirmEnabled 
+              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/25 cursor-pointer' 
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           }`}
         >
           Confirm Order
         </button>
+
       </div>
     </div>
   );

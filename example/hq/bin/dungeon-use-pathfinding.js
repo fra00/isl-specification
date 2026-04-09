@@ -14,14 +14,15 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
     const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
     const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
 
+    const { isValidDestination, isWalkable } = movementRules;
+
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
+        if (!isValidDestination(targetX, targetY, excludeEntityId)) {
             return [];
         }
 
         const queue = [{ x: startX, y: startY, path: [] }];
-        const visited = new Set();
-        visited.add(`${startX},${startY}`);
+        const visited = new Set([`${startX},${startY}`]);
 
         const directions = [
             { dx: 0, dy: -1 }, // Up
@@ -47,7 +48,7 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
                 const neighborKey = `${neighborX},${neighborY}`;
 
                 if (!visited.has(neighborKey)) {
-                    if (movementRules.isWalkable(current.x, current.y, neighborX, neighborY, excludeEntityId)) {
+                    if (isWalkable(current.x, current.y, neighborX, neighborY, excludeEntityId)) {
                         visited.add(neighborKey);
                         queue.push({
                             x: neighborX,
@@ -60,7 +61,7 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
         }
 
         return [];
-    }, [movementRules]);
+    }, [isValidDestination, isWalkable]);
 
     return {
         calculatePath

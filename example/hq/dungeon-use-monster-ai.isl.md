@@ -12,6 +12,13 @@
 > **Reference**: @useCombatLogic in `./dungeon-use-combat.isl.md`
 > **Reference**: @useHeroStats in `./dungeon-use-hero-stats.isl.md`
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component owns monster-turn orchestration while delegating all persistent `@GameSession` mutations to the dungeon session boundary.
 
 ## Component: useMonsterAI
 
@@ -21,16 +28,17 @@
 
 - `gameSession`: @GameSession
 - `visibilityMap`: @VisibilityMap
-- `onUpdateSession`: (session: @GameSession) -> void
 - `onNotify`: (message: String) -> void
 - `pathfinding`: @usePathfinding
 - `combatLogic`: @useCombatLogic
 - `heroStatsLogic`: @useHeroStats
+- `sessionManager`: @useDungeonSessionManager
 
 ### ⚡ Capabilities
 
 #### internal State
 
+- **Contract**: Tracks whether the master phase is currently executing so monster turns cannot overlap.
 - `isMonsterTurnInProgress`: Boolean (Default: false)
 
 #### runMonsterTurn
@@ -48,9 +56,8 @@
         - Trigger `onNotify(monster.monster.nome + " sta dormendo e salta il turno.")`.
         - CONTINUE to next monster.
       - IF `monster.activeStatus` contains "Tempest":
-        - Remove "Tempest" from `monster.activeStatus`.
+        - Call `sessionManager.updateMonsterState(monster.id, null, null, ["Tempest"])`.
         - Trigger `onNotify(monster.monster.nome + " è bloccato dalla tempesta e salta il turno!")`.
-        - Trigger `onUpdateSession`.
         - CONTINUE to next monster.
       - **Targeting**: Find the nearest `hero` in `gameSession.heroes` that is NOT under fog (revealed area) using `findNearestHero`.
       - IF no visible hero is found, CONTINUE to next monster.
@@ -75,9 +82,11 @@
         - Let `movPoints` = `monster.monster.movimento`.
         - IF `monster.activeStatus` contains "Entangled":
           - Set `movPoints` to 1.
-          - Remove "Entangled" from `monster.activeStatus`.
           - Trigger `onNotify(monster.monster.nome + " è intralciato e si muove a fatica.")`.
         - Let `reachablePath` = first N cells of filtered path (where N is `movPoints`).
+        - Initialize `statusesToRemove` as an empty list.
+        - IF `monster.activeStatus` contains "Entangled":
+          - Add "Entangled" to `statusesToRemove`.
         - Initialize `targetCell` to null.
         - **Occupancy Check**: Iterate `reachablePath` from end to start:
           - Check if cell (x, y) is occupied by any hero or ANY OTHER monster (excluding current `monster`) in `gameSession`.
@@ -85,30 +94,24 @@
             - Set `targetCell` to this cell.
             - BREAK loop.
         - IF `targetCell` is NOT null AND `targetCell` is NOT current position:
-          - Update `monster.x`, `monster.y` to `targetCell.x`, `targetCell.y`.
-        - Trigger `onUpdateSession`.
+          - Call `sessionManager.updateMonsterState(monster.id, targetCell.x, targetCell.y, statusesToRemove)`.
+        - ELSE IF `monster.activeStatus` contains "Entangled":
+          - Call `sessionManager.updateMonsterState(monster.id, null, null, ["Entangled"])`.
         - Wait 400ms (allow movement animation).
     - **Combat**:
       - Check if `hero` is now adjacent (dist <= 1).
       - IF adjacent:
         - Let `heroStats` = `heroStatsLogic.calculateStats(hero)`.
         - Let `combatResult` = `combatLogic.resolveCombat(monster.monster.attacco, heroStats.difesa, true)`.
-        - Apply `combatResult.damageDealt` to `hero.currentBody`.
         - IF `combatResult.damageDealt` > 0 AND `hero.activeStatus` contains "RockSkin":
-          - Remove "RockSkin" from `hero.activeStatus`.
           - Trigger `onNotify("La pelle di pietra di " + hero.hero.classe + " si frantuma!")`.
         - Trigger `onNotify(monster.monster.nome + " attacca " + hero.hero.classe + "!")`.
-        - Set `gameSession.lastAttack` to {hero: hero, monster: monster, combatResult: combatResult}.
-        - IF `hero.currentBody` <= 0:
+        - Call `sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult)`.
+        - IF `hero.currentBody` - `combatResult.damageDealt` <= 0:
           - Trigger `onNotify(hero.hero.classe + " è caduto in battaglia!")`.
-        - Trigger `onUpdateSession`.
   - **End Phase**:
     - SET `isMonsterTurnInProgress` to false.
-    - Set `gameSession.currentTurn` to 1.
-    - For each hero in `gameSession.heroes`:
-      - Set `turnPhase.HasMoved` to `false`.
-      - Set `turnPhase.HasPerformedAction` to `false`.
-      - Set `turnPhase.IsTurnFinished` to `false`.
+    - Call `sessionManager.startNextHeroRound()`.
     - Trigger `onNotify("Nuovo Turno! Tocca agli eroi.")`.
 
 #### performInstantAttack
@@ -119,14 +122,11 @@
   - Trigger `onNotify("Il Mostro Errante (" + monster.monster.nome + ") attacca immediatamente!")`.
   - Let `heroStats` = `heroStatsLogic.calculateStats(hero)`.
   - Let `combatResult` = `combatLogic.resolveCombat(monster.monster.attacco, heroStats.difesa, true)`.
-  - Apply `combatResult.damageDealt` to `hero.currentBody`.
   - IF `combatResult.damageDealt` > 0 AND `hero.activeStatus` contains "RockSkin":
-    - Remove "RockSkin" from `hero.activeStatus`.
     - Trigger `onNotify("La pelle di pietra di " + hero.hero.classe + " si frantuma!")`.
-  - Set `gameSession.lastAttack` to {hero: hero, monster: monster, combatResult: combatResult}.
-  - IF `hero.currentBody` <= 0:
+  - Call `sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult)`.
+  - IF `hero.currentBody` - `combatResult.damageDealt` <= 0:
     - Trigger `onNotify(hero.hero.classe + " è caduto sotto i colpi del Mostro Errante!")`.
-  - Trigger `onUpdateSession`.
   - Wait 1000ms (to let the player see the result).
 
 #### findNearestHero

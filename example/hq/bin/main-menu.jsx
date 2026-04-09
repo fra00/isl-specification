@@ -6,167 +6,163 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function MainMenu({ onChangePageView = () => {} }) {
+export default function MainMenu({ onChangePageView }) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hoveredImage, setHoveredImage] = useState(null);
-  const [hoveredItem, setHoveredItem] = useState(null);
+  const [hoverImage, setHoverImage] = useState(null);
 
-  // Generazione delle 80 particelle di pulviscolo all'inizializzazione
-  const dustParticles = useMemo(() => {
+  // Lazy initialization for particles to ensure they are generated only once on mount
+  const [particles] = useState(() => {
     return Array.from({ length: 80 }).map((_, i) => ({
       id: i,
-      size: Math.random() * 2 + 1, // Dimensione random 1-3px
-      left: Math.random() * 100, // Posizione X random 0-100%
-      duration: Math.random() * 10 + 15, // Durata random 15-25s
-      delay: -(Math.random() * 25), // Delay negativo per pre-caricamento
+      size: Math.random() * 2 + 1, // 1px to 3px
+      left: `${Math.random() * 100}%`,
+      duration: Math.random() * 10 + 15, // 15s to 25s
+      delay: -(Math.random() * 25), // Negative delay to start already on screen
+      drift: Math.random() * 40 - 20 // +/- 20px drift
     }));
-  }, []);
-
-  const menuItems = useMemo(() => [
-    { 
-      label: "GIOCA", 
-      destination: PageNavigationEnum.PLAY_GAME, 
-      image: "/img/main-menu/nuova.jpg" 
-    },
-    { 
-      label: "EDITOR", 
-      destination: PageNavigationEnum.EDITOR_GAME, 
-      image: "/img/main-menu/editor.jpg" 
-    }
-  ], []);
+  });
 
   const handleClick = useCallback((destination) => {
-    if (!isProcessing) {
-      setIsProcessing(true);
+    if (isProcessing) return;
+    setIsProcessing(true);
+    if (onChangePageView) {
       onChangePageView(destination);
-      setIsProcessing(false);
     }
+    setIsProcessing(false);
   }, [isProcessing, onChangePageView]);
 
-  const handleMouseEnter = useCallback((image, label) => {
-    setHoveredImage(image);
-    setHoveredItem(label);
+  const handleMouseEnter = useCallback((imagePath) => {
+    setHoverImage(imagePath);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    setHoveredImage(null);
-    setHoveredItem(null);
+    setHoverImage(null);
   }, []);
 
-  const customStyles = `
-    @keyframes respiro {
-      0% { transform: scale(1.0); }
-      100% { transform: scale(1.08); }
-    }
-    @keyframes derivaNebbia {
-      0% { background-position-x: 0%; }
-      100% { background-position-x: 100%; }
-    }
-    @keyframes floatY {
-      0% { top: 110%; opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { top: -10%; opacity: 0; }
-    }
-    @keyframes driftX {
-      0% { transform: translateX(-20px); }
-      100% { transform: translateX(20px); }
-    }
-    @keyframes baglioreVivo {
-      0%, 100% { opacity: 0.4; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.02); }
-    }
-  `;
-
   return (
-    <div className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-black">
-      <style>{customStyles}</style>
+    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
+      <style>
+        {`
+          @keyframes respiro {
+            0% { transform: scale(1.0); }
+            100% { transform: scale(1.08); }
+          }
+          @keyframes deriva-nebbia {
+            0% { background-position-x: 0%; }
+            100% { background-position-x: 100%; }
+          }
+          @keyframes bagliore-vivo {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+          }
+          @keyframes fluttuazione-pulviscolo {
+            0% { transform: translateY(110vh) translateX(0px); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateY(50vh) translateX(var(--drift)); }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) translateX(0px); opacity: 0; }
+          }
+          .menu-text {
+            font-family: fantasy;
+            font-weight: bold;
+            font-size: 4rem;
+            background: linear-gradient(to bottom, #FFD700 0%, #B8860B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 2px #2a2a2a;
+            filter: drop-shadow(4px 4px 2px rgba(0,0,0,1)) blur(4px);
+            transition: filter 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            letter-spacing: 0.1em;
+          }
+          .menu-text:hover {
+            filter: drop-shadow(4px 4px 2px rgba(0,0,0,1)) blur(0px);
+          }
+        `}
+      </style>
 
-      {/* BackgroundLayer - z-index 0 */}
+      {/* BackgroundLayer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div
+        <div 
           className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: 'url(/img/menusfondo.jpg)',
-            animation: 'respiro 30s ease-in-out infinite alternate'
-          }}
+          style={{ 
+            backgroundImage: "url('/img/menusfondo.jpg')",
+            animation: 'respiro 30s ease-in-out infinite alternate' 
+          }} 
         />
       </div>
 
-      {/* MouseOverImageLayer - z-index 2 */}
-      {hoveredImage && (
-        <img
-          src={hoveredImage}
-          alt="Menu Preview"
-          className="absolute top-0 right-0 h-[30%] w-auto opacity-80 z-[2] object-contain border-none transition-opacity duration-300"
-        />
+      {/* MouseOverImageLayer */}
+      {hoverImage && (
+        <div className="absolute top-0 right-0 h-[30%] w-auto z-[2] opacity-80 pointer-events-none">
+          <img 
+            src={hoverImage} 
+            alt="Menu Preview" 
+            className="h-full w-auto object-contain"
+          />
+        </div>
       )}
 
-      {/* MistOverlay - z-index 5 */}
-      <div
+      {/* MistOverlay */}
+      <div 
         className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"
         style={{
           backgroundImage: 'url(/img/mist.jpeg)',
           backgroundRepeat: 'repeat-x',
           backgroundSize: '200% 100%',
           filter: 'blur(5px)',
-          animation: 'derivaNebbia 60s linear infinite'
-        }}
+          animation: 'deriva-nebbia 60s linear infinite'
+        }} 
       />
 
-      {/* DustOverlay - z-index 8 */}
+      {/* DustOverlay */}
       <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen">
-        {dustParticles.map(p => (
-          <div
+        {particles.map(p => (
+          <div 
             key={p.id}
-            className="absolute rounded-full"
+            className="absolute rounded-full bg-[#FFD700]"
             style={{
               width: `${p.size}px`,
               height: `${p.size}px`,
-              backgroundColor: '#FFD700',
-              left: `${p.left}%`,
-              animation: `floatY ${p.duration}s linear infinite ${p.delay}s, driftX 4s ease-in-out infinite alternate ${p.delay}s`
-            }}
+              left: p.left,
+              '--drift': `${p.drift}px`,
+              animation: `fluttuazione-pulviscolo ${p.duration}s linear ${p.delay}s infinite`
+            }} 
           />
         ))}
       </div>
 
-      {/* CandleLightOverlay - z-index 10 */}
-      <div
+      {/* CandleLightOverlay */}
+      <div 
         className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"
         style={{
           background: 'radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)',
-          animation: 'baglioreVivo 4s ease-in-out infinite'
-        }}
+          animation: 'bagliore-vivo 4s ease-in-out infinite'
+        }} 
       />
 
-      {/* UIContent - z-index 20 */}
+      {/* UIContent */}
       <div className="relative z-[20] flex flex-col items-center gap-12">
-        {menuItems.map(item => (
-          <div
-            key={item.label}
-            onClick={() => handleClick(item.destination)}
-            onMouseEnter={() => handleMouseEnter(item.image, item.label)}
-            onMouseLeave={handleMouseLeave}
-            className="cursor-pointer select-none"
-            style={{
-              fontFamily: 'fantasy',
-              fontWeight: 'bold',
-              fontSize: '4rem',
-              background: 'linear-gradient(to bottom, #FFD700 0%, #B8860B 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              WebkitTextStroke: '2px #2a2a2a',
-              filter: `drop-shadow(4px 4px 2px rgba(0,0,0,1)) blur(${hoveredItem === item.label ? '0px' : '4px'})`,
-              transition: 'filter 0.4s ease-in-out'
-            }}
-          >
-            {item.label}
-          </div>
-        ))}
+        <div
+          className="menu-text"
+          onClick={() => handleClick(PageNavigationEnum.PLAY_GAME)}
+          onMouseEnter={() => handleMouseEnter('/img/main-menu/nuova.jpg')}
+          onMouseLeave={handleMouseLeave}
+        >
+          GIOCA
+        </div>
+        <div
+          className="menu-text"
+          onClick={() => handleClick(PageNavigationEnum.EDITOR_GAME)}
+          onMouseEnter={() => handleMouseEnter('/img/main-menu/editor.jpg')}
+          onMouseLeave={handleMouseLeave}
+        >
+          EDITOR
+        </div>
       </div>
     </div>
   );

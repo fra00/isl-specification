@@ -6,28 +6,27 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 
 export default function ShopInventory({
   items = [],
   selectedItemId = null,
   canBuy = false,
-  buyReason = '',
+  buyReason = "",
   onSelect = () => {},
   onBuy = () => {},
   onEnterDungeon = () => {},
   onExit = () => {}
 }) {
   const selectedItem = useMemo(() => {
-    if (selectedItemId == null) return null;
-    return items.find(i => i.id === selectedItemId) || null;
+    if (!items || !Array.isArray(items)) return null;
+    return items.find(i => i?.id === selectedItemId) || null;
   }, [items, selectedItemId]);
 
   const handleItemClick = useCallback((id) => {
-    const item = items.find(i => i.id === id);
-    if (item == null) {
-      return;
-    }
+    if (!items || !Array.isArray(items)) return;
+    const itemExists = items.find(i => i?.id === id);
+    if (itemExists == null) return;
     onSelect(id);
   }, [items, onSelect]);
 
@@ -46,94 +45,84 @@ export default function ShopInventory({
   }, [onExit]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-stone-900 text-stone-200 p-4 rounded-lg shadow-xl font-sans">
-      <div className="flex flex-1 overflow-hidden gap-6 mb-6">
-        
+    <div className="flex flex-col h-full w-full bg-slate-900 text-slate-100 p-4 gap-4 rounded-lg shadow-xl">
+      <div className="flex flex-col md:flex-row flex-1 gap-4 min-h-0">
         {/* Item List */}
-        <div className="flex-1 overflow-y-auto bg-stone-800 rounded-md border border-stone-700 p-2 custom-scrollbar">
-          {items.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-stone-500 italic">
-              Nessun oggetto disponibile nel negozio.
-            </div>
+        <div className="flex-1 overflow-y-auto border border-slate-700 rounded-lg p-2 bg-slate-800/50">
+          {items && items.length > 0 ? (
+            items.map((item) => (
+              <div
+                key={item?.id}
+                onClick={() => handleItemClick(item?.id)}
+                className={`flex justify-between items-center p-3 cursor-pointer rounded mb-2 transition-colors ${
+                  item?.id === selectedItemId
+                    ? 'bg-blue-600 shadow-md'
+                    : 'bg-slate-800 hover:bg-slate-700'
+                }`}
+              >
+                <span className="font-medium text-lg">{item?.nome || 'Oggetto Sconosciuto'}</span>
+                <span className="text-yellow-400 font-bold">{item?.prezzo || 0} GC</span>
+              </div>
+            ))
           ) : (
-            <ul className="space-y-2">
-              {items.map((item) => {
-                const isSelected = item.id === selectedItemId;
-                return (
-                  <li
-                    key={item.id}
-                    onClick={() => handleItemClick(item.id)}
-                    className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 ${
-                      isSelected 
-                        ? 'bg-amber-800 text-white border border-amber-500 shadow-md' 
-                        : 'bg-stone-700 hover:bg-stone-600 border border-transparent'
-                    }`}
-                  >
-                    <span className="font-semibold text-lg">{item.nome}</span>
-                    <span className="text-amber-400 font-bold">{item.prezzo} M.O.</span>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="p-4 text-center text-slate-500">Nessun oggetto disponibile</div>
           )}
         </div>
 
-        {/* Preview Card */}
-        <div className="w-1/3 min-w-[250px] bg-stone-800 rounded-md border border-stone-700 p-6 flex flex-col items-center justify-center relative">
+        {/* Preview Panel */}
+        <div className="w-full md:w-1/3 border border-slate-700 rounded-lg p-4 flex flex-col items-center justify-center bg-slate-800/80 min-h-[250px]">
           {selectedItem ? (
-            <div className="flex flex-col items-center text-center w-full h-full justify-start pt-4">
-              <div className="h-48 w-full flex items-center justify-center mb-6 bg-stone-900 rounded-md border border-stone-700 p-2 shadow-inner">
-                {selectedItem.immagine ? (
-                  <img 
-                    src={`/img/equip/${selectedItem.immagine}`} 
-                    alt={selectedItem.nome}
-                    className="max-w-full max-h-full object-contain drop-shadow-lg"
-                  />
-                ) : (
-                  <span className="text-stone-600 italic">Immagine non disponibile</span>
-                )}
-              </div>
-              <h3 className="text-2xl font-bold text-amber-500 mb-2">{selectedItem.nome}</h3>
-              <div className="text-lg text-stone-300 bg-stone-900 px-4 py-1 rounded-full border border-stone-700">
-                Prezzo: <span className="text-amber-400 font-bold">{selectedItem.prezzo} M.O.</span>
-              </div>
-            </div>
+            <>
+              {selectedItem.immagine ? (
+                <img
+                  src={`/img/equip/${selectedItem.immagine}`}
+                  alt={selectedItem.nome || 'Anteprima oggetto'}
+                  className="max-w-full max-h-48 object-contain mb-4 drop-shadow-lg"
+                />
+              ) : (
+                <div className="w-32 h-32 bg-slate-700 rounded mb-4 flex items-center justify-center text-slate-500">
+                  No Image
+                </div>
+              )}
+              <h3 className="text-xl font-bold text-center text-white mb-2">
+                {selectedItem.nome || 'Senza Nome'}
+              </h3>
+              <p className="text-yellow-400 font-bold text-lg">
+                {selectedItem.prezzo || 0} GC
+              </p>
+            </>
           ) : (
-            <div className="text-stone-500 text-center italic">
-              Seleziona un oggetto dall'elenco per visualizzarne i dettagli.
-            </div>
+            <span className="text-slate-400 text-center">Seleziona un oggetto per visualizzare i dettagli</span>
           )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center pt-4 border-t border-stone-700">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t border-slate-700">
         <button
-          onClick={handleExitClick}
-          className="px-6 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded-md font-bold transition-colors shadow-md"
+          onClick={handleBuyClick}
+          disabled={!canBuy}
+          title={!canBuy ? buyReason : "Acquista oggetto selezionato"}
+          className={`px-8 py-3 rounded-lg font-bold text-lg transition-all ${
+            canBuy
+              ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-green-500/20'
+              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+          }`}
         >
-          Esci
+          Acquista
         </button>
-        
-        <div className="flex gap-4">
-          <button
-            onClick={handleBuyClick}
-            disabled={!canBuy || !selectedItem}
-            className={`px-8 py-3 rounded-md font-bold transition-all shadow-md ${
-              canBuy && selectedItem
-                ? 'bg-green-700 hover:bg-green-600 text-white cursor-pointer'
-                : 'bg-stone-700 text-stone-500 cursor-not-allowed'
-            }`}
-            title={(!canBuy && selectedItem) ? buyReason : ''}
-          >
-            Acquista
-          </button>
-          
+        <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={handleEnterDungeonClick}
-            className="px-8 py-3 bg-amber-700 hover:bg-amber-600 text-white rounded-md font-bold transition-colors shadow-md"
+            className="px-6 py-3 rounded-lg font-bold bg-red-700 hover:bg-red-600 text-white transition-colors shadow-lg hover:shadow-red-600/20"
           >
             Entra nel dungeon
+          </button>
+          <button
+            onClick={handleExitClick}
+            className="px-6 py-3 rounded-lg font-bold bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+          >
+            Esci
           </button>
         </div>
       </div>

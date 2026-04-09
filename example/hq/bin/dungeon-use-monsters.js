@@ -16,41 +16,45 @@ export function useDungeonMonsters({
   onNotify,
   monsterDefinitions
 }) {
-  // Use a ref to keep the session state accessible in stable callbacks and effects
-  // without triggering unnecessary re-renders or effect re-runs.
+  // Use refs to keep track of the latest state/callbacks without triggering re-renders or effect loops
   const sessionRef = useRef(gameSession);
+  const onUpdateSessionRef = useRef(onUpdateSession);
+  const onNotifyRef = useRef(onNotify);
+  const monsterDefsRef = useRef(monsterDefinitions);
 
   useEffect(() => {
     sessionRef.current = gameSession;
-  }, [gameSession]);
+    onUpdateSessionRef.current = onUpdateSession;
+    onNotifyRef.current = onNotify;
+    monsterDefsRef.current = monsterDefinitions;
+  }, [gameSession, onUpdateSession, onNotify, monsterDefinitions]);
 
-  // Capability: spawnMonsters
-  useEffect(() => {
+  const spawnMonsters = useCallback(() => {
     if (!visibilityMap || !visibilityMap.data) return;
-    
-    const session = sessionRef.current;
-    if (!session || !session.currentMap || !session.currentMap.grid) return;
 
+    const currentSession = sessionRef.current;
+    if (!currentSession || !currentSession.currentMap || !currentSession.currentMap.grid) return;
+
+    const spawnedLocations = currentSession.spawnedLocations || [];
     const newMonsters = [];
     const newSpawnedLocations = [];
-    const currentSpawned = session.spawnedLocations || [];
 
-    visibilityMap.data.forEach((visCell) => {
+    visibilityMap.data.forEach(visCell => {
       const locKey = `${visCell.x},${visCell.y}`;
       
-      if (visCell.fog === false && !currentSpawned.includes(locKey)) {
-        const mapCell = session.currentMap.grid.find(
-          (c) => c.x === visCell.x && c.y === visCell.y
+      if (visCell.fog === false && !spawnedLocations.includes(locKey) && !newSpawnedLocations.includes(locKey)) {
+        const mapCell = currentSession.currentMap.grid.find(
+          c => c.x === visCell.x && c.y === visCell.y
         );
 
-        if (mapCell && mapCell.mostab && mapCell.mostab.mos === true) {
-          const monsterDef = monsterDefinitions?.find(
-            (m) => m.id === mapCell.mostab.mosid
+        if (mapCell?.mostab?.mos === true) {
+          const monsterDef = monsterDefsRef.current?.find(
+            m => m.id === mapCell.mostab.mosid
           );
 
           if (monsterDef) {
             const newMonster = MonsterState({
-              id: Math.floor(Math.random() * 1000000),
+              id: Date.now() + Math.floor(Math.random() * 1000000),
               monster: monsterDef,
               x: visCell.x,
               y: visCell.y,
@@ -68,21 +72,22 @@ export function useDungeonMonsters({
 
     if (newMonsters.length > 0) {
       const updatedSession = GameSession({
-        ...session,
-        monsters: [...(session.monsters || []), ...newMonsters],
-        spawnedLocations: [...currentSpawned, ...newSpawnedLocations]
+        ...currentSession,
+        monsters: [...(currentSession.monsters || []), ...newMonsters],
+        spawnedLocations: [...spawnedLocations, ...newSpawnedLocations]
       });
-      
-      if (onUpdateSession) {
-        onUpdateSession(updatedSession);
-      }
+      onUpdateSessionRef.current?.(updatedSession);
     }
-  }, [visibilityMap, monsterDefinitions, onUpdateSession]);
+  }, [visibilityMap]);
 
-  // Capability: spawnWanderingMonster
+  // Trigger: When visibilityMap changes.
+  useEffect(() => {
+    spawnMonsters();
+  }, [visibilityMap, spawnMonsters]);
+
   const spawnWanderingMonster = useCallback((heroX, heroY) => {
-    const session = sessionRef.current;
-    if (!session || !session.currentMap || !session.currentMap.grid) return null;
+    const currentSession = sessionRef.current;
+    if (!currentSession || !currentSession.currentMap || !currentSession.currentMap.grid) return null;
 
     const directions = [
       { x: 0, y: -1 }, // Up
@@ -97,20 +102,16 @@ export function useDungeonMonsters({
       const targetX = heroX + dir.x;
       const targetY = heroY + dir.y;
 
-      const cell = session.currentMap.grid.find(
-        (c) => c.x === targetX && c.y === targetY
+      const cell = currentSession.currentMap.grid.find(
+        c => c.x === targetX && c.y === targetY
       );
 
       if (cell) {
-        const isWalkable = !cell.arnt?.antroc && !cell.arnt?.inv;
-        const isOccupiedByHero = session.heroes?.some(
-          (h) => h.x === targetX && h.y === targetY
-        );
-        const isOccupiedByMonster = session.monsters?.some(
-          (m) => m.x === targetX && m.y === targetY
-        );
+        const isRock = cell.arnt?.antroc === true;
+        const hasHero = currentSession.heroes?.some(h => h.x === targetX && h.y === targetY);
+        const hasMonster = currentSession.monsters?.some(m => m.x === targetX && m.y === targetY);
 
-        if (isWalkable && !isOccupiedByHero && !isOccupiedByMonster) {
+        if (!isRock && !hasHero && !hasMonster) {
           spawnCell = { x: targetX, y: targetY };
           break;
         }
@@ -118,43 +119,40 @@ export function useDungeonMonsters({
     }
 
     if (!spawnCell) {
-      if (onNotify) {
-        onNotify("Non c'è spazio per il mostro errante!");
-      }
+      onNotifyRef.current?.("Non c'è spazio per il mostro errante!");
       return null;
     }
 
-    // Default ID 1 (Orco) or fallback to the first available monster
-    let monsterDef = monsterDefinitions?.find((m) => m.id === 1);
-    if (!monsterDef && monsterDefinitions?.length > 0) {
-      monsterDef = monsterDefinitions[0];
+    const defs = monsterDefsRef.current || [];
+    let selectedDef = defs.find(m => m.id === 1);
+    if (!selectedDef && defs.length > 0) {
+      selectedDef = defs[0];
     }
 
-    if (!monsterDef) return null;
+    if (!selectedDef) return null;
 
     const newMonster = MonsterState({
-      id: Math.floor(Math.random() * 1000000),
-      monster: monsterDef,
+      id: Date.now() + Math.floor(Math.random() * 1000000),
+      monster: selectedDef,
       x: spawnCell.x,
       y: spawnCell.y,
-      currentBody: monsterDef.corpo,
-      currentMind: monsterDef.mente,
+      currentBody: selectedDef.corpo,
+      currentMind: selectedDef.mente,
       activeStatus: []
     });
 
     const updatedSession = GameSession({
-      ...session,
-      monsters: [...(session.monsters || []), newMonster]
+      ...currentSession,
+      monsters: [...(currentSession.monsters || []), newMonster]
     });
 
-    if (onUpdateSession) {
-      onUpdateSession(updatedSession);
-    }
+    onUpdateSessionRef.current?.(updatedSession);
 
     return newMonster;
-  }, [monsterDefinitions, onNotify, onUpdateSession]);
+  }, []);
 
   return {
+    spawnMonsters,
     spawnWanderingMonster
   };
 }

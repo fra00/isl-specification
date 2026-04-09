@@ -6,33 +6,28 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 
-export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
-    const visibleFurniture = useCallback(() => {
+export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
+    const visibleFurniture = useMemo(() => {
         if (!gameSession?.currentMap || !boardVisibilityMap) {
             return [];
         }
 
-        const visibleItems = [];
         const grid = gameSession.currentMap.grid || [];
         const visibilityData = boardVisibilityMap.data || [];
+        const visibleItems = [];
 
+        // Create a lookup map for faster visibility cell retrieval
         const visibilityLookup = new Map();
-        for (let i = 0; i < visibilityData.length; i++) {
-            const vCell = visibilityData[i];
-            if (vCell != null) {
-                visibilityLookup.set(`${vCell.x}_${vCell.y}`, vCell);
-            }
+        for (const vCell of visibilityData) {
+            visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
         }
 
-        for (let i = 0; i < grid.length; i++) {
-            const mapCell = grid[i];
-            if (!mapCell) continue;
+        for (const mapCell of grid) {
+            const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
 
-            const visCell = visibilityLookup.get(`${mapCell.x}_${mapCell.y}`);
-
-            if (visCell && visCell.fog === false) {
+            if (vCell && vCell.fog === false) {
                 if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
                     visibleItems.push({
                         x: mapCell.x,
@@ -55,4 +50,4 @@ export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
     return {
         visibleFurniture
     };
-}
+};

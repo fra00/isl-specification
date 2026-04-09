@@ -15,9 +15,7 @@ export default function DungeonNotification({ message, duration = 3000, onClose 
     }
 
     const timer = setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
+      onClose?.();
     }, duration);
 
     return () => {
@@ -30,7 +28,11 @@ export default function DungeonNotification({ message, duration = 3000, onClose 
   }
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-2xl animate-pulse">
+    <div 
+      className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-2xl text-center min-w-[250px]"
+      role="alert"
+      aria-live="assertive"
+    >
       {message}
     </div>
   );

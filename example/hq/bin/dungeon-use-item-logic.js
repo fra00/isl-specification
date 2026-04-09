@@ -8,87 +8,21 @@
 
 import { useCallback } from 'react';
 
-export const useItemLogic = ({ staticItems = [], onUpdateSession, onNotify }) => {
-  const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
-    if (!gameSession || !gameSession.heroes) return;
-
-    const heroIndex = gameSession.heroes.findIndex(h => h.heroId === heroId);
-    if (heroIndex === -1) return;
-
-    const itemDef = staticItems.find(i => i.id === itemId);
-    if (!itemDef) return;
-
-    const hero = gameSession.heroes[heroIndex];
-    const inventoryIndex = hero.inventory?.indexOf(itemId);
-    if (inventoryIndex == null || inventoryIndex === -1) return;
-
-    // Deep clone session for immutability
-    const newSession = {
-      ...gameSession,
-      heroes: [...gameSession.heroes],
-      monsters: [...(gameSession.monsters || [])]
-    };
-
-    const updatedHero = { 
-      ...hero, 
-      inventory: [...(hero.inventory || [])] 
-    };
-
-    // Apply Effects
-    if (itemDef.hp !== 0 && itemDef.hp != null) {
-      updatedHero.currentBody += itemDef.hp;
-      const maxBody = updatedHero.hero?.corpo || 0;
-      if (updatedHero.currentBody > maxBody) {
-        updatedHero.currentBody = maxBody;
-      }
-    }
-
-    if (itemDef.mp !== 0 && itemDef.mp != null) {
-      updatedHero.currentMind += itemDef.mp;
-      const maxMind = updatedHero.hero?.mente || 0;
-      if (updatedHero.currentMind > maxMind) {
-        updatedHero.currentMind = maxMind;
-      }
-    }
-
-    // Handle Special Items
-    if (itemDef.acqua) {
-      if (targetMonsterId !== null) {
-        const monsterIndex = newSession.monsters.findIndex(m => m.id === targetMonsterId);
-        if (monsterIndex !== -1) {
-          const targetMonster = newSession.monsters[monsterIndex];
-          if (targetMonster.monster?.nonmorto) {
-            const updatedMonster = { ...targetMonster };
-            const damage = itemDef.danni || 0;
-            
-            updatedMonster.currentBody -= damage;
-            onNotify?.(`L'Acqua Santa purifica il non-morto infliggendo ${damage} danni!`);
-            
-            if (updatedMonster.currentBody <= 0) {
-              newSession.monsters.splice(monsterIndex, 1);
-            } else {
-              newSession.monsters[monsterIndex] = updatedMonster;
-            }
-          } else {
-            onNotify?.("L'Acqua Santa non ha effetto su questa creatura.");
-          }
+export function useItemLogic({ staticItems = [], sessionManager }) {
+    
+    const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
+        if (gameSession == null) {
+            return false;
         }
-      } else {
-        onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-      }
-    }
 
-    // Inventory Management
-    updatedHero.inventory.splice(inventoryIndex, 1);
-    newSession.heroes[heroIndex] = updatedHero;
+        if (sessionManager == null || typeof sessionManager.useItem !== 'function') {
+            return false;
+        }
 
-    // Feedback
-    onNotify?.(`Hai usato ${itemDef.nome}!`);
+        return sessionManager.useItem(heroId, itemId, staticItems, targetMonsterId);
+    }, [sessionManager, staticItems]);
 
-    // Update
-    onUpdateSession?.(newSession);
-
-  }, [staticItems, onUpdateSession, onNotify]);
-
-  return { useItem };
-};
+    return {
+        useItem
+    };
+}

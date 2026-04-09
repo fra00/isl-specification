@@ -9,6 +9,13 @@
 
 > **Reference**: @HeroState, @GameSession in `./domain-session.isl.md`
 > **Reference**: @Equipment in `./domain-ruleset.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component validates equipment metadata and delegates persistent equip state changes to the dungeon session boundary.
 
 ## Component: useInventoryLogic
 
@@ -17,8 +24,7 @@
 **Signature**:
 
 - `staticEquipment`: List<@Equipment>
-- `onUpdateSession`: (session: @GameSession) -> void
-- `onNotify`: (message: String) -> void
+- `sessionManager`: @useDungeonSessionManager
 
 ### ⚡ Capabilities
 
@@ -35,33 +41,11 @@
 
 #### toggleEquipItem
 
-- **Contract**: Equips or unequips an item, handling validation and mutual exclusivity (noogg).
-- **Signature**: `(heroId: Integer, itemId: Integer, gameSession: @GameSession)`
+- **Contract**: Requests the dungeon session boundary to equip or unequip an item after the consumer provides the active `gameSession` context.
+- **Signature**: `(heroId: Integer, itemId: Integer, gameSession: @GameSession) -> Boolean`
 - **Flow**:
-  - Find `hero` in `gameSession.heroes` matching `heroId`.
-  - Find `item` in `staticEquipment` matching `itemId`.
-  - IF `item` is null:
-    - Trigger `onNotify('Oggetto non trovato.')`.
-    - RETURN.
-
-  - IF `hero.equipped` contains `itemId`:
-    - Remove `itemId` from `hero.equipped`.
-  - ELSE:
-    - **Step 1: Validate Class**:
-      - IF `isItemCompatibleWithHero(hero, item)` is false:
-        - Trigger `onNotify("La tua classe non può equipaggiare questo oggetto.")`.
-        - RETURN.
-    - **Step 2: Handle Incompatibilities (noogg)**:
-      - IF `item.noogg` > 0:
-        - Remove `item.noogg` from `hero.equipped` (if present).
-      - FOR EACH `equippedId` in `hero.equipped`:
-        - Find `equippedItem` in `staticEquipment`.
-        - IF `equippedItem.noogg` is EQUAL to `itemId`:
-          - Remove `equippedId` from `hero.equipped`.
-          - Trigger `onNotify("Hai rimosso " + equippedItem.nome + " perché incompatibile.")`.
-    - **Step 3: Add Item**:
-      - Add `itemId` to `hero.equipped`.
-  - Trigger `onUpdateSession` with updated `gameSession`.
+  - IF `gameSession` is null RETURN false.
+  - RETURN `sessionManager.toggleEquipItem(heroId, itemId, staticEquipment)`.
 
 ### ✅ Acceptance Criteria
 

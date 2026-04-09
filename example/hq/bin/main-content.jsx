@@ -27,15 +27,7 @@ export default function MainContent() {
 
     const bootstrap = async () => {
       try {
-        const [
-          monstersRes,
-          heroesRes,
-          boardDataRes,
-          equipmentRes,
-          itemsRes,
-          treasureDeckRes,
-          campaignRes
-        ] = await Promise.all([
+        const responses = await Promise.all([
           fetch('/jsonData/monsters.json'),
           fetch('/jsonData/heroes.json'),
           fetch('/jsonData/tabellone/default.json'),
@@ -45,31 +37,31 @@ export default function MainContent() {
           fetch('/jsonData/campagne.json')
         ]);
 
-        if (!monstersRes.ok) throw new Error(`Failed to fetch monsters: ${monstersRes.statusText}`);
-        if (!heroesRes.ok) throw new Error(`Failed to fetch heroes: ${heroesRes.statusText}`);
-        if (!boardDataRes.ok) throw new Error(`Failed to fetch board data: ${boardDataRes.statusText}`);
-        if (!equipmentRes.ok) throw new Error(`Failed to fetch equipment: ${equipmentRes.statusText}`);
-        if (!itemsRes.ok) throw new Error(`Failed to fetch items: ${itemsRes.statusText}`);
-        if (!treasureDeckRes.ok) throw new Error(`Failed to fetch treasure deck: ${treasureDeckRes.statusText}`);
-        if (!campaignRes.ok) throw new Error(`Failed to fetch campaign: ${campaignRes.statusText}`);
+        for (const res of responses) {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status} on ${res.url}`);
+          }
+        }
 
-        const monsters = await monstersRes.json();
-        const heroes = await heroesRes.json();
-        const boardData = await boardDataRes.json();
-        const equipment = await equipmentRes.json();
-        const items = await itemsRes.json();
-        const treasureDeck = await treasureDeckRes.json();
-        const campaign = await campaignRes.json();
+        const [
+          monsters,
+          heroes,
+          boardData,
+          equipment,
+          items,
+          treasureDeck,
+          campaign
+        ] = await Promise.all(responses.map(res => res.json()));
 
         if (isMounted) {
-          setGlobalMonsters(monsters);
-          setGlobalHeroes(heroes);
-          setGlobalBoardData(boardData);
-          setGlobalEquipment(equipment);
-          setGlobalItems(items);
-          setGlobalTreasureDeck(treasureDeck);
-          setGlobalCampaign(campaign);
-          setGlobalSpells(getAllSpells());
+          setGlobalMonsters(monsters || []);
+          setGlobalHeroes(heroes || []);
+          setGlobalBoardData(boardData || null);
+          setGlobalEquipment(equipment || []);
+          setGlobalItems(items || []);
+          setGlobalTreasureDeck(treasureDeck || []);
+          setGlobalCampaign(campaign || null);
+          setGlobalSpells(getAllSpells() || []);
           setIsAppReady(true);
         }
       } catch (err) {
@@ -86,34 +78,38 @@ export default function MainContent() {
     };
   }, []);
 
-  if (error) {
+  if (error != null) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p>Errore durante il caricamento degli asset: {error.message}</p>
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-red-500">
+          Errore durante il caricamento degli asset: {error.message}
+        </div>
       </div>
     );
   }
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p>Inizializzazione Sistema...</p>
+      <div className="w-full h-screen flex items-center justify-center">
+        <div>Inizializzazione Sistema...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-black">
-      <PageContent
-        monsters={globalMonsters}
-        heroes={globalHeroes}
-        boardData={globalBoardData}
-        equipment={globalEquipment}
-        items={globalItems}
-        spells={globalSpells}
-        treasureDeck={globalTreasureDeck}
-        campaign={globalCampaign}
-      />
+    <div className="w-full h-screen flex items-center justify-center">
+      {globalBoardData != null && globalCampaign != null && (
+        <PageContent
+          monsters={globalMonsters}
+          heroes={globalHeroes}
+          boardData={globalBoardData}
+          equipment={globalEquipment}
+          items={globalItems}
+          spells={globalSpells}
+          treasureDeck={globalTreasureDeck}
+          campaign={globalCampaign}
+        />
+      )}
     </div>
   );
 }

@@ -6,24 +6,34 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
+import React, { useCallback } from "react";
+import { PageNavigationEnum } from "./domain-core";
 
-export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
-  const handleInteraction = useCallback((action) => {
-    if (!onChangePageView) return;
-    
-    if (action === 'ENTER') {
-      onChangePageView(PageNavigationEnum.DUNGEON);
-    } else if (action === 'SHOP') {
-      onChangePageView(PageNavigationEnum.SHOP);
-    } else if (action === 'BACK') {
-      onChangePageView(PageNavigationEnum.PLAY_GAME);
-    }
-  }, [onChangePageView]);
+export default function DungeonDescription({
+  gameSession,
+  onChangePageView,
+  onUpdateSession,
+}) {
+  const handleInteraction = useCallback(
+    (action) => {
+      if (!onChangePageView) return;
 
-  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
-  const missionTitle = gameSession?.currentMap?.header?.titolo || "Briefing della Missione";
+      if (action === "ENTER") {
+        onChangePageView(PageNavigationEnum.DUNGEON);
+      } else if (action === "SHOP") {
+        onChangePageView(PageNavigationEnum.SHOP);
+      } else if (action === "BACK") {
+        onChangePageView(PageNavigationEnum.PLAY_GAME);
+      }
+    },
+    [onChangePageView],
+  );
+
+  const description =
+    gameSession?.currentMap?.header?.descrizione ||
+    "Nessuna descrizione disponibile per questa missione.";
+  const missionTitle =
+    gameSession?.currentMap?.header?.titolo || "Briefing della Missione";
 
   return (
     <div className="dungeon-description-root relative h-full min-h-0 w-full overflow-hidden bg-black text-[#eadfc8]">
@@ -95,7 +105,8 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
       <div
         className="absolute inset-0 mix-blend-screen pointer-events-none"
         style={{
-          background: "radial-gradient(circle at 50% 20%, rgba(214, 179, 106, 0.12) 0%, transparent 28%), radial-gradient(circle at 50% 72%, rgba(174, 84, 31, 0.15) 0%, transparent 24%)",
+          background:
+            "radial-gradient(circle at 50% 20%, rgba(214, 179, 106, 0.12) 0%, transparent 28%), radial-gradient(circle at 50% 72%, rgba(174, 84, 31, 0.15) 0%, transparent 24%)",
           animation: "dungeon-brief-glow 5s ease-in-out infinite",
         }}
       />
@@ -109,7 +120,8 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
             {missionTitle}
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-[#cebfa3]">
-            Leggi il briefing, prepara gli eroi e scegli se entrare subito nel dungeon o passare prima dall'armeria.
+            Leggi il briefing, prepara gli eroi e scegli se entrare subito nel
+            dungeon o passare prima dall'armeria.
           </p>
         </div>
 
@@ -126,21 +138,21 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
 
           <div className="mt-4 grid gap-3 border-t border-[rgba(153,117,77,0.25)] pt-4 sm:grid-cols-3">
             <button
-              onClick={() => handleInteraction('ENTER')}
+              onClick={() => handleInteraction("ENTER")}
               className="rounded-2xl border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition hover:brightness-110"
             >
               Entra nel dungeon
             </button>
 
             <button
-              onClick={() => handleInteraction('SHOP')}
+              onClick={() => handleInteraction("SHOP")}
               className="rounded-2xl border border-[rgba(126,78,60,0.5)] bg-[rgba(32,20,18,0.82)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#e3d4bb] transition hover:border-[rgba(214,179,106,0.34)] hover:text-[#f0e2c8]"
             >
               Armeria
             </button>
 
             <button
-              onClick={() => handleInteraction('BACK')}
+              onClick={() => handleInteraction("BACK")}
               className="rounded-2xl border border-[rgba(109,88,72,0.5)] bg-[rgba(17,12,12,0.82)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#d5c3a7] transition hover:border-[rgba(214,179,106,0.28)] hover:text-[#f0e2c8]"
             >
               Indietro

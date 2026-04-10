@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from "react";
 
 export default function ShopInventory({
   items = [],
@@ -16,19 +16,22 @@ export default function ShopInventory({
   onSelect = () => {},
   onBuy = () => {},
   onEnterDungeon = () => {},
-  onExit = () => {}
+  onExit = () => {},
 }) {
   const selectedItem = useMemo(() => {
     if (!items || !Array.isArray(items)) return null;
-    return items.find(i => i?.id === selectedItemId) || null;
+    return items.find((i) => i?.id === selectedItemId) || null;
   }, [items, selectedItemId]);
 
-  const handleItemClick = useCallback((id) => {
-    if (!items || !Array.isArray(items)) return;
-    const itemExists = items.find(i => i?.id === id);
-    if (itemExists == null) return;
-    onSelect(id);
-  }, [items, onSelect]);
+  const handleItemClick = useCallback(
+    (id) => {
+      if (!items || !Array.isArray(items)) return;
+      const itemExists = items.find((i) => i?.id === id);
+      if (itemExists == null) return;
+      onSelect(id);
+    },
+    [items, onSelect],
+  );
 
   const handleBuyClick = useCallback(() => {
     if (canBuy) {
@@ -58,26 +61,32 @@ export default function ShopInventory({
             Equipaggiamenti Disponibili
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
-          {items && items.length > 0 ? (
-            items.map((item) => (
-              <div
-                key={item?.id}
-                onClick={() => handleItemClick(item?.id)}
-                title={item?.disabled ? item?.reason : item?.nome}
-                className={`mb-2 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all ${
-                  item?.id === selectedItemId
-                    ? 'border-[rgba(214,179,106,0.52)] bg-[rgba(79,53,26,0.82)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]'
-                    : 'border-[rgba(126,78,60,0.26)] bg-[rgba(16,10,10,0.64)] hover:border-[rgba(214,179,106,0.34)] hover:bg-[rgba(35,22,18,0.74)]'
-                }`}
-                style={{ opacity: item?.disabled ? 0.52 : 1 }}
-              >
-                <span className="font-medium text-lg text-[#f0e2c8]">{item?.nome || 'Oggetto Sconosciuto'}</span>
-                <span className="font-bold text-[#e6c27a]">{item?.prezzo || 0} GC</span>
+            {items && items.length > 0 ? (
+              items.map((item) => (
+                <div
+                  key={item?.id}
+                  onClick={() => handleItemClick(item?.id)}
+                  title={item?.disabled ? item?.reason : item?.nome}
+                  className={`mb-2 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all ${
+                    item?.id === selectedItemId
+                      ? "border-[rgba(214,179,106,0.52)] bg-[rgba(79,53,26,0.82)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]"
+                      : "border-[rgba(126,78,60,0.26)] bg-[rgba(16,10,10,0.64)] hover:border-[rgba(214,179,106,0.34)] hover:bg-[rgba(35,22,18,0.74)]"
+                  }`}
+                  style={{ opacity: item?.disabled ? 0.52 : 1 }}
+                >
+                  <span className="font-medium text-lg text-[#f0e2c8]">
+                    {item?.nome || "Oggetto Sconosciuto"}
+                  </span>
+                  <span className="font-bold text-[#e6c27a]">
+                    {item?.prezzo || 0} GC
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-[#9f8e78]">
+                Nessun oggetto disponibile
               </div>
-            ))
-          ) : (
-            <div className="p-4 text-center text-[#9f8e78]">Nessun oggetto disponibile</div>
-          )}
+            )}
           </div>
         </div>
 
@@ -87,7 +96,7 @@ export default function ShopInventory({
               {selectedItem.immagine ? (
                 <img
                   src={`/img/equip/${selectedItem.immagine}`}
-                  alt={selectedItem.nome || 'Anteprima oggetto'}
+                  alt={selectedItem.nome || "Anteprima oggetto"}
                   className="mb-3 max-h-28 max-w-[140px] object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,0.45)] sm:max-h-32 sm:max-w-[160px]"
                 />
               ) : (
@@ -96,17 +105,23 @@ export default function ShopInventory({
                 </div>
               )}
               <h3 className="mb-2 text-lg font-bold text-[#f0e2c8] sm:text-xl">
-                {selectedItem.nome || 'Senza Nome'}
+                {selectedItem.nome || "Senza Nome"}
               </h3>
               <p className="text-base font-bold text-[#e6c27a] sm:text-lg">
                 {selectedItem.prezzo || 0} GC
               </p>
-              {selectedItem?.reason && !canBuy && selectedItem.id === selectedItemId ? (
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[#c98b6a]">{selectedItem.reason}</p>
+              {selectedItem?.reason &&
+              !canBuy &&
+              selectedItem.id === selectedItemId ? (
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#c98b6a]">
+                  {selectedItem.reason}
+                </p>
               ) : null}
             </>
           ) : (
-            <span className="text-center text-[#a69580]">Seleziona un oggetto per visualizzare i dettagli</span>
+            <span className="text-center text-[#a69580]">
+              Seleziona un oggetto per visualizzare i dettagli
+            </span>
           )}
         </div>
         <div className="flex flex-col justify-between gap-4 border-t border-[rgba(153,117,77,0.25)] pt-4 xl:border-t-0 xl:pt-0">
@@ -116,8 +131,8 @@ export default function ShopInventory({
             title={!canBuy ? buyReason : "Acquista oggetto selezionato"}
             className={`rounded-2xl px-8 py-3 text-lg font-bold uppercase tracking-[0.24em] transition-all ${
               canBuy
-                ? 'border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110'
-                : 'cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]'
+                ? "border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110"
+                : "cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]"
             }`}
           >
             Acquista

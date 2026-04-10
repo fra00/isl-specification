@@ -6,100 +6,114 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback } from "react";
 
 export default function HeroSummary({
-    heroes = [],
-    staticHeroes = [],
-    staticEquipment = [],
-    selectedIndex = 0,
-    onSelect
+  heroes = [],
+  staticHeroes = [],
+  staticEquipment = [],
+  selectedIndex = 0,
+  onSelect,
 }) {
-    if (!heroes || heroes.length === 0) {
-        return (
-            <div className="rounded-[1.25rem] border border-[rgba(126,78,60,0.35)] bg-[rgba(16,10,10,0.72)] p-4 text-center font-medium text-[#a9937a]">
-                No Heroes Available
-            </div>
-        );
-    }
-
-    const safeIndex = selectedIndex >= heroes.length ? 0 : selectedIndex;
-    const currentHeroState = heroes[safeIndex];
-    const currentStaticHero = staticHeroes.find(h => h?.id === currentHeroState?.heroId);
-
-    const handleSelect = useCallback((e) => {
-        if (onSelect) {
-            onSelect(Number(e.target.value));
-        }
-    }, [onSelect]);
-
+  if (!heroes || heroes.length === 0) {
     return (
-        <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden text-[#eadfc8]">
-            <div className="border-b border-[rgba(153,117,77,0.25)] pb-3">
-                <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
-                    Compagnia
-                </span>
-            </div>
-
-            <div className="flex flex-col gap-2">
-                <label htmlFor="hero-selector" className="text-xs font-bold uppercase tracking-[0.32em] text-[#b69876]">
-                    Eroe Attivo
-                </label>
-                <select
-                    id="hero-selector"
-                    value={safeIndex}
-                    onChange={handleSelect}
-                    className="cursor-pointer rounded-2xl border border-[rgba(214,179,106,0.28)] bg-[rgba(16,10,10,0.82)] px-4 py-3 text-[#f0e2c8] shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] focus:outline-none"
-                >
-                    {heroes.map((hState, idx) => {
-                        const sHero = staticHeroes.find(h => h?.id === hState?.heroId);
-                        return (
-                            <option key={`hero-option-${idx}`} value={idx}>
-                                {sHero?.classe || `Hero ${hState?.heroId}`}
-                            </option>
-                        );
-                    })}
-                </select>
-            </div>
-
-            {currentStaticHero?.portrait && (
-                <div className="flex w-full justify-center overflow-hidden rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
-                    <img
-                        src={`/img/eroi/${currentStaticHero.portrait}`}
-                        alt={currentStaticHero.classe || 'Hero Portrait'}
-                        className="h-auto max-h-48 max-w-[220px] object-cover drop-shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
-                    />
-                </div>
-            )}
-
-            <div className="rounded-[1rem] border border-[rgba(214,179,106,0.16)] bg-[rgba(0,0,0,0.18)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,222,173,0.03)]">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-[#ab8e6e]">
-                    Tesoro Disponibile
-                </div>
-                <span className="mt-1 block text-lg font-bold text-[#e6c27a]">
-                    {currentHeroState?.gold ?? 0} GC
-                </span>
-            </div>
-
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-                <h3 className="border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.32em] text-[#d8b16f]">
-                    Equipaggiamento
-                </h3>
-                {currentHeroState?.equipment && currentHeroState.equipment.length > 0 ? (
-                    <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pr-1 text-[#dbcdb4]">
-                        {currentHeroState.equipment.map((eqId, idx) => {
-                            const eq = staticEquipment.find(e => e?.id === eqId);
-                            return (
-                                <li key={`eq-${idx}`} className="rounded-xl border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.6)] px-4 py-3">
-                                    {eq?.nome || `Unknown Equipment (ID: ${eqId})`}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                ) : (
-                    <p className="text-sm italic text-[#9f8e78]">Nessun equipaggiamento posseduto.</p>
-                )}
-            </div>
-        </div>
+      <div className="rounded-[1.25rem] border border-[rgba(126,78,60,0.35)] bg-[rgba(16,10,10,0.72)] p-4 text-center font-medium text-[#a9937a]">
+        No Heroes Available
+      </div>
     );
+  }
+
+  const safeIndex = selectedIndex >= heroes.length ? 0 : selectedIndex;
+  const currentHeroState = heroes[safeIndex];
+  const currentStaticHero = staticHeroes.find(
+    (h) => h?.id === currentHeroState?.heroId,
+  );
+
+  const handleSelect = useCallback(
+    (e) => {
+      if (onSelect) {
+        onSelect(Number(e.target.value));
+      }
+    },
+    [onSelect],
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden text-[#eadfc8]">
+      <div className="border-b border-[rgba(153,117,77,0.25)] pb-3">
+        <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
+          Compagnia
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="hero-selector"
+          className="text-xs font-bold uppercase tracking-[0.32em] text-[#b69876]"
+        >
+          Eroe Attivo
+        </label>
+        <select
+          id="hero-selector"
+          value={safeIndex}
+          onChange={handleSelect}
+          className="cursor-pointer rounded-2xl border border-[rgba(214,179,106,0.28)] bg-[rgba(16,10,10,0.82)] px-4 py-3 text-[#f0e2c8] shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] focus:outline-none"
+        >
+          {heroes.map((hState, idx) => {
+            const sHero = staticHeroes.find((h) => h?.id === hState?.heroId);
+            return (
+              <option key={`hero-option-${idx}`} value={idx}>
+                {sHero?.classe || `Hero ${hState?.heroId}`}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {currentStaticHero?.portrait && (
+        <div className="flex w-full justify-center overflow-hidden rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
+          <img
+            src={`/img/eroi/${currentStaticHero.portrait}`}
+            alt={currentStaticHero.classe || "Hero Portrait"}
+            className="h-auto max-h-48 max-w-[220px] object-cover drop-shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
+          />
+        </div>
+      )}
+
+      <div className="rounded-[1rem] border border-[rgba(214,179,106,0.16)] bg-[rgba(0,0,0,0.18)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,222,173,0.03)]">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-[#ab8e6e]">
+          Tesoro Disponibile
+        </div>
+        <span className="mt-1 block text-lg font-bold text-[#e6c27a]">
+          {currentHeroState?.gold ?? 0} GC
+        </span>
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        <h3 className="border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.32em] text-[#d8b16f]">
+          Equipaggiamento
+        </h3>
+        {currentHeroState?.equipment &&
+        currentHeroState.equipment.length > 0 ? (
+          <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pr-1 text-[#dbcdb4]">
+            {currentHeroState.equipment.map((eqId, idx) => {
+              const eq = staticEquipment.find((e) => e?.id === eqId);
+              return (
+                <li
+                  key={`eq-${idx}`}
+                  className="rounded-xl border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.6)] px-4 py-3"
+                >
+                  {eq?.nome || `Unknown Equipment (ID: ${eqId})`}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-sm italic text-[#9f8e78]">
+            Nessun equipaggiamento posseduto.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }

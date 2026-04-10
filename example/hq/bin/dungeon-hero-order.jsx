@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 
 export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
   const [selectedOrder, setSelectedOrder] = useState([]);
@@ -17,36 +17,40 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
     setAvailableHeroes([...heroes]);
   }, [heroes]);
 
-  const selectHero = useCallback((heroId) => {
-    setSelectedOrder((prevOrder) => {
-      if (!prevOrder.includes(heroId) && prevOrder.length < heroes.length) {
-        return [...prevOrder, heroId];
-      }
-      return prevOrder;
-    });
-    
-    setAvailableHeroes((prevAvailable) => 
-      prevAvailable.filter((h) => h.heroId !== heroId)
-    );
-  }, [heroes.length]);
+  const selectHero = useCallback(
+    (heroId) => {
+      setSelectedOrder((prevOrder) => {
+        if (!prevOrder.includes(heroId) && prevOrder.length < heroes.length) {
+          return [...prevOrder, heroId];
+        }
+        return prevOrder;
+      });
 
-  const removeHero = useCallback((heroId) => {
-    setSelectedOrder((prevOrder) => 
-      prevOrder.filter((id) => id !== heroId)
-    );
-    
-    setAvailableHeroes((prevAvailable) => {
-      if (prevAvailable.some((h) => h.heroId === heroId)) {
-        return prevAvailable;
-      }
-      const heroToAdd = heroes.find((h) => h.heroId === heroId);
-      if (!heroToAdd) {
-        return prevAvailable;
-      }
-      const newAvailable = [...prevAvailable, heroToAdd];
-      return newAvailable.sort((a, b) => a.heroId - b.heroId);
-    });
-  }, [heroes]);
+      setAvailableHeroes((prevAvailable) =>
+        prevAvailable.filter((h) => h.heroId !== heroId),
+      );
+    },
+    [heroes.length],
+  );
+
+  const removeHero = useCallback(
+    (heroId) => {
+      setSelectedOrder((prevOrder) => prevOrder.filter((id) => id !== heroId));
+
+      setAvailableHeroes((prevAvailable) => {
+        if (prevAvailable.some((h) => h.heroId === heroId)) {
+          return prevAvailable;
+        }
+        const heroToAdd = heroes.find((h) => h.heroId === heroId);
+        if (!heroToAdd) {
+          return prevAvailable;
+        }
+        const newAvailable = [...prevAvailable, heroToAdd];
+        return newAvailable.sort((a, b) => a.heroId - b.heroId);
+      });
+    },
+    [heroes],
+  );
 
   const confirm = useCallback(() => {
     if (selectedOrder.length === heroes.length && onConfirmOrder) {
@@ -54,7 +58,8 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
     }
   }, [selectedOrder, heroes.length, onConfirmOrder]);
 
-  const isConfirmEnabled = selectedOrder.length === heroes.length && heroes.length > 0;
+  const isConfirmEnabled =
+    selectedOrder.length === heroes.length && heroes.length > 0;
 
   return (
     <div className="hero-order-root fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/85 p-4 text-[#eadfc8]">
@@ -103,90 +108,116 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
 
       <div className="hero-order-panel relative flex h-full max-h-[min(860px,100%)] w-full max-w-6xl min-h-0 flex-col overflow-hidden rounded-[1.75rem] p-5 sm:p-6 lg:p-8">
         <div className="mb-5 shrink-0 text-center">
-          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">Ordine di Turno</span>
-          <h2 className="hero-order-title mt-2 text-3xl sm:text-4xl">Scegli l'Ordine degli Eroi</h2>
-          <p className="mt-3 text-sm leading-6 text-[#c8baa0]">Clicca gli eroi disponibili per assegnare l'iniziativa. Clicca uno slot occupato per rimuoverlo e cambiare l'ordine.</p>
+          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">
+            Ordine di Turno
+          </span>
+          <h2 className="hero-order-title mt-2 text-3xl sm:text-4xl">
+            Scegli l'Ordine degli Eroi
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-[#c8baa0]">
+            Clicca gli eroi disponibili per assegnare l'iniziativa. Clicca uno
+            slot occupato per rimuoverlo e cambiare l'ordine.
+          </p>
         </div>
 
         <div className="grid min-h-0 flex-1 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
-            <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">Ordine Attuale</h3>
+            <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">
+              Ordine Attuale
+            </h3>
             <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden pr-1 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: heroes.length }).map((_, index) => {
-              const heroId = selectedOrder[index];
-              const heroState = heroId != null ? heroes.find(h => h.heroId === heroId) : null;
-              const heroDef = heroState?.hero;
+              {Array.from({ length: heroes.length }).map((_, index) => {
+                const heroId = selectedOrder[index];
+                const heroState =
+                  heroId != null
+                    ? heroes.find((h) => h.heroId === heroId)
+                    : null;
+                const heroDef = heroState?.hero;
 
-              if (heroState && heroDef) {
+                if (heroState && heroDef) {
+                  return (
+                    <div
+                      key={`selected-${heroId}`}
+                      onClick={() => removeHero(heroId)}
+                      className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(214,179,106,0.3)] bg-[rgba(32,20,18,0.78)] p-4 transition-all hover:border-[rgba(201,94,74,0.55)] hover:bg-[rgba(45,25,22,0.86)]"
+                    >
+                      <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-sm font-bold text-[#f7ecd8] shadow-md">
+                        {index + 1}
+                      </div>
+                      <img
+                        src={`img/eroi/${heroDef.portrait}`}
+                        alt={heroDef.classe}
+                        className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
+                      />
+                      <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">
+                        {heroDef.classe}
+                      </span>
+                      <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(152,48,36,0.18)] opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="rounded-full bg-[rgba(128,36,28,0.92)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">
+                          Rimuovi
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div 
-                    key={`selected-${heroId}`}
-                    onClick={() => removeHero(heroId)}
-                    className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(214,179,106,0.3)] bg-[rgba(32,20,18,0.78)] p-4 transition-all hover:border-[rgba(201,94,74,0.55)] hover:bg-[rgba(45,25,22,0.86)]"
+                  <div
+                    key={`empty-${index}`}
+                    className="relative flex h-[188px] flex-col items-center justify-center rounded-[1.15rem] border-2 border-dashed border-[rgba(112,88,63,0.45)] bg-[rgba(12,8,8,0.45)] p-4"
                   >
-                    <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-sm font-bold text-[#f7ecd8] shadow-md">
+                    <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[rgba(45,33,28,0.94)] font-bold text-[#8e7f71]">
                       {index + 1}
                     </div>
-                    <img 
-                      src={`img/eroi/${heroDef.portrait}`} 
-                      alt={heroDef.classe}
-                      className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
-                    />
-                    <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">{heroDef.classe}</span>
-                    <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(152,48,36,0.18)] opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="rounded-full bg-[rgba(128,36,28,0.92)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">Rimuovi</span>
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <div 
-                  key={`empty-${index}`}
-                  className="relative flex h-[188px] flex-col items-center justify-center rounded-[1.15rem] border-2 border-dashed border-[rgba(112,88,63,0.45)] bg-[rgba(12,8,8,0.45)] p-4"
-                >
-                  <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[rgba(45,33,28,0.94)] font-bold text-[#8e7f71]">
-                    {index + 1}
-                  </div>
-                  <span className="text-sm uppercase tracking-[0.2em] text-[#7f7267]">Slot Vuoto</span>
-                </div>
-              );
-            })}
-            </div>
-          </div>
-
-          <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
-          <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">Eroi Disponibili</h3>
-          {availableHeroes.length > 0 ? (
-            <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden pr-1 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              {availableHeroes.map((heroState) => {
-                const heroDef = heroState?.hero;
-                if (!heroDef) return null;
-
-                return (
-                  <div 
-                    key={`available-${heroState.heroId}`}
-                    onClick={() => selectHero(heroState.heroId)}
-                    className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.64)] p-4 transition-all hover:border-[rgba(214,179,106,0.42)] hover:bg-[rgba(35,22,18,0.74)]"
-                  >
-                    <img 
-                      src={`img/eroi/${heroDef.portrait}`} 
-                      alt={heroDef.classe}
-                      className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
-                    />
-                    <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">{heroDef.classe}</span>
-                    <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(102,84,34,0.2)] opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="rounded-full bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#f7ecd8]">Seleziona</span>
-                    </div>
+                    <span className="text-sm uppercase tracking-[0.2em] text-[#7f7267]">
+                      Slot Vuoto
+                    </span>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div className="flex items-center justify-center rounded-[1.15rem] border border-[rgba(112,88,63,0.34)] bg-[rgba(12,8,8,0.45)] p-8">
-              <span className="italic text-[#9f8e78]">Tutti gli eroi sono stati assegnati.</span>
-            </div>
-          )}
+          </div>
+
+          <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
+            <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">
+              Eroi Disponibili
+            </h3>
+            {availableHeroes.length > 0 ? (
+              <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden pr-1 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                {availableHeroes.map((heroState) => {
+                  const heroDef = heroState?.hero;
+                  if (!heroDef) return null;
+
+                  return (
+                    <div
+                      key={`available-${heroState.heroId}`}
+                      onClick={() => selectHero(heroState.heroId)}
+                      className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.64)] p-4 transition-all hover:border-[rgba(214,179,106,0.42)] hover:bg-[rgba(35,22,18,0.74)]"
+                    >
+                      <img
+                        src={`img/eroi/${heroDef.portrait}`}
+                        alt={heroDef.classe}
+                        className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
+                      />
+                      <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">
+                        {heroDef.classe}
+                      </span>
+                      <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(102,84,34,0.2)] opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="rounded-full bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#f7ecd8]">
+                          Seleziona
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center rounded-[1.15rem] border border-[rgba(112,88,63,0.34)] bg-[rgba(12,8,8,0.45)] p-8">
+                <span className="italic text-[#9f8e78]">
+                  Tutti gli eroi sono stati assegnati.
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -194,14 +225,13 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
           onClick={confirm}
           disabled={!isConfirmEnabled}
           className={`mt-5 w-full shrink-0 rounded-2xl py-4 text-lg font-bold uppercase tracking-[0.28em] transition-all duration-200 ${
-            isConfirmEnabled 
-              ? 'border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110 cursor-pointer' 
-              : 'cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]'
+            isConfirmEnabled
+              ? "border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110 cursor-pointer"
+              : "cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]"
           }`}
         >
           Conferma Ordine
         </button>
-
       </div>
     </div>
   );

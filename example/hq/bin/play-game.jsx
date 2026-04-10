@@ -140,11 +140,14 @@ export default function PlayGame({
 
   const missions = campaign.missioni || [];
   const selectedMission = missions[focusedMissionIndex] || missions[0] || null;
-  const selectedMissionOrder = (selectedMission?.ordine ?? ((selectedMission ? focusedMissionIndex : 0) + 1))
+  const selectedMissionOrder = (
+    selectedMission?.ordine ?? (selectedMission ? focusedMissionIndex : 0) + 1
+  )
     .toString()
     .padStart(2, "0");
   const selectedMissionLocked = focusedMissionIndex > maxUnlockedMissionIndex;
-  const selectedMissionCompleted = focusedMissionIndex < maxUnlockedMissionIndex;
+  const selectedMissionCompleted =
+    focusedMissionIndex < maxUnlockedMissionIndex;
   const selectedMissionStatusLabel = selectedMissionLocked
     ? "Sigillata"
     : selectedMissionCompleted
@@ -159,9 +162,7 @@ export default function PlayGame({
     ? "Le cripte restano chiuse. Completa le missioni precedenti per spezzare il sigillo e aprire questa mappa."
     : selectedMissionCompleted
       ? "Questa missione puo essere affrontata di nuovo. Il sentiero e noto, ma le tenebre di Morcar non restano mai innocue."
-      : "La prossima incursione e pronta. Raduna gli eroi, prepara l'equipaggiamento e scendi nel sotterraneo."
-    ;
-
+      : "La prossima incursione e pronta. Raduna gli eroi, prepara l'equipaggiamento e scendi nel sotterraneo.";
   return (
     <div className="campaign-scroll-root relative h-full min-h-0 w-full overflow-y-auto overflow-x-hidden bg-black text-[#efe3c2]">
       <style>
@@ -279,7 +280,8 @@ export default function PlayGame({
       <div
         className="absolute inset-0 mix-blend-screen pointer-events-none"
         style={{
-          background: "radial-gradient(circle at 52% 22%, rgba(214, 179, 106, 0.12) 0%, transparent 34%), radial-gradient(circle at 48% 70%, rgba(174, 84, 31, 0.16) 0%, transparent 28%)",
+          background:
+            "radial-gradient(circle at 52% 22%, rgba(214, 179, 106, 0.12) 0%, transparent 34%), radial-gradient(circle at 48% 70%, rgba(174, 84, 31, 0.16) 0%, transparent 28%)",
           animation: "campaign-candle-glow 5s ease-in-out infinite",
         }}
       />
@@ -293,7 +295,8 @@ export default function PlayGame({
             {campaign.nome_campagna}
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-[#cdbda3] sm:text-[15px]">
-            Scegli quale impresa affrontare e apri il sigillo della prossima discesa nei sotterranei di HeroQuest.
+            Scegli quale impresa affrontare e apri il sigillo della prossima
+            discesa nei sotterranei di HeroQuest.
           </p>
         </div>
 
@@ -305,7 +308,8 @@ export default function PlayGame({
                   Missioni
                 </h2>
                 <p className="mt-1 text-sm text-[#b8a489]">
-                  Le missioni disponibili brillano nel bronzo. Quelle sigillate restano soffocate dall'ombra.
+                  Le missioni disponibili brillano nel bronzo. Quelle sigillate
+                  restano soffocate dall'ombra.
                 </p>
               </div>
               <div className="rounded-full border border-[rgba(214,179,106,0.3)] bg-[rgba(0,0,0,0.28)] px-4 py-2 text-center text-[11px] uppercase tracking-[0.32em] text-[#ceb188]">
@@ -315,56 +319,64 @@ export default function PlayGame({
 
             <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1 lg:max-h-[calc(100vh-14rem)]">
               {missions.map((mission, index) => {
-          const isLocked = index > maxUnlockedMissionIndex;
-          const isCompleted = index < maxUnlockedMissionIndex;
-          const isAvailable = index === maxUnlockedMissionIndex;
+                const isLocked = index > maxUnlockedMissionIndex;
+                const isCompleted = index < maxUnlockedMissionIndex;
+                const isAvailable = index === maxUnlockedMissionIndex;
 
-          let statusBadgeClass = "border-[rgba(120,112,104,0.35)] bg-[rgba(26,23,23,0.7)] text-[#948574]";
-          let statusText = "Sigillata";
-          let titleTone = "text-[#8b8177]";
-          let cardVariant = "locked-mission cursor-not-allowed";
+                let statusBadgeClass =
+                  "border-[rgba(120,112,104,0.35)] bg-[rgba(26,23,23,0.7)] text-[#948574]";
+                let statusText = "Sigillata";
+                let titleTone = "text-[#8b8177]";
+                let cardVariant = "locked-mission cursor-not-allowed";
 
-          if (isCompleted) {
-            statusText = "Conquistata";
-            statusBadgeClass = "border-[rgba(112,150,87,0.4)] bg-[rgba(34,51,29,0.72)] text-[#b8c99e]";
-            titleTone = "text-[#e9dcc3]";
-            cardVariant = "completed-mission cursor-pointer";
-          } else if (isAvailable) {
-            statusText = "Pronta";
-            statusBadgeClass = "border-[rgba(214,179,106,0.45)] bg-[rgba(60,42,20,0.76)] text-[#e6c27a]";
-            titleTone = "text-[#f3e6cc]";
-            cardVariant = "cursor-pointer";
-          }
+                if (isCompleted) {
+                  statusText = "Conquistata";
+                  statusBadgeClass =
+                    "border-[rgba(112,150,87,0.4)] bg-[rgba(34,51,29,0.72)] text-[#b8c99e]";
+                  titleTone = "text-[#e9dcc3]";
+                  cardVariant = "completed-mission cursor-pointer";
+                } else if (isAvailable) {
+                  statusText = "Pronta";
+                  statusBadgeClass =
+                    "border-[rgba(214,179,106,0.45)] bg-[rgba(60,42,20,0.76)] text-[#e6c27a]";
+                  titleTone = "text-[#f3e6cc]";
+                  cardVariant = "cursor-pointer";
+                }
 
-          const isFocused = index === focusedMissionIndex;
+                const isFocused = index === focusedMissionIndex;
 
-          return (
-            <div
-              key={index}
-              className={`mission-card p-5 sm:p-6 ${cardVariant} ${isFocused ? "active-mission" : ""}`}
-              onClick={() => setFocusedMissionIndex(index)}
-            >
-              <div className="relative z-10 flex items-start justify-between gap-4">
-                <div className="flex min-w-0 flex-col gap-2">
-                  <span className="text-xs uppercase tracking-[0.35em] text-[#a9957d]">
-                    Missione {(mission.ordine ?? index + 1).toString().padStart(2, "0")}
-                  </span>
-                  <span className={`text-xl font-semibold tracking-[0.08em] sm:text-2xl ${titleTone}`}>
-                    {mission.titolo}
-                  </span>
-                  <span className="text-sm text-[#b9a992]">
-                    Archivio: {mission.file}
-                  </span>
-                </div>
-                <div
-                  className={`inline-flex min-w-[9.5rem] shrink-0 items-center justify-center self-center rounded-full border px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.32em] ${statusBadgeClass}`}
-                >
-                  {statusText}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                return (
+                  <div
+                    key={index}
+                    className={`mission-card p-5 sm:p-6 ${cardVariant} ${isFocused ? "active-mission" : ""}`}
+                    onClick={() => setFocusedMissionIndex(index)}
+                  >
+                    <div className="relative z-10 flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 flex-col gap-2">
+                        <span className="text-xs uppercase tracking-[0.35em] text-[#a9957d]">
+                          Missione{" "}
+                          {(mission.ordine ?? index + 1)
+                            .toString()
+                            .padStart(2, "0")}
+                        </span>
+                        <span
+                          className={`text-xl font-semibold tracking-[0.08em] sm:text-2xl ${titleTone}`}
+                        >
+                          {mission.titolo}
+                        </span>
+                        <span className="text-sm text-[#b9a992]">
+                          Archivio: {mission.file}
+                        </span>
+                      </div>
+                      <div
+                        className={`inline-flex min-w-[9.5rem] shrink-0 items-center justify-center self-center rounded-full border px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.32em] ${statusBadgeClass}`}
+                      >
+                        {statusText}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -379,7 +391,9 @@ export default function PlayGame({
               <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#f0e2c8] sm:text-[2rem]">
                 {selectedMission?.titolo || "Nessuna Missione"}
               </h2>
-              <div className={`mt-3 inline-flex w-fit items-center justify-center self-start rounded-full border border-[rgba(214,179,106,0.22)] bg-[rgba(0,0,0,0.22)] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.28em] ${selectedMissionStatusTone}`}>
+              <div
+                className={`mt-3 inline-flex w-fit items-center justify-center self-start rounded-full border border-[rgba(214,179,106,0.22)] bg-[rgba(0,0,0,0.22)] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.28em] ${selectedMissionStatusTone}`}
+              >
                 {selectedMissionStatusLabel}
               </div>
               <p className="mt-4 text-sm leading-6 text-[#cdbda3]">
@@ -387,19 +401,27 @@ export default function PlayGame({
               </p>
               <div className="mt-5 border-t border-[rgba(214,179,106,0.16)] pt-4 text-sm text-[#bca98b]">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="uppercase tracking-[0.3em] text-[#9f8365]">Stato</span>
-                  <span className={selectedMissionStatusTone}>{selectedMissionStatusLabel}</span>
+                  <span className="uppercase tracking-[0.3em] text-[#9f8365]">
+                    Stato
+                  </span>
+                  <span className={selectedMissionStatusTone}>
+                    {selectedMissionStatusLabel}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="mt-4 grid gap-3">
               <button
-                onClick={() => !selectedMissionLocked && selectMission(focusedMissionIndex)}
+                onClick={() =>
+                  !selectedMissionLocked && selectMission(focusedMissionIndex)
+                }
                 disabled={selectedMissionLocked || selectedMission == null}
                 className="rounded-2xl border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-6 py-4 text-sm font-bold uppercase tracking-[0.34em] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {selectedMissionCompleted ? "Rigioca Missione" : "Entra nel Sotterraneo"}
+                {selectedMissionCompleted
+                  ? "Rigioca Missione"
+                  : "Entra nel Sotterraneo"}
               </button>
 
               <button

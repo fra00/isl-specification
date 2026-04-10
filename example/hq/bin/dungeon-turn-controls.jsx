@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 export default function DungeonTurnControls({
   currentHero = null,
@@ -24,7 +24,7 @@ export default function DungeonTurnControls({
   onOpenMagic = () => {},
   onOpenInventory = () => {},
   onCancelTargeting = () => {},
-  onOpenDoor = () => {}
+  onOpenDoor = () => {},
 }) {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const positionRef = useRef(position);
@@ -41,7 +41,11 @@ export default function DungeonTurnControls({
       const saved = localStorage.getItem("dungeonTurnControlsPosition");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        if (
+          parsed &&
+          typeof parsed.x === "number" &&
+          typeof parsed.y === "number"
+        ) {
           setPosition(parsed);
         }
       }
@@ -55,10 +59,10 @@ export default function DungeonTurnControls({
   useEffect(() => {
     return () => {
       if (dragHandlersRef.current.move) {
-        window.removeEventListener('mousemove', dragHandlersRef.current.move);
+        window.removeEventListener("mousemove", dragHandlersRef.current.move);
       }
       if (dragHandlersRef.current.up) {
-        window.removeEventListener('mouseup', dragHandlersRef.current.up);
+        window.removeEventListener("mouseup", dragHandlersRef.current.up);
       }
     };
   }, []);
@@ -73,22 +77,25 @@ export default function DungeonTurnControls({
       const dy = moveEvent.clientY - startY;
       setPosition({
         x: startPos.x + dx,
-        y: startPos.y + dy
+        y: startPos.y + dy,
       });
     };
 
     const handleMouseUp = () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
       dragHandlersRef.current = { move: null, up: null };
-      
+
       // Save to LocalStorage on drag end
-      localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
+      localStorage.setItem(
+        "dungeonTurnControlsPosition",
+        JSON.stringify(positionRef.current),
+      );
     };
 
     dragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   }, []);
 
   // Derived state for UI
@@ -100,7 +107,8 @@ export default function DungeonTurnControls({
   const gold = currentHero?.gold ?? 0;
 
   const isMagicVisible = ["mago", "elfo"].includes(heroClass.toLowerCase());
-  const isMagicDisabled = turnPhase?.HasPerformedAction || isMoving || isTargeting;
+  const isMagicDisabled =
+    turnPhase?.HasPerformedAction || isMoving || isTargeting;
   const isRollDisabled = turnPhase?.HasMoved || movementPoints != null;
   const isSearchDisabled = turnPhase?.HasPerformedAction;
   const isOpenDoorVisible = canOpenDoor != null && canOpenDoor.found === true;
@@ -126,7 +134,7 @@ export default function DungeonTurnControls({
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Movement:</span>
-            <span className="font-semibold">{movementPoints ?? '-'}</span>
+            <span className="font-semibold">{movementPoints ?? "-"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Gold:</span>

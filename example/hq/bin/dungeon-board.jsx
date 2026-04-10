@@ -519,7 +519,7 @@ export default function DungeonBoard({
                   className={`max-w-[34px] max-h-[34px] w-full h-full object-contain ${opacityClass} ${statusClasses}`}
                 />
                 <div className="absolute -bottom-1 -right-1 min-w-[20px] h-[14px] px-1 rounded-full bg-black/85 border border-red-400 text-[9px] leading-[12px] font-bold text-red-200 text-center pointer-events-none">
-                  {(h.currentBody ?? 0)}/{maxBody}
+                  {h.currentBody ?? 0}/{maxBody}
                 </div>
               </div>
             );

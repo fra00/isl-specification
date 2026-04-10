@@ -45,7 +45,8 @@ Gli incantesimi possono applicare tag alla lista `activeStatus`:
 - **Sleep (Sonno)**: Il mostro salta il turno. Lo stato viene rimosso immediatamente se il mostro subisce danni da incantesimi (es. Palla di Fuoco) o attacchi fisici.
 - **Tempest (Tempesta)**: Il mostro salta il turno (rimozione stato in `useMonsterAI`). Se attaccato _prima_ di aver saltato il turno, la sua difesa è ridotta a 0 (gestito esplicitamente dal Genio in `useMagicLogic`).
 - **Entangled (Intralcio)**: Il mostro riduce il suo movimento a 1 sola casella per il prossimo turno.
-- **FoggyMist / WallPass**: Permettono di attraversare rispettivamente mostri o muri durante il movimento.
+- **FoggyMist**: Applica lo stato temporaneo `FoggyMist` fino alla fine del turno, ma non consente di attraversare occupanti.
+- **InvisiblePassage / WallPass**: Permettono rispettivamente di attraversare occupanti e muri durante il movimento.
 - **Passapareti**: Non introduce un contatore di utilizzi basato su un dado. L'eroe bersaglio tira normalmente il movimento; l'effetto consente di attraversare un solo muro e si consuma al primo attraversamento valido. Deve essere chiaramente visibile in UI quando attivo.
 
 ## 5. Interazioni Speciali

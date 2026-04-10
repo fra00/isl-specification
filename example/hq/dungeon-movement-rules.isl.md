@@ -10,6 +10,12 @@
 > **Reference**: @useDungeonMapQuery in `./dungeon-map-query.isl.md`
 > **Reference**: @MapCell, @VisibilityCell in `./domain-map.isl.md`
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component is the canonical shared validator for tile traversal, so hero movement and monster AI must obey the same blocking rules for occupants, walls, and terrain.
+
 ## Component: useDungeonMovementRules
 
 ### Role: Business Logic
@@ -39,12 +45,20 @@
 - **Flow**:
   - **Bounds Check**: Return FALSE if target coordinates are less than 1 or greater than the map dimensions (using `mapQuery.getMapDimensions`).
   - **Static Obstacles**: Return FALSE if `mapQuery.isBlockedByFurniture(targetX, targetY)`.
+  - Resolve `movingHero` from `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
+  - Resolve `isHeroMovement` as TRUE only if `movingHero` exists.
+  - Resolve `canIgnoreOccupants` as TRUE only if `movingHero.activeStatus` contains "InvisiblePassage".
   - **Dynamic Obstacles**: 
     - IF `mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)` is TRUE:
-      - Find the Hero in `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
-      - IF hero exists AND `hero.activeStatus` contains "FoggyMist":
-        - // Traversal allowed through monsters due to spell effect.
-      - ELSE: Return FALSE.
+      - IF `canIgnoreOccupants` is FALSE:
+        - Return FALSE.
+    - IF `mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)` is TRUE:
+      - IF `isHeroMovement` is FALSE AND `canIgnoreOccupants` is FALSE:
+        - Return FALSE.
+      - IF `isHeroMovement` is TRUE AND `canIgnoreOccupants` is FALSE:
+        - // Hero movement may pass through allied heroes, but `isValidDestination` still forbids ending on an occupied hero cell.
+      - ELSE IF `canIgnoreOccupants` is TRUE:
+        - Return FALSE.
   - **Rock Obstacles**: Return FALSE if `mapQuery.isBlockedByRock(targetX, targetY)`.
   - **Room/Wall Logic**:
     - Get `sourceValo` from `mapQuery.getVisibilityCell(sourceX, sourceY)` (@VisibilityCell).
@@ -53,8 +67,7 @@
     - **(Crossing Rooms)**: IF `sourceValo` != `targetValo`:
       - IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)` OR `mapQuery.isSecretPassage(sourceX, sourceY)` OR `mapQuery.isSecretPassage(targetX, targetY)`:
         - Return TRUE.
-      - Find the Hero in `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
-      - IF hero exists AND (`hero.activeStatus` contains "WallPass" OR `hero.activeStatus` contains "InvisiblePassage"):
+      - IF `movingHero` exists AND (`movingHero.activeStatus` contains "WallPass" OR `movingHero.activeStatus` contains "InvisiblePassage"):
         - Return TRUE.
       - Return FALSE.
   - Return TRUE.

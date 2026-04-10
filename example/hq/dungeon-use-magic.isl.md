@@ -128,7 +128,7 @@
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
         - IF `targetHero` is found:
           - Add "FoggyMist" to `targetHero.activeStatus`.
-          - Trigger `onNotify(targetHero.hero.classe + " può attraversare i mostri!")`.
+          - Trigger `onNotify(targetHero.hero.classe + " è avvolto dalla Nebbia Caliginosa!")`.
           - Set `wasCastSuccessful` to true.
       - CASE "Sonno":
         - Find `targetMonster` in the current session `monsters` matching `targetMonsterId`.
@@ -188,7 +188,7 @@
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
         - IF `targetHero` is found:
           - Add "InvisiblePassage" to `targetHero.activeStatus`.
-          - Trigger `onNotify(targetHero.hero.classe + " può attraversare i muri!")`.
+          - Trigger `onNotify(targetHero.hero.classe + " può attraversare muri e occupanti durante il movimento!")`.
           - Set `wasCastSuccessful` to true.
       - CASE "Pelle di Pietra":
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.

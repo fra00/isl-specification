@@ -7,12 +7,34 @@
     - Returns `FALSE` because the cell is blocked by a monster.
     - Ensures the `excludeEntityId` logic correctly identifies the target cell as non-traversable for movement termination.
 
-## Scenario: Walkable Path Through FoggyMist
+## Scenario: FoggyMist Does Not Allow Crossing Monsters
 - **Given**: A Hero with `activeStatus` containing "FoggyMist" at (2, 2). A Monster is positioned at (2, 3).
 - **When**: `isWalkable(2, 2, 2, 3, heroId)` is called.
 - **Assert (Expected Outcomes)**:
+    - Returns `FALSE`.
+    - Validates that `FoggyMist` does not override the occupant blocking rules.
+
+## Scenario: InvisiblePassage Allows Hero To Cross Occupants
+- **Given**: A Hero with `activeStatus` containing "InvisiblePassage" at (2, 2). A Monster is positioned at (2, 3).
+- **When**: `isWalkable(2, 2, 2, 3, heroId)` is called.
+- **Assert (Expected Outcomes)**:
     - Returns `TRUE`.
-    - Validates that the "FoggyMist" status correctly overrides the `isBlockedByMonster` check.
+    - Validates that only `InvisiblePassage` allows a hero to traverse an occupied cell during movement.
+
+## Scenario: Monster Cannot Cross Hero Cell
+- **Given**: A Monster is moving and a living Hero occupies the only intermediate cell on the route.
+- **When**: `isWalkable(sourceX, sourceY, heroX, heroY, monsterId)` is called.
+- **Assert (Expected Outcomes)**:
+    - Returns `FALSE`.
+    - Validates that monsters cannot path through hero-occupied cells.
+
+## Scenario: Hero Can Cross Allied Hero Cell
+- **Given**: A Hero is moving and another living Hero occupies the only intermediate cell on the route.
+- **When**: `isWalkable(sourceX, sourceY, allyHeroX, allyHeroY, heroId)` is called.
+- **Assert (Expected Outcomes)**:
+    - Returns `TRUE`.
+    - Validates that hero movement may traverse cells occupied by allied heroes.
+    - The final destination must still be validated separately by `isValidDestination`.
 
 ## Scenario: Crossing Rooms Without Door or Status
 - **Given**: `VisibilityCell` at (3, 3) has `valo` "RoomA". `VisibilityCell` at (3, 4) has `valo` "RoomB". No door or secret passage exists between these coordinates. The Hero has no special status.

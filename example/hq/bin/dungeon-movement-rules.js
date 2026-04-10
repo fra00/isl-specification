@@ -42,13 +42,21 @@ export function useDungeonMovementRules({ mapQuery }) {
             return false;
         }
 
+        const heroes = mapQuery.gameSession?.heroes || [];
+        const movingHero = heroes.find(h => h?.heroId === excludeEntityId || h?.id === excludeEntityId);
+        const isHeroMovement = Boolean(movingHero);
+        const activeStatus = movingHero?.activeStatus || [];
+        const canIgnoreOccupants = activeStatus.includes("InvisiblePassage");
+
         // Dynamic Obstacles
         if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
-            const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h?.heroId === excludeEntityId || h?.id === excludeEntityId);
-            const activeStatus = hero?.activeStatus || [];
-            
-            if (!activeStatus.includes("FoggyMist")) {
+            if (!canIgnoreOccupants) {
+                return false;
+            }
+        }
+
+        if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
+            if (!isHeroMovement && !canIgnoreOccupants) {
                 return false;
             }
         }
@@ -78,10 +86,6 @@ export function useDungeonMovementRules({ mapQuery }) {
             ) {
                 return true;
             }
-
-            const heroes = mapQuery.gameSession?.heroes || [];
-            const hero = heroes.find(h => h?.heroId === excludeEntityId || h?.id === excludeEntityId);
-            const activeStatus = hero?.activeStatus || [];
 
             if (activeStatus.includes("WallPass") || activeStatus.includes("InvisiblePassage")) {
                 return true;

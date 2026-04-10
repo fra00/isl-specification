@@ -9,6 +9,12 @@
 
 > **Reference**: Spell in `./domain-ruleset.isl.md`
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component is the authoritative catalog of spell metadata shown in UI and consumed by game logic.
+
 ## Component: GameSpellsData
 
 ### Role: Domain
@@ -16,6 +22,8 @@
 ### 📦 Content/Structure
 
 #### `staticSpells`
+
+- **Contract**: Static authoritative list of the 12 spell definitions available in the game, including targeting metadata and player-facing descriptions.
 
 La lista autoritativa dei 12 incantesimi disponibili nel gioco.
 
@@ -26,7 +34,7 @@ La lista autoritativa dei 12 incantesimi disponibili nel gioco.
 
 - **Acqua** (Set 2):
   - **4**: { nome: "Acqua Guaritrice", elemento: "Acqua", targetType: "Hero", effetto: "Acqua Guaritrice", valore: 4, immagine: "Acqua01.jpg", dorso: "Acqua00_Dorso.jpg", descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio." }
-  - **5**: { nome: "Nebbia Caliginosa", elemento: "Acqua", targetType: "Hero", effetto: "Nebbia Caliginosa", valore: 0, immagine: "Acqua02.jpg", dorso: "Acqua00_Dorso.jpg", descrizione: "Permette all'eroe di attraversare i mostri durante il movimento." }
+  - **5**: { nome: "Nebbia Caliginosa", elemento: "Acqua", targetType: "Hero", effetto: "Nebbia Caliginosa", valore: 0, immagine: "Acqua02.jpg", dorso: "Acqua00_Dorso.jpg", descrizione: "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno." }
   - **6**: { nome: "Sonno", elemento: "Acqua", targetType: "Monster", effetto: "Sonno", valore: 0, immagine: "Acqua03.jpg", dorso: "Acqua00_Dorso.jpg", descrizione: "Fa addormentare un mostro (salta il turno) finché non viene attaccato." }
 
 - **Terra** (Set 3):
@@ -36,7 +44,7 @@ La lista autoritativa dei 12 incantesimi disponibili nel gioco.
 
 - **Aria** (Set 4):
   - **10**: { nome: "Tempesta", elemento: "Aria", targetType: "Monster", effetto: "Tempesta", valore: 0, immagine: "Aria01.jpg", dorso: "Aria00_Dorso.jpg", descrizione: "Il mostro viene avvolto dai venti e salta il suo prossimo turno." }
-  - **11**: { nome: "Passaggio Invisibile", elemento: "Aria", targetType: "Hero", effetto: "Passaggio Invisibile", valore: 0, immagine: "Aria02.jpg", dorso: "Aria00_Dorso.jpg", descrizione: "Rende l'eroe in grado di passare attraverso i muri o fuggire via." }
+  - **11**: { nome: "Passaggio Invisibile", elemento: "Aria", targetType: "Hero", effetto: "Passaggio Invisibile", valore: 0, immagine: "Aria02.jpg", dorso: "Aria00_Dorso.jpg", descrizione: "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento." }
   - **12**: { nome: "Intralcio", elemento: "Aria", targetType: "Monster", effetto: "Intralcio", valore: 1, immagine: "Aria03.jpg", dorso: "Aria00_Dorso.jpg", descrizione: "Riduce il movimento del mostro a 1 sola casella." }
 
 ### ⚡ Capabilities

@@ -28,6 +28,15 @@
     - Spell ID 52 remains in `currentHero.availableSpells`.
     - `onActionDone` is triggered to prevent logical dead-end.
 
+## Scenario: Cast Spell - Hero Target Selected From Board Token
+- **Given**: The active hero starts targeting `Coraggio` or `Pelle di Pietra`, and another hero is present on a visible board cell.
+- **When**: The user clicks directly on the target hero token on the board.
+- **Assert (Expected Outcomes)**:
+    - The targeting flow resolves the clicked hero's `heroId` from the board coordinates.
+    - `castSpell(spellId, targetHeroId, null, targetX, targetY)` is triggered with the clicked hero as target.
+    - The spell effect is applied to that hero, the spell is consumed, and targeting mode ends.
+    - No extra click on the empty underlying cell is required.
+
 ## Scenario: Cast Spell - Genie Door Opening
 - **Given**: A hero is adjacent to a closed door at (5, 5). Hero casts "Genie" (ID: 53).
 - **When**: `castSpell(53, null, null, 5, 5)` is triggered.

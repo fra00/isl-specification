@@ -30,6 +30,15 @@
   - `Dungeon` MUST NOT rely on a non-guaranteed `hooksTraps.triggeredTraps` property unless the hook contract explicitly exposes it.
   - The board receives a list containing the trap marker and can render `/img/cell/lancia.jpg`, `/img/cell/rocciacad.jpg`, or `/img/cell/abisso.jpg` according to `tipo`.
 
+## Scenario: Board Receives Live Visibility Calculator
+
+- **Given**: `DungeonBoard` is rendered while targeting, hover previews, or tracer logic are available.
+- **When**: `Dungeon` prepares props for `DungeonBoard`.
+- **Assert (Expected Outcomes)**:
+  - `Dungeon` MUST pass `hooksVisibilityCalc` into the `visibilityCalc` prop.
+  - `Dungeon` MUST NOT pass `null` to `visibilityCalc` in this integration.
+  - Board line-of-sight highlights and targeting tracer logic can evaluate against the live visibility calculator instance.
+
 ## Scenario: Combat Resolution - Gargoyle Defense
 
 - **Given**: A hero attacks a "Gargoyle" monster.

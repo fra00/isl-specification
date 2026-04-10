@@ -89,3 +89,13 @@
   - The hero token MUST have a visual "square selection" indicator applied.
   - The CSS transition `top 0.3s linear, left 0.3s linear` MUST be active on the hero container to ensure smooth movement when coordinates update.
   - If `activeStatus` contains "FoggyMist", the hero MUST render with 50% opacity and a pulsing white aura.
+
+## Scenario: Hero-Target Spell Selection Through Hero Token
+
+- **Given**: `targetingSpell.targetType` is `Hero` and a hero token is rendered at (4, 6).
+- **When**: The pointer enters the hero token and the user clicks that hero token.
+- **Assert (Expected Outcomes)**:
+  - The hero token MUST update the same hover preview used by the underlying board cell.
+  - The hero token click MUST forward the selection through the board click flow using coordinates (4, 6).
+  - Hero-target spells such as `Coraggio`, `Pelle di Pietra`, `Nebbia Caliginosa`, `Acqua Guaritrice`, `Passapareti`, and `Passaggio Invisibile` MUST remain directly selectable by clicking the hero miniature.
+  - The hero token MUST NOT absorb the click without producing target selection.

@@ -86,6 +86,7 @@
   - `triggeredTraps`: `hooksTraps.getTriggeredTraps()`.
   - `targetingSpell`: `targetingSpell`.
   - `visibilityCalc`: `hooksVisibilityCalc`.
+  - `visibilityCalc` MUST be the live `hooksVisibilityCalc` instance and MUST NOT be `null` while the board supports line-of-sight highlights, targeting previews, or tracer rendering.
 - **Turn Controls**:
   - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
   - **Props**:

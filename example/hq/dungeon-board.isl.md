@@ -1,6 +1,6 @@
 # Project: Heroquest React
 
-**Version**: 1.0.1
+**Version**: 1.0.2
 **ISL Version**: 1.6.1
 **Created**: 2026-02-09
 **Implementation**: ./dungeon-board
@@ -121,6 +121,10 @@
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)
+  - **Targeting Interaction**:
+    - IF `targetingSpell.targetType` == "Hero", hovering a hero token MUST update the same targeting preview used for the underlying board cell.
+    - IF `targetingSpell.targetType` == "Hero", clicking a hero token MUST forward selection using that hero's board coordinates exactly as if the underlying cell had been clicked.
+    - Hero tokens MUST NOT swallow click or hover events needed to target hero-only spells.
   - **Cursor**:
     - IF `targetingSpell` is NOT null AND `targetingSpell.targetType` == "Hero" THEN `cursor-crosshair`.
     - ELSE `cursor-default`.
@@ -178,6 +182,24 @@
   - Set `hoveredCell` to {x, y}.
   - Convert 0-indexed (x, y) to 1-indexed by adding 1.
   - Trigger `onCellHover(x + 1, y + 1)`.
+
+#### onHeroTargetHover
+
+- **Contract**: Keeps hero-target spell preview active when the pointer is over a hero token instead of the empty grid.
+- **Trigger**: Pointer enters a hero token while `targetingSpell.targetType` == "Hero".
+- **Flow**:
+  - Convert hero token board coordinates from 1-indexed to 0-indexed.
+  - Set `hoveredCell` to the hero token cell.
+  - Trigger `onCellHover` using the hero token coordinates as 1-indexed board coordinates.
+
+#### onHeroTargetClick
+
+- **Contract**: Selects a hero-target spell target by clicking the hero token directly.
+- **Trigger**: Hero token click while `targetingSpell.targetType` == "Hero".
+- **Flow**:
+  - Prevent the hero token from blocking the board click flow.
+  - Forward the hero token coordinates through `onCellClick` as 1-indexed board coordinates.
+  - The forwarded coordinates MUST be identical to the underlying grid cell coordinates.
 
 #### onMouseLeaveBoard
 

@@ -422,6 +422,19 @@ export function useDungeonSessionManager(config) {
         );
         if (!monster) return currentSession;
 
+        if (nextX != null && nextY != null) {
+          const collidingMonster = currentSession.monsters?.find(
+            (m) =>
+              m.id !== monsterId &&
+              m.currentBody > 0 &&
+              m.x === nextX &&
+              m.y === nextY,
+          );
+          if (collidingMonster) {
+            return currentSession;
+          }
+        }
+
         const updatedMonster = { ...monster };
         if (nextX != null) updatedMonster.x = nextX;
         if (nextY != null) updatedMonster.y = nextY;

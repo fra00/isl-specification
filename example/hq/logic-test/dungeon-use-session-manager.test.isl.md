@@ -133,3 +133,12 @@
   - `currentTurn` becomes `nextTurn`.
   - Only the current hero loses `FoggyMist`.
   - Unrelated hero statuses and map state remain unchanged.
+
+## Scenario: updateMonsterState Rejects Occupied Monster Cell
+
+- **Given**: Two living monsters exist in the current session and one already occupies coordinates `(nextX, nextY)`.
+- **When**: `updateMonsterState(otherMonsterId, nextX, nextY, [])` is triggered for the second monster.
+- **Assert (Expected Outcomes)**:
+  - The session snapshot is returned unchanged.
+  - The moving monster keeps its previous coordinates.
+  - The invariant "two living monsters cannot share a cell" is enforced by the session boundary even if a caller passes invalid movement data.

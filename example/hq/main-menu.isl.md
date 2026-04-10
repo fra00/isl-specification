@@ -11,6 +11,12 @@ Short description
 
 > **Reference**: Core entities are defined in `./domain-core.isl.md`.
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component is the presentation entry point of the application and defines the visual language of the home screen, including menu emphasis and preview behavior on hover.
+
 ## Component: MainMenu
 
 Main Menu Screen
@@ -25,7 +31,7 @@ Main Menu Screen
 
 - full width
 - height : 100vh
-- contenuto: allineato al centro (z-index superiore agli effetti di background)
+- contenuto: centrato orizzontalmente ma spostato più in basso rispetto al centro verticale (z-index superiore agli effetti di background)
 - `BackgroundLayer`: livello di base con immagine `/img/menusfondo.jpg` (z-index 0, overflow: hidden)
   - size: cover, position: center, width: 100%, height: 100%
   - animation: "Respiro" (zoom continuo: scale da 1.0 a 1.08, durata 30s, loop alternato, ease-in-out)
@@ -61,6 +67,7 @@ Main Menu Screen
   - animation: "Bagliore Vivo" (pulsazione morbida dell'opacità tra 0.4 e 0.8 e lievissima variazione di scala 1.02, durata 4s, ease-in-out, loop infinito)
   - mix-blend-mode: screen
 - `UIContent`: livello superiore (z-index 20)
+  - posizionamento: offset verticale verso il basso per dare più respiro all'immagine di sfondo e al riquadro preview in alto
 
 voci di menu :
 
@@ -78,8 +85,8 @@ voci di menu :
   Drop-Shadow: filter: drop-shadow(4px 4px 2px rgba(0,0,0,1)).
   💡 Nota: Usare filter: drop-shadow invece di text-shadow garantisce che l'ombra segua la sagoma del testo incluso lo stroke grigio.
 
-- blur effect on text with animation
-- mouse over remove blur effect with animation
+- stato base del testo: nessun blur, ma ombra scura netta e contrasto forte
+- mouse over: evidenziazione con leggero aumento scala, glow ambrato, stroke più chiaro e lieve traslazione orizzontale; evitare blur sul testo
 
 ### 📦 Content
 

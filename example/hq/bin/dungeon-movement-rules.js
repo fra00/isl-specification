@@ -6,99 +6,110 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 export function useDungeonMovementRules({ mapQuery }) {
-    const isValidDestination = useCallback((x, y, excludeEntityId) => {
-        if (!mapQuery) return false;
+  const isValidDestination = useCallback(
+    (x, y, excludeEntityId) => {
+      if (!mapQuery) return false;
 
-        const cell = mapQuery.getMapCell(x, y);
-        if (cell == null) return false;
+      const cell = mapQuery.getMapCell(x, y);
+      if (cell == null) return false;
 
-        if (mapQuery.isBlockedByFurniture(x, y)) return false;
-        if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) return false;
-        if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) return false;
-        if (mapQuery.isBlockedByRock(x, y)) return false;
+      if (mapQuery.isBlockedByFurniture(x, y)) return false;
+      if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) return false;
+      if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) return false;
+      if (mapQuery.isBlockedByRock(x, y)) return false;
 
+      return true;
+    },
+    [mapQuery],
+  );
+
+  const isWalkable = useCallback(
+    (sourceX, sourceY, targetX, targetY, excludeEntityId) => {
+      if (!mapQuery) return false;
+
+      // Bounds Check
+      const dimensions = mapQuery.getMapDimensions();
+      if (
+        targetX < 1 ||
+        targetX > dimensions.width ||
+        targetY < 1 ||
+        targetY > dimensions.height
+      ) {
+        return false;
+      }
+
+      // Static Obstacles
+      if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
+        return false;
+      }
+
+      const heroes = mapQuery.gameSession?.heroes || [];
+      const movingHero = heroes.find(
+        (h) => h?.heroId === excludeEntityId || h?.id === excludeEntityId,
+      );
+      const isHeroMovement = Boolean(movingHero);
+      const activeStatus = movingHero?.activeStatus || [];
+      const canIgnoreOccupants = activeStatus.includes("InvisiblePassage");
+
+      // Dynamic Obstacles
+      if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
+        if (!canIgnoreOccupants) {
+          return false;
+        }
+      }
+
+      if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
+        if (!isHeroMovement && !canIgnoreOccupants) {
+          return false;
+        }
+      }
+
+      // Rock Obstacles
+      if (mapQuery.isBlockedByRock(targetX, targetY)) {
+        return false;
+      }
+
+      // Room/Wall Logic
+      const sourceVis = mapQuery.getVisibilityCell(sourceX, sourceY);
+      const targetVis = mapQuery.getVisibilityCell(targetX, targetY);
+
+      const sourceValo = sourceVis?.valo;
+      const targetValo = targetVis?.valo;
+
+      if (sourceValo == null || targetValo == null) {
         return true;
-    }, [mapQuery]);
+      }
 
-    const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
-        if (!mapQuery) return false;
-
-        // Bounds Check
-        const dimensions = mapQuery.getMapDimensions();
+      if (sourceValo !== targetValo) {
         if (
-            targetX < 1 || 
-            targetX > dimensions.width || 
-            targetY < 1 || 
-            targetY > dimensions.height
+          mapQuery.isDoor(sourceX, sourceY) ||
+          mapQuery.isDoor(targetX, targetY) ||
+          mapQuery.isSecretPassage(sourceX, sourceY) ||
+          mapQuery.isSecretPassage(targetX, targetY)
         ) {
-            return false;
+          return true;
         }
 
-        // Static Obstacles
-        if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
-            return false;
+        if (
+          activeStatus.includes("WallPass") ||
+          activeStatus.includes("InvisiblePassage")
+        ) {
+          return true;
         }
 
-        const heroes = mapQuery.gameSession?.heroes || [];
-        const movingHero = heroes.find(h => h?.heroId === excludeEntityId || h?.id === excludeEntityId);
-        const isHeroMovement = Boolean(movingHero);
-        const activeStatus = movingHero?.activeStatus || [];
-        const canIgnoreOccupants = activeStatus.includes("InvisiblePassage");
+        return false;
+      }
 
-        // Dynamic Obstacles
-        if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
-            if (!canIgnoreOccupants) {
-                return false;
-            }
-        }
+      return true;
+    },
+    [mapQuery],
+  );
 
-        if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
-            if (!isHeroMovement && !canIgnoreOccupants) {
-                return false;
-            }
-        }
-
-        // Rock Obstacles
-        if (mapQuery.isBlockedByRock(targetX, targetY)) {
-            return false;
-        }
-
-        // Room/Wall Logic
-        const sourceVis = mapQuery.getVisibilityCell(sourceX, sourceY);
-        const targetVis = mapQuery.getVisibilityCell(targetX, targetY);
-
-        const sourceValo = sourceVis?.valo;
-        const targetValo = targetVis?.valo;
-
-        if (sourceValo == null || targetValo == null) {
-            return true;
-        }
-
-        if (sourceValo !== targetValo) {
-            if (
-                mapQuery.isDoor(sourceX, sourceY) ||
-                mapQuery.isDoor(targetX, targetY) ||
-                mapQuery.isSecretPassage(sourceX, sourceY) ||
-                mapQuery.isSecretPassage(targetX, targetY)
-            ) {
-                return true;
-            }
-
-            if (activeStatus.includes("WallPass") || activeStatus.includes("InvisiblePassage")) {
-                return true;
-            }
-
-            return false;
-        }
-
-        return true;
-    }, [mapQuery]);
-
-    return {
-        isValidDestination,
-        isWalkable
-    };
+  return {
+    isValidDestination,
+    isWalkable,
+  };
 }

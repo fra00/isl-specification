@@ -48,7 +48,7 @@
   - Resolve `movingHero` from `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
   - Resolve `isHeroMovement` as TRUE only if `movingHero` exists.
   - Resolve `canIgnoreOccupants` as TRUE only if `movingHero.activeStatus` contains "InvisiblePassage".
-  - **Dynamic Obstacles**: 
+  - **Dynamic Obstacles**:
     - IF `mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)` is TRUE:
       - IF `canIgnoreOccupants` is FALSE:
         - Return FALSE.

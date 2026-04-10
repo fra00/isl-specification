@@ -61,13 +61,13 @@
         - CONTINUE to next monster.
       - **Targeting**: Find the nearest `hero` in `gameSession.heroes` that is NOT under fog (revealed area) using `findNearestHero`.
       - IF no visible hero is found, CONTINUE to next monster.
+      - **Topological Adjacency Rule**: A monster and hero are considered adjacent for attack purposes only if they are orthogonally adjacent AND no wall boundary separates their two cells. A pure Manhattan distance of 1 is NOT sufficient across different `valo` areas unless the adjacency is mediated by a door or discovered secret passage cell.
       - **Surround Strategy**:
-        - Let `heroArea` = `valo` of the cell at `hero.x`, `hero.y` in `visibilityMap`.
         - Identify all adjacent cells to `hero` (Up, Down, Left, Right).
         - Filter for cells that:
           - Are walkable (no walls/obstacles) AND NOT occupied by other entities.
-          - Have the same `valo` as `heroArea` (Room Logic) OR are part of a revealed corridor (`valo` == "1").
-        - IF `monster` is already adjacent to `hero`:
+          - Are themselves topologically valid melee positions relative to the hero.
+        - IF `monster` is already topologically adjacent to `hero`:
           - Set `navigationTarget` to current `monster` position.
         - ELSE IF there are available adjacent cells:
           - Select `navigationTarget` as the unoccupied adjacent cell with the shortest valid path from `monster`.
@@ -78,12 +78,12 @@
         - Calculate `path` to `navigationTarget` using `pathfinding.calculatePath` (maxDepth: 100, ignoreEntities: false).
       - ELSE: Let `path` be an empty list.
       - IF path length > 0:
-        - Filter path to keep only cells where `fog` is false in `visibilityMap.data`.
+        - Traverse path in order and stop at the first cell where `fog` is true.
         - Let `movPoints` = `monster.monster.movimento`.
         - IF `monster.activeStatus` contains "Entangled":
           - Set `movPoints` to 1.
           - Trigger `onNotify(monster.monster.nome + " è intralciato e si muove a fatica.")`.
-        - Let `reachablePath` = first N cells of filtered path (where N is `movPoints`).
+        - Let `reachablePath` = first N contiguous visible cells of that ordered path (where N is `movPoints`).
         - Initialize `statusesToRemove` as an empty list.
         - IF `monster.activeStatus` contains "Entangled":
           - Add "Entangled" to `statusesToRemove`.
@@ -99,8 +99,8 @@
           - Call `sessionManager.updateMonsterState(monster.id, null, null, ["Entangled"])`.
         - Wait 400ms (allow movement animation).
     - **Combat**:
-      - Check if `hero` is now adjacent (dist <= 1).
-      - IF adjacent:
+      - Check if `hero` is now topologically adjacent.
+      - IF topologically adjacent:
         - Let `heroStats` = `heroStatsLogic.calculateStats(hero)`.
         - Let `combatResult` = `combatLogic.resolveCombat(monster.monster.attacco, heroStats.difesa, true)`.
         - IF `combatResult.damageDealt` > 0 AND `hero.activeStatus` contains "RockSkin":
@@ -131,13 +131,17 @@
 
 #### findNearestHero
 
-- **Contract**: Logic to determine which hero a monster should focus on.
+- **Contract**: Logic to determine which visible hero a monster should focus on, preferring the nearest reachable attack opportunity rather than raw Manhattan distance through walls.
 - **Signature**: `(monster: @MonsterState) -> @HeroState`
 - **Flow**:
   - Filter `gameSession.heroes` to find those whose (x, y) coordinates have `fog == false` in `visibilityMap`.
   - IF filtered list is empty, return NULL.
-  - Calculate Manhattan distance from `monster` to each filtered hero.
-  - Return the hero with the minimum distance.
+  - For each visible hero:
+    - IF the monster is already topologically adjacent to that hero, treat the hero as having approach cost 0.
+    - ELSE evaluate the hero's orthogonally adjacent cells and keep only those that are valid, unoccupied, and topologically adjacent to the hero for melee.
+    - Use `pathfinding.calculatePath` to estimate the shortest valid approach toward one of those attack cells.
+  - Prefer the hero with the smallest valid approach length.
+  - IF no visible hero has a valid approach path, fall back to the smallest Manhattan distance only as a last resort.
 
 ### 🚨 Constraints
 

@@ -286,6 +286,9 @@
   - Call `commitSessionUpdate` with an updater.
   - Inside the updater, find `monster` in the provided current session matching `id` = `monsterId`.
   - IF `monster` is null RETURN the current session unchanged.
+  - IF `nextX` and `nextY` are both NOT null:
+    - Search another living monster in the provided current session with different `id` and coordinates exactly matching (`nextX`, `nextY`).
+    - IF such monster exists RETURN the current session unchanged.
   - Create `updatedMonster` as a copy of `monster`.
   - IF `nextX` is NOT null: Set `updatedMonster.x` to `nextX`.
   - IF `nextY` is NOT null: Set `updatedMonster.y` to `nextY`.

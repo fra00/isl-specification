@@ -39,6 +39,15 @@ export function useMonsterAI(config = {}) {
         return true;
     }, [gameSession]);
 
+    const isDoor = useCallback((x, y) => {
+        return (gameSession?.currentMap?.porte || []).some(d => d.x === x && d.y === y);
+    }, [gameSession]);
+
+    const isSecretPassage = useCallback((x, y) => {
+        const gridCell = gameSession?.currentMap?.grid?.find(c => c.x === x && c.y === y);
+        return gridCell?.psgg?.ps != null;
+    }, [gameSession]);
+
     const isCellOccupied = useCallback((x, y, excludeMonsterId = null) => {
         const hasHero = gameSession?.heroes?.some(h => h.x === x && h.y === y && h.currentBody > 0);
         if (hasHero) return true;
@@ -46,25 +55,85 @@ export function useMonsterAI(config = {}) {
         return hasMonster;
     }, [gameSession]);
 
+    const canAttackHeroFromPosition = useCallback((monsterX, monsterY, heroX, heroY) => {
+        const dist = Math.abs(monsterX - heroX) + Math.abs(monsterY - heroY);
+        if (dist !== 1) return false;
+
+        const monsterVis = getVisibilityCell(monsterX, monsterY);
+        const heroVis = getVisibilityCell(heroX, heroY);
+        const monsterValo = monsterVis?.valo;
+        const heroValo = heroVis?.valo;
+
+        if (monsterValo == null || heroValo == null) {
+            return true;
+        }
+
+        if (monsterValo === heroValo) {
+            return true;
+        }
+
+        if (
+            isDoor(monsterX, monsterY) ||
+            isDoor(heroX, heroY) ||
+            isSecretPassage(monsterX, monsterY) ||
+            isSecretPassage(heroX, heroY)
+        ) {
+            return true;
+        }
+
+        return false;
+    }, [getVisibilityCell, isDoor, isSecretPassage]);
+
     const findNearestHero = useCallback((monster) => {
-        if (!gameSession?.heroes || !visibilityMap) return null;
+        if (!gameSession?.heroes || !visibilityMap || !pathfinding) return null;
         
         const visibleHeroes = gameSession.heroes.filter(h => isCellVisible(h.x, h.y) && h.currentBody > 0);
         if (visibleHeroes.length === 0) return null;
 
-        let nearest = null;
-        let minDistance = Infinity;
+        let nearestReachable = null;
+        let minApproachLength = Infinity;
+        let fallbackHero = null;
+        let fallbackDistance = Infinity;
 
         for (const hero of visibleHeroes) {
-            const dist = Math.abs(hero.x - monster.x) + Math.abs(hero.y - monster.y);
-            if (dist < minDistance) {
-                minDistance = dist;
-                nearest = hero;
+            const directDistance = Math.abs(hero.x - monster.x) + Math.abs(hero.y - monster.y);
+            if (directDistance < fallbackDistance) {
+                fallbackDistance = directDistance;
+                fallbackHero = hero;
+            }
+
+            if (canAttackHeroFromPosition(monster.x, monster.y, hero.x, hero.y)) {
+                return hero;
+            }
+
+            const adjacentCoords = [
+                { x: hero.x, y: hero.y - 1 },
+                { x: hero.x, y: hero.y + 1 },
+                { x: hero.x - 1, y: hero.y },
+                { x: hero.x + 1, y: hero.y }
+            ];
+
+            let bestApproachLength = Infinity;
+
+            for (const coord of adjacentCoords) {
+                if (!isCellWalkable(coord.x, coord.y)) continue;
+                if (isCellOccupied(coord.x, coord.y, monster.id)) continue;
+                if (!canAttackHeroFromPosition(coord.x, coord.y, hero.x, hero.y)) continue;
+
+                const path = pathfinding.calculatePath(monster.x, monster.y, coord.x, coord.y, 100, monster.id);
+                if (path && path.length > 0 && path.length < bestApproachLength) {
+                    bestApproachLength = path.length;
+                }
+            }
+
+            if (bestApproachLength < minApproachLength) {
+                minApproachLength = bestApproachLength;
+                nearestReachable = hero;
             }
         }
 
-        return nearest;
-    }, [gameSession, visibilityMap, isCellVisible]);
+        return nearestReachable || fallbackHero;
+    }, [gameSession, visibilityMap, pathfinding, isCellVisible, isCellWalkable, isCellOccupied, canAttackHeroFromPosition]);
 
     const performInstantAttack = useCallback(async (monster, hero) => {
         if (!monster || !hero || !onNotify || !heroStatsLogic || !combatLogic || !sessionManager) return;
@@ -121,9 +190,6 @@ export function useMonsterAI(config = {}) {
             let currentX = monster.x;
             let currentY = monster.y;
 
-            const heroVisCell = getVisibilityCell(targetHero.x, targetHero.y);
-            const heroArea = heroVisCell?.valo;
-
             const adjacentCoords = [
                 { x: targetHero.x, y: targetHero.y - 1 },
                 { x: targetHero.x, y: targetHero.y + 1 },
@@ -134,13 +200,11 @@ export function useMonsterAI(config = {}) {
             const validAdjacents = adjacentCoords.filter(coord => {
                 if (!isCellWalkable(coord.x, coord.y)) return false;
                 if (isCellOccupied(coord.x, coord.y, monster.id)) return false;
-                const visCell = getVisibilityCell(coord.x, coord.y);
-                if (!visCell) return false;
-                return visCell.valo === heroArea || visCell.valo === "1";
+                return canAttackHeroFromPosition(coord.x, coord.y, targetHero.x, targetHero.y);
             });
 
             let navigationTarget = null;
-            const isAlreadyAdjacent = Math.abs(currentX - targetHero.x) + Math.abs(currentY - targetHero.y) === 1;
+            const isAlreadyAdjacent = canAttackHeroFromPosition(currentX, currentY, targetHero.x, targetHero.y);
 
             if (isAlreadyAdjacent) {
                 navigationTarget = { x: currentX, y: currentY };
@@ -166,7 +230,6 @@ export function useMonsterAI(config = {}) {
             }
 
             if (path.length > 0) {
-                const filteredPath = path.filter(p => isCellVisible(p.x, p.y));
                 let movPoints = monster.monster?.movimento || 0;
 
                 if (monster.activeStatus?.includes("Entangled")) {
@@ -174,7 +237,15 @@ export function useMonsterAI(config = {}) {
                     onNotify(`${monster.monster?.nome || 'Il mostro'} è intralciato e si muove a fatica.`);
                 }
 
-                const reachablePath = filteredPath.slice(0, movPoints);
+                const contiguousVisiblePath = [];
+                for (const step of path) {
+                    if (!isCellVisible(step.x, step.y)) {
+                        break;
+                    }
+                    contiguousVisiblePath.push(step);
+                }
+
+                const reachablePath = contiguousVisiblePath.slice(0, movPoints);
                 const statusesToRemove = [];
                 
                 if (monster.activeStatus?.includes("Entangled")) {
@@ -200,8 +271,7 @@ export function useMonsterAI(config = {}) {
                 }
             }
 
-            const distToHero = Math.abs(currentX - targetHero.x) + Math.abs(currentY - targetHero.y);
-            if (distToHero === 1) {
+            if (canAttackHeroFromPosition(currentX, currentY, targetHero.x, targetHero.y)) {
                 const heroStats = heroStatsLogic.calculateStats(targetHero);
                 const attackDice = monster.monster?.attacco || 0;
                 const combatResult = combatLogic.resolveCombat(attackDice, heroStats.difesa, true);
@@ -224,7 +294,7 @@ export function useMonsterAI(config = {}) {
         sessionManager.startNextHeroRound();
         onNotify("Nuovo Turno! Tocca agli eroi.");
 
-    }, [gameSession, onNotify, sessionManager, pathfinding, combatLogic, heroStatsLogic, findNearestHero, getVisibilityCell, isCellWalkable, isCellOccupied, isCellVisible]);
+    }, [gameSession, onNotify, sessionManager, pathfinding, combatLogic, heroStatsLogic, findNearestHero, getVisibilityCell, isCellWalkable, isCellOccupied, isCellVisible, canAttackHeroFromPosition]);
 
     return {
         isMonsterTurnInProgress,

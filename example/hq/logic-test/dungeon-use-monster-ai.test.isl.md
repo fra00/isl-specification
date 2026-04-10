@@ -22,6 +22,23 @@ This test suite focuses on the **Business Logic** and **Flow Integrity** of the 
   - The monster stops movement if the calculated `reachablePath` is blocked by another entity (Hero or Monster).
   - The monster never moves into a cell occupied by another entity.
 
+## Scenario: Monster Must Not Skip Over First Fogged Step
+
+- **Given**: A monster has a valid path toward a hero, but the first non-current visible segment is interrupted by a cell still under `fog: true`, while a later cell in the same path would be visible.
+- **When**: `runMonsterTurn` processes that path.
+- **Assert (Expected Outcomes)**:
+  - The monster stops path consumption at the first fogged step.
+  - The movement logic does not compress the path by removing hidden intermediate cells.
+  - `sessionManager.updateMonsterState(...)` is never called with a later visible cell beyond that fogged interruption.
+
+## Scenario: Monster Only Chooses Topological Attack Cells
+
+- **Given**: A hero has orthogonally adjacent cells that look close by coordinates, but some of those cells are separated from the hero by a wall boundary.
+- **When**: `runMonsterTurn` computes `validAdjacents` around that hero.
+- **Assert (Expected Outcomes)**:
+  - Cells that are not true melee-contact positions are excluded.
+  - The monster only approaches cells from which `canAttackHeroFromPosition(...)` would be true.
+
 ## Scenario: Combat Resolution and Status Effects
 
 - **Given**: A monster is adjacent to a hero with `activeStatus` = ["RockSkin"].
@@ -32,6 +49,15 @@ This test suite focuses on the **Business Logic** and **Flow Integrity** of the 
   - If `damageDealt` > 0, the persisted hero body is reduced and "RockSkin" is removed by the boundary.
   - `gameSession.lastAttack` is updated through the boundary with the combat result.
   - `onNotify` is triggered to announce the attack and the shattering of "RockSkin".
+
+## Scenario: Monster Must Not Attack Through Wall
+
+- **Given**: A monster and a hero have Manhattan distance 1, but their cells belong to different `valo` areas and there is no door or discovered secret passage between them.
+- **When**: `runMonsterTurn` evaluates adjacency and combat.
+- **Assert (Expected Outcomes)**:
+  - The monster is NOT considered adjacent for attack purposes.
+  - `sessionManager.resolveMonsterAttack(...)` is NOT called for that hero.
+  - The logic does not treat wall-separated cells as melee contact.
 
 ## Scenario: Deterministic Turn Completion (Flow Integrity)
 
@@ -64,3 +90,12 @@ This test suite focuses on the **Business Logic** and **Flow Integrity** of the 
   - The monster identifies Hero B as the target.
   - If Hero B enters `fog` (becomes hidden), the monster re-evaluates and targets Hero A.
   - If no heroes are visible (all in fog), the function returns `null` and the monster remains stationary.
+
+## Scenario: Targeting Prefers Reachable Hero Over Wall-Separated Hero
+
+- **Given**: Hero A is Manhattan-closer to the monster but separated by a wall with no valid attack approach, while Hero B is farther away but has a valid path to an adjacent attack cell.
+- **When**: `findNearestHero` is evaluated during `runMonsterTurn`.
+- **Assert (Expected Outcomes)**:
+  - Hero A is not preferred solely because of raw Manhattan proximity.
+  - The monster selects Hero B as the actionable target.
+  - The logic uses reachable attack positions before falling back to raw distance.

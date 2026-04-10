@@ -358,6 +358,19 @@
   - Replace the matching hero with `updatedHero`.
   - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
 
+#### clearCurrentHeroStatus
+
+- **Contract**: Removes a named status from the active hero only and persists the update only if that hero currently has the status.
+- **Signature**: `(statusName: String) -> Boolean`
+- **Flow**:
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, find `hero` in the current session `heroes` matching `turnOrder` = `currentTurn`.
+  - IF `hero` is null RETURN the current session unchanged.
+  - IF `hero.activeStatus` does NOT contain `statusName` RETURN the current session unchanged.
+  - Create `updatedHero` as a copy of `hero` removing `statusName` from `activeStatus`.
+  - Create `updatedHeroes` replacing only the active hero with `updatedHero`.
+  - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
+
 #### resolveMovementTrap
 
 - **Contract**: Applies trap consequences to the active hero, optionally blocks a falling-rock cell, and persists the interrupted movement state.

@@ -117,10 +117,12 @@
       - CASE "Acqua Guaritrice":
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
         - IF `targetHero` is found:
+          - Let `previousBody` = `targetHero.currentBody`.
           - Let `healAmount` = `spell.valore` (e.g., 4).
           - Add `healAmount` to `targetHero.currentBody`.
           - Clamp `targetHero.currentBody` to max `targetHero.hero.corpo`.
-          - Trigger `onNotify(targetHero.hero.classe + " recupera " + healAmount + " Punti Corpo!")`.
+          - Let `actualRecovered` = `targetHero.currentBody - previousBody`.
+          - Trigger `onNotify(targetHero.hero.classe + " recupera " + actualRecovered + " Punti Corpo! (" + targetHero.currentBody + "/" + targetHero.hero.corpo + ")")`.
           - Set `wasCastSuccessful` to true.
       - CASE "Nebbia Caliginosa":
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
@@ -198,9 +200,9 @@
       - CASE "Passapareti":
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
         - IF `targetHero` is found:
-          - // Effetto: Permette di attraversare le pareti durante il movimento.
+          - // Effetto: Permette all'eroe bersaglio di attraversare un solo muro durante il movimento.
           - Add "WallPass" to `targetHero.activeStatus`.
-          - Trigger `onNotify(targetHero.hero.classe + " può passare attraverso i muri!")`.
+          - Trigger `onNotify(targetHero.hero.classe + " può attraversare un muro con Passapareti!")`.
           - Set `wasCastSuccessful` to true.
       - CASE "Intralcio":
         - Find `targetMonster` in the current session `monsters` matching `targetMonsterId`.

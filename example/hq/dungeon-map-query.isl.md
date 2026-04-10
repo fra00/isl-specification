@@ -10,6 +10,12 @@
 > **Reference**: @GameSession in `./domain-session.isl.md`
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+- This component is the canonical read-only boundary for map topology queries and exposes enough session context for movement rules to evaluate temporary traversal effects.
+
 ## Component: useDungeonMapQuery
 
 ### Role: Business Logic
@@ -78,6 +84,12 @@
 
 - **Contract**: Returns the width and height of the map.
 - **Signature**: `() -> { width: 26, height: 19 }`
+
+#### exposedContext
+
+- **Contract**: Exposes read-only session context alongside lookup helpers so downstream movement rules can resolve active hero statuses while pathfinding across fog or special traversal effects.
+- `gameSession`: @GameSession
+- `visibilityMap`: @VisibilityMap
 
 ### 🚨 Global Constraints
 

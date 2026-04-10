@@ -34,6 +34,7 @@
 - `onCellHover`: (x: Integer, y: Integer) -> void (Callback when a cell is hovered).
 - `onMonsterClick`: (monsterId: Integer) -> void (Callback when a monster is clicked).
 - `hoveredPath`: List of {x, y} (Path to highlight).
+- `hoveredPathVariant`: "valid" | "blocked-by-second-wall" | null (Visual state for the currently previewed movement path).
 - `secretPassages`: List of {x: Integer, y: Integer, img: String} (List of discovered secret passages).
 - `treasures`: List of {x: Integer, y: Integer, img: String} (List of discovered treasures).
 - `triggeredTraps`: List of {x: Integer, y: Integer, tipo: Integer} (List of traps that have been activated).
@@ -77,7 +78,10 @@
       - The second mist layer MUST animate with keyframes `rotate(180deg) translate3d(-32px, 18px, 0)` to `rotate(180deg) translate3d(14px, -12px, 0)` to `rotate(180deg) translate3d(30px, 22px, 0)` over `18s` with `ease-in-out`, `infinite`, and `alternate`.
     - **Unfogging Logic**: The black overlay MUST disappear ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`. The mist layers remain global and visible across both revealed and fogged areas.
     - **Layer Order**: The visual stack MUST be, from back to front: board background, per-cell black fog overlays, global mist overlay, board entities, targeting tracer, debug panel.
-    - **Path Highlight**: If cell {x+1, y+1} is in `hoveredPath`, add a semi-transparent green overlay (bg-green-500/50).
+    - **Path Highlight**:
+      - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "valid", add a semi-transparent green overlay.
+      - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "blocked-by-second-wall", add a semi-transparent red overlay.
+      - This preview MUST remain visible even when the destination cell is fogged, provided the path itself is being previewed by movement logic.
     - **Targeting Highlight**:
       - IF `targetingSpell` is NOT null:
         - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
@@ -120,6 +124,10 @@
     - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
+  - **Body Points Indicator**:
+    - Render the current hero body points as a compact badge on the hero token using `@HeroState.currentBody` and `@Hero.corpo`.
+    - The badge MUST update when `currentBody` changes so healing and damage are visible immediately on the board.
+    - The hero token tooltip/title SHOULD expose the same `currentBody` / max body information.
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)
   - **Targeting Interaction**:
     - IF `targetingSpell.targetType` == "Hero", hovering a hero token MUST update the same targeting preview used for the underlying board cell.
@@ -135,6 +143,10 @@
       - Apply a pulsing gray/brown outer glow (aura).
     - IF `@HeroState.activeStatus` contains "Courage":
       - Apply a pulsing red/orange outer glow (aura).
+    - IF `@HeroState.activeStatus` contains "WallPass":
+      - Apply a pulsing earthy amber glow (aura) so Passapareti is immediately visible on the target hero.
+    - IF `@HeroState.activeStatus` contains "InvisiblePassage":
+      - Apply a pulsing cyan glow (aura).
   - **Style**: Apply CSS transition `top 0.3s linear, left 0.3s linear` to the container for smooth movement.
 - **debug panel**: Display an "fixed" "right" side bar containing these Debug information (fixed width:250px):
   - cell coordinates x,y of current mouse position

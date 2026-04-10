@@ -48,6 +48,7 @@
 - `turnPhase`: @TurnPhase (Current phase of the turn).
 - `movementPoints`: Integer (Remaining movement steps) Default: null.
 - `hoveredPath`: List of {x, y} (The valid path to the hovered cell, empty if invalid).
+- `hoveredPathVariant`: "valid" | "blocked-by-second-wall" | null (Visual state for the currently previewed movement path).
 - `canAttack`: Boolean (True if there is at least one visible monster in attack range).
 - `attacksPerformed`: Integer (Number of attacks performed in the current turn) Default: 0.
 - `isMoving`: Boolean (True if hero is currently animating movement).
@@ -117,13 +118,21 @@
 - **Flow**:
   - IF `movementPoints` is null OR `movementPoints` <= 0 OR `isMoving` is true:
     - Set `hoveredPath` to empty.
+    - Set `hoveredPathVariant` to null.
     - RETURN.
   - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
   - Call `hooksPathfinding.calculatePath(hero.x, hero.y, x, y, movementPoints, hero.heroId)` and store result in `path`.
   - IF `path` is not empty:
     - Prepend `{x: hero.x, y: hero.y}` to `path` (to include start).
     - Set `hoveredPath` to `path`.
+    - Count true wall crossings in the preview path:
+      - A true wall crossing is a step where `oldVis.valo != newVis.valo` and the step is NOT a door or discovered passage transition.
+    - IF `hero.activeStatus` contains `WallPass` AND true wall crossings > 1:
+      - Set `hoveredPathVariant` to `blocked-by-second-wall`.
+    - ELSE:
+      - Set `hoveredPathVariant` to `valid`.
   - ELSE: Set `hoveredPath` to empty.
+    - Set `hoveredPathVariant` to null.
 
 #### handleBoardClick
 
@@ -134,15 +143,21 @@
   - Set `isMovingStarted` to true.
   - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
   - Initialize `path` with `hoveredPath`.
+  - Initialize `pathVariant` with `hoveredPathVariant`.
   - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
     - Calculate path from `currentHero` to (x, y) using `hooksPathfinding`.
     - IF calculated path is valid (length > 0):
       - Set `path` to [`currentHero` position, ...calculated path].
   - IF `path` length > 1 AND last point of `path` is (x, y):
+    - IF `pathVariant` == `blocked-by-second-wall`:
+      - Trigger `onNotify("Passapareti permette di attraversare un solo muro.")`.
+      - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null)`.
+      - RETURN.
     - Set `canOpenDoor` to null.
     - Set `isMoving` to true.
     - Set `activePath` to a copy of `path`.
     - Set `hoveredPath` to empty.
+    - Set `hoveredPathVariant` to null.
   - ELSE:
     - // Restore/re-check door interaction if movement didn't happen
     - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null)`.
@@ -192,6 +207,9 @@
       - IF `doorCheck.found` is true AND `doorCheck.passageCell` is same as `nextPos`:
         - Call `mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y)`.
         - Set `canOpenDoor` to null.
+      - ELSE IF `currentHero.activeStatus` contains "WallPass":
+        - Call `sessionManager.clearCurrentHeroStatus("WallPass")`.
+        - Trigger `onNotify("Passapareti si consuma dopo aver attraversato un muro.")`.
 
   - **Trap Check**:
     - Find `mapCell` at `nextPos` in grid.

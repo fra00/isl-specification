@@ -138,6 +138,7 @@ export function useMagicLogic(config = {}) {
                     case "Acqua Guaritrice": {
                         const targetHero = nextSession.heroes.find(h => h.heroId === targetHeroId);
                         if (targetHero) {
+                            const previousBody = targetHero.currentBody ?? 0;
                             const healAmount = spell.valore || 0;
                             targetHero.currentBody += healAmount;
                             
@@ -145,8 +146,9 @@ export function useMagicLogic(config = {}) {
                             if (targetHero.currentBody > maxCorpo) {
                                 targetHero.currentBody = maxCorpo;
                             }
-                            
-                            onNotify?.(`${targetHero.hero?.classe} recupera ${healAmount} Punti Corpo!`);
+
+                            const actualRecovered = targetHero.currentBody - previousBody;
+                            onNotify?.(`${targetHero.hero?.classe} recupera ${actualRecovered} Punti Corpo! (${targetHero.currentBody}/${maxCorpo})`);
                             wasCastSuccessful = true;
                         }
                         break;
@@ -276,7 +278,7 @@ export function useMagicLogic(config = {}) {
                             if (!targetHero.activeStatus.includes("WallPass")) {
                                 targetHero.activeStatus.push("WallPass");
                             }
-                            onNotify?.(`${targetHero.hero?.classe} può passare attraverso i muri!`);
+                            onNotify?.(`${targetHero.hero?.classe} può attraversare un muro con Passapareti!`);
                             wasCastSuccessful = true;
                         }
                         break;

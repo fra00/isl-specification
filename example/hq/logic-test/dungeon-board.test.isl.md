@@ -90,6 +90,24 @@
   - The CSS transition `top 0.3s linear, left 0.3s linear` MUST be active on the hero container to ensure smooth movement when coordinates update.
   - If `activeStatus` contains "FoggyMist", the hero MUST render with 50% opacity and a pulsing white aura.
 
+## Scenario: Hero Token Body Points Indicator Updates Immediately
+
+- **Given**: A hero token is rendered with `currentBody: 2` and `hero.corpo: 4`.
+- **When**: The session updates that same hero to `currentBody: 4` after `Acqua Guaritrice` or to `currentBody: 1` after damage.
+- **Assert (Expected Outcomes)**:
+  - The token MUST display a compact body-points indicator showing the current and max body values.
+  - The displayed values MUST update immediately with the new `currentBody`.
+  - The indicator MUST NOT block hover or click interactions used for movement or hero-target spell selection.
+
+## Scenario: Hero Token Shows Wall Traversal Effects
+
+- **Given**: A hero token is rendered with `activeStatus` containing `WallPass` or `InvisiblePassage`.
+- **When**: The board renders the hero token.
+- **Assert (Expected Outcomes)**:
+  - The token MUST show a distinct movement-effect aura so wall traversal is visually apparent.
+  - The tooltip/title MUST expose the active movement effect name.
+  - The effect indicator MUST NOT block hero-target spell selection or hover preview forwarding.
+
 ## Scenario: Hero-Target Spell Selection Through Hero Token
 
 - **Given**: `targetingSpell.targetType` is `Hero` and a hero token is rendered at (4, 6).

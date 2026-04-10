@@ -81,6 +81,7 @@
     - `onConfirmSelection`: Trigger `confirmSpellSelection`.
 - **Dungeon Board**: Displays `DungeonBoard` with props:
   - `boardVisibilityMap`: `boardVisibilityMap`.
+  - `hoveredPathVariant`: `hooksTurnLogic.hoveredPathVariant`.
   - `secretPassages`: `hooksSecretPassages.foundPassages`.
   - `treasures`: `hooksTreasure.foundTreasures`.
   - `triggeredTraps`: `hooksTraps.getTriggeredTraps()`.
@@ -174,12 +175,12 @@
 - `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment` and `hooksSessionManager`.
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
-- `hooksVisibilityCalc`: @useVisibilityCalc passing gameSession and visibilityMap: staticVisibilityMap.
+- `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `staticVisibilityMap`.
 - `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
-- `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.foundPassages`, and `hooksSessionManager`.
+- `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.getFoundPassages().visiblePassages`, and `hooksSessionManager`.
 - `hooksHeroStats`: @useHeroStats passing `staticEquipment`.
-- `hooksPathfinding`: @usePathfinding passing `gameSession`, `staticVisibilityMap`, and `hooksSecretPassages.foundPassages`.
+- `hooksPathfinding`: @usePathfinding passing `gameSession`, `staticVisibilityMap`, and `hooksSecretPassages.getFoundPassages().visiblePassages`.
 - `hooksCombatLogic`: @useCombatLogic.
 - `hooksTurnLogic`: @useTurnLogic passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTraps`, `hooksHeroStats`, `hooksPathfinding`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksVisibilityCalc`, and `hooksSessionManager`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, and `staticMonsters`.

@@ -57,6 +57,46 @@
   - No position update occurs for the hero.
   - `hoveredPath` remains empty.
 
+## Scenario: Passapareti Preview Allows One Fogged-Room Crossing
+
+- **Given**: The active hero has `WallPass`, enough movement points, and hovers a fogged destination cell in a neighboring room that requires exactly one true wall crossing.
+- **When**: `handleBoardHover` is triggered for that fogged destination.
+- **Assert (Expected Outcomes)**:
+  - `hooksPathfinding.calculatePath` returns a path to the fogged destination.
+  - `hoveredPath` is populated with the full preview path.
+  - `hoveredPathVariant` is set to `valid`.
+  - The flow does not require the destination room to be already revealed.
+
+## Scenario: Passapareti Preview Turns Red On Second Wall Crossing
+
+- **Given**: The active hero has `WallPass`, enough movement points, and hovers a destination whose preview path would require two true wall crossings.
+- **When**: `handleBoardHover` is triggered for that destination.
+- **Assert (Expected Outcomes)**:
+  - `hoveredPath` is still populated for feedback.
+  - `hoveredPathVariant` is set to `blocked-by-second-wall`.
+  - `handleBoardClick` on that destination does not start movement.
+  - `onNotify` explains that `Passapareti` allows only one wall crossing.
+
+## Scenario: Passapareti Preview Allows One Fogged-Room Crossing
+
+- **Given**: The active hero has `WallPass`, enough movement points, and hovers a fogged destination cell in a neighboring room that requires exactly one true wall crossing.
+- **When**: `handleBoardHover` is triggered for that fogged destination.
+- **Assert (Expected Outcomes)**:
+  - `hooksPathfinding.calculatePath` returns a path to the fogged destination.
+  - `hoveredPath` is populated with the full preview path.
+  - `hoveredPathVariant` is set to `valid`.
+  - The flow does not require the destination room to be already revealed.
+
+## Scenario: Passapareti Preview Turns Red On Second Wall Crossing
+
+- **Given**: The active hero has `WallPass`, enough movement points, and hovers a destination whose preview path would require two true wall crossings.
+- **When**: `handleBoardHover` is triggered for that destination.
+- **Assert (Expected Outcomes)**:
+  - `hoveredPath` is still populated for feedback.
+  - `hoveredPathVariant` is set to `blocked-by-second-wall`.
+  - `handleBoardClick` on that destination does not start movement.
+  - `onNotify` explains that `Passapareti` allows only one wall crossing.
+
 ## Scenario: Courage Spell Expiration
 
 - **Given**: A hero has "Courage" in `activeStatus`. No monsters are visible (all cells in `visibilityMap.data` with `fog: false` contain no monsters).

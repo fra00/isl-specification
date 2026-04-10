@@ -59,3 +59,31 @@ This document outlines the logical test scenarios for the `usePathfinding` compo
     - It checks for `isDoor` and `isSecretPassage`.
     - Since neither exists, it returns `FALSE`.
     - The pathfinding algorithm correctly identifies the rooms as disconnected and returns an empty list.
+
+## Scenario: Pathfinding Allows Wall Crossing With Passapareti
+
+- **Given**: A hero has `activeStatus` containing `WallPass`, starts in a cell with `valo: "A"`, and targets a reachable empty cell in `valo: "B"` with no door between the two areas.
+- **When**: `calculatePath` is called during that hero's movement phase.
+- **Assert (Expected Outcomes)**:
+    - The movement rules can resolve the active hero status from the shared session context used by `useDungeonMapQuery`.
+    - `movementRules.isWalkable` returns `TRUE` on the room-boundary transition because `WallPass` is active.
+    - The returned path crosses the area boundary instead of stopping at the wall.
+    - The pathfinding result remains constrained by the hero's normal movement depth; no extra charges or extra path length are created by the spell itself.
+
+## Scenario: Pathfinding Can Target Fogged Cell In Adjacent Room With Passapareti
+
+- **Given**: A hero has `activeStatus` containing `WallPass`, starts in a revealed room, and the destination cell is empty, belongs to an adjacent room, and is still under `fog: true`.
+- **When**: `calculatePath` is called for that fogged destination.
+- **Assert (Expected Outcomes)**:
+    - The target is accepted as a valid destination as long as it is not occupied by furniture, monster, hero, or rock.
+    - `movementRules.isWalkable` uses area topology and hero status, not current fog visibility, to evaluate the room transition.
+    - The returned path can include cells that are currently not visible to the player.
+
+## Scenario: Turn Logic Consumes Passapareti After One Wall Crossing
+
+- **Given**: The active hero moves along a path that crosses from one `valo` area to another without using a door or secret passage, and `activeStatus` contains `WallPass`.
+- **When**: `movementEffect` resolves the first valid wall-crossing step.
+- **Assert (Expected Outcomes)**:
+    - The move is allowed.
+    - `sessionManager.clearCurrentHeroStatus("WallPass")` is requested immediately after that crossing.
+    - Any subsequent wall crossing in the same movement requires another valid rule and MUST NOT reuse the consumed `WallPass`.

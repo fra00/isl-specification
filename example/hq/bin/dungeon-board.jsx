@@ -18,6 +18,7 @@ export default function DungeonBoard({
   onCellHover,
   onMonsterClick,
   hoveredPath = [],
+  hoveredPathVariant = null,
   secretPassages = [],
   treasures = [],
   triggeredTraps = [],
@@ -324,7 +325,7 @@ export default function DungeonBoard({
           {gridCells.map((cell) => (
             <div
               key={`grid-${cell.x}-${cell.y}`}
-              className={`absolute ${cell.cursorClass} ${cell.isHoveredPath ? "bg-green-500/50" : ""} ${cell.highlightClass}`}
+              className={`absolute ${cell.cursorClass} ${cell.isHoveredPath ? (hoveredPathVariant === "blocked-by-second-wall" ? "bg-red-500/45" : "bg-green-500/50") : ""} ${cell.highlightClass}`}
               style={{
                 left: cell.x * 34,
                 top: cell.y * 34,
@@ -469,6 +470,7 @@ export default function DungeonBoard({
           {/* Heroes */}
           {gameSession?.heroes?.map((h) => {
             const isCurrentTurn = gameSession.currentTurn === h.turnOrder;
+            const maxBody = h.hero?.corpo ?? h.currentBody ?? 0;
             let statusClasses = "";
             let opacityClass = "opacity-100";
 
@@ -482,7 +484,15 @@ export default function DungeonBoard({
             } else if (h.activeStatus?.includes("Courage")) {
               statusClasses =
                 "shadow-[0_0_15px_rgba(255,69,0,0.8)] animate-pulse";
+            } else if (h.activeStatus?.includes("WallPass")) {
+              statusClasses =
+                "shadow-[0_0_15px_rgba(217,119,6,0.85)] animate-pulse";
+            } else if (h.activeStatus?.includes("InvisiblePassage")) {
+              statusClasses =
+                "shadow-[0_0_15px_rgba(34,211,238,0.85)] animate-pulse";
             }
+
+            const statusLabel = (h.activeStatus || []).join(", ");
 
             let cursorClass = "cursor-default";
             if (targetingSpell?.targetType === "Hero") {
@@ -501,12 +511,16 @@ export default function DungeonBoard({
                 }}
                 onMouseEnter={() => handleHeroTargetHover(h)}
                 onClick={() => handleHeroTargetClick(h)}
+                title={`${h.hero?.classe || "Hero"} HP: ${h.currentBody ?? 0}/${maxBody}${statusLabel ? ` | Effects: ${statusLabel}` : ""}`}
               >
                 <img
                   src={`/img/eroi/${h.hero?.miniature}`}
                   alt={h.hero?.classe}
                   className={`max-w-[34px] max-h-[34px] w-full h-full object-contain ${opacityClass} ${statusClasses}`}
                 />
+                <div className="absolute -bottom-1 -right-1 min-w-[20px] h-[14px] px-1 rounded-full bg-black/85 border border-red-400 text-[9px] leading-[12px] font-bold text-red-200 text-center pointer-events-none">
+                  {(h.currentBody ?? 0)}/{maxBody}
+                </div>
               </div>
             );
           })}

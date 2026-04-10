@@ -12,6 +12,7 @@
 ## Domain Concepts
 
 - `currentHeroStats`: Effective hero stats already resolved by business logic, including equipment bonuses and temporary effects such as `RockSkin` and `Courage`.
+- `activeEffects`: The list of current hero status effects from `currentHero.activeStatus`, used to surface temporary spell effects such as `WallPass`, `FoggyMist`, `RockSkin`, and `Courage`.
 
 ## Component: DungeonTurnControls
 
@@ -56,6 +57,7 @@
   - Display Intelligence.
   - Display Attack using `currentHeroStats.attacco` when available; otherwise fall back to the base hero value.
   - Display Defense using `currentHeroStats.difesa` when available; otherwise fall back to the base hero value.
+  - Display the active temporary effects from `currentHero.activeStatus`, if any, so movement-related spells remain visible when the affected hero starts the turn.
 - **Inventary Section**
   - **Inventory button**
     - Style: Blue primary button.

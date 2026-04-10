@@ -105,6 +105,7 @@ export default function DungeonTurnControls({
   const health = currentHero?.currentBody ?? 0;
   const mind = currentHero?.currentMind ?? 0;
   const gold = currentHero?.gold ?? 0;
+  const activeEffects = currentHero?.activeStatus ?? [];
 
   const isMagicVisible = ["mago", "elfo"].includes(heroClass.toLowerCase());
   const isMagicDisabled =
@@ -156,6 +157,21 @@ export default function DungeonTurnControls({
             <span className="text-gray-400">Defense:</span>
             <span className="font-semibold">{defense}</span>
           </div>
+          {activeEffects.length > 0 && (
+            <div className="flex flex-col gap-1 pt-2">
+              <span className="text-gray-400">Effects:</span>
+              <div className="flex flex-wrap gap-1 justify-end">
+                {activeEffects.map((effect) => (
+                  <span
+                    key={effect}
+                    className="px-2 py-[2px] rounded-full bg-indigo-900/80 border border-indigo-500 text-[10px] font-semibold"
+                  >
+                    {effect}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Inventory Section */}

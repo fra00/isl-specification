@@ -100,7 +100,7 @@ const staticSpells = [
     valore: 0,
     immagine: "Terra02.jpg",
     dorso: "Terra00_Dorso.jpg",
-    descrizione: "Permette all'eroe di attraversare i muri durante questo turno."
+    descrizione: "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi."
   }),
   Spell({
     id: 9,

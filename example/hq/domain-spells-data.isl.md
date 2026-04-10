@@ -31,7 +31,7 @@ La lista autoritativa dei 12 incantesimi disponibili nel gioco.
 
 - **Terra** (Set 3):
   - **7**: { nome: "Pelle di Pietra", elemento: "Terra", targetType: "Hero", effetto: "Pelle di Pietra", valore: 1, immagine: "Terra01.jpg", dorso: "Terra00_Dorso.jpg", descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni." }
-  - **8**: { nome: "Passapareti", elemento: "Terra", targetType: "Hero", effetto: "Passapareti", valore: 0, immagine: "Terra02.jpg", dorso: "Terra00_Dorso.jpg", descrizione: "Permette all'eroe di attraversare i muri durante questo turno." }
+  - **8**: { nome: "Passapareti", elemento: "Terra", targetType: "Hero", effetto: "Passapareti", valore: 0, immagine: "Terra02.jpg", dorso: "Terra00_Dorso.jpg", descrizione: "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi." }
   - **9**: { nome: "Genio", elemento: "Terra", targetType: "Monster", effetto: "Genio", valore: 5, immagine: "Terra03.jpg", dorso: "Terra00_Dorso.jpg", descrizione: "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza." }
 
 - **Aria** (Set 4):

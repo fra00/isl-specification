@@ -438,6 +438,24 @@ export function useDungeonSessionManager(config) {
         });
     }, [commitSessionUpdate]);
 
+    const clearCurrentHeroStatus = useCallback((statusName) => {
+        return commitSessionUpdate((currentSession) => {
+            const hero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+            if (!hero || !hero.activeStatus?.includes(statusName)) return currentSession;
+
+            const updatedHero = {
+                ...hero,
+                activeStatus: hero.activeStatus.filter(s => s !== statusName)
+            };
+            const updatedHeroes = currentSession.heroes.map(h => h.turnOrder === currentSession.currentTurn ? updatedHero : h);
+
+            return GameSession({
+                ...currentSession,
+                heroes: updatedHeroes
+            });
+        });
+    }, [commitSessionUpdate]);
+
     const resolveMovementTrap = useCallback((nextX, nextY, trapType, rockFallX, rockFallY) => {
         return commitSessionUpdate((currentSession) => {
             if (currentSession.currentMap == null) return currentSession;
@@ -572,6 +590,7 @@ export function useDungeonSessionManager(config) {
         startNextHeroRound,
         clearHeroStatusEverywhere,
         moveCurrentHeroTo,
+        clearCurrentHeroStatus,
         resolveMovementTrap,
         markCurrentHeroEscaped,
         resolveHeroAttack,

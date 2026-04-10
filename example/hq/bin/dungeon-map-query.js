@@ -61,6 +61,8 @@ export const useDungeonMapQuery = ({ gameSession, visibilityMap }) => {
   }, []);
 
   return {
+    gameSession,
+    visibilityMap,
     getMapCell,
     getVisibilityCell,
     isDoor,

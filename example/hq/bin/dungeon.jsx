@@ -21,6 +21,7 @@ import { usePathfinding } from "./dungeon-use-pathfinding";
 import { useCombatLogic } from "./dungeon-use-combat";
 import { useHeroStats } from "./dungeon-use-hero-stats";
 import { useFogOfWar } from "./dungeon-use-fog-of-war";
+import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 import { useDungeonMonsters } from "./dungeon-use-monsters";
 import CombatResultModal from "./dungeon-combat-result-modal";
 import DungeonTurnControls from "./dungeon-turn-controls";
@@ -94,7 +95,10 @@ export default function Dungeon(props) {
 
   const hooksCampaignManager = useCampaignManager();
 
-  const hooksVisibilityCalc = undefined;
+  const hooksVisibilityCalc = useVisibilityCalc({
+    gameSession,
+    visibilityMap: staticVisibilityMap,
+  });
 
   const hooksHeroStats = useHeroStats({ staticEquipment });
 
@@ -109,14 +113,14 @@ export default function Dungeon(props) {
 
   const hooksMapInteraction = useMapInteraction({
     gameSession,
-    foundPassages: hooksSecretPassages.foundPassages,
+    foundPassages: hooksSecretPassages.getFoundPassages().visiblePassages,
     sessionManager: hooksSessionManager,
   });
 
   const hooksPathfinding = usePathfinding({
     gameSession,
     visibilityMap: staticVisibilityMap,
-    foundPassages: hooksSecretPassages.foundPassages,
+    foundPassages: hooksSecretPassages.getFoundPassages().visiblePassages,
   });
 
   const areMonstersVisible = useMemo(() => {
@@ -483,8 +487,9 @@ export default function Dungeon(props) {
         onCellHover={hooksTurnLogic.handleBoardHover}
         onMonsterClick={handleMonsterClick}
         hoveredPath={hooksTurnLogic.hoveredPath}
-        secretPassages={hooksSecretPassages.foundPassages}
-        treasures={hooksTreasure.foundTreasures}
+        hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
+        secretPassages={hooksSecretPassages.getFoundPassages().visiblePassages}
+        treasures={hooksTreasure.getFoundTreasures()}
         triggeredTraps={triggeredTraps}
         targetingSpell={targetingSpell}
         visibilityCalc={hooksVisibilityCalc}

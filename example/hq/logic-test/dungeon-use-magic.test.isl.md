@@ -31,6 +31,25 @@
   - Spell ID 52 remains in `currentHero.availableSpells`.
   - `onActionDone` is triggered to prevent logical dead-end.
 
+## Scenario: Cast Spell - Healing Water Updates Target Hero Body Points
+
+- **Given**: A hero (ID: 1) whose turn it is has "Acqua Guaritrice" available, and a target hero (ID: 2) has `currentBody: 1` with `hero.corpo: 4`.
+- **When**: `castSpell(4, 2, null, null, null)` is triggered.
+- **Assert (Expected Outcomes)**:
+  - `targetHero.currentBody` is updated from 1 to 4.
+  - Spell ID 4 is removed from the casting hero's `availableSpells`.
+  - `onNotify` reports the actual recovered amount together with the final health total.
+  - `onUpdateSession` and `onActionDone` are triggered.
+
+## Scenario: Cast Spell - Healing Water Clamps At Maximum Body Points
+
+- **Given**: A hero (ID: 1) whose turn it is has "Acqua Guaritrice" available, and a target hero (ID: 2) has `currentBody: 3` with `hero.corpo: 4`.
+- **When**: `castSpell(4, 2, null, null, null)` is triggered.
+- **Assert (Expected Outcomes)**:
+  - `targetHero.currentBody` is updated from 3 to 4 and MUST NOT exceed 4.
+  - `onNotify` reports only the actual recovered amount (1), not the raw spell value (4).
+  - The spell is consumed and the session update remains atomic.
+
 ## Scenario: Cast Spell - Hero Target Selected From Board Token
 
 - **Given**: The active hero starts targeting `Coraggio` or `Pelle di Pietra`, and another hero is present on a visible board cell.
@@ -40,6 +59,16 @@
   - `castSpell(spellId, targetHeroId, null, targetX, targetY)` is triggered with the clicked hero as target.
   - The spell effect is applied to that hero, the spell is consumed, and targeting mode ends.
   - No extra click on the empty underlying cell is required.
+
+## Scenario: Cast Spell - Passapareti Grants One Wall Crossing
+
+- **Given**: The active hero casts `Passapareti` on another hero.
+- **When**: `castSpell(8, targetHeroId, null, null, null)` is triggered successfully.
+- **Assert (Expected Outcomes)**:
+  - `targetHero.activeStatus` contains `WallPass` after the session update.
+  - The casting hero consumes spell ID 8.
+  - The notification clearly states that the target hero can cross one wall with `Passapareti`.
+  - The spell does not create a die-based counter or additional charges.
 
 ## Scenario: Cast Spell - Genie Door Opening
 

@@ -94,6 +94,15 @@ This document outlines the logical test scenarios for the `DungeonTurnControls` 
   - The Attack value shown in the Info Section is 4, not the base 2.
   - The displayed attack reflects active effects and equipped bonuses already resolved by business logic.
 
+## Scenario: Active Effects List Shows Movement Buffs
+
+- **Given**: `currentHero.activeStatus` contains `WallPass` and `FoggyMist`.
+- **When**: The component renders at the start of that hero's turn.
+- **Assert (Expected Outcomes)**:
+  - The Info Section displays both active effects.
+  - Movement-related spell effects remain visible without opening any secondary panel.
+  - The UI makes it immediately clear that the hero still has a temporary traversal effect available.
+
 ## Scenario: Guaranteed Cleanup on Unmount
 
 - **Given**: The user is in the middle of a drag operation (`mousemove` listener active).

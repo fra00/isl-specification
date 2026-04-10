@@ -36,6 +36,10 @@ export function useTurnLogic(config) {
   const hoveredPathRef = useRef(hoveredPath);
   useEffect(() => { hoveredPathRef.current = hoveredPath; }, [hoveredPath]);
 
+  const [hoveredPathVariant, setHoveredPathVariant] = useState(null);
+  const hoveredPathVariantRef = useRef(hoveredPathVariant);
+  useEffect(() => { hoveredPathVariantRef.current = hoveredPathVariant; }, [hoveredPathVariant]);
+
   const [canAttack, setCanAttack] = useState(false);
 
   const [attacksPerformed, setAttacksPerformed] = useState(0);
@@ -147,9 +151,43 @@ export function useTurnLogic(config) {
     setMovementPoints(total);
   }, [gameSession, heroStatsLogic]);
 
+  const getHoveredPathVariantForHero = useCallback((hero, fullPath) => {
+    if (!hero || !fullPath || fullPath.length < 2) return null;
+
+    let wallCrossings = 0;
+
+    for (let index = 1; index < fullPath.length; index += 1) {
+      const from = fullPath[index - 1];
+      const to = fullPath[index];
+      const fromVis = visibilityMap?.data?.find((c) => c.x === from.x && c.y === from.y);
+      const toVis = visibilityMap?.data?.find((c) => c.x === to.x && c.y === to.y);
+
+      if (!fromVis || !toVis || fromVis.valo === toVis.valo) {
+        continue;
+      }
+
+      const doorCheck = mapInteractionLogic.isFrontOfDoor(from.x, from.y, fromVis.valo);
+      const isPassageTransition =
+        doorCheck?.found &&
+        doorCheck.passageCell?.x === to.x &&
+        doorCheck.passageCell?.y === to.y;
+
+      if (!isPassageTransition) {
+        wallCrossings += 1;
+      }
+    }
+
+    if (hero.activeStatus?.includes("WallPass") && wallCrossings > 1) {
+      return "blocked-by-second-wall";
+    }
+
+    return "valid";
+  }, [visibilityMap, mapInteractionLogic]);
+
   const handleBoardHover = useCallback((x, y) => {
     if (movementPointsRef.current == null || movementPointsRef.current <= 0 || isMovingRef.current) {
       setHoveredPath([]);
+      setHoveredPathVariant(null);
       return;
     }
 
@@ -158,11 +196,14 @@ export function useTurnLogic(config) {
 
     const path = hooksPathfinding.calculatePath(hero.x, hero.y, x, y, movementPointsRef.current, hero.heroId);
     if (path && path.length > 0) {
-      setHoveredPath([{ x: hero.x, y: hero.y }, ...path]);
+      const fullPath = [{ x: hero.x, y: hero.y }, ...path];
+      setHoveredPath(fullPath);
+      setHoveredPathVariant(getHoveredPathVariantForHero(hero, fullPath));
     } else {
       setHoveredPath([]);
+      setHoveredPathVariant(null);
     }
-  }, [gameSession, hooksPathfinding]);
+  }, [gameSession, hooksPathfinding, getHoveredPathVariantForHero]);
 
   const handleBoardClick = useCallback((x, y) => {
     if (isMovingRef.current || movementPointsRef.current == null || movementPointsRef.current <= 0) return;
@@ -172,22 +213,31 @@ export function useTurnLogic(config) {
     if (!currentHero) return;
 
     let path = [...hoveredPathRef.current];
+    let pathVariant = hoveredPathVariantRef.current;
     if (path.length === 0 || path[path.length - 1].x !== x || path[path.length - 1].y !== y) {
       const calcPath = hooksPathfinding.calculatePath(currentHero.x, currentHero.y, x, y, movementPointsRef.current, currentHero.heroId);
       if (calcPath && calcPath.length > 0) {
         path = [{ x: currentHero.x, y: currentHero.y }, ...calcPath];
+        pathVariant = getHoveredPathVariantForHero(currentHero, path);
       }
     }
 
     if (path.length > 1 && path[path.length - 1].x === x && path[path.length - 1].y === y) {
+      if (pathVariant === "blocked-by-second-wall") {
+        onNotify("Passapareti permette di attraversare un solo muro.");
+        setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null));
+        return;
+      }
+
       setCanOpenDoor(null);
       setIsMoving(true);
       setActivePath([...path]);
       setHoveredPath([]);
+      setHoveredPathVariant(null);
     } else {
       setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null));
     }
-  }, [gameSession, hooksPathfinding, mapInteractionLogic]);
+  }, [gameSession, hooksPathfinding, mapInteractionLogic, onNotify, getHoveredPathVariantForHero]);
 
   const endTurn = useCallback(() => {
     if (isMovingRef.current) return;
@@ -284,6 +334,9 @@ export function useTurnLogic(config) {
             doorCheck.destination.y
           );
           setCanOpenDoor(null);
+        } else if (currentHero.activeStatus?.includes("WallPass")) {
+          sessionManager.clearCurrentHeroStatus("WallPass");
+          onNotify("Passapareti si consuma dopo aver attraversato un muro.");
         }
       }
 
@@ -455,6 +508,7 @@ export function useTurnLogic(config) {
     turnPhase,
     movementPoints,
     hoveredPath,
+    hoveredPathVariant,
     canAttack,
     isMoving,
     canOpenDoor,

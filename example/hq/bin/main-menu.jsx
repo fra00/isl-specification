@@ -6,8 +6,8 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
+import React, { useState, useCallback } from "react";
+import { PageNavigationEnum } from "./domain-core";
 
 export default function MainMenu({ onChangePageView }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -21,18 +21,21 @@ export default function MainMenu({ onChangePageView }) {
       left: `${Math.random() * 100}%`,
       duration: Math.random() * 10 + 15, // 15s to 25s
       delay: -(Math.random() * 25), // Negative delay to start already on screen
-      drift: Math.random() * 40 - 20 // +/- 20px drift
+      drift: Math.random() * 40 - 20, // +/- 20px drift
     }));
   });
 
-  const handleClick = useCallback((destination) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    if (onChangePageView) {
-      onChangePageView(destination);
-    }
-    setIsProcessing(false);
-  }, [isProcessing, onChangePageView]);
+  const handleClick = useCallback(
+    (destination) => {
+      if (isProcessing) return;
+      setIsProcessing(true);
+      if (onChangePageView) {
+        onChangePageView(destination);
+      }
+      setIsProcessing(false);
+    },
+    [isProcessing, onChangePageView],
+  );
 
   const handleMouseEnter = useCallback((imagePath) => {
     setHoverImage(imagePath);
@@ -92,62 +95,63 @@ export default function MainMenu({ onChangePageView }) {
 
       {/* BackgroundLayer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div 
+        <div
           className="w-full h-full bg-cover bg-center"
-          style={{ 
+          style={{
             backgroundImage: "url('/img/menusfondo.jpg')",
-            animation: 'respiro 30s ease-in-out infinite alternate' 
-          }} 
+            animation: "respiro 30s ease-in-out infinite alternate",
+          }}
         />
       </div>
 
       {/* MouseOverImageLayer */}
       {hoverImage && (
         <div className="absolute top-0 right-0 h-[30%] w-auto z-[2] opacity-80 pointer-events-none">
-          <img 
-            src={hoverImage} 
-            alt="Menu Preview" 
+          <img
+            src={hoverImage}
+            alt="Menu Preview"
             className="h-full w-auto object-contain"
           />
         </div>
       )}
 
       {/* MistOverlay */}
-      <div 
+      <div
         className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"
         style={{
-          backgroundImage: 'url(/img/mist.jpeg)',
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: '200% 100%',
-          filter: 'blur(5px)',
-          animation: 'deriva-nebbia 60s linear infinite'
-        }} 
+          backgroundImage: "url(/img/mist.jpeg)",
+          backgroundRepeat: "repeat-x",
+          backgroundSize: "200% 100%",
+          filter: "blur(5px)",
+          animation: "deriva-nebbia 60s linear infinite",
+        }}
       />
 
       {/* DustOverlay */}
       <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen">
-        {particles.map(p => (
-          <div 
+        {particles.map((p) => (
+          <div
             key={p.id}
             className="absolute rounded-full bg-[#FFD700]"
             style={{
               width: `${p.size}px`,
               height: `${p.size}px`,
               left: p.left,
-              '--drift': `${p.drift}px`,
-              animation: `fluttuazione-pulviscolo ${p.duration}s linear ${p.delay}s infinite`
-            }} 
+              "--drift": `${p.drift}px`,
+              animation: `fluttuazione-pulviscolo ${p.duration}s linear ${p.delay}s infinite`,
+            }}
           />
         ))}
       </div>
 
       {/* CandleLightOverlay */}
-      <div 
+      <div
         className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"
         style={{
-          background: 'radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)',
-          animation: 'bagliore-vivo 4s ease-in-out infinite'
-        }} 
+          background:
+            "radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)",
+          animation: "bagliore-vivo 4s ease-in-out infinite",
+        }}
       />
 
       {/* UIContent */}
@@ -155,7 +159,7 @@ export default function MainMenu({ onChangePageView }) {
         <div
           className="menu-text"
           onClick={() => handleClick(PageNavigationEnum.PLAY_GAME)}
-          onMouseEnter={() => handleMouseEnter('/img/main-menu/nuova.jpg')}
+          onMouseEnter={() => handleMouseEnter("/img/main-menu/nuova.jpg")}
           onMouseLeave={handleMouseLeave}
         >
           GIOCA
@@ -163,7 +167,7 @@ export default function MainMenu({ onChangePageView }) {
         <div
           className="menu-text"
           onClick={() => handleClick(PageNavigationEnum.EDITOR_GAME)}
-          onMouseEnter={() => handleMouseEnter('/img/main-menu/editor.jpg')}
+          onMouseEnter={() => handleMouseEnter("/img/main-menu/editor.jpg")}
           onMouseLeave={handleMouseLeave}
         >
           EDITOR

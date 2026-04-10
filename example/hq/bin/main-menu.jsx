@@ -72,23 +72,23 @@ export default function MainMenu({ onChangePageView }) {
             font-family: fantasy;
             font-weight: bold;
             font-size: 4rem;
-            background: linear-gradient(to bottom, #FFD700 0%, #B8860B 100%);
+            background: linear-gradient(to bottom, #D6B36A 0%, #8C6239 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             -webkit-text-stroke: 2px #2a2a2a;
             filter: drop-shadow(4px 4px 2px rgba(0,0,0,1));
-            text-shadow: 0 0 0 rgba(255, 214, 102, 0);
+            text-shadow: 0 0 0 rgba(214, 179, 106, 0);
             transition: transform 0.22s ease, filter 0.22s ease, text-shadow 0.22s ease, letter-spacing 0.22s ease;
             cursor: pointer;
             text-align: center;
             letter-spacing: 0.12em;
           }
           .menu-text:hover {
-            filter: drop-shadow(0 0 10px rgba(255, 214, 102, 0.45)) drop-shadow(4px 4px 2px rgba(0,0,0,0.95));
-            text-shadow: 0 0 18px rgba(255, 214, 102, 0.45);
+            filter: drop-shadow(0 0 10px rgba(214, 179, 106, 0.42)) drop-shadow(4px 4px 2px rgba(0,0,0,0.95));
+            text-shadow: 0 0 18px rgba(214, 179, 106, 0.42);
             transform: translateX(6px) scale(1.035);
             letter-spacing: 0.16em;
-            -webkit-text-stroke: 2px #4a3410;
+            -webkit-text-stroke: 2px #5a4125;
           }
         `}
       </style>

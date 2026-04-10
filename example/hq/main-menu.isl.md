@@ -75,10 +75,10 @@ voci di menu :
   Font: 'fantasy' (Bold).
 
   Typography:
-  Color: linear-gradient(to bottom, #FFD700 0%, #B8860B 100%).
+  Color: linear-gradient(to bottom, #D6B36A 0%, #8C6239 100%).
   -webkit-background-clip: text.
   -webkit-text-fill-color: transparent.
-  💡 Effetto: Questo crea il riflesso metallico dell'oro.
+  💡 Effetto: Questo crea un riflesso metallico bronzo caldo, più desaturato e coerente con l'atmosfera del menu.
 
   Shadow & Stroke (Rilevante per la tua immagine):
   Stroke: -webkit-text-stroke: 2px #2a2a2a (Grigio pietra molto scuro per staccare dal giallo).
@@ -86,7 +86,7 @@ voci di menu :
   💡 Nota: Usare filter: drop-shadow invece di text-shadow garantisce che l'ombra segua la sagoma del testo incluso lo stroke grigio.
 
 - stato base del testo: nessun blur, ma ombra scura netta e contrasto forte
-- mouse over: evidenziazione con leggero aumento scala, glow ambrato, stroke più chiaro e lieve traslazione orizzontale; evitare blur sul testo
+- mouse over: evidenziazione con leggero aumento scala, glow bronzo caldo, stroke più chiaro e lieve traslazione orizzontale; evitare blur sul testo
 
 ### 📦 Content
 

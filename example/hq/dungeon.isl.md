@@ -91,6 +91,7 @@
   - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
   - **Props**:
     - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
+    - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
     - `movementPoints`: `hooksTurnLogic.movementPoints`.
     - `turnPhase`: `hooksTurnLogic.turnPhase`.
     - `isMoving`: `hooksTurnLogic.isMoving`.

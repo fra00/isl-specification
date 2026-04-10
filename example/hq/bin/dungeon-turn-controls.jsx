@@ -9,210 +9,227 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function DungeonTurnControls({
-    currentHero,
-    movementPoints,
-    turnPhase,
-    canOpenDoor,
-    isTargeting,
-    isMoving,
-    onRollMovement,
-    onEndTurn,
-    onSearchPassages,
-    onSearchTreasure,
-    onSearchTraps,
-    onOpenMagic,
-    onOpenInventory,
-    onCancelTargeting,
-    onOpenDoor
+  currentHero = null,
+  currentHeroStats = null,
+  movementPoints = null,
+  turnPhase = {},
+  canOpenDoor = null,
+  isTargeting = false,
+  isMoving = false,
+  onRollMovement = () => {},
+  onEndTurn = () => {},
+  onSearchPassages = () => {},
+  onSearchTreasure = () => {},
+  onSearchTraps = () => {},
+  onOpenMagic = () => {},
+  onOpenInventory = () => {},
+  onCancelTargeting = () => {},
+  onOpenDoor = () => {}
 }) {
-    const [position, setPosition] = useState(() => {
-        try {
-            const saved = localStorage.getItem("dungeonTurnControlsPosition");
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
-                    return parsed;
-                }
-            }
-        } catch (e) {
-            console.error("Failed to parse dungeonTurnControlsPosition", e);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const positionRef = useRef(position);
+  const dragHandlersRef = useRef({ move: null, up: null });
+
+  // Keep ref updated for drag calculations without triggering re-renders of the callback
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
+
+  // Initialize position from LocalStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("dungeonTurnControlsPosition");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          setPosition(parsed);
         }
-        return { x: 20, y: 20 };
-    });
+      }
+    } catch (e) {
+      // Fallback to default if parsing fails
+      setPosition({ x: 20, y: 20 });
+    }
+  }, []);
 
-    const positionRef = useRef(position);
-    const isDragging = useRef(false);
-    const dragOffset = useRef({ x: 0, y: 0 });
+  // Cleanup global event listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (dragHandlersRef.current.move) {
+        window.removeEventListener('mousemove', dragHandlersRef.current.move);
+      }
+      if (dragHandlersRef.current.up) {
+        window.removeEventListener('mouseup', dragHandlersRef.current.up);
+      }
+    };
+  }, []);
 
-    const handleMouseDown = useCallback((e) => {
-        isDragging.current = true;
-        dragOffset.current = {
-            x: e.clientX - positionRef.current.x,
-            y: e.clientY - positionRef.current.y
-        };
-    }, []);
+  const handleMouseDown = useCallback((e) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPos = positionRef.current;
 
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            if (!isDragging.current) return;
-            const newPos = {
-                x: e.clientX - dragOffset.current.x,
-                y: e.clientY - dragOffset.current.y
-            };
-            setPosition(newPos);
-            positionRef.current = newPos;
-        };
+    const handleMouseMove = (moveEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      setPosition({
+        x: startPos.x + dx,
+        y: startPos.y + dy
+      });
+    };
 
-        const handleMouseUp = () => {
-            if (isDragging.current) {
-                isDragging.current = false;
-                try {
-                    localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
-                } catch (e) {
-                    console.error("Failed to save dungeonTurnControlsPosition", e);
-                }
-            }
-        };
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      dragHandlersRef.current = { move: null, up: null };
+      
+      // Save to LocalStorage on drag end
+      localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
+    };
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
+    dragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, []);
 
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []);
+  // Derived state for UI
+  const heroClass = currentHero?.hero?.classe || "Unknown";
+  const attack = currentHeroStats?.attacco ?? currentHero?.hero?.attacco ?? 0;
+  const defense = currentHeroStats?.difesa ?? currentHero?.hero?.difesa ?? 0;
+  const health = currentHero?.currentBody ?? 0;
+  const mind = currentHero?.currentMind ?? 0;
+  const gold = currentHero?.gold ?? 0;
 
-    const heroClass = currentHero?.hero?.classe || "Unknown";
-    const isMagicUser = ["mago", "elfo"].includes(heroClass.toLowerCase());
-    const showOpenDoor = canOpenDoor != null && canOpenDoor.found === true;
+  const isMagicVisible = ["mago", "elfo"].includes(heroClass.toLowerCase());
+  const isMagicDisabled = turnPhase?.HasPerformedAction || isMoving || isTargeting;
+  const isRollDisabled = turnPhase?.HasMoved || movementPoints != null;
+  const isSearchDisabled = turnPhase?.HasPerformedAction;
+  const isOpenDoorVisible = canOpenDoor != null && canOpenDoor.found === true;
 
-    return (
-        <div
-            style={{ left: position.x, top: position.y }}
-            className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col overflow-hidden"
-        >
-            {/* Header */}
-            <div
-                onMouseDown={handleMouseDown}
-                className="bg-gray-900 p-3 cursor-grab active:cursor-grabbing select-none font-bold text-center border-b border-gray-700"
-            >
-                Turn Controls
-            </div>
+  return (
+    <div
+      className="fixed bg-gray-800 text-white rounded shadow-xl w-[250px] flex flex-col overflow-hidden z-50"
+      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+    >
+      <div
+        className="bg-gray-900 p-2 cursor-grab active:cursor-grabbing select-none font-bold text-center border-b border-gray-700"
+        onMouseDown={handleMouseDown}
+      >
+        Turn Controls
+      </div>
 
-            {/* Info Section */}
-            <div className="p-4 flex flex-col gap-2 text-sm border-b border-gray-700">
-                <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Class:</span>
-                    <span className="font-semibold capitalize">{heroClass}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Movement:</span>
-                    <span className="font-semibold">{movementPoints ?? "-"}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Gold:</span>
-                    <span className="font-semibold text-yellow-400">{currentHero?.gold ?? 0}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div className="bg-gray-700 p-2 rounded text-center">
-                        <div className="text-xs text-gray-400">Health</div>
-                        <div className="font-bold text-red-400">{currentHero?.currentBody ?? 0}</div>
-                    </div>
-                    <div className="bg-gray-700 p-2 rounded text-center">
-                        <div className="text-xs text-gray-400">Mind</div>
-                        <div className="font-bold text-blue-400">{currentHero?.currentMind ?? 0}</div>
-                    </div>
-                    <div className="bg-gray-700 p-2 rounded text-center">
-                        <div className="text-xs text-gray-400">Attack</div>
-                        <div className="font-bold text-orange-400">{currentHero?.hero?.attacco ?? 0}</div>
-                    </div>
-                    <div className="bg-gray-700 p-2 rounded text-center">
-                        <div className="text-xs text-gray-400">Defense</div>
-                        <div className="font-bold text-green-400">{currentHero?.hero?.difesa ?? 0}</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Inventory Section */}
-            <div className="p-4 border-b border-gray-700">
-                <button
-                    onClick={onOpenInventory}
-                    className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors"
-                >
-                    Inventory
-                </button>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-4 flex flex-col gap-2">
-                <button
-                    onClick={onRollMovement}
-                    disabled={turnPhase?.HasMoved || movementPoints != null}
-                    className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors"
-                >
-                    Roll Movement
-                </button>
-
-                <button
-                    onClick={onSearchPassages}
-                    disabled={turnPhase?.HasPerformedAction}
-                    className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors"
-                >
-                    Search Passages
-                </button>
-
-                <button
-                    onClick={onSearchTreasure}
-                    disabled={turnPhase?.HasPerformedAction}
-                    className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors"
-                >
-                    Search Treasure
-                </button>
-
-                <button
-                    onClick={onSearchTraps}
-                    disabled={turnPhase?.HasPerformedAction}
-                    className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors"
-                >
-                    Search Traps
-                </button>
-
-                {isMagicUser && (
-                    <button
-                        onClick={onOpenMagic}
-                        disabled={turnPhase?.HasPerformedAction || isMoving || isTargeting}
-                        className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded font-semibold transition-colors"
-                    >
-                        Magic
-                    </button>
-                )}
-
-                {isTargeting && (
-                    <button
-                        onClick={onCancelTargeting}
-                        className="w-full py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded font-semibold transition-colors"
-                    >
-                        Cancel Targeting
-                    </button>
-                )}
-
-                {showOpenDoor && (
-                    <button
-                        onClick={onOpenDoor}
-                        className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded font-semibold transition-colors"
-                    >
-                        Open Door
-                    </button>
-                )}
-
-                <button
-                    onClick={onEndTurn}
-                    className="w-full py-2 px-4 mt-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold transition-colors"
-                >
-                    End Turn
-                </button>
-            </div>
+      <div className="p-4 flex flex-col gap-4">
+        {/* Info Section */}
+        <div className="flex flex-col gap-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Class:</span>
+            <span className="font-semibold capitalize">{heroClass}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Movement:</span>
+            <span className="font-semibold">{movementPoints ?? '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Gold:</span>
+            <span className="font-semibold text-yellow-400">{gold}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Health:</span>
+            <span className="font-semibold text-red-400">{health}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Mind:</span>
+            <span className="font-semibold text-blue-400">{mind}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Attack:</span>
+            <span className="font-semibold">{attack}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Defense:</span>
+            <span className="font-semibold">{defense}</span>
+          </div>
         </div>
-    );
+
+        {/* Inventory Section */}
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onOpenInventory}
+            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold transition-colors"
+          >
+            Inventory
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2 border-t border-gray-700 pt-4">
+          <button
+            onClick={onRollMovement}
+            disabled={isRollDisabled}
+            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+          >
+            Roll Movement
+          </button>
+
+          <button
+            onClick={onSearchPassages}
+            disabled={isSearchDisabled}
+            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+          >
+            Search Passages
+          </button>
+
+          <button
+            onClick={onSearchTreasure}
+            disabled={isSearchDisabled}
+            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+          >
+            Search Treasure
+          </button>
+
+          <button
+            onClick={onSearchTraps}
+            disabled={isSearchDisabled}
+            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+          >
+            Search Traps
+          </button>
+
+          {isMagicVisible && (
+            <button
+              onClick={onOpenMagic}
+              disabled={isMagicDisabled}
+              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+            >
+              Magic
+            </button>
+          )}
+
+          {isTargeting && (
+            <button
+              onClick={onCancelTargeting}
+              className="w-full py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded font-semibold transition-colors"
+            >
+              Cancel Targeting
+            </button>
+          )}
+
+          {isOpenDoorVisible && (
+            <button
+              onClick={onOpenDoor}
+              className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded font-semibold transition-colors"
+            >
+              Open Door
+            </button>
+          )}
+
+          <button
+            onClick={onEndTurn}
+            className="w-full py-2 px-4 bg-red-600 hover:bg-red-500 text-white rounded font-semibold transition-colors mt-2"
+          >
+            End Turn
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

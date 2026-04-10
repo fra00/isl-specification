@@ -69,6 +69,20 @@ This document outlines the logical test scenarios for the `DungeonTurnControls` 
     - The component does not crash (graceful degradation).
     - All action buttons are disabled to prevent invalid state triggers.
 
+## Scenario: Effective Defense Display Includes RockSkin
+- **Given**: `currentHero.hero.difesa` is 2 and `currentHeroStats.difesa` is 3 because `RockSkin` is active.
+- **When**: The component renders.
+- **Assert (Expected Outcomes)**:
+    - The Defense value shown in the Info Section is 3, not the base 2.
+    - The displayed defense reflects active effects and equipped bonuses already resolved by business logic.
+
+## Scenario: Effective Attack Display Includes Courage
+- **Given**: `currentHero.hero.attacco` is 2 and `currentHeroStats.attacco` is 4 because `Courage` is active.
+- **When**: The component renders.
+- **Assert (Expected Outcomes)**:
+    - The Attack value shown in the Info Section is 4, not the base 2.
+    - The displayed attack reflects active effects and equipped bonuses already resolved by business logic.
+
 ## Scenario: Guaranteed Cleanup on Unmount
 - **Given**: The user is in the middle of a drag operation (`mousemove` listener active).
 - **When**: The component unmounts.

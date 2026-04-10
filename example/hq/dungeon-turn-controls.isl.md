@@ -9,6 +9,10 @@
 
 > **Reference**: @HeroState, @TurnPhase in `./domain-session.isl.md`
 
+## Domain Concepts
+
+- `currentHeroStats`: Effective hero stats already resolved by business logic, including equipment bonuses and temporary effects such as `RockSkin` and `Courage`.
+
 ## Component: DungeonTurnControls
 
 ### Role: Presentation
@@ -16,6 +20,7 @@
 **Signature**:
 
 - `currentHero`: @HeroState (The hero currently taking their turn).
+- `currentHeroStats`: { attacco: Integer, difesa: Integer, movimento: Integer, mente: Integer, corpo: Integer, canAttackDiagonal: Boolean, canAttackRanged: Boolean, canDisarmTraps: Boolean, hasDoubleAttack: Boolean } | null (Precomputed effective hero stats, including equipment and temporary status effects).
 - `movementPoints`: Integer (Current movement points available).
 - `turnPhase`: @TurnPhase (info about the current activity of the turn).
 - `canOpenDoor`: Boolean (Whether an adjacent door can be opened).
@@ -49,8 +54,8 @@
   - Display Gold.
   - Display Health.
   - Display Intelligence.
-  - Display Attack.
-  - Display Defense.
+  - Display Attack using `currentHeroStats.attacco` when available; otherwise fall back to the base hero value.
+  - Display Defense using `currentHeroStats.difesa` when available; otherwise fall back to the base hero value.
 - **Inventary Section**
   - **Inventory button**
     - Style: Blue primary button.
@@ -93,6 +98,7 @@
 
 #### internalState
 
+- **Contract**: Stores the floating panel position used by the drag interaction lifecycle.
 - `position`: {x: Integer, y: Integer} (Tracks the top-left coordinates of the dialog).
 
 #### initialize

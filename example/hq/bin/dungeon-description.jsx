@@ -23,39 +23,129 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
   }, [onChangePageView]);
 
   const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
+  const missionTitle = gameSession?.currentMap?.header?.titolo || "Briefing della Missione";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4 font-serif">
-      <div className="bg-[#2a1f1a] text-[#e8dcc4] p-8 rounded-lg shadow-2xl max-w-3xl w-full border-4 border-[#5c4033]">
-        <h1 className="text-4xl font-bold mb-6 text-center border-b-2 border-[#5c4033] pb-4 text-[#d4af37]">
-          Mission Description
-        </h1>
-        
-        <div className="max-h-96 overflow-y-auto mb-8 pr-4 whitespace-pre-wrap text-lg leading-relaxed">
-          {description}
+    <div className="dungeon-description-root relative h-full min-h-0 w-full overflow-hidden bg-black text-[#eadfc8]">
+      <style>
+        {`
+          @keyframes dungeon-brief-mist {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 150% 0%; }
+          }
+          @keyframes dungeon-brief-glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.55; transform: scale(1.03); }
+          }
+          .dungeon-description-root,
+          .dungeon-description-root * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(173, 133, 86, 0.92) rgba(12, 8, 8, 0.72);
+          }
+          .dungeon-description-root::-webkit-scrollbar,
+          .dungeon-description-root *::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          .dungeon-description-root::-webkit-scrollbar-track,
+          .dungeon-description-root *::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, rgba(13, 9, 9, 0.96) 0%, rgba(29, 19, 15, 0.88) 100%);
+          }
+          .dungeon-description-root::-webkit-scrollbar-thumb,
+          .dungeon-description-root *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(214, 179, 106, 0.92) 0%, rgba(109, 71, 40, 0.92) 100%);
+            border: 2px solid rgba(13, 9, 9, 0.95);
+            border-radius: 999px;
+          }
+          .brief-title {
+            font-family: fantasy;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            background: linear-gradient(to bottom, #dfc27d 0%, #9b6a3d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #25160d;
+            filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.75));
+          }
+          .brief-panel {
+            background: linear-gradient(180deg, rgba(29, 19, 15, 0.93) 0%, rgba(10, 8, 8, 0.95) 100%);
+            border: 1px solid rgba(150, 108, 64, 0.5);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 226, 170, 0.06);
+            backdrop-filter: blur(4px);
+          }
+        `}
+      </style>
+
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,3,3,0.58)_0%,rgba(5,4,4,0.82)_42%,rgba(0,0,0,0.94)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(130,81,39,0.18),transparent_32%),radial-gradient(circle_at_80%_18%,rgba(92,33,24,0.16),transparent_28%)]" />
+      <div
+        className="absolute inset-0 opacity-20 mix-blend-screen"
+        style={{
+          backgroundImage: "url('/img/mist.jpeg')",
+          backgroundRepeat: "repeat-x",
+          backgroundSize: "220% 100%",
+          filter: "blur(8px)",
+          animation: "dungeon-brief-mist 90s linear infinite",
+        }}
+      />
+      <div
+        className="absolute inset-0 mix-blend-screen pointer-events-none"
+        style={{
+          background: "radial-gradient(circle at 50% 20%, rgba(214, 179, 106, 0.12) 0%, transparent 28%), radial-gradient(circle at 50% 72%, rgba(174, 84, 31, 0.15) 0%, transparent 24%)",
+          animation: "dungeon-brief-glow 5s ease-in-out infinite",
+        }}
+      />
+
+      <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mb-4 flex shrink-0 flex-col gap-2">
+          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">
+            Cronaca della Spedizione
+          </span>
+          <h1 className="brief-title text-3xl sm:text-4xl lg:text-5xl">
+            {missionTitle}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-[#cebfa3]">
+            Leggi il briefing, prepara gli eroi e scegli se entrare subito nel dungeon o passare prima dall'armeria.
+          </p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 border-t-2 border-[#5c4033] pt-6">
-          <button
-            onClick={() => handleInteraction('ENTER')}
-            className="w-full sm:w-auto px-8 py-3 bg-red-900 hover:bg-red-800 text-white font-bold rounded shadow-lg transition-colors border-2 border-red-950"
-          >
-            Entra nel dungeon
-          </button>
-          
-          <button
-            onClick={() => handleInteraction('SHOP')}
-            className="w-full sm:w-auto px-8 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded shadow-lg transition-colors border-2 border-blue-950"
-          >
-            Armeria
-          </button>
-          
-          <button
-            onClick={() => handleInteraction('BACK')}
-            className="w-full sm:w-auto px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded shadow-lg transition-colors border-2 border-gray-800"
-          >
-            Indietro
-          </button>
+
+        <div className="brief-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.6rem] p-4 sm:p-5 lg:p-6">
+          <div className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-3">
+            <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
+              Briefing
+            </span>
+          </div>
+
+          <div className="min-h-0 overflow-y-auto overflow-x-hidden whitespace-pre-wrap rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] px-4 py-4 text-base leading-8 text-[#eadbc2] shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] sm:px-5 sm:text-lg lg:max-h-[calc(100vh-19rem)]">
+            {description}
+          </div>
+
+          <div className="mt-4 grid gap-3 border-t border-[rgba(153,117,77,0.25)] pt-4 sm:grid-cols-3">
+            <button
+              onClick={() => handleInteraction('ENTER')}
+              className="rounded-2xl border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition hover:brightness-110"
+            >
+              Entra nel dungeon
+            </button>
+
+            <button
+              onClick={() => handleInteraction('SHOP')}
+              className="rounded-2xl border border-[rgba(126,78,60,0.5)] bg-[rgba(32,20,18,0.82)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#e3d4bb] transition hover:border-[rgba(214,179,106,0.34)] hover:text-[#f0e2c8]"
+            >
+              Armeria
+            </button>
+
+            <button
+              onClick={() => handleInteraction('BACK')}
+              className="rounded-2xl border border-[rgba(109,88,72,0.5)] bg-[rgba(17,12,12,0.82)] px-6 py-4 text-sm font-bold uppercase tracking-[0.3em] text-[#d5c3a7] transition hover:border-[rgba(214,179,106,0.28)] hover:text-[#f0e2c8]"
+            >
+              Indietro
+            </button>
+          </div>
         </div>
       </div>
     </div>

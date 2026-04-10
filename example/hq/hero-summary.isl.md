@@ -15,6 +15,19 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `HeroSummarySection`
+
+- **Contract**: Represents the distinct content blocks displayed in the hero dossier panel.
+
+- `SELECTOR`: Hero selection control.
+- `PORTRAIT`: Hero portrait area.
+- `GOLD`: Gold summary card.
+- `EQUIPMENT`: Owned equipment list.
+
 **Signature**:
 
 - `heroes`: List<HeroState> (Dynamic states from session).
@@ -29,17 +42,17 @@
 
 ### 🔍 Appearance
 
-- **Layout**: Vertical column layout.
-- **Hero Selector**: A list or dropdown to switch between heroes.
-- **Portrait**: Large image container for the hero's portrait.
-- **Stats**: Display for Gold amount.
-- **Inventory**: List of owned items.
+- **Layout**: Dark gothic hero dossier panel.
+- **Hero Selector**: Bronze/dark dropdown to switch between heroes.
+- **Portrait**: Framed image area for the hero portrait.
+- **Stats**: Compact gold summary card with reduced visual footprint.
+- **Inventory**: Scrollable list of owned equipment shown as dark list entries.
 
 ### 📦 Content
 
 - **Selector**: Renders names of all heroes in the session.
 - **Portrait**: Image sourced from `/img/eroi/` + `staticHero.portrait`.
-- **Gold**: Text displaying "Gold: " + `heroState.gold`.
+- **Gold**: Compact text displaying `heroState.gold` in gold coins.
 - **Equipment List**: List of names of equipment currently owned by the hero. Use id to find the Equipment "nome" from static Equipment list
 
 ### ⚡ Capabilities

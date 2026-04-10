@@ -21,6 +21,20 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `MissionArchiveStatus`
+
+- **Contract**: Classifies each mission card according to campaign progression for presentation and interaction rules.
+
+Represents the visual progression state of a mission in the selection screen.
+
+- `LOCKED`: Mission not yet available.
+- `AVAILABLE`: Current next mission that can be started.
+- `COMPLETED`: Mission already completed and replayable.
+
 **Signature**:
 
 - `gameSession`: @GameSession (Current state of the session, nullable).
@@ -32,13 +46,20 @@
 
 ### 🔍 Appearance
 
-- A centered layout displaying the Campaign Title.
+- A full-screen gothic mission archive aligned with the main menu visual language.
+- Background: reuse the original HeroQuest artwork from the home screen, darkened with shadow gradients, mist, and warm candle-like highlights.
+- Title area: compact bronze/fantasy heading with reduced vertical footprint.
 - **State: Mission List**:
-  - A list of missions rendered as cards or list items.
+  - A left column containing vertically stacked mission cards inside a dark panel.
+  - Cards use a stone/parchment gothic treatment with bronze borders and subtle inner glow.
   - Visual distinction between **Completed**, **Available** (Next), and **Locked** missions.
-  - A "Back to Menu" button.
+  - Status pills inside the cards must remain horizontally centered and visually stable.
+  - Click on a card updates the mission detail panel; hover alone must not change the selected mission.
 - **State: Mission Details**:
-  - Renders the `DungeonDescription` component.
+  - A right panel shows the currently focused mission with title, archive file, status seal, atmospheric copy, and the primary action button.
+  - Includes a dark "Back to Menu" button styled coherently with the main menu.
+  - When vertical space is insufficient, the page and the detail/list panels must allow scroll instead of overflowing outside the container.
+  - Scrollbars must use dark bronze/gothic colors coherent with the page palette.
 
 ### 📦 Content
 
@@ -46,17 +67,22 @@
 - **Mission List**: Iterates over `missioni`.
   - **Mission Item**:
     - Title: `titolo`.
+    - Archive reference: `file`.
     - Status Indicator: Determine based on `index` vs `maxUnlockedMissionIndex`.
-- **Dungeon Description**: Visible only when a mission is selected.
-  - **Props**:
-    - `description`: `currentMap.header.descrizione`.
+- **Focused Mission Panel**:
+  - Uses the currently focused mission index.
+  - Shows `titolo` and a status label derived from progression state.
+  - Shows atmospheric helper text based on whether the mission is locked, completed, or available.
 - **Loading State**: Displays IF `campaign` or `staticHeroes` is null.
 
 ### ⚡ Capabilities
 
 #### internal State
 
+- **Contract**: Maintains the progression boundary, the currently focused mission, and access to persisted campaign progression.
+
 - `maxUnlockedMissionIndex`: Integer (Highest mission index accessible).
+- `focusedMissionIndex`: Integer (Mission currently highlighted in the archive panel).
 - `campaignManager`: @useCampaignManager
 
 #### initSession
@@ -88,6 +114,16 @@
       - Call `campaignManager.saveCampaign(defaultHeroes, 0)`.
       - Set `maxUnlockedMissionIndex` to 0.
 
+#### syncFocusedMission
+
+- **Contract**: Keeps the focused mission index valid when the campaign or unlocked progress changes.
+- **Trigger**: When `campaign` or `maxUnlockedMissionIndex` changes.
+- **Flow**:
+  - Determine mission count from `campaign.missioni`.
+  - IF there are no missions THEN do nothing.
+  - IF current `focusedMissionIndex` is still within bounds THEN preserve it.
+  - ELSE set `focusedMissionIndex` to the highest valid mission index, preferring `maxUnlockedMissionIndex`.
+
 #### selectMission
 
 - **Contract**: Loads the selected mission map, updates the session
@@ -110,6 +146,15 @@
   - ELSE:
     - (Optional) Show visual feedback that the mission is locked.
 
+#### focusMission
+
+- **Contract**: Updates the mission detail panel without navigating away.
+- **Signature**: `(index: Integer)`
+- **Flow**:
+  - Set `focusedMissionIndex` to `index`.
+  - This capability is triggered by click on a mission card.
+  - Selecting a card MUST NOT start the mission immediately; mission start remains on the primary action button in the detail panel.
+
 #### goBack
 
 - **Contract**: Returns to the main menu.
@@ -122,3 +167,6 @@
 - **Progression Rule**: The user MUST NOT be able to start a mission with an index higher than `currentMissionIndex`.
 - **Default State**: If no `gameSession` exists, the user is treated as a new player (only @Mission 0 is unlocked).
 - **Data Source**: Must load campaign structure strictly from `campagne.json`.
+- **Visual Direction**: The page must remain darker and more gothic than the main menu while preserving palette continuity with bronze, ember, shadow, and black-stone tones.
+- **Layout Fit Rule**: The component must adapt to 100% of the available container height; content that exceeds available space must scroll vertically.
+- **Overflow Rule**: Horizontal scrolling must be prevented at page level and inside mission/detail panels.

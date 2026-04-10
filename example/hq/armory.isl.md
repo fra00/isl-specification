@@ -18,6 +18,17 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `ArmoryPanel`
+
+- **Contract**: Identifies the two main presentation areas of the armory flow.
+
+- `HERO_SUMMARY`: Panel containing the selected hero dossier.
+- `SHOP_INVENTORY`: Panel containing the inventory and purchase actions.
+
 **Signature**:
 
 - `gameSession`: GameSession (Current session state).
@@ -26,9 +37,15 @@
 
 ### 🔍 Appearance
 
-- **Layout**: Two-column grid layout.
-  - **Left Column**: Contains `HeroSummary`.
-  - **Right Column**: Contains `ShopInventory`.
+- **Layout**: Full-page dark gothic armory aligned with mission selection and briefing screens.
+- **Background**: Reuse the original HeroQuest artwork with dark overlays, mist and bronze highlights.
+- **Header**: Compact bronze fantasy heading and short descriptive copy.
+- **Columns**: Two-column responsive layout.
+  - **Left Column**: Contains `HeroSummary` inside a dark panel.
+  - **Right Column**: Contains `ShopInventory` inside a dark panel.
+- On large screens, the combined composition must read as three vertical areas: hero dossier, equipment list, preview/actions.
+- Scrollbars must use the same dark bronze palette as the rest of the navigation flow.
+- Horizontal scrolling must never appear.
 
 ### 📦 Content
 
@@ -86,3 +103,10 @@
 - **Trigger**: `onExit` callback from `ShopInventory`.
 - **Flow**:
   - onChangePageView to `PageNavigationEnum.DUNGEON_DESCRIPTION`
+
+### 🚨 Constraints
+
+- The component must adapt to 100% of the available container height.
+- The main armory container must not scroll vertically.
+- When vertical space is insufficient, only the internal panels and lists may scroll vertically.
+- The visual direction must remain coherent with the dark bronze HeroQuest navigation flow.

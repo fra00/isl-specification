@@ -21,6 +21,7 @@ export default function PlayGame({
   staticEquipment = [],
 }) {
   const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
+  const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);
   const { loadCampaign, saveCampaign } = useCampaignManager({});
 
   useEffect(() => {
@@ -63,6 +64,18 @@ export default function PlayGame({
       setMaxUnlockedMissionIndex(0);
     }
   }, [campaign, staticHeroes, staticEquipment, loadCampaign, saveCampaign]);
+
+  useEffect(() => {
+    const missionCount = campaign?.missioni?.length || 0;
+    if (missionCount === 0) return;
+
+    setFocusedMissionIndex((currentIndex) => {
+      if (currentIndex < missionCount) {
+        return currentIndex;
+      }
+      return Math.min(maxUnlockedMissionIndex, missionCount - 1);
+    });
+  }, [campaign, maxUnlockedMissionIndex]);
 
   const selectMission = useCallback(
     async (index) => {
@@ -112,58 +125,239 @@ export default function PlayGame({
 
   if (!campaign || !staticHeroes.length) {
     return (
-      <div className="flex items-center justify-center w-full h-full bg-gray-900 text-white">
-        <p className="text-xl font-bold animate-pulse">Loading Campaign...</p>
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black text-[#efe3c2]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-45"
+          style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(111,78,55,0.18),transparent_38%),linear-gradient(180deg,rgba(3,3,3,0.35)_0%,rgba(3,3,3,0.82)_48%,rgba(0,0,0,0.96)_100%)]" />
+        <p className="relative z-10 text-xl font-bold uppercase tracking-[0.35em] text-[#d6b36a] animate-pulse">
+          Loading Campaign...
+        </p>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col items-center w-full h-full p-8 bg-gray-900 text-white overflow-y-auto">
-      <h1 className="text-4xl font-bold mb-8 text-yellow-500 drop-shadow-md text-center">
-        {campaign.nome_campagna}
-      </h1>
+  const missions = campaign.missioni || [];
+  const selectedMission = missions[focusedMissionIndex] || missions[0] || null;
+  const selectedMissionOrder = (selectedMission?.ordine ?? ((selectedMission ? focusedMissionIndex : 0) + 1))
+    .toString()
+    .padStart(2, "0");
+  const selectedMissionLocked = focusedMissionIndex > maxUnlockedMissionIndex;
+  const selectedMissionCompleted = focusedMissionIndex < maxUnlockedMissionIndex;
+  const selectedMissionStatusLabel = selectedMissionLocked
+    ? "Sigillata"
+    : selectedMissionCompleted
+      ? "Conquistata"
+      : "Pronta alla Spedizione";
+  const selectedMissionStatusTone = selectedMissionLocked
+    ? "text-[#948574]"
+    : selectedMissionCompleted
+      ? "text-[#b9c99c]"
+      : "text-[#e6c27a]";
+  const selectedMissionDescription = selectedMissionLocked
+    ? "Le cripte restano chiuse. Completa le missioni precedenti per spezzare il sigillo e aprire questa mappa."
+    : selectedMissionCompleted
+      ? "Questa missione puo essere affrontata di nuovo. Il sentiero e noto, ma le tenebre di Morcar non restano mai innocue."
+      : "La prossima incursione e pronta. Raduna gli eroi, prepara l'equipaggiamento e scendi nel sotterraneo."
+    ;
 
-      <div className="flex flex-col gap-4 w-full max-w-3xl mb-8">
-        {campaign.missioni?.map((mission, index) => {
+  return (
+    <div className="campaign-scroll-root relative h-full min-h-0 w-full overflow-y-auto overflow-x-hidden bg-black text-[#efe3c2]">
+      <style>
+        {`
+          @keyframes campaign-mist-drift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 140% 0%; }
+          }
+          @keyframes campaign-candle-glow {
+            0%, 100% { opacity: 0.35; transform: scale(1); }
+            50% { opacity: 0.62; transform: scale(1.03); }
+          }
+          .campaign-title {
+            font-family: fantasy;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            background: linear-gradient(to bottom, #dfc27d 0%, #9b6a3d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #25160d;
+            filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.75));
+          }
+          .gothic-panel {
+            background: linear-gradient(180deg, rgba(29, 19, 15, 0.92) 0%, rgba(10, 8, 8, 0.94) 100%);
+            border: 1px solid rgba(150, 108, 64, 0.5);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 226, 170, 0.06);
+            backdrop-filter: blur(4px);
+          }
+          .mission-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.15rem;
+            border: 1px solid rgba(112, 88, 63, 0.55);
+            background: linear-gradient(135deg, rgba(28, 18, 14, 0.95) 0%, rgba(13, 11, 11, 0.92) 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 218, 158, 0.05), 0 18px 40px rgba(0, 0, 0, 0.34);
+            transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+          }
+          .mission-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(214, 179, 106, 0.1) 0%, transparent 38%, transparent 62%, rgba(214, 179, 106, 0.04) 100%);
+            pointer-events: none;
+          }
+          .mission-card:hover {
+            transform: translateX(6px);
+            border-color: rgba(214, 179, 106, 0.62);
+            box-shadow: inset 0 1px 0 rgba(255, 218, 158, 0.1), 0 22px 44px rgba(0, 0, 0, 0.42);
+          }
+          .mission-card.active-mission {
+            border-color: rgba(214, 179, 106, 0.75);
+            box-shadow: inset 0 1px 0 rgba(255, 218, 158, 0.12), 0 0 0 1px rgba(214, 179, 106, 0.18), 0 24px 50px rgba(0, 0, 0, 0.48);
+          }
+          .mission-card.completed-mission {
+            border-color: rgba(104, 139, 82, 0.55);
+          }
+          .mission-card.locked-mission {
+            opacity: 0.58;
+            border-color: rgba(90, 81, 76, 0.55);
+          }
+          .mission-card.locked-mission:hover {
+            transform: none;
+            border-color: rgba(90, 81, 76, 0.55);
+            box-shadow: inset 0 1px 0 rgba(255, 218, 158, 0.04), 0 18px 40px rgba(0, 0, 0, 0.34);
+          }
+          .campaign-scroll-root,
+          .campaign-scroll-root * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(173, 133, 86, 0.92) rgba(12, 8, 8, 0.72);
+          }
+          .campaign-scroll-root::-webkit-scrollbar,
+          .campaign-scroll-root *::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          .campaign-scroll-root::-webkit-scrollbar-track,
+          .campaign-scroll-root *::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, rgba(13, 9, 9, 0.96) 0%, rgba(29, 19, 15, 0.88) 100%);
+            border-left: 1px solid rgba(118, 84, 50, 0.22);
+          }
+          .campaign-scroll-root::-webkit-scrollbar-thumb,
+          .campaign-scroll-root *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(214, 179, 106, 0.92) 0%, rgba(109, 71, 40, 0.92) 100%);
+            border: 2px solid rgba(13, 9, 9, 0.95);
+            border-radius: 999px;
+            box-shadow: inset 0 1px 0 rgba(255, 234, 188, 0.28);
+          }
+          .campaign-scroll-root::-webkit-scrollbar-thumb:hover,
+          .campaign-scroll-root *::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(231, 198, 129, 0.96) 0%, rgba(138, 90, 51, 0.94) 100%);
+          }
+          .campaign-scroll-root::-webkit-scrollbar-corner,
+          .campaign-scroll-root *::-webkit-scrollbar-corner {
+            background: rgba(12, 8, 8, 0.92);
+          }
+        `}
+      </style>
+
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,2,2,0.78)_0%,rgba(8,5,5,0.7)_38%,rgba(7,4,4,0.84)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(130,81,39,0.2),transparent_34%),radial-gradient(circle_at_80%_18%,rgba(92,33,24,0.18),transparent_28%),radial-gradient(circle_at_bottom,rgba(0,0,0,0.72),rgba(0,0,0,0.94))]" />
+      <div
+        className="absolute inset-0 opacity-20 mix-blend-screen"
+        style={{
+          backgroundImage: "url('/img/mist.jpeg')",
+          backgroundRepeat: "repeat-x",
+          backgroundSize: "220% 100%",
+          filter: "blur(8px)",
+          animation: "campaign-mist-drift 90s linear infinite",
+        }}
+      />
+      <div
+        className="absolute inset-0 mix-blend-screen pointer-events-none"
+        style={{
+          background: "radial-gradient(circle at 52% 22%, rgba(214, 179, 106, 0.12) 0%, transparent 34%), radial-gradient(circle at 48% 70%, rgba(174, 84, 31, 0.16) 0%, transparent 28%)",
+          animation: "campaign-candle-glow 5s ease-in-out infinite",
+        }}
+      />
+
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-7xl flex-col overflow-x-hidden px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6">
+        <div className="mb-4 flex flex-col gap-2 lg:mb-5">
+          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">
+            Archivio delle Spedizioni
+          </span>
+          <h1 className="campaign-title text-3xl sm:text-4xl lg:text-5xl">
+            {campaign.nome_campagna}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-[#cdbda3] sm:text-[15px]">
+            Scegli quale impresa affrontare e apri il sigillo della prossima discesa nei sotterranei di HeroQuest.
+          </p>
+        </div>
+
+        <div className="grid min-h-0 flex-1 gap-4 overflow-x-hidden overflow-y-visible lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] xl:gap-6">
+          <div className="gothic-panel min-h-0 rounded-[1.5rem] p-4 sm:p-5 lg:p-5">
+            <div className="mb-4 flex items-center justify-between gap-4 border-b border-[rgba(153,117,77,0.25)] pb-3">
+              <div>
+                <h2 className="text-base font-semibold uppercase tracking-[0.26em] text-[#d8b16f] sm:text-lg">
+                  Missioni
+                </h2>
+                <p className="mt-1 text-sm text-[#b8a489]">
+                  Le missioni disponibili brillano nel bronzo. Quelle sigillate restano soffocate dall'ombra.
+                </p>
+              </div>
+              <div className="rounded-full border border-[rgba(214,179,106,0.3)] bg-[rgba(0,0,0,0.28)] px-4 py-2 text-center text-[11px] uppercase tracking-[0.32em] text-[#ceb188]">
+                {missions.length} mappe
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1 lg:max-h-[calc(100vh-14rem)]">
+              {missions.map((mission, index) => {
           const isLocked = index > maxUnlockedMissionIndex;
           const isCompleted = index < maxUnlockedMissionIndex;
           const isAvailable = index === maxUnlockedMissionIndex;
 
-          let statusClass =
-            "bg-gray-800 border-gray-600 opacity-60 cursor-not-allowed";
-          let statusText = "Locked";
-          let statusTextColor = "text-gray-400";
+          let statusBadgeClass = "border-[rgba(120,112,104,0.35)] bg-[rgba(26,23,23,0.7)] text-[#948574]";
+          let statusText = "Sigillata";
+          let titleTone = "text-[#8b8177]";
+          let cardVariant = "locked-mission cursor-not-allowed";
 
           if (isCompleted) {
-            statusClass =
-              "bg-green-900 border-green-600 hover:bg-green-800 cursor-pointer";
-            statusText = "Completed";
-            statusTextColor = "text-green-300";
+            statusText = "Conquistata";
+            statusBadgeClass = "border-[rgba(112,150,87,0.4)] bg-[rgba(34,51,29,0.72)] text-[#b8c99e]";
+            titleTone = "text-[#e9dcc3]";
+            cardVariant = "completed-mission cursor-pointer";
           } else if (isAvailable) {
-            statusClass =
-              "bg-blue-900 border-blue-500 hover:bg-blue-800 cursor-pointer shadow-[0_0_15px_rgba(59,130,246,0.5)]";
-            statusText = "Next Mission";
-            statusTextColor = "text-blue-300";
+            statusText = "Pronta";
+            statusBadgeClass = "border-[rgba(214,179,106,0.45)] bg-[rgba(60,42,20,0.76)] text-[#e6c27a]";
+            titleTone = "text-[#f3e6cc]";
+            cardVariant = "cursor-pointer";
           }
+
+          const isFocused = index === focusedMissionIndex;
 
           return (
             <div
               key={index}
-              className={`p-6 rounded-xl border-2 transition-all duration-300 ${statusClass}`}
-              onClick={() => !isLocked && selectMission(index)}
+              className={`mission-card p-5 sm:p-6 ${cardVariant} ${isFocused ? "active-mission" : ""}`}
+              onClick={() => setFocusedMissionIndex(index)}
             >
-              <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-400 mb-1">
-                    Mission {index + 1}
+              <div className="relative z-10 flex items-start justify-between gap-4">
+                <div className="flex min-w-0 flex-col gap-2">
+                  <span className="text-xs uppercase tracking-[0.35em] text-[#a9957d]">
+                    Missione {(mission.ordine ?? index + 1).toString().padStart(2, "0")}
                   </span>
-                  <span className="text-2xl font-semibold tracking-wide">
+                  <span className={`text-xl font-semibold tracking-[0.08em] sm:text-2xl ${titleTone}`}>
                     {mission.titolo}
+                  </span>
+                  <span className="text-sm text-[#b9a992]">
+                    Archivio: {mission.file}
                   </span>
                 </div>
                 <div
-                  className={`px-4 py-2 rounded-full bg-black bg-opacity-40 font-bold tracking-wider uppercase text-sm ${statusTextColor}`}
+                  className={`inline-flex min-w-[9.5rem] shrink-0 items-center justify-center self-center rounded-full border px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.32em] ${statusBadgeClass}`}
                 >
                   {statusText}
                 </div>
@@ -171,14 +365,53 @@ export default function PlayGame({
             </div>
           );
         })}
-      </div>
+            </div>
+          </div>
 
-      <button
-        onClick={goBack}
-        className="mt-auto px-8 py-3 bg-red-900 hover:bg-red-800 border-2 border-red-700 text-white font-bold rounded-lg shadow-lg transition-colors uppercase tracking-widest"
-      >
-        Back to Menu
-      </button>
+          <div className="gothic-panel flex min-h-0 flex-col rounded-[1.5rem] p-4 sm:p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] lg:self-start">
+            <span className="text-[11px] uppercase tracking-[0.4em] text-[#a98a68]">
+              Carta della Missione
+            </span>
+            <div className="mt-3 flex min-h-0 flex-col overflow-y-auto overflow-x-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.28)] bg-[linear-gradient(180deg,rgba(54,37,22,0.34)_0%,rgba(15,11,11,0.78)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] lg:max-h-[calc(100vh-17rem)]">
+              <div className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
+                Sigillo {selectedMissionOrder}
+              </div>
+              <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#f0e2c8] sm:text-[2rem]">
+                {selectedMission?.titolo || "Nessuna Missione"}
+              </h2>
+              <div className={`mt-3 inline-flex w-fit items-center justify-center self-start rounded-full border border-[rgba(214,179,106,0.22)] bg-[rgba(0,0,0,0.22)] px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.28em] ${selectedMissionStatusTone}`}>
+                {selectedMissionStatusLabel}
+              </div>
+              <p className="mt-4 text-sm leading-6 text-[#cdbda3]">
+                {selectedMissionDescription}
+              </p>
+              <div className="mt-5 border-t border-[rgba(214,179,106,0.16)] pt-4 text-sm text-[#bca98b]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="uppercase tracking-[0.3em] text-[#9f8365]">Stato</span>
+                  <span className={selectedMissionStatusTone}>{selectedMissionStatusLabel}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <button
+                onClick={() => !selectedMissionLocked && selectMission(focusedMissionIndex)}
+                disabled={selectedMissionLocked || selectedMission == null}
+                className="rounded-2xl border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-6 py-4 text-sm font-bold uppercase tracking-[0.34em] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {selectedMissionCompleted ? "Rigioca Missione" : "Entra nel Sotterraneo"}
+              </button>
+
+              <button
+                onClick={goBack}
+                className="rounded-2xl border border-[rgba(126,78,60,0.5)] bg-[rgba(18,10,10,0.78)] px-6 py-4 text-sm font-bold uppercase tracking-[0.34em] text-[#d6c4a9] transition hover:border-[rgba(214,179,106,0.34)] hover:text-[#f0e2c8]"
+              >
+                Torna al Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

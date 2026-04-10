@@ -14,6 +14,18 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `HeroOrderSection`
+
+- **Contract**: Represents the distinct visual areas in the hero turn order overlay.
+
+- `CURRENT_ORDER`: Ordered slots already assigned.
+- `AVAILABLE_HEROES`: Heroes still available for assignment.
+- `CONFIRM_ACTION`: Final action to lock the order.
+
 **Signature**:
 
 - `heroes`: List of HeroState (The heroes available for the mission).
@@ -21,15 +33,19 @@
 
 ### 🔍 Appearance
 
-- **Overlay**: Fixed full-screen semi-transparent background (black 75%).
-- **Modal**: Centered box, dark theme (gray-800), rounded corners, shadow.
-- **Typography**: White text, bold headers.
-- **Grid**: 4 columns for hero slots.
+- **Overlay**: Fixed full-screen dark gothic overlay.
+- **Modal**: Centered large dark bronze panel aligned with the HeroQuest navigation flow.
+- **Typography**: Bronze fantasy title, warm neutral body text, uppercase section labels.
+- **Sections**: Two internal panels side by side on large screens.
+  - `Current Order`
+  - `Available Heroes`
+- **Cards**: Portrait cards with bronze/dark borders and hover overlays.
+- Scrollbars must stay inside the internal grids if the hero lists exceed available space.
 
 ### 📦 Content
 
-- **Title**: "Select Hero Turn Order".
-- **Instructions**: "Click heroes below to set their turn order (1st, 2nd, etc.)".
+- **Title**: "Scegli l'Ordine degli Eroi".
+- **Instructions**: Explain that clicking available heroes assigns initiative and clicking assigned slots removes them.
 - **Current Order Section**:
   - Displays slots for the selected order (1 to 4).
   - Shows selected heroes (`HeroState`) with their portrait (`hero.portrait`) and class (`hero.classe`).
@@ -40,11 +56,13 @@
   - Clicking an available hero adds them to the next available slot in the order.
 - **Confirm Button**:
   - Enabled only when all heroes are assigned an order.
-  - Text: "Confirm Order".
+  - Text: "Conferma Ordine".
 
 ### ⚡ Capabilities
 
 #### internalState
+
+- **Contract**: Tracks currently assigned hero ids and the list of heroes still available for selection.
 
 - `selectedOrder`: List of Integer (Hero IDs in order).
 - `availableHeroes`: List of HeroState (Heroes not yet selected).

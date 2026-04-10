@@ -45,85 +45,97 @@ export default function ShopInventory({
   }, [onExit]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-900 text-slate-100 p-4 gap-4 rounded-lg shadow-xl">
-      <div className="flex flex-col md:flex-row flex-1 gap-4 min-h-0">
-        {/* Item List */}
-        <div className="flex-1 overflow-y-auto border border-slate-700 rounded-lg p-2 bg-slate-800/50">
+    <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-hidden text-[#eadfc8]">
+      <div className="border-b border-[rgba(153,117,77,0.25)] pb-3">
+        <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
+          Emporio del Custode
+        </span>
+      </div>
+
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1.08fr)_minmax(250px,0.92fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] xl:row-span-2">
+          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.34em] text-[#b69775]">
+            Equipaggiamenti Disponibili
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
           {items && items.length > 0 ? (
             items.map((item) => (
               <div
                 key={item?.id}
                 onClick={() => handleItemClick(item?.id)}
-                className={`flex justify-between items-center p-3 cursor-pointer rounded mb-2 transition-colors ${
+                title={item?.disabled ? item?.reason : item?.nome}
+                className={`mb-2 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all ${
                   item?.id === selectedItemId
-                    ? 'bg-blue-600 shadow-md'
-                    : 'bg-slate-800 hover:bg-slate-700'
+                    ? 'border-[rgba(214,179,106,0.52)] bg-[rgba(79,53,26,0.82)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]'
+                    : 'border-[rgba(126,78,60,0.26)] bg-[rgba(16,10,10,0.64)] hover:border-[rgba(214,179,106,0.34)] hover:bg-[rgba(35,22,18,0.74)]'
                 }`}
+                style={{ opacity: item?.disabled ? 0.52 : 1 }}
               >
-                <span className="font-medium text-lg">{item?.nome || 'Oggetto Sconosciuto'}</span>
-                <span className="text-yellow-400 font-bold">{item?.prezzo || 0} GC</span>
+                <span className="font-medium text-lg text-[#f0e2c8]">{item?.nome || 'Oggetto Sconosciuto'}</span>
+                <span className="font-bold text-[#e6c27a]">{item?.prezzo || 0} GC</span>
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-slate-500">Nessun oggetto disponibile</div>
+            <div className="p-4 text-center text-[#9f8e78]">Nessun oggetto disponibile</div>
           )}
+          </div>
         </div>
 
-        {/* Preview Panel */}
-        <div className="w-full md:w-1/3 border border-slate-700 rounded-lg p-4 flex flex-col items-center justify-center bg-slate-800/80 min-h-[250px]">
+        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] xl:min-h-0 xl:justify-start">
           {selectedItem ? (
             <>
               {selectedItem.immagine ? (
                 <img
                   src={`/img/equip/${selectedItem.immagine}`}
                   alt={selectedItem.nome || 'Anteprima oggetto'}
-                  className="max-w-full max-h-48 object-contain mb-4 drop-shadow-lg"
+                  className="mb-3 max-h-28 max-w-[140px] object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,0.45)] sm:max-h-32 sm:max-w-[160px]"
                 />
               ) : (
-                <div className="w-32 h-32 bg-slate-700 rounded mb-4 flex items-center justify-center text-slate-500">
+                <div className="mb-3 flex h-24 w-24 items-center justify-center rounded bg-[rgba(21,14,14,0.72)] text-[#8c7c67] sm:h-28 sm:w-28">
                   No Image
                 </div>
               )}
-              <h3 className="text-xl font-bold text-center text-white mb-2">
+              <h3 className="mb-2 text-lg font-bold text-[#f0e2c8] sm:text-xl">
                 {selectedItem.nome || 'Senza Nome'}
               </h3>
-              <p className="text-yellow-400 font-bold text-lg">
+              <p className="text-base font-bold text-[#e6c27a] sm:text-lg">
                 {selectedItem.prezzo || 0} GC
               </p>
+              {selectedItem?.reason && !canBuy && selectedItem.id === selectedItemId ? (
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#c98b6a]">{selectedItem.reason}</p>
+              ) : null}
             </>
           ) : (
-            <span className="text-slate-400 text-center">Seleziona un oggetto per visualizzare i dettagli</span>
+            <span className="text-center text-[#a69580]">Seleziona un oggetto per visualizzare i dettagli</span>
           )}
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t border-slate-700">
-        <button
-          onClick={handleBuyClick}
-          disabled={!canBuy}
-          title={!canBuy ? buyReason : "Acquista oggetto selezionato"}
-          className={`px-8 py-3 rounded-lg font-bold text-lg transition-all ${
-            canBuy
-              ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-green-500/20'
-              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-          }`}
-        >
-          Acquista
-        </button>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col justify-between gap-4 border-t border-[rgba(153,117,77,0.25)] pt-4 xl:border-t-0 xl:pt-0">
           <button
-            onClick={handleEnterDungeonClick}
-            className="px-6 py-3 rounded-lg font-bold bg-red-700 hover:bg-red-600 text-white transition-colors shadow-lg hover:shadow-red-600/20"
+            onClick={handleBuyClick}
+            disabled={!canBuy}
+            title={!canBuy ? buyReason : "Acquista oggetto selezionato"}
+            className={`rounded-2xl px-8 py-3 text-lg font-bold uppercase tracking-[0.24em] transition-all ${
+              canBuy
+                ? 'border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110'
+                : 'cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]'
+            }`}
           >
-            Entra nel dungeon
+            Acquista
           </button>
-          <button
-            onClick={handleExitClick}
-            className="px-6 py-3 rounded-lg font-bold bg-slate-700 hover:bg-slate-600 text-white transition-colors"
-          >
-            Esci
-          </button>
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={handleEnterDungeonClick}
+              className="rounded-2xl border border-[rgba(126,78,60,0.5)] bg-[rgba(32,20,18,0.82)] px-6 py-3 font-bold uppercase tracking-[0.24em] text-[#e3d4bb] transition hover:border-[rgba(214,179,106,0.34)] hover:text-[#f0e2c8]"
+            >
+              Entra nel dungeon
+            </button>
+            <button
+              onClick={handleExitClick}
+              className="rounded-2xl border border-[rgba(109,88,72,0.5)] bg-[rgba(17,12,12,0.82)] px-6 py-3 font-bold uppercase tracking-[0.24em] text-[#d5c3a7] transition hover:border-[rgba(214,179,106,0.28)] hover:text-[#f0e2c8]"
+            >
+              Indietro
+            </button>
+          </div>
         </div>
       </div>
     </div>

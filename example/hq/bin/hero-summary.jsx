@@ -17,7 +17,7 @@ export default function HeroSummary({
 }) {
     if (!heroes || heroes.length === 0) {
         return (
-            <div className="p-4 text-center text-gray-500 font-medium">
+            <div className="rounded-[1.25rem] border border-[rgba(126,78,60,0.35)] bg-[rgba(16,10,10,0.72)] p-4 text-center font-medium text-[#a9937a]">
                 No Heroes Available
             </div>
         );
@@ -34,17 +34,22 @@ export default function HeroSummary({
     }, [onSelect]);
 
     return (
-        <div className="flex flex-col gap-6 p-4 bg-white rounded-lg shadow-md w-full max-w-md">
-            {/* Hero Selector */}
+        <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden text-[#eadfc8]">
+            <div className="border-b border-[rgba(153,117,77,0.25)] pb-3">
+                <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
+                    Compagnia
+                </span>
+            </div>
+
             <div className="flex flex-col gap-2">
-                <label htmlFor="hero-selector" className="font-bold text-gray-700">
-                    Select Hero
+                <label htmlFor="hero-selector" className="text-xs font-bold uppercase tracking-[0.32em] text-[#b69876]">
+                    Eroe Attivo
                 </label>
                 <select
                     id="hero-selector"
                     value={safeIndex}
                     onChange={handleSelect}
-                    className="p-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className="cursor-pointer rounded-2xl border border-[rgba(214,179,106,0.28)] bg-[rgba(16,10,10,0.82)] px-4 py-3 text-[#f0e2c8] shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] focus:outline-none"
                 >
                     {heroes.map((hState, idx) => {
                         const sHero = staticHeroes.find(h => h?.id === hState?.heroId);
@@ -57,42 +62,42 @@ export default function HeroSummary({
                 </select>
             </div>
 
-            {/* Portrait */}
             {currentStaticHero?.portrait && (
-                <div className="w-full flex justify-center overflow-hidden rounded-lg shadow-sm bg-gray-100">
+                <div className="flex w-full justify-center overflow-hidden rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
                     <img
                         src={`/img/eroi/${currentStaticHero.portrait}`}
                         alt={currentStaticHero.classe || 'Hero Portrait'}
-                        className="w-full h-auto object-cover max-w-xs"
+                        className="h-auto max-h-48 max-w-[220px] object-cover drop-shadow-[0_12px_28px_rgba(0,0,0,0.45)]"
                     />
                 </div>
             )}
 
-            {/* Stats */}
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md shadow-sm">
-                <span className="text-lg font-bold text-yellow-800">
-                    Gold: {currentHeroState?.gold ?? 0}
+            <div className="rounded-[1rem] border border-[rgba(214,179,106,0.16)] bg-[rgba(0,0,0,0.18)] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,222,173,0.03)]">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-[#ab8e6e]">
+                    Tesoro Disponibile
+                </div>
+                <span className="mt-1 block text-lg font-bold text-[#e6c27a]">
+                    {currentHeroState?.gold ?? 0} GC
                 </span>
             </div>
 
-            {/* Equipment List */}
-            <div className="flex flex-col gap-2">
-                <h3 className="font-bold text-lg text-gray-800 border-b-2 border-gray-100 pb-1">
-                    Equipment
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+                <h3 className="border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.32em] text-[#d8b16f]">
+                    Equipaggiamento
                 </h3>
                 {currentHeroState?.equipment && currentHeroState.equipment.length > 0 ? (
-                    <ul className="list-disc pl-6 text-gray-700 flex flex-col gap-1">
+                    <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pr-1 text-[#dbcdb4]">
                         {currentHeroState.equipment.map((eqId, idx) => {
                             const eq = staticEquipment.find(e => e?.id === eqId);
                             return (
-                                <li key={`eq-${idx}`}>
+                                <li key={`eq-${idx}`} className="rounded-xl border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.6)] px-4 py-3">
                                     {eq?.nome || `Unknown Equipment (ID: ${eqId})`}
                                 </li>
                             );
                         })}
                     </ul>
                 ) : (
-                    <p className="text-gray-500 italic text-sm">No equipment owned.</p>
+                    <p className="text-sm italic text-[#9f8e78]">Nessun equipaggiamento posseduto.</p>
                 )}
             </div>
         </div>

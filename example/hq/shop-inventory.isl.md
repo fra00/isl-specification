@@ -13,6 +13,18 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `ShopInventorySection`
+
+- **Contract**: Represents the distinct visual sections of the armory inventory panel.
+
+- `LIST`: Scrollable list of purchasable items.
+- `PREVIEW`: Selected item preview card.
+- `ACTIONS`: Purchase and navigation buttons.
+
 **Signature**:
 
 - `items`: List<Equipment> (List of available shop items).
@@ -26,10 +38,11 @@
 
 ### 🔍 Appearance
 
-- **Layout**: Vertical column layout.
-- **List**: Scrollable list of items.
-- **Preview**: Card showing selected item image.
-- **Actions**: Row of buttons at the bottom.
+- **Layout**: Dark gothic inventory panel that becomes a two-column internal structure on wide screens.
+- **List**: Scrollable list of items occupying the main inventory column.
+- **Preview**: Smaller preview card in a dedicated side column.
+- **Actions**: Gothic action buttons stacked under the preview on wide screens.
+- Combined with the hero dossier column, the armory reads as a three-column composition on large screens.
 
 ### 📦 Content
 
@@ -37,11 +50,13 @@
   - Displays Name and Price.
   - Highlights if `id` matches `selectedItemId`.
   - Visual indication (e.g., opacity) if item is not affordable/compatible (logic handled by parent).
+  - Must scroll vertically when the list exceeds available space.
 - **Preview**: Image sourced from `/img/equip/` + `selectedItem.immagine`.
+- **Validation Feedback**: When the selected item cannot be bought, show `buyReason` / item reason in the preview panel.
 - **Buttons**:
   - "Acquista" (Disabled if `!canBuy`, tooltip shows `buyReason`).
   - "Entra nel dungeon".
-  - "Esci".
+  - "Indietro".
 
 ### ⚡ Capabilities
 

@@ -57,17 +57,61 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
   const isConfirmEnabled = selectedOrder.length === heroes.length && heroes.length > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-4xl text-white border border-gray-700">
-        
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2">Select Hero Turn Order</h2>
-          <p className="text-gray-400">Click heroes below to set their turn order (1st, 2nd, etc.)</p>
+    <div className="hero-order-root fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/85 p-4 text-[#eadfc8]">
+      <style>
+        {`
+          .hero-order-root,
+          .hero-order-root * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(173, 133, 86, 0.92) rgba(12, 8, 8, 0.72);
+          }
+          .hero-order-root::-webkit-scrollbar,
+          .hero-order-root *::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          .hero-order-root::-webkit-scrollbar-track,
+          .hero-order-root *::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, rgba(13, 9, 9, 0.96) 0%, rgba(29, 19, 15, 0.88) 100%);
+          }
+          .hero-order-root::-webkit-scrollbar-thumb,
+          .hero-order-root *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(214, 179, 106, 0.92) 0%, rgba(109, 71, 40, 0.92) 100%);
+            border: 2px solid rgba(13, 9, 9, 0.95);
+            border-radius: 999px;
+          }
+          .hero-order-title {
+            font-family: fantasy;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            background: linear-gradient(to bottom, #dfc27d 0%, #9b6a3d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #25160d;
+            filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.75));
+          }
+          .hero-order-panel {
+            background: linear-gradient(180deg, rgba(29, 19, 15, 0.94) 0%, rgba(10, 8, 8, 0.96) 100%);
+            border: 1px solid rgba(150, 108, 64, 0.5);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 226, 170, 0.06);
+            backdrop-filter: blur(4px);
+          }
+        `}
+      </style>
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(130,81,39,0.16),transparent_32%),linear-gradient(180deg,rgba(0,0,0,0.44)_0%,rgba(0,0,0,0.76)_100%)]" />
+
+      <div className="hero-order-panel relative flex h-full max-h-[min(860px,100%)] w-full max-w-6xl min-h-0 flex-col overflow-hidden rounded-[1.75rem] p-5 sm:p-6 lg:p-8">
+        <div className="mb-5 shrink-0 text-center">
+          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">Ordine di Turno</span>
+          <h2 className="hero-order-title mt-2 text-3xl sm:text-4xl">Scegli l'Ordine degli Eroi</h2>
+          <p className="mt-3 text-sm leading-6 text-[#c8baa0]">Clicca gli eroi disponibili per assegnare l'iniziativa. Clicca uno slot occupato per rimuoverlo e cambiare l'ordine.</p>
         </div>
 
-        <div className="mb-8">
-          <h3 className="text-xl font-bold mb-4 text-gray-300 border-b border-gray-700 pb-2">Current Order</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid min-h-0 flex-1 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
+            <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">Ordine Attuale</h3>
+            <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden pr-1 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: heroes.length }).map((_, index) => {
               const heroId = selectedOrder[index];
               const heroState = heroId != null ? heroes.find(h => h.heroId === heroId) : null;
@@ -78,19 +122,19 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                   <div 
                     key={`selected-${heroId}`}
                     onClick={() => removeHero(heroId)}
-                    className="bg-gray-700 rounded-lg p-4 flex flex-col items-center cursor-pointer hover:bg-gray-600 transition-colors border-2 border-transparent hover:border-red-500 relative group"
+                    className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(214,179,106,0.3)] bg-[rgba(32,20,18,0.78)] p-4 transition-all hover:border-[rgba(201,94,74,0.55)] hover:bg-[rgba(45,25,22,0.86)]"
                   >
-                    <div className="absolute -top-3 -left-3 bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-gray-800 shadow-md">
+                    <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-sm font-bold text-[#f7ecd8] shadow-md">
                       {index + 1}
                     </div>
                     <img 
                       src={`img/eroi/${heroDef.portrait}`} 
                       alt={heroDef.classe}
-                      className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-gray-500 bg-gray-900"
+                      className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
                     />
-                    <span className="text-sm font-semibold uppercase tracking-wider">{heroDef.classe}</span>
-                    <div className="absolute inset-0 bg-red-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white font-bold bg-red-600 px-2 py-1 rounded text-xs">Remove</span>
+                    <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">{heroDef.classe}</span>
+                    <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(152,48,36,0.18)] opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="rounded-full bg-[rgba(128,36,28,0.92)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-white">Rimuovi</span>
                     </div>
                   </div>
                 );
@@ -99,22 +143,22 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
               return (
                 <div 
                   key={`empty-${index}`}
-                  className="bg-gray-900/50 rounded-lg p-4 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 h-40 relative"
+                  className="relative flex h-[188px] flex-col items-center justify-center rounded-[1.15rem] border-2 border-dashed border-[rgba(112,88,63,0.45)] bg-[rgba(12,8,8,0.45)] p-4"
                 >
-                  <div className="absolute -top-3 -left-3 bg-gray-700 text-gray-400 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-gray-800">
+                  <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[rgba(23,15,15,0.9)] bg-[rgba(45,33,28,0.94)] font-bold text-[#8e7f71]">
                     {index + 1}
                   </div>
-                  <span className="text-gray-500 text-sm">Empty Slot</span>
+                  <span className="text-sm uppercase tracking-[0.2em] text-[#7f7267]">Slot Vuoto</span>
                 </div>
               );
             })}
+            </div>
           </div>
-        </div>
 
-        <div className="mb-8">
-          <h3 className="text-xl font-bold mb-4 text-gray-300 border-b border-gray-700 pb-2">Available Heroes</h3>
+          <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)]">
+          <h3 className="mb-4 border-b border-[rgba(153,117,77,0.25)] pb-2 text-sm font-bold uppercase tracking-[0.34em] text-[#d8b16f]">Eroi Disponibili</h3>
           {availableHeroes.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden pr-1 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               {availableHeroes.map((heroState) => {
                 const heroDef = heroState?.hero;
                 if (!heroDef) return null;
@@ -123,38 +167,39 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                   <div 
                     key={`available-${heroState.heroId}`}
                     onClick={() => selectHero(heroState.heroId)}
-                    className="bg-gray-700 rounded-lg p-4 flex flex-col items-center cursor-pointer hover:bg-gray-600 transition-colors border-2 border-transparent hover:border-green-500 group relative"
+                    className="group relative flex min-h-[188px] cursor-pointer flex-col items-center rounded-[1.15rem] border border-[rgba(126,78,60,0.28)] bg-[rgba(16,10,10,0.64)] p-4 transition-all hover:border-[rgba(214,179,106,0.42)] hover:bg-[rgba(35,22,18,0.74)]"
                   >
                     <img 
                       src={`img/eroi/${heroDef.portrait}`} 
                       alt={heroDef.classe}
-                      className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-gray-500 bg-gray-900"
+                      className="mb-3 h-20 w-20 rounded-full border-2 border-[rgba(214,179,106,0.3)] bg-[rgba(18,10,10,0.82)] object-cover"
                     />
-                    <span className="text-sm font-semibold uppercase tracking-wider">{heroDef.classe}</span>
-                    <div className="absolute inset-0 bg-green-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white font-bold bg-green-600 px-2 py-1 rounded text-xs">Select</span>
+                    <span className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-[#f0e2c8]">{heroDef.classe}</span>
+                    <div className="absolute inset-0 flex items-center justify-center rounded-[1.15rem] bg-[rgba(102,84,34,0.2)] opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="rounded-full bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#f7ecd8]">Seleziona</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="bg-gray-900/30 rounded-lg p-8 flex items-center justify-center border border-gray-700">
-              <span className="text-gray-400 italic">All heroes assigned.</span>
+            <div className="flex items-center justify-center rounded-[1.15rem] border border-[rgba(112,88,63,0.34)] bg-[rgba(12,8,8,0.45)] p-8">
+              <span className="italic text-[#9f8e78]">Tutti gli eroi sono stati assegnati.</span>
             </div>
           )}
+          </div>
         </div>
 
         <button
           onClick={confirm}
           disabled={!isConfirmEnabled}
-          className={`w-full py-4 rounded-lg font-bold text-lg uppercase tracking-wider transition-all duration-200 ${
+          className={`mt-5 w-full shrink-0 rounded-2xl py-4 text-lg font-bold uppercase tracking-[0.28em] transition-all duration-200 ${
             isConfirmEnabled 
-              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/25 cursor-pointer' 
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              ? 'border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110 cursor-pointer' 
+              : 'cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]'
           }`}
         >
-          Confirm Order
+          Conferma Ordine
         </button>
 
       </div>

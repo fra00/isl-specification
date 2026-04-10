@@ -14,6 +14,18 @@
 
 ### Role: Presentation
 
+## Domain Concepts
+
+### 📦 Content/Structure
+
+#### `BriefingAction`
+
+- **Contract**: Represents the navigation actions available from the mission briefing screen.
+
+- `ENTER`: Starts the dungeon.
+- `SHOP`: Opens the armory before the mission.
+- `BACK`: Returns to mission selection.
+
 **Signature**:
 
 - `gameSession`: GameSession (Current session state).
@@ -22,17 +34,21 @@
 
 ### 🔍 Appearance
 
-- **Layout**: Centered content box with a parchment or dark theme.
-- **Title**: "Mission Description".
-- **Text**: The `description` text from th current map in @gameSession.currentMap.header.descrizione, scrollable if long.
-- **Actions**: Row of buttons.
+- **Layout**: Full-page dark gothic briefing screen visually aligned with the mission selection page.
+- **Background**: Reuse the original HeroQuest artwork with dark gradients, mist, and warm bronze highlights.
+- **Title**: Large fantasy/bronze heading for the mission briefing.
+- **Text**: The `description` text from the current map in `@gameSession.currentMap.header.descrizione`, scrollable if long.
+- **Actions**: Compact action row near the bottom of the panel.
   - "Entra nel dungeon" (Primary action).
   - "Armeria" (Secondary action).
   - "Indietro" (Tertiary action).
+- Scrollbars must use the same dark bronze palette as the surrounding page.
+- Horizontal scrolling must never appear.
 
 ### 📦 Content
 
 - **Description Text**: Displays the `description`.
+- **Briefing Header**: Shows a mission title/briefing heading.
 - **Buttons**:
   - Enter Button.
   - Shop Button.
@@ -48,3 +64,10 @@
   - IF "Entra nel dungeon" clicked -> - onChangePageView to @PageNavigationEnum.DUNGEON.
   - IF "Armeria" clicked -> - onChangePageView to @PageNavigationEnum.SHOP.
   - IF "Indietro" clicked -> - onChangePageView to @PageNavigationEnum.PLAY_GAME.
+
+### 🚨 Constraints
+
+- The component must adapt to 100% of the available container height.
+- The main component container must not scroll vertically.
+- If the mission description is too long, only the briefing text area must scroll vertically within the panel.
+- The visual treatment must remain coherent with the dark bronze HeroQuest navigation flow.

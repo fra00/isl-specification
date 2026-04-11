@@ -39,4 +39,16 @@ describe('useHeroStats', () => {
     expect(result.current.canAttackTwice(heroState, { id: 3 })).toBe(true);
     expect(result.current.getConsumableWeaponId(heroState)).toBe(3);
   });
+
+  it('allows the dwarf to disarm traps without requiring the toolkit', () => {
+    const { result } = renderHook(() => useHeroStats({ staticEquipment: [] }));
+
+    expect(
+      result.current.calculateStats({
+        equipped: [],
+        activeStatus: [],
+        hero: { classe: 'Nano', attacco: 2, difesa: 2, movimento: 2, mente: 4, corpo: 6 },
+      }),
+    ).toMatchObject({ canDisarmTraps: true });
+  });
 });

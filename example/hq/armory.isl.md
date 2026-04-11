@@ -32,7 +32,7 @@
 **Signature**:
 
 - `gameSession`: GameSession (Current session state).
-- `onUpdateSession`: (session: GameSession) -> void (Callback to update session).
+- `onUpdateSession`: `(session: GameSession) -> void` OR `((previousSession: GameSession) -> GameSession) -> void` (Callback to update session).
 - `onChangePageView`: (page: PageNavigationEnum) -> void (Callback to navigate).
 
 ### 🔍 Appearance
@@ -87,8 +87,9 @@
   - Get `currentHero` and `selectedItem`.
   - Call `ShopLogic.validatePurchase(currentHero, selectedItem)`.
   - IF allowed:
-    - Call `ShopLogic.executePurchase(gameSession, selectedHeroIndex, selectedItem)`.
-    - Trigger `onUpdateSession(updatedSession)`.
+    - Trigger `onUpdateSession` with a functional updater.
+    - Inside that updater, call `ShopLogic.executePurchase(previousSession OR gameSession, selectedHeroIndex, selectedItem)`.
+    - Persist the returned updated session.
 
 #### enterDungeon
 

@@ -55,17 +55,17 @@
 - **Signature**: `(treasureDeck: List<@TreasureCard>) -> void`
 - **Flow**:
   - IF `gameSession` is null OR `gameSession.currentMap` is null RETURN.
-  - Create `placedHeroes` by mapping `gameSession.heroes`.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, use the provided latest session snapshot.
+  - IF the provided session is null OR `currentMap` is null RETURN the provided session unchanged.
+  - Create `placedHeroes` by mapping the provided session `heroes`.
   - FOR EACH `heroState` in `placedHeroes`:
-    - Find `spawnPoint` in `gameSession.currentMap.eroi_start` where `id` == `heroState.heroId`.
+    - Find `spawnPoint` in the provided session `currentMap.eroi_start` where `id` == `heroState.heroId`.
     - IF `spawnPoint` exists:
       - Set `heroState.x` to `spawnPoint.x`.
       - Set `heroState.y` to `spawnPoint.y`.
       - Set `heroState.isEscaped` to false.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.heroes` to `placedHeroes`.
-  - Set `updatedSession.treasureDeck` to `treasureDeck`.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `placedHeroes`, and setting `treasureDeck` to `treasureDeck`.
 
 #### confirmHeroOrder
 
@@ -73,16 +73,16 @@
 - **Signature**: `(orderedHeroIds: List<Integer>) -> void`
 - **Flow**:
   - IF `gameSession` is null OR `gameSession.isHeroOrderConfirmed` is true RETURN.
-  - Create `updatedHeroes` by mapping `gameSession.heroes`.
+  - Call `fogOfWarLogic.revealInitialVisibility()`.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, use the provided latest session snapshot.
+  - IF the provided session is null OR `isHeroOrderConfirmed` is true RETURN the provided session unchanged.
+  - Create `updatedHeroes` by mapping the provided session `heroes`.
   - For each `hero` in `updatedHeroes`:
     - Let `nextTurnOrder` = position of `hero.heroId` in `orderedHeroIds` + 1.
     - IF `nextTurnOrder` is greater than 0:
       - Set `hero.turnOrder` to `nextTurnOrder`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.heroes` to `updatedHeroes`.
-  - Set `updatedSession.isHeroOrderConfirmed` to true.
-  - Call `fogOfWarLogic.revealInitialVisibility()`.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `updatedHeroes`, and setting `isHeroOrderConfirmed` to true.
 
 #### clearLastAttack
 
@@ -90,9 +90,9 @@
 - **Signature**: `() -> void`
 - **Flow**:
   - IF `gameSession` is null OR `gameSession.lastAttack` is null RETURN.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.lastAttack` to `null`.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, IF the provided session is null OR `lastAttack` is null RETURN the provided session unchanged.
+  - RETURN a new @GameSession preserving all unrelated properties and setting `lastAttack` to `null`.
 
 #### openPassage
 
@@ -107,10 +107,12 @@
   - IF `gameSession.openedDoors` contains `coordKey` RETURN false.
   - TRY:
     - Call `fogOfWarLogic.revealFromPoint(destinationX, destinationY)`.
-    - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-    - Set `updatedSession.openedDoors` to `gameSession.openedDoors` plus `coordKey`.
+    - Call `commitSessionUpdate` with an updater.
+    - Inside the updater, IF the provided session is null RETURN the provided session unchanged.
+    - Let `existingDoors` = the provided session `openedDoors` or an empty list.
+    - IF `existingDoors` already contains `coordKey` RETURN the provided session unchanged.
+    - RETURN a new @GameSession preserving all unrelated properties and setting `openedDoors` to `existingDoors` plus `coordKey`.
     - Trigger `onNotify("Porta aperta.")`.
-    - Trigger `onUpdateSession(updatedSession)`.
     - RETURN true.
   - CATCH:
     - LOG "Errore durante l'apertura della porta o rivelazione nebbia."
@@ -128,16 +130,20 @@
   - IF `item` is null:
     - Trigger `onNotify("Oggetto non trovato.")`.
     - RETURN false.
-  - Create `updatedEquipped` as a copy of `hero.equipped`.
+  - IF `item.solopsg` is true AND `item.solopsgid` is NOT equal to `hero.heroId`:
+    - Trigger `onNotify("La tua classe non può equipaggiare questo oggetto.")`.
+    - RETURN false.
+  - IF `item.nopsg` is true AND `item.nopsgid` is EQUAL to `hero.heroId`:
+    - Trigger `onNotify("La tua classe non può equipaggiare questo oggetto.")`.
+    - RETURN false.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, use the provided latest session snapshot.
+  - Find `currentHero` in the provided session `heroes` matching `heroId`.
+  - IF `currentHero` is null RETURN the provided session unchanged.
+  - Create `updatedEquipped` as a copy of `currentHero.equipped`.
   - IF `updatedEquipped` contains `itemId`:
     - Remove `itemId` from `updatedEquipped`.
   - ELSE:
-    - IF `item.solopsg` is true AND `item.solopsgid` is NOT equal to `hero.heroId`:
-      - Trigger `onNotify("La tua classe non può equipaggiare questo oggetto.")`.
-      - RETURN false.
-    - IF `item.nopsg` is true AND `item.nopsgid` is EQUAL to `hero.heroId`:
-      - Trigger `onNotify("La tua classe non può equipaggiare questo oggetto.")`.
-      - RETURN false.
     - IF `item.noogg` > 0:
       - Remove `item.noogg` from `updatedEquipped`.
     - FOR EACH `equippedId` in `updatedEquipped`:
@@ -146,11 +152,9 @@
         - Remove `equippedId` from `updatedEquipped`.
         - Trigger `onNotify("Hai rimosso " + equippedItem.nome + " perché incompatibile.")`.
     - Add `itemId` to `updatedEquipped`.
-  - Create `updatedHeroes` as a copy of `gameSession.heroes`.
+  - Create `updatedHeroes` as a copy of the provided session `heroes`.
   - Replace the matching hero with a new hero state whose `equipped` is `updatedEquipped`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.heroes` to `updatedHeroes`.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
   - RETURN true.
 
 #### useItem
@@ -164,8 +168,15 @@
   - IF `hero` is null OR `itemDef` is null RETURN false.
   - Find the first index of `itemId` in `hero.inventory`.
   - IF item index is less than 0 RETURN false.
-  - Create `updatedHero` as a copy of `hero`.
-  - Create `updatedMonsters` as a copy of `gameSession.monsters`.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, use the provided latest session snapshot.
+  - Find `currentHero` in the provided session `heroes` matching `heroId`.
+  - IF `currentHero` is null RETURN the provided session unchanged.
+  - Create `currentInventory` as a copy of `currentHero.inventory`.
+  - Find the first index of `itemId` in `currentInventory`.
+  - IF item index is less than 0 RETURN the provided session unchanged.
+  - Create `updatedHero` as a copy of `currentHero`.
+  - Create `updatedMonsters` as a copy of the provided session `monsters`.
   - IF `itemDef.hp` is NOT 0:
     - Add `itemDef.hp` to `updatedHero.currentBody`.
     - Clamp `updatedHero.currentBody` to max `updatedHero.hero.corpo`.
@@ -181,20 +192,19 @@
           - Trigger `onNotify("L'Acqua Santa purifica il non-morto infliggendo " + itemDef.danni + " danni!")`.
           - IF `targetMonster.currentBody` <= 0:
             - Remove `targetMonster` from `updatedMonsters`.
+          - ELSE:
+            - Replace the matching monster in `updatedMonsters` with the damaged instance.
         - ELSE:
           - Trigger `onNotify("L'Acqua Santa non ha effetto su questa creatura.")`.
       - ELSE:
         - Trigger `onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!")`.
     - ELSE:
       - Trigger `onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!")`.
-  - Remove the first matching `itemId` from `updatedHero.inventory`.
+  - Remove the first matching `itemId` from `currentInventory` and assign the resulting inventory to `updatedHero.inventory`.
   - Trigger `onNotify("Hai usato " + itemDef.nome + "!")`.
-  - Create `updatedHeroes` as a copy of `gameSession.heroes`.
+  - Create `updatedHeroes` as a copy of the provided session `heroes`.
   - Replace the matching hero with `updatedHero`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.heroes` to `updatedHeroes`.
-  - Set `updatedSession.monsters` to `updatedMonsters`.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `updatedHeroes`, and setting `monsters` to `updatedMonsters`.
   - RETURN true.
 
 #### collectTreasureAtCell

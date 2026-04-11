@@ -21,6 +21,8 @@ export default function DungeonTurnControls({
   onSearchPassages = () => {},
   onSearchTreasure = () => {},
   onSearchTraps = () => {},
+  canDisarmTrap = false,
+  onDisarmTrap = () => {},
   onOpenMagic = () => {},
   onOpenInventory = () => {},
   onCancelTargeting = () => {},
@@ -183,6 +185,16 @@ export default function DungeonTurnControls({
           >
             Search Trap
           </button>
+
+          {canDisarmTrap && (
+            <button
+              onClick={onDisarmTrap}
+              disabled={!!turnPhase?.HasPerformedAction || isMoving || isTargeting}
+              className="w-full py-1.5 px-2 rounded font-semibold bg-amber-700 hover:bg-amber-800 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Disarm Trap
+            </button>
+          )}
 
           {canUseMagic && (
             <button

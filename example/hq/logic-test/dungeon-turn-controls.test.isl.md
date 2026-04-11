@@ -1,3 +1,24 @@
+# Project: Heroquest React Logic Tests
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.1
+**Created**: 2026-04-12
+**Implementation**: ./logic-test/dungeon-turn-controls.test
+
+---
+
+> **Reference**: `./dungeon-turn-controls.isl.md`
+
+## Domain Concepts
+
+- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced HeroQuest component behavior.
+
+## Component: LogicTestScenarios
+
+### Role: Test
+
+### ⚡ Scenarios
+
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-turn-controls.isl.md -->
 
 This document outlines the logical test scenarios for the `DungeonTurnControls` component, focusing on its role as a **Presentation** layer that maps user intent to domain-driven state transitions.

@@ -16,6 +16,20 @@ export function useDungeonMonsters({
   onNotify,
   monsterDefinitions,
 }) {
+  const commitSessionUpdate = useCallback((updater) => {
+    if (typeof onUpdateSession !== "function") return false;
+
+    onUpdateSession((previousSession) => {
+      const baseSession = previousSession != null ? previousSession : gameSession;
+      if (baseSession == null) {
+        return previousSession;
+      }
+      return updater(baseSession);
+    });
+
+    return true;
+  }, [gameSession, onUpdateSession]);
+
   // internalState: Tracks which map cells have had monsters spawned to prevent duplicates
   const [spawnedLocations, setSpawnedLocations] = useState(
     () => gameSession?.spawnedLocations || [],
@@ -75,21 +89,17 @@ export function useDungeonMonsters({
       ];
       setSpawnedLocations(updatedSpawnedLocations);
 
-      const updatedSession = GameSession({
-        ...gameSession,
-        monsters: [...(gameSession.monsters || []), ...newMonsters],
+      commitSessionUpdate((providedSession) => GameSession({
+        ...providedSession,
+        monsters: [...(providedSession.monsters || []), ...newMonsters],
         spawnedLocations: updatedSpawnedLocations,
-      });
-
-      if (onUpdateSession) {
-        onUpdateSession(updatedSession);
-      }
+      }));
     }
   }, [
+    commitSessionUpdate,
     visibilityMap,
     gameSession,
     monsterDefinitions,
-    onUpdateSession,
     spawnedLocations,
   ]);
 
@@ -275,23 +285,19 @@ export function useDungeonMonsters({
         activeStatus: [],
       });
 
-      const updatedSession = GameSession({
-        ...gameSession,
-        monsters: [...(gameSession.monsters || []), newMonster],
-      });
-
-      if (onUpdateSession) {
-        onUpdateSession(updatedSession);
-      }
+      commitSessionUpdate((providedSession) => GameSession({
+        ...providedSession,
+        monsters: [...(providedSession.monsters || []), newMonster],
+      }));
 
       return newMonster;
     },
     [
+      commitSessionUpdate,
       findLegacyAdjacentSpawnCell,
       findVisibleSpawnCell,
       gameSession,
       monsterDefinitions,
-      onUpdateSession,
       onNotify,
       visibilityMap,
     ],

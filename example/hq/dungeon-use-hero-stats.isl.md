@@ -11,6 +11,11 @@
 > **Reference**: @Equipment in `./domain-ruleset.isl.md`
 > **Reference**: @Monster in `./domain-ruleset.isl.md`
 
+## Domain Concepts
+
+- `effective hero stats`: The derived combat and utility values obtained from base hero data, equipped items, and active statuses.
+- `trap disarm capability`: Boolean ability granted natively to the Dwarf (`Nano`) or by equipment with `disinnesc = true`.
+
 ## Component: useHeroStats
 
 ### Role: Business Logic
@@ -26,6 +31,8 @@
 - **Contract**: Calculates the total stats for a hero based on their base stats and equipped items.
 - **Signature**: `(heroState: @HeroState) -> { attacco: Integer, difesa: Integer, movimento: Integer, mente: Integer, corpo: Integer, canAttackDiagonal: Boolean, canAttackRanged: Boolean, canDisarmTraps: Boolean, hasDoubleAttack: Boolean }`
 - **Flow**:
+  - IF `heroState` is null OR `heroState.hero` is null:
+    - RETURN a zeroed stats object with all numeric fields set to 0 and all capability flags set to false.
   - Get `hero` from `heroState.hero`.
   - Initialize `stats` with base values:
     - `attacco`: `hero.attacco`.
@@ -35,7 +42,7 @@
     - `corpo`: `hero.corpo`.
     - `canAttackDiagonal`: false.
     - `canAttackRanged`: false.
-    - `canDisarmTraps`: false.
+    - `canDisarmTraps`: true only if `hero.classe.toLowerCase()` is `"nano"`, otherwise false.
     - `hasDoubleAttack`: false.
   - Filter `staticEquipment` to find items where `id` is in `heroState.equipped`.
   - FOR each `item` in equipped items:
@@ -54,7 +61,7 @@
     - **Capabilities**:
       - IF `item.diago` is true: Set `stats.canAttackDiagonal` to true.
       - IF `item.tiro` is true OR `item.tirounavo` is true: Set `stats.canAttackRanged` to true.
-      - IF `item.disinnesc` is true: Set `stats.canDisarmTraps` to true.
+      - IF `item.disinnesc` is true: Set `stats.canDisarmTraps` to true, allowing any non-Dwarf hero with the correct equipment to disarm traps.
       - IF `item.doppioatt` is true: Set `stats.hasDoubleAttack` to true.
   - **Status Modifiers**:
     - IF `heroState.activeStatus` contains "RockSkin":

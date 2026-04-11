@@ -22,8 +22,8 @@ export const MapHeader = (data = {}) => ({
 });
 
 export const BlockCellArea = (data = {}) => ({
-  antroc: data.antroc ?? false,
-  inv: data.inv ?? false,
+  antroc: Boolean(data.antroc),
+  inv: Boolean(data.inv),
 });
 
 export const MapCellFurniture = (data = {}) => ({
@@ -33,7 +33,7 @@ export const MapCellFurniture = (data = {}) => ({
 
 export const MapCellMonster = (data = {}) => ({
   mosid: data.mosid ?? 0,
-  mos: data.mos ?? false,
+  mos: Boolean(data.mos),
   corpo: data.corpo ?? 0,
 });
 
@@ -46,7 +46,7 @@ export const MapCellTreasure = (data = {}) => ({
 
 export const MapCellPassage = (data = {}) => ({
   ps: data.ps ?? null,
-  oriz: data.oriz ?? false,
+  oriz: Boolean(data.oriz),
 });
 
 export const MapCellTrap = (data = {}) => ({
@@ -76,7 +76,7 @@ export const MapHeroStart = (data = {}) => ({
 export const MapDoor = (data = {}) => ({
   x: data.x ?? 0,
   y: data.y ?? 0,
-  oriz: data.oriz ?? false,
+  oriz: Boolean(data.oriz),
 });
 
 export const MapScript = (data = {}) => ({
@@ -113,7 +113,7 @@ export const VisibilityCell = (data = {}) => ({
   valo: data.valo ?? "",
   vis1: data.vis1 ?? "",
   vis2: data.vis2 ?? "",
-  fog: data.fog ?? true,
+  fog: data.fog == null ? true : Boolean(data.fog),
 });
 
 export const VisibilityMap = (data = {}) => ({
@@ -125,5 +125,5 @@ export const VisibilityMap = (data = {}) => ({
 export const GameScript = (data = {}) => ({
   command: data.command ?? "",
   params: data.params ?? 0,
-  isOneTime: data.isOneTime ?? false,
+  isOneTime: Boolean(data.isOneTime),
 });

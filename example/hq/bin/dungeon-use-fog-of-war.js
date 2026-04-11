@@ -34,6 +34,10 @@ export function useFogOfWar({ gameSession, staticVisibilityMap }) {
   }, [staticVisibilityMap]);
 
   const calculateFog = useCallback(() => {
+    if (!staticVisibilityMap) {
+      return null;
+    }
+
     setFogVisibilityMap(prevMap => {
       if (!prevMap || !prevMap.data) return prevMap;
       if (!gameSession?.isHeroOrderConfirmed) return prevMap;
@@ -60,8 +64,10 @@ export function useFogOfWar({ gameSession, staticVisibilityMap }) {
 
       return hasChanges ? { ...prevMap, data: newData } : prevMap;
     });
+    return undefined;
   }, [
     calculateVisibleCells,
+    staticVisibilityMap,
     gameSession?.isHeroOrderConfirmed,
     gameSession?.heroes,
     gameSession?.currentTurn

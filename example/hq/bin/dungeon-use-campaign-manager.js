@@ -10,6 +10,19 @@ import { useCallback } from 'react';
 import { HeroState } from './domain-session';
 
 export const useCampaignManager = (config = {}) => {
+  const notifySaveError = useCallback((message) => {
+    if (typeof config?.onError === 'function') {
+      config.onError(message);
+      return;
+    }
+
+    if (typeof globalThis.alert === 'function') {
+      globalThis.alert(message);
+      return;
+    }
+
+    console.warn(message);
+  }, [config]);
   
   const saveCampaign = useCallback((heroes, nextMissionIndex) => {
     const campaignData = {
@@ -23,13 +36,9 @@ export const useCampaignManager = (config = {}) => {
       localStorage.setItem("hq_campaign_data", jsonString);
     } catch (error) {
       console.error("Error saving campaign:", error);
-      if (typeof config?.onError === 'function') {
-        config.onError("Could not save progress");
-      } else {
-        console.warn("Could not save progress");
-      }
+      notifySaveError("Could not save progress");
     }
-  }, [config]);
+  }, [notifySaveError]);
 
   const loadCampaign = useCallback(() => {
     const item = localStorage.getItem("hq_campaign_data");

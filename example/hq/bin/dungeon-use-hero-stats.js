@@ -10,9 +10,22 @@ import { useCallback } from 'react';
 
 export function useHeroStats({ staticEquipment = [] }) {
   const calculateStats = useCallback((heroState) => {
-    if (!heroState || !heroState.hero) return null;
+    if (!heroState || !heroState.hero) {
+      return {
+        attacco: 0,
+        difesa: 0,
+        movimento: 0,
+        mente: 0,
+        corpo: 0,
+        canAttackDiagonal: false,
+        canAttackRanged: false,
+        canDisarmTraps: false,
+        hasDoubleAttack: false
+      };
+    }
 
     const hero = heroState.hero;
+    const isDwarf = (hero.classe || '').toLowerCase() === 'nano';
     const stats = {
       attacco: hero.attacco || 0,
       difesa: hero.difesa || 0,
@@ -21,7 +34,7 @@ export function useHeroStats({ staticEquipment = [] }) {
       corpo: hero.corpo || 0,
       canAttackDiagonal: false,
       canAttackRanged: false,
-      canDisarmTraps: false,
+      canDisarmTraps: isDwarf,
       hasDoubleAttack: false
     };
 

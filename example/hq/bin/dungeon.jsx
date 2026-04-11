@@ -190,6 +190,10 @@ export default function Dungeon(props) {
         return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
     }, [gameSession?.heroes, gameSession?.currentTurn]);
 
+    const currentHeroStats = currentHero ? hooksHeroStats.calculateStats(currentHero) : null;
+    const adjacentDisarmableTrap = currentHero ? hooksTraps.getAdjacentDisarmableTrap(currentHero.x, currentHero.y) : null;
+    const canDisarmAdjacentTrap = Boolean(adjacentDisarmableTrap && currentHeroStats?.canDisarmTraps);
+
     useEffect(() => {
         if (!isMissionInitialized && gameSession) {
             hooksSessionManager.initializeMission(treasureDeck);
@@ -218,7 +222,10 @@ export default function Dungeon(props) {
             return hero;
         });
         setIsSpellSelectionRequired(false);
-        onUpdateSession({ ...gameSession, heroes: updatedHeroes });
+        onUpdateSession((previousSession) => ({
+            ...(previousSession || gameSession || {}),
+            heroes: updatedHeroes,
+        }));
     }, [gameSession, onUpdateSession]);
 
     const closeCombatResult = useCallback(() => {
@@ -231,6 +238,28 @@ export default function Dungeon(props) {
         }
         setDrawnTreasureCard(null);
     }, [drawnTreasureCard, hooksTreasure]);
+
+    const handleDisarmTrap = useCallback(() => {
+        if (!currentHero) return;
+
+        hooksTraps.disarmAdjacentTrap(
+            currentHero.x,
+            currentHero.y,
+            Boolean(currentHeroStats?.canDisarmTraps),
+            (failedTrap) => {
+                const trapCell = gameSession?.currentMap?.grid?.find(
+                    (cell) => cell.x === failedTrap.x && cell.y === failedTrap.y,
+                );
+                hooksSessionManager.resolveMovementTrap(
+                    currentHero.x,
+                    currentHero.y,
+                    failedTrap.tipo,
+                    trapCell?.trpl?.rccadex,
+                    trapCell?.trpl?.rccadey,
+                );
+            },
+        );
+    }, [currentHero, currentHeroStats?.canDisarmTraps, gameSession?.currentMap?.grid, hooksSessionManager, hooksTraps]);
 
     const leaveDungeonAfterRetreat = useCallback(() => {
         const savedData = hooksCampaignManager.loadCampaign();
@@ -385,7 +414,7 @@ export default function Dungeon(props) {
                 hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
                 secretPassages={hooksSecretPassages.getFoundPassages().visiblePassages}
                 treasures={hooksTreasure.getFoundTreasures()}
-                triggeredTraps={hooksTraps.getTriggeredTraps()}
+                triggeredTraps={hooksTraps.getTriggeredTraps().filter(trap => trap.status !== 'DISARMED')}
                 targetingSpell={targetingSpell}
                 visibilityCalc={null}
             />
@@ -393,7 +422,7 @@ export default function Dungeon(props) {
             {gameSession?.isHeroOrderConfirmed && currentHero && (
                 <DungeonTurnControls
                     currentHero={currentHero}
-                    currentHeroStats={hooksHeroStats.calculateStats(currentHero)}
+                    currentHeroStats={currentHeroStats}
                     movementPoints={hooksTurnLogic.movementPoints}
                     turnPhase={hooksTurnLogic.turnPhase}
                     canOpenDoor={hooksTurnLogic.canOpenDoor != null}
@@ -404,6 +433,8 @@ export default function Dungeon(props) {
                     onSearchPassages={hooksSecretPassages.searchPassages}
                     onSearchTreasure={hooksTreasure.searchTreasure}
                     onSearchTraps={hooksTraps.searchTraps}
+                    canDisarmTrap={canDisarmAdjacentTrap}
+                    onDisarmTrap={handleDisarmTrap}
                     onOpenMagic={openMagicModal}
                     onOpenInventory={openInventory}
                     onCancelTargeting={cancelTargeting}

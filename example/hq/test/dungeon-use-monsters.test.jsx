@@ -8,6 +8,10 @@ const monsterDefinitions = [
   { id: 6, nome: "Mummia", corpo: 1, mente: 0 },
 ];
 
+function resolveUpdatedSession(updateArg, baseSession) {
+  return typeof updateArg === "function" ? updateArg(baseSession) : updateArg;
+}
+
 function makeSession({
   merr,
   grid = [
@@ -30,12 +34,13 @@ function makeSession({
 
 describe("useDungeonMonsters", () => {
   it("uses currentMap.header.merr to choose the wandering monster", () => {
+    const session = makeSession({ merr: 6 });
     const onUpdateSession = vi.fn();
     const onNotify = vi.fn();
 
     const { result } = renderHook(() =>
       useDungeonMonsters({
-        gameSession: makeSession({ merr: 6 }),
+        gameSession: session,
         visibilityMap: null,
         onUpdateSession,
         onNotify,
@@ -52,8 +57,9 @@ describe("useDungeonMonsters", () => {
     expect(newMonster.monster.id).toBe(6);
     expect(onNotify).not.toHaveBeenCalled();
     expect(onUpdateSession).toHaveBeenCalledTimes(1);
-    expect(onUpdateSession.mock.calls[0][0].monsters).toHaveLength(1);
-    expect(onUpdateSession.mock.calls[0][0].monsters[0].monster.id).toBe(6);
+    const updatedSession = resolveUpdatedSession(onUpdateSession.mock.calls[0][0], session);
+    expect(updatedSession.monsters).toHaveLength(1);
+    expect(updatedSession.monsters[0].monster.id).toBe(6);
   });
 
   it("prefers a free visible cell in the same valo as the hero", () => {

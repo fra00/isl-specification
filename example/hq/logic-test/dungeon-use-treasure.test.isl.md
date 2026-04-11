@@ -1,3 +1,24 @@
+# Project: Heroquest React Logic Tests
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.1
+**Created**: 2026-04-12
+**Implementation**: ./logic-test/dungeon-use-treasure.test
+
+---
+
+> **Reference**: `./dungeon-use-treasure.isl.md`
+
+## Domain Concepts
+
+- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced HeroQuest component behavior.
+
+## Component: LogicTestScenarios
+
+### Role: Test
+
+### ⚡ Scenarios
+
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-use-treasure.isl.md -->
 
 ## Scenario: Search Treasure Blocked by Proximity

@@ -6,6 +6,8 @@
  * Edit the ISL file instead.
  */
 
+import { Equipment, Hero } from './domain-ruleset';
+
 export const loadShopData = async () => {
   try {
     const [heroesResponse, equipmentResponse] = await Promise.all([
@@ -13,8 +15,15 @@ export const loadShopData = async () => {
       fetch('/jsonData/equipment.json')
     ]);
 
-    const heroes = await heroesResponse.json();
-    const equipment = await equipmentResponse.json();
+    if (heroesResponse?.ok === false || equipmentResponse?.ok === false) {
+      throw new Error('Failed to load shop data');
+    }
+
+    const heroesPayload = await heroesResponse.json();
+    const equipmentPayload = await equipmentResponse.json();
+
+    const heroes = Array.isArray(heroesPayload) ? heroesPayload.map(Hero) : [];
+    const equipment = Array.isArray(equipmentPayload) ? equipmentPayload.map(Equipment) : [];
 
     const items = (equipment || []).filter(item => item?.prezzo > 0);
 
@@ -27,7 +36,7 @@ export const loadShopData = async () => {
 
 export const validatePurchase = (heroState, item) => {
   if (!heroState || !item) {
-    return { allowed: false, reason: "Invalid data provided" };
+    return { allowed: false, reason: "Invalid data" };
   }
 
   if ((heroState.gold || 0) < (item.prezzo || 0)) {

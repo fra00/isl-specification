@@ -109,7 +109,7 @@ export function useTurnLogic(config) {
 
     const missionObjectiveCompleted = checkMissionObjective();
     if (!missionObjectiveCompleted) {
-      const confirmRetreat = window.confirm("Vuoi ritirarti dalle scale anche se la missione non è completata?");
+      const confirmRetreat = window.confirm("La missione non è ancora completata. Vuoi uscire comunque dalle scale?");
       if (!confirmRetreat) {
         config.onNotify("Uscita annullata. Completa la missione o conferma la ritirata dalle scale.");
         return false;
@@ -473,6 +473,7 @@ export function useTurnLogic(config) {
     handleBoardHover,
     handleBoardClick,
     handleMonsterClick,
+    attemptExitFromCurrentCell,
     markActionDone,
     endTurn
   };

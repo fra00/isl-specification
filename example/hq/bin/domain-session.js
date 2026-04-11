@@ -28,7 +28,7 @@ export const HeroState = (data = {}) => ({
 
 export const MonsterState = (data = {}) => ({
   id: data.id ?? 0,
-  monster: data.monster ? Monster(data.monster) : Monster(),
+  monster: data.monster ? Monster(data.monster) : null,
   x: data.x ?? 0,
   y: data.y ?? 0,
   currentBody: data.currentBody ?? 0,

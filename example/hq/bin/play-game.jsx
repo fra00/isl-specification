@@ -104,7 +104,10 @@ export default function PlayGame({
           treasureDeck: []
         };
 
-        onUpdateSession?.(updatedSession);
+        onUpdateSession?.((previousSession) => ({
+          ...(previousSession || gameSession || {}),
+          ...updatedSession,
+        }));
         onChangePageView?.(PageNavigationEnum.DUNGEON_DESCRIPTION);
       } catch (error) {
         console.error("Error loading mission:", error);

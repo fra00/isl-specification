@@ -85,7 +85,7 @@
   - `hoveredPathVariant`: `hooksTurnLogic.hoveredPathVariant`.
   - `secretPassages`: `hooksSecretPassages.foundPassages`.
   - `treasures`: `hooksTreasure.foundTreasures`.
-  - `triggeredTraps`: `hooksTraps.getTriggeredTraps()`.
+  - `triggeredTraps`: `hooksTraps.getTriggeredTraps()` filtered to exclude traps whose status is `DISARMED`, so a disarmed trap miniature disappears immediately.
   - `targetingSpell`: `targetingSpell`.
   - `visibilityCalc`: `hooksVisibilityCalc`.
   - `visibilityCalc` MUST be the live `hooksVisibilityCalc` instance and MUST NOT be `null` while the board supports line-of-sight highlights, targeting previews, or tracer rendering.
@@ -103,6 +103,8 @@
     - `onSearchPassages`: `hooksSecretPassages.searchPassages`.
     - `onSearchTreasure`: `hooksTreasure.searchTreasure`.
     - `onSearchTraps`: `hooksTraps.searchTraps`.
+    - `canDisarmTrap`: true only when the active hero is adjacent to a revealed active trap (`DETECTED` or `TRIGGERED`) and `hooksHeroStats.calculateStats(currentHero).canDisarmTraps` is true.
+    - `onDisarmTrap`: Trigger `handleDisarmTrap`, applying the trap consequence if the disarm attempt fails.
     - `onOpenMagic`: Trigger `openMagicModal`.
     - `isTargeting`: `targetingSpell` is NOT null.
     - `onCancelTargeting`: Trigger `cancelTargeting`.

@@ -14,6 +14,14 @@ export const CombatDiceResult = {
   BLACK_SHIELD: 'BLACK_SHIELD'
 };
 
+export const CombatResult = (data = {}) => ({
+  attackerDice: Array.isArray(data.attackerDice) ? [...data.attackerDice] : [],
+  defenderDice: Array.isArray(data.defenderDice) ? [...data.defenderDice] : [],
+  skulls: data.skulls ?? 0,
+  shields: data.shields ?? 0,
+  damageDealt: data.damageDealt ?? 0,
+});
+
 export function useCombatLogic() {
   const resolveCombat = useCallback((attackDiceCount, defenseDiceCount, defenderIsHero) => {
     const safeAttackDice = Math.max(0, attackDiceCount || 0);
@@ -57,13 +65,13 @@ export function useCombatLogic() {
 
     const damageDealt = Math.max(0, skulls - shields);
 
-    return {
+    return CombatResult({
       attackerDice,
       defenderDice,
       skulls,
       shields,
       damageDealt
-    };
+    });
   }, []);
 
   return {

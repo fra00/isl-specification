@@ -52,3 +52,18 @@
     - All boolean flags (`canAttackDiagonal`, `canAttackRanged`, `canDisarmTraps`, `hasDoubleAttack`) must be `false`.
     - Stats must match the base `hero` definition exactly.
     - The flow must complete without errors or null pointer exceptions.
+
+## Scenario: Missing Hero Returns Zeroed Stats
+- **Given**: `heroState` is null.
+- **When**: `calculateStats(heroState)` is invoked.
+- **Assert (Expected Outcomes)**:
+    - All numeric stats must be 0.
+    - All capability flags must be `false`.
+    - The function must return a stable object shape instead of `null`.
+
+## Scenario: Dwarf Can Disarm Traps Natively
+- **Given**: A `HeroState` whose `hero.classe` is `"Nano"` and with no equipped toolkit.
+- **When**: `calculateStats(heroState)` is invoked.
+- **Assert (Expected Outcomes)**:
+    - `stats.canDisarmTraps` must be `true`.
+    - No equipment with `disinnesc` is required for the Dwarf.

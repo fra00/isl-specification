@@ -32,6 +32,8 @@
 - `onSearchPassages`: () -> void (Callback to search for secret passages).
 - `onSearchTreasure`: () -> void (Callback to search for treasure).
 - `onSearchTraps`: () -> void (Callback to search for traps).
+- `canDisarmTrap`: Boolean (Whether the current hero can currently disarm an adjacent detected trap).
+- `onDisarmTrap`: () -> void (Callback to execute the disarm-trap action).
 - `onOpenMagic`: () -> void (Callback to open magic selection).
 - `onOpenInventory`: () -> void (Callback to open inventory modal).
 - `onCancelTargeting`: () -> void (Callback to cancel spell targeting).
@@ -79,6 +81,11 @@
     - Disabled IF `turnPhase.HasPerformedAction` is true.
     - Style: Yellow/Orange button.
     - OnClick: Trigger `onSearchTraps`.
+  - **Disarm Trap**:
+    - Visible IF `canDisarmTrap` is true.
+    - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
+    - Style: Amber button.
+    - OnClick: Trigger `onDisarmTrap`.
   - **Magic**:
     - Visible IF `currentHero.hero.classe.toLowerCase()` IN ["mago", "elfo"].
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.

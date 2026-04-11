@@ -15,6 +15,10 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
     const movementRules = useDungeonMovementRules({ mapQuery });
 
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
+        if (startX == null || startY == null || targetX == null || targetY == null || maxDepth == null) {
+            return [];
+        }
+
         if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
             return [];
         }
@@ -48,8 +52,12 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
 
                     // Passage Validation: Ensure Secret Passages are only walkable if they have been found
                     if (canWalk) {
-                        const isSourceSP = mapQuery.isSecretPassage(current.x, current.y);
-                        const isTargetSP = mapQuery.isSecretPassage(neighbor.x, neighbor.y);
+                        const isSourceSP = typeof mapQuery?.isSecretPassage === 'function'
+                            ? mapQuery.isSecretPassage(current.x, current.y)
+                            : false;
+                        const isTargetSP = typeof mapQuery?.isSecretPassage === 'function'
+                            ? mapQuery.isSecretPassage(neighbor.x, neighbor.y)
+                            : false;
 
                         if (isSourceSP || isTargetSP) {
                             const isSourceFound = foundPassages?.some(p => p.x === current.x && p.y === current.y);

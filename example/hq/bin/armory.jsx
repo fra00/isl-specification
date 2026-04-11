@@ -67,8 +67,7 @@ export default function Armory({ gameSession, onUpdateSession, onChangePageView 
     if (currentHero && selectedItem) {
       const validation = validatePurchase(currentHero, selectedItem);
       if (validation.allowed) {
-        const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
-        onUpdateSession(updatedSession);
+        onUpdateSession?.((previousSession) => executePurchase(previousSession || gameSession, selectedHeroIndex, selectedItem));
       }
     }
   }, [gameSession, selectedHeroIndex, selectedEquipmentId, shopItems, onUpdateSession]);

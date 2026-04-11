@@ -39,7 +39,7 @@ Represents the visual progression state of a mission in the selection screen.
 
 - `gameSession`: @GameSession (Current state of the session, nullable).
 - `onChangePageView`: (nextPage: @PageNavigationEnum) -> void (Callback to change page).
-- `onUpdateSession`: (session: @GameSession) -> void (Callback to update the session state).
+- `onUpdateSession`: `(session: @GameSession) -> void` OR `((previousSession: @GameSession) -> @GameSession) -> void` (Callback to update the session state).
 - `campaign`: @Campaign (Provided by MainContent).
 - `staticHeroes`: List<@Hero> (Provided by MainContent).
 - `staticEquipment`: List<@Equipment> (Provided by MainContent).
@@ -136,12 +136,18 @@ Represents the visual progression state of a mission in the selection screen.
     - Identify the mission file from `campaign.missioni[index].file`.
     - Fetch map data from `/jsonData/map/[filename]` (extension is included in the filename).
     - Parse into @MapDefinition.
-    - Create or Update @GameSession:
+    - Trigger `onUpdateSession` with a functional updater so the mission bootstrap merges onto the latest available session snapshot.
+    - Inside that updater:
+      - Start from `previousSession` when available, otherwise outer `gameSession`.
+      - Set `campaignName` to `campaign.nome_campagna`.
       - Set `heroes` to `savedData.heroes`.
       - Set `currentMap` to the loaded map.
       - Set `currentMissionIndex` to `index`.
+      - Reset `monsters`, `openedDoors`, and `spawnedLocations` to empty lists.
+      - Set `currentTurn` to 1.
       - Set `isHeroOrderConfirmed` to false.
-    - Trigger `onUpdateSession(updatedSession)`.
+      - Set `lastAttack` to `null`.
+      - Set `treasureDeck` to an empty list so mission initialization owns deck seeding.
     - onChangePageView to @PageNavigationEnum.DUNGEON_DESCRIPTION
   - ELSE:
     - (Optional) Show visual feedback that the mission is locked.

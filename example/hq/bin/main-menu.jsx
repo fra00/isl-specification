@@ -6,116 +6,131 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { PageNavigationEnum } from "./domain-core";
 
-export default function MainMenu({ onChangePageView }) {
+export default function MainMenu({ onChangePageView = () => {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hoverImage, setHoverImage] = useState(null);
 
-  // Lazy initialization for particles to ensure they are generated only once on mount
-  const [particles] = useState(() => {
-    return Array.from({ length: 80 }).map((_, i) => ({
-      id: i,
-      size: Math.random() * 2 + 1, // 1px to 3px
-      left: `${Math.random() * 100}%`,
-      duration: Math.random() * 10 + 15, // 15s to 25s
-      delay: -(Math.random() * 25), // Negative delay to start already on screen
-      drift: Math.random() * 40 - 20, // +/- 20px drift
-    }));
-  });
+  // Generate static dust particles on mount
+  const dustParticles = useMemo(() => {
+    const particles = [];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        id: i,
+        size: Math.random() * 2 + 1, // 1px to 3px
+        left: Math.random() * 100, // 0% to 100%
+        duration: Math.random() * 10 + 15, // 15s to 25s
+        delay: -(Math.random() * 25), // Negative delay to start already on screen
+        drift: (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 10 + 10), // +/- 10 to 20px
+      });
+    }
+    return particles;
+  }, []);
 
   const handleClick = useCallback(
     (destination) => {
       if (isProcessing) return;
       setIsProcessing(true);
-      if (onChangePageView) {
-        onChangePageView(destination);
-      }
-      setIsProcessing(false);
+      onChangePageView(destination);
+
+      // Reset processing after a short delay to prevent immediate double clicks
+      // if the component doesn't unmount immediately
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 500);
     },
     [isProcessing, onChangePageView],
   );
 
-  const handleMouseEnter = useCallback((imagePath) => {
-    setHoverImage(imagePath);
+  const handleMouseOver = useCallback((imgUrl) => {
+    setHoverImage(imgUrl);
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseOut = useCallback(() => {
     setHoverImage(null);
   }, []);
 
   return (
-    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-black">
-      <style>
-        {`
-          @keyframes respiro {
-            0% { transform: scale(1.0); }
-            100% { transform: scale(1.08); }
+    <div className="relative w-full h-screen overflow-hidden bg-black">
+      {/* Injected Styles for complex animations and text effects */}
+      <style>{`
+        @keyframes respiro {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.08); }
+        }
+        
+        @keyframes deriva-nebbia {
+          0% { background-position-x: 0%; }
+          100% { background-position-x: 100%; }
+        }
+        
+        @keyframes fluttuazione-pulviscolo {
+          0% { 
+            transform: translate3d(0, 110vh, 0); 
+            opacity: 0; 
           }
-          @keyframes deriva-nebbia {
-            0% { background-position-x: 0%; }
-            100% { background-position-x: 100%; }
+          10% { opacity: 1; }
+          50% { transform: translate3d(var(--drift), 50vh, 0); }
+          90% { opacity: 1; }
+          100% { 
+            transform: translate3d(calc(var(--drift) * -1), -10vh, 0); 
+            opacity: 0; 
           }
-          @keyframes bagliore-vivo {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.02); }
-          }
-          @keyframes fluttuazione-pulviscolo {
-            0% { transform: translateY(110vh) translateX(0px); opacity: 0; }
-            10% { opacity: 1; }
-            50% { transform: translateY(50vh) translateX(var(--drift)); }
-            90% { opacity: 1; }
-            100% { transform: translateY(-10vh) translateX(0px); opacity: 0; }
-          }
-          .menu-text {
-            font-family: fantasy;
-            font-weight: bold;
-            font-size: 4rem;
-            background: linear-gradient(to bottom, #D6B36A 0%, #8C6239 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            -webkit-text-stroke: 2px #2a2a2a;
-            filter: drop-shadow(4px 4px 2px rgba(0,0,0,1));
-            text-shadow: 0 0 0 rgba(214, 179, 106, 0);
-            transition: transform 0.22s ease, filter 0.22s ease, text-shadow 0.22s ease, letter-spacing 0.22s ease;
-            cursor: pointer;
-            text-align: center;
-            letter-spacing: 0.12em;
-          }
-          .menu-text:hover {
-            filter: drop-shadow(0 0 10px rgba(214, 179, 106, 0.42)) drop-shadow(4px 4px 2px rgba(0,0,0,0.95));
-            text-shadow: 0 0 18px rgba(214, 179, 106, 0.42);
-            transform: translateX(6px) scale(1.035);
-            letter-spacing: 0.16em;
-            -webkit-text-stroke: 2px #5a4125;
-          }
-        `}
-      </style>
+        }
+        
+        @keyframes bagliore-vivo {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.02); }
+        }
 
-      {/* BackgroundLayer */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/img/menusfondo.jpg')",
-            animation: "respiro 30s ease-in-out infinite alternate",
-          }}
-        />
-      </div>
+        .menu-item-text {
+          font-family: fantasy;
+          font-weight: bold;
+          font-size: 4rem;
+          background: linear-gradient(to bottom, #D6B36A 0%, #8C6239 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          -webkit-text-stroke: 2px #2a2a2a;
+          filter: drop-shadow(4px 4px 2px rgba(0,0,0,1));
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
 
-      {/* MouseOverImageLayer */}
-      {hoverImage && (
-        <div className="absolute top-0 right-0 h-[30%] w-auto z-[2] opacity-80 pointer-events-none">
+        .menu-item-text:hover {
+          transform: scale(1.05) translateX(10px);
+          -webkit-text-stroke: 1px #e8c988;
+          filter: drop-shadow(4px 4px 8px rgba(214, 179, 106, 0.6));
+        }
+      `}</style>
+
+      {/* Z-Index 0: BackgroundLayer */}
+      <div
+        className="absolute inset-0 z-0 w-full h-full bg-center bg-cover"
+        style={{
+          backgroundImage: "url(/img/menusfondo.jpg)",
+          animation: "respiro 30s ease-in-out infinite alternate",
+        }}
+      />
+
+      {/* Z-Index 2: MouseOverImageLayer */}
+      <div
+        className="absolute top-0 right-0 h-[30%] w-auto z-[2] transition-opacity duration-500 ease-in-out"
+        style={{ opacity: hoverImage ? 0.8 : 0 }}
+      >
+        {hoverImage && (
           <img
             src={hoverImage}
-            alt="Menu Preview"
-            className="h-full w-auto object-contain"
+            alt="Preview"
+            className="h-full w-auto object-contain mix-blend-screen"
           />
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* MistOverlay */}
+      {/* Z-Index 5: MistOverlay */}
       <div
         className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"
         style={{
@@ -127,24 +142,26 @@ export default function MainMenu({ onChangePageView }) {
         }}
       />
 
-      {/* DustOverlay */}
+      {/* Z-Index 8: DustOverlay */}
       <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen">
-        {particles.map((p) => (
+        {dustParticles.map((particle) => (
           <div
-            key={p.id}
+            key={particle.id}
             className="absolute rounded-full bg-[#FFD700]"
             style={{
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              left: p.left,
-              "--drift": `${p.drift}px`,
-              animation: `fluttuazione-pulviscolo ${p.duration}s linear ${p.delay}s infinite`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              left: `${particle.left}%`,
+              top: 0, // Starting position is handled by transform in keyframes
+              "--drift": `${particle.drift}px`,
+              animation: `fluttuazione-pulviscolo ${particle.duration}s linear infinite`,
+              animationDelay: `${particle.delay}s`,
             }}
           />
         ))}
       </div>
 
-      {/* CandleLightOverlay */}
+      {/* Z-Index 10: CandleLightOverlay */}
       <div
         className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"
         style={{
@@ -154,24 +171,27 @@ export default function MainMenu({ onChangePageView }) {
         }}
       />
 
-      {/* UIContent */}
-      <div className="relative z-[20] flex flex-col items-center gap-12 pt-28 md:pt-40">
-        <div
-          className="menu-text"
-          onClick={() => handleClick(PageNavigationEnum.PLAY_GAME)}
-          onMouseEnter={() => handleMouseEnter("/img/main-menu/nuova.jpg")}
-          onMouseLeave={handleMouseLeave}
-        >
-          GIOCA
-        </div>
-        <div
-          className="menu-text"
-          onClick={() => handleClick(PageNavigationEnum.EDITOR_GAME)}
-          onMouseEnter={() => handleMouseEnter("/img/main-menu/editor.jpg")}
-          onMouseLeave={handleMouseLeave}
-        >
-          EDITOR
-        </div>
+      {/* Z-Index 20: UIContent */}
+      <div className="absolute inset-0 z-[20] flex flex-col items-center justify-center pt-[30vh]">
+        <nav className="flex flex-col gap-8 items-center">
+          <div
+            className="menu-item-text"
+            onClick={() => handleClick(PageNavigationEnum.PLAY_GAME)}
+            onMouseEnter={() => handleMouseOver("/img/main-menu/nuova.jpg")}
+            onMouseLeave={handleMouseOut}
+          >
+            Gioca
+          </div>
+
+          <div
+            className="menu-item-text"
+            onClick={() => handleClick(PageNavigationEnum.EDITOR_GAME)}
+            onMouseEnter={() => handleMouseOver("/img/main-menu/editor.jpg")}
+            onMouseLeave={handleMouseOut}
+          >
+            Editor
+          </div>
+        </nav>
       </div>
     </div>
   );

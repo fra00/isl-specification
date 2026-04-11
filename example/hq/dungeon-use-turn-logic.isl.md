@@ -350,4 +350,4 @@
   - ELSE:
     - Call `sessionManager.advanceTurn(nextTurn, null)`.
 
-- **Return**: `{ turnPhase, movementPoints, hoveredPath, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`
+- **Return**: `{ turnPhase, movementPoints, hoveredPath, hoveredPathVariant, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`

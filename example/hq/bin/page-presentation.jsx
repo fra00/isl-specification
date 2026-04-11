@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { PageNavigationEnum } from './domain-core';
 import PlayGame from './play-game';
 import EditorGame from './editor-game';
@@ -25,23 +25,32 @@ export default function PageContent({
   treasureDeck = [],
   campaign = null
 }) {
-  // FirstLoad: Initialize with default page view
-  const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
+  const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);
   const [gameSession, setGameSession] = useState(null);
 
+  // FirstLoad: Inizializzazione della pagina
+  useEffect(() => {
+    if (!currentPageView) {
+      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
+    }
+  }, [currentPageView]);
+
+  // changePageView: Cambia la PageView corrente
   const changePageView = useCallback((nextPageView) => {
     setCurrentPageView(nextPageView);
   }, []);
 
+  // updateSession: Updates the global game session state
   const updateSession = useCallback((sessionOrUpdater) => {
-    // React's state setter natively supports both direct values and functional updaters
     setGameSession(sessionOrUpdater);
   }, []);
 
+  // startMission: Handles the start of a mission
   const startMission = useCallback((missionIndex) => {
     console.log(`Starting mission index: ${missionIndex}`);
   }, []);
 
+  // showPageView: Mostra la PageView corrente
   const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
@@ -53,8 +62,8 @@ export default function PageContent({
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             campaign={campaign}
             staticHeroes={heroes}
@@ -68,16 +77,16 @@ export default function PageContent({
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -90,13 +99,17 @@ export default function PageContent({
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
       default:
-        return null;
+        return (
+          <MainMenu 
+            onChangePageView={changePageView} 
+          />
+        );
     }
   };
 

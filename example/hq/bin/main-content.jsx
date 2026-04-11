@@ -6,14 +6,15 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from "react";
-import PageContent from "./page-presentation";
-import { Monster, Hero, Equipment, Item, TreasureCard } from "./domain-ruleset";
-import { Campaign, VisibilityMap, VisibilityCell } from "./domain-map";
-import { getAllSpells } from "./domain-spells-data";
+import React, { useState, useEffect } from 'react';
+import PageContent from './page-presentation';
+import { VisibilityMap } from './domain-map';
+import { getAllSpells } from './domain-spells-data';
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
+  const [error, setError] = useState(null);
+  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalHeroes, setGlobalHeroes] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
@@ -22,7 +23,6 @@ export default function MainContent() {
   const [globalSpells, setGlobalSpells] = useState([]);
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,72 +35,58 @@ export default function MainContent() {
           boardDataRes,
           equipmentRes,
           itemsRes,
-          treasureRes,
+          treasureDeckRes,
           campaignRes
         ] = await Promise.all([
-          fetch("/jsonData/monsters.json"),
-          fetch("/jsonData/heroes.json"),
-          fetch("/jsonData/tabellone/default.json"),
-          fetch("/jsonData/equipment.json"),
-          fetch("/jsonData/items.json"),
-          fetch("/jsonData/treasure-card.json"),
-          fetch("/jsonData/campagne.json")
+          fetch('/jsonData/monsters.json'),
+          fetch('/jsonData/heroes.json'),
+          fetch('/jsonData/tabellone/default.json'),
+          fetch('/jsonData/equipment.json'),
+          fetch('/jsonData/items.json'),
+          fetch('/jsonData/treasure-card.json'),
+          fetch('/jsonData/campagne.json')
         ]);
 
-        if (
-          !monstersRes.ok ||
-          !heroesRes.ok ||
-          !boardDataRes.ok ||
-          !equipmentRes.ok ||
-          !itemsRes.ok ||
-          !treasureRes.ok ||
-          !campaignRes.ok
-        ) {
-          throw new Error("Network response was not ok");
-        }
+        if (!monstersRes.ok) throw new Error(`monsters.json: ${monstersRes.statusText}`);
+        if (!heroesRes.ok) throw new Error(`heroes.json: ${heroesRes.statusText}`);
+        if (!boardDataRes.ok) throw new Error(`tabellone/default.json: ${boardDataRes.statusText}`);
+        if (!equipmentRes.ok) throw new Error(`equipment.json: ${equipmentRes.statusText}`);
+        if (!itemsRes.ok) throw new Error(`items.json: ${itemsRes.statusText}`);
+        if (!treasureDeckRes.ok) throw new Error(`treasure-card.json: ${treasureDeckRes.statusText}`);
+        if (!campaignRes.ok) throw new Error(`campagne.json: ${campaignRes.statusText}`);
 
-        const rawMonsters = await monstersRes.json();
-        const rawHeroes = await heroesRes.json();
-        const rawBoardData = await boardDataRes.json();
-        const rawEquipment = await equipmentRes.json();
-        const rawItems = await itemsRes.json();
-        const rawTreasure = await treasureRes.json();
-        const rawCampaign = await campaignRes.json();
+        const monstersData = await monstersRes.json();
+        const heroesData = await heroesRes.json();
+        const boardDataJson = await boardDataRes.json();
+        const equipmentData = await equipmentRes.json();
+        const itemsData = await itemsRes.json();
+        const treasureDeckData = await treasureDeckRes.json();
+        const campaignData = await campaignRes.json();
 
         if (!isMounted) return;
 
-        const monsters = (Array.isArray(rawMonsters) ? rawMonsters : []).map(m => Monster(m));
-        const heroes = (Array.isArray(rawHeroes) ? rawHeroes : []).map(h => Hero(h));
-        const equipment = (Array.isArray(rawEquipment) ? rawEquipment : []).map(e => Equipment(e));
-        const items = (Array.isArray(rawItems) ? rawItems : []).map(i => Item(i));
-        const treasureDeck = (Array.isArray(rawTreasure) ? rawTreasure : []).map(t => TreasureCard(t));
-        const campaign = Campaign(rawCampaign);
+        setGlobalMonsters(monstersData);
+        setGlobalHeroes(heroesData);
+        setGlobalEquipment(equipmentData);
+        setGlobalItems(itemsData);
+        setGlobalTreasureDeck(treasureDeckData);
+        setGlobalCampaign(campaignData);
 
         const normalizedBoardData = VisibilityMap({
-          ...(rawBoardData || {}),
-          data: (rawBoardData?.data || []).map(cell =>
-            VisibilityCell({
-              ...(cell || {}),
-              fog: cell?.fog !== undefined ? cell.fog : true
-            })
-          )
+          ...boardDataJson,
+          data: (boardDataJson?.data || []).map(cell => ({
+            ...cell,
+            fog: cell?.fog !== undefined ? cell.fog : true
+          }))
         });
-
-        const spells = getAllSpells();
-
-        setGlobalMonsters(monsters);
-        setGlobalHeroes(heroes);
-        setGlobalEquipment(equipment);
-        setGlobalItems(items);
-        setGlobalTreasureDeck(treasureDeck);
-        setGlobalCampaign(campaign);
         setGlobalBoardData(normalizedBoardData);
-        setGlobalSpells(spells);
+
+        setGlobalSpells(getAllSpells());
 
         setIsAppReady(true);
       } catch (err) {
         if (isMounted) {
-          setError("Errore durante il caricamento degli asset: " + (err?.message || "Errore sconosciuto"));
+          setError("Errore durante il caricamento degli asset: " + err.message);
         }
       }
     };
@@ -114,16 +100,16 @@ export default function MainContent() {
 
   if (error) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black">
-        <div className="text-red-500 text-xl font-bold">{error}</div>
+      <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-4 text-center">
+        <p>{error}</p>
       </div>
     );
   }
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-2xl font-bold animate-pulse">Inizializzazione Sistema...</div>
+      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
+        <p>Inizializzazione Sistema...</p>
       </div>
     );
   }

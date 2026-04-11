@@ -95,8 +95,37 @@
 - **Assert (Expected Outcomes)**:
   - The capability returns `true`.
   - The hero gains 50 gold in the emitted session.
+  - `onNotify` is triggered with the treasure reward summary.
   - Only the `tes` payload of cell `(6, 6)` is reset.
   - Unrelated map cells and other heroes remain unchanged.
+
+## Scenario: Treasure Notification Names The Exact Reward And Assigns It To The Searching Hero
+
+- **Given**: A visible treasure cell contains gold, an item ID present in `staticItems`, and a weapon ID present in `staticEquipment`, while another hero exists in the same session.
+- **When**: `collectTreasureAtCell(searchingHeroId, treasureX, treasureY)` is triggered.
+- **Assert (Expected Outcomes)**:
+  - The emitted session adds gold, item ownership, and weapon ownership only to the hero matching `searchingHeroId`.
+  - No unrelated hero inventory, equipment, or gold is modified.
+  - `onNotify` includes the exact readable reward names resolved from `staticItems` and `staticEquipment`, not only a generic "oggetto" or "arma" label.
+
+## Scenario: Treasure Collection Uses Latest Session Snapshot
+
+- **Given**: `onUpdateSession` accepts a functional updater and the latest session snapshot already contains unrelated changes from another action.
+- **When**: `collectTreasureAtCell(heroId, treasureX, treasureY)` is triggered.
+- **Assert (Expected Outcomes)**:
+  - The capability computes the treasure reward against the latest provided session snapshot, not a stale outer closure.
+  - The emitted session preserves unrelated branches already changed in that latest snapshot.
+  - The treasure reward, map-cell reset, and notification are all derived from the same persisted snapshot.
+
+## Scenario: Treasure Return Values Must Not Depend On Synchronous React Updates
+
+- **Given**: `onUpdateSession` behaves like a React state setter and defers execution of the functional updater until a later render pass.
+- **When**: `collectTreasureAtCell`, `drawTreasureCard`, or `applyTreasureCardEffect` is triggered from the treasure flow.
+- **Assert (Expected Outcomes)**:
+  - The method return value is derived from the currently validated outer session snapshot, not from side effects captured inside the deferred updater body.
+  - `collectTreasureAtCell(...)` returns `true` as soon as a visible collectible treasure has been accepted for enqueueing.
+  - `drawTreasureCard()` returns the top card immediately when one exists.
+  - `applyTreasureCardEffect(...)` returns `true` when the effect request has been accepted for enqueueing.
 
 ## Scenario: Monster Attack Persists Last Combat Snapshot
 

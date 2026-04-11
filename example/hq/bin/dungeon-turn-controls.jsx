@@ -6,253 +6,196 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function DungeonTurnControls({
-  currentHero = null,
-  currentHeroStats = null,
-  movementPoints = null,
-  turnPhase = {},
-  canOpenDoor = null,
-  isTargeting = false,
-  isMoving = false,
-  onRollMovement = () => {},
-  onEndTurn = () => {},
-  onSearchPassages = () => {},
-  onSearchTreasure = () => {},
-  onSearchTraps = () => {},
-  onOpenMagic = () => {},
-  onOpenInventory = () => {},
-  onCancelTargeting = () => {},
-  onOpenDoor = () => {},
+  currentHero,
+  currentHeroStats,
+  movementPoints,
+  turnPhase,
+  canOpenDoor,
+  isTargeting,
+  isMoving,
+  onRollMovement,
+  onEndTurn,
+  onSearchPassages,
+  onSearchTreasure,
+  onSearchTraps,
+  onOpenMagic,
+  onOpenInventory,
+  onCancelTargeting,
+  onOpenDoor
 }) {
-  const [position, setPosition] = useState({ x: 20, y: 20 });
-  const positionRef = useRef(position);
-  const dragHandlersRef = useRef({ move: null, up: null });
-
-  // Keep ref updated for drag calculations without triggering re-renders of the callback
-  useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
-
-  // Initialize position from LocalStorage
-  useEffect(() => {
+  const [position, setPosition] = useState(() => {
     try {
       const saved = localStorage.getItem("dungeonTurnControlsPosition");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (
-          parsed &&
-          typeof parsed.x === "number" &&
-          typeof parsed.y === "number"
-        ) {
-          setPosition(parsed);
+        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return parsed;
         }
       }
     } catch (e) {
-      // Fallback to default if parsing fails
-      setPosition({ x: 20, y: 20 });
+      // Ignore parse errors and fallback to default
     }
-  }, []);
+    return { x: 20, y: 20 };
+  });
 
-  // Cleanup global event listeners on unmount
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const positionRef = useRef(position);
+
+  // Keep a ref to the latest position for the mouseup event
   useEffect(() => {
-    return () => {
-      if (dragHandlersRef.current.move) {
-        window.removeEventListener("mousemove", dragHandlersRef.current.move);
-      }
-      if (dragHandlersRef.current.up) {
-        window.removeEventListener("mouseup", dragHandlersRef.current.up);
-      }
-    };
-  }, []);
+    positionRef.current = position;
+  }, [position]);
 
   const handleMouseDown = useCallback((e) => {
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startPos = positionRef.current;
+    setIsDragging(true);
+    dragOffset.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+  }, [position]);
 
-    const handleMouseMove = (moveEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e) => {
       setPosition({
-        x: startPos.x + dx,
-        y: startPos.y + dy,
+        x: e.clientX - dragOffset.current.x,
+        y: e.clientY - dragOffset.current.y
       });
     };
 
     const handleMouseUp = () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      dragHandlersRef.current = { move: null, up: null };
-
-      // Save to LocalStorage on drag end
-      localStorage.setItem(
-        "dungeonTurnControlsPosition",
-        JSON.stringify(positionRef.current),
-      );
+      setIsDragging(false);
+      try {
+        localStorage.setItem("dungeonTurnControlsPosition", JSON.stringify(positionRef.current));
+      } catch (e) {
+        // Ignore storage errors
+      }
     };
 
-    dragHandlersRef.current = { move: handleMouseMove, up: handleMouseUp };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-  }, []);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
-  // Derived state for UI
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   const heroClass = currentHero?.hero?.classe || "Unknown";
   const attack = currentHeroStats?.attacco ?? currentHero?.hero?.attacco ?? 0;
   const defense = currentHeroStats?.difesa ?? currentHero?.hero?.difesa ?? 0;
-  const health = currentHero?.currentBody ?? 0;
-  const mind = currentHero?.currentMind ?? 0;
-  const gold = currentHero?.gold ?? 0;
-  const activeEffects = currentHero?.activeStatus ?? [];
+  const activeEffects = currentHero?.activeStatus || [];
 
   const isMagicVisible = ["mago", "elfo"].includes(heroClass.toLowerCase());
-  const isMagicDisabled =
-    turnPhase?.HasPerformedAction || isMoving || isTargeting;
-  const isRollDisabled = turnPhase?.HasMoved || movementPoints != null;
-  const isSearchDisabled = turnPhase?.HasPerformedAction;
+  const isCancelTargetingVisible = isTargeting === true;
   const isOpenDoorVisible = canOpenDoor != null && canOpenDoor.found === true;
 
   return (
     <div
-      className="fixed bg-gray-800 text-white rounded shadow-xl w-[250px] flex flex-col overflow-hidden z-50"
+      className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col overflow-hidden"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
       <div
-        className="bg-gray-900 p-2 cursor-grab active:cursor-grabbing select-none font-bold text-center border-b border-gray-700"
+        className={`bg-gray-900 p-2 text-center font-bold select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
       >
         Turn Controls
       </div>
 
-      <div className="p-4 flex flex-col gap-4">
-        {/* Info Section */}
-        <div className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Class:</span>
-            <span className="font-semibold capitalize">{heroClass}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Movement:</span>
-            <span className="font-semibold">{movementPoints ?? "-"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Gold:</span>
-            <span className="font-semibold text-yellow-400">{gold}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Health:</span>
-            <span className="font-semibold text-red-400">{health}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Mind:</span>
-            <span className="font-semibold text-blue-400">{mind}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Attack:</span>
-            <span className="font-semibold">{attack}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Defense:</span>
-            <span className="font-semibold">{defense}</span>
-          </div>
-          {activeEffects.length > 0 && (
-            <div className="flex flex-col gap-1 pt-2">
-              <span className="text-gray-400">Effects:</span>
-              <div className="flex flex-wrap gap-1 justify-end">
-                {activeEffects.map((effect) => (
-                  <span
-                    key={effect}
-                    className="px-2 py-[2px] rounded-full bg-indigo-900/80 border border-indigo-500 text-[10px] font-semibold"
-                  >
-                    {effect}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="p-3 text-sm space-y-1 border-b border-gray-700">
+        <div><span className="text-gray-400">Class:</span> {heroClass}</div>
+        <div><span className="text-gray-400">Movement:</span> {movementPoints ?? '-'}</div>
+        <div><span className="text-gray-400">Gold:</span> {currentHero?.gold ?? 0}</div>
+        <div><span className="text-gray-400">Health:</span> {currentHero?.currentBody ?? 0}</div>
+        <div><span className="text-gray-400">Intelligence:</span> {currentHero?.currentMind ?? 0}</div>
+        <div><span className="text-gray-400">Attack:</span> {attack}</div>
+        <div><span className="text-gray-400">Defense:</span> {defense}</div>
+        {activeEffects.length > 0 && (
+          <div><span className="text-gray-400">Effects:</span> {activeEffects.join(', ')}</div>
+        )}
+      </div>
 
-        {/* Inventory Section */}
-        <div className="flex flex-col gap-2">
+      <div className="p-2 border-b border-gray-700">
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-blue-600 hover:bg-blue-500 transition-colors"
+          onClick={onOpenInventory}
+        >
+          Inventory
+        </button>
+      </div>
+
+      <div className="p-2 flex flex-col gap-2">
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={turnPhase?.HasMoved === true || movementPoints != null}
+          onClick={onRollMovement}
+        >
+          Roll Movement
+        </button>
+
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-orange-600 hover:bg-orange-500 disabled:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={turnPhase?.HasPerformedAction === true}
+          onClick={onSearchPassages}
+        >
+          Search Passages
+        </button>
+
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-orange-600 hover:bg-orange-500 disabled:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={turnPhase?.HasPerformedAction === true}
+          onClick={onSearchTreasure}
+        >
+          Search Treasure
+        </button>
+
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-orange-600 hover:bg-orange-500 disabled:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={turnPhase?.HasPerformedAction === true}
+          onClick={onSearchTraps}
+        >
+          Search Trap
+        </button>
+
+        {isMagicVisible && (
           <button
-            onClick={onOpenInventory}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded font-semibold transition-colors"
+            className="w-full py-1 px-2 rounded font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={turnPhase?.HasPerformedAction === true || isMoving === true || isTargeting === true}
+            onClick={onOpenMagic}
           >
-            Inventory
+            Magic
           </button>
-        </div>
+        )}
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2 border-t border-gray-700 pt-4">
+        {isCancelTargetingVisible && (
           <button
-            onClick={onRollMovement}
-            disabled={isRollDisabled}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+            className="w-full py-1 px-2 rounded font-semibold bg-gray-600 hover:bg-gray-500 transition-colors"
+            onClick={onCancelTargeting}
           >
-            Roll Movement
+            Cancel Targeting
           </button>
+        )}
 
+        {isOpenDoorVisible && (
           <button
-            onClick={onSearchPassages}
-            disabled={isSearchDisabled}
-            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
+            className="w-full py-1 px-2 rounded font-semibold bg-green-600 hover:bg-green-500 transition-colors"
+            onClick={onOpenDoor}
           >
-            Search Passages
+            Open Door
           </button>
+        )}
 
-          <button
-            onClick={onSearchTreasure}
-            disabled={isSearchDisabled}
-            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
-          >
-            Search Treasure
-          </button>
-
-          <button
-            onClick={onSearchTraps}
-            disabled={isSearchDisabled}
-            className="w-full py-2 px-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
-          >
-            Search Traps
-          </button>
-
-          {isMagicVisible && (
-            <button
-              onClick={onOpenMagic}
-              disabled={isMagicDisabled}
-              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-600 disabled:text-gray-400 text-white rounded font-semibold transition-colors"
-            >
-              Magic
-            </button>
-          )}
-
-          {isTargeting && (
-            <button
-              onClick={onCancelTargeting}
-              className="w-full py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded font-semibold transition-colors"
-            >
-              Cancel Targeting
-            </button>
-          )}
-
-          {isOpenDoorVisible && (
-            <button
-              onClick={onOpenDoor}
-              className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded font-semibold transition-colors"
-            >
-              Open Door
-            </button>
-          )}
-
-          <button
-            onClick={onEndTurn}
-            className="w-full py-2 px-4 bg-red-600 hover:bg-red-500 text-white rounded font-semibold transition-colors mt-2"
-          >
-            End Turn
-          </button>
-        </div>
+        <button
+          className="w-full py-1 px-2 rounded font-semibold bg-red-600 hover:bg-red-500 transition-colors"
+          onClick={onEndTurn}
+        >
+          End Turn
+        </button>
       </div>
     </div>
   );

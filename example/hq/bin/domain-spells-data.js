@@ -9,7 +9,6 @@
 import { Spell } from "./domain-ruleset";
 
 const staticSpells = [
-  // Fuoco
   Spell({
     id: 1,
     nome: "Palla di Fuoco",
@@ -19,7 +18,7 @@ const staticSpells = [
     valore: 2,
     immagine: "Fuoco01.jpg",
     dorso: "Fuoco00_Dorso.jpg",
-    descrizione: "Infligge 2 danni diretti a un mostro.",
+    descrizione: "Infligge 2 danni diretti a un mostro."
   }),
   Spell({
     id: 2,
@@ -30,7 +29,7 @@ const staticSpells = [
     valore: 1,
     immagine: "Fuoco02.jpg",
     dorso: "Fuoco00_Dorso.jpg",
-    descrizione: "Infligge 1 danno diretto a un mostro.",
+    descrizione: "Infligge 1 danno diretto a un mostro."
   }),
   Spell({
     id: 3,
@@ -41,11 +40,8 @@ const staticSpells = [
     valore: 2,
     immagine: "Fuoco03.jpg",
     dorso: "Fuoco00_Dorso.jpg",
-    descrizione:
-      "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri.",
+    descrizione: "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri."
   }),
-
-  // Acqua
   Spell({
     id: 4,
     nome: "Acqua Guaritrice",
@@ -55,7 +51,7 @@ const staticSpells = [
     valore: 4,
     immagine: "Acqua01.jpg",
     dorso: "Acqua00_Dorso.jpg",
-    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio.",
+    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio."
   }),
   Spell({
     id: 5,
@@ -66,8 +62,7 @@ const staticSpells = [
     valore: 0,
     immagine: "Acqua02.jpg",
     dorso: "Acqua00_Dorso.jpg",
-    descrizione:
-      "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno.",
+    descrizione: "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno."
   }),
   Spell({
     id: 6,
@@ -78,11 +73,8 @@ const staticSpells = [
     valore: 0,
     immagine: "Acqua03.jpg",
     dorso: "Acqua00_Dorso.jpg",
-    descrizione:
-      "Fa addormentare un mostro (salta il turno) finché non viene attaccato.",
+    descrizione: "Fa addormentare un mostro (salta il turno) finché non viene attaccato."
   }),
-
-  // Terra
   Spell({
     id: 7,
     nome: "Pelle di Pietra",
@@ -92,7 +84,7 @@ const staticSpells = [
     valore: 1,
     immagine: "Terra01.jpg",
     dorso: "Terra00_Dorso.jpg",
-    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni.",
+    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni."
   }),
   Spell({
     id: 8,
@@ -103,8 +95,7 @@ const staticSpells = [
     valore: 0,
     immagine: "Terra02.jpg",
     dorso: "Terra00_Dorso.jpg",
-    descrizione:
-      "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi.",
+    descrizione: "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi."
   }),
   Spell({
     id: 9,
@@ -115,11 +106,8 @@ const staticSpells = [
     valore: 5,
     immagine: "Terra03.jpg",
     dorso: "Terra00_Dorso.jpg",
-    descrizione:
-      "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza.",
+    descrizione: "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza."
   }),
-
-  // Aria
   Spell({
     id: 10,
     nome: "Tempesta",
@@ -129,8 +117,7 @@ const staticSpells = [
     valore: 0,
     immagine: "Aria01.jpg",
     dorso: "Aria00_Dorso.jpg",
-    descrizione:
-      "Il mostro viene avvolto dai venti e salta il suo prossimo turno.",
+    descrizione: "Il mostro viene avvolto dai venti e salta il suo prossimo turno."
   }),
   Spell({
     id: 11,
@@ -141,8 +128,7 @@ const staticSpells = [
     valore: 0,
     immagine: "Aria02.jpg",
     dorso: "Aria00_Dorso.jpg",
-    descrizione:
-      "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento.",
+    descrizione: "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento."
   }),
   Spell({
     id: 12,
@@ -153,15 +139,14 @@ const staticSpells = [
     valore: 1,
     immagine: "Aria03.jpg",
     dorso: "Aria00_Dorso.jpg",
-    descrizione: "Riduce il movimento del mostro a 1 sola casella.",
-  }),
+    descrizione: "Riduce il movimento del mostro a 1 sola casella."
+  })
 ];
 
 export const getAllSpells = () => {
-  return [...staticSpells];
+  return staticSpells;
 };
 
 export const getSpellsByElement = (elemento) => {
-  if (!elemento) return [];
-  return staticSpells.filter((spell) => spell.elemento === elemento);
+  return staticSpells.filter(spell => spell.elemento === elemento);
 };

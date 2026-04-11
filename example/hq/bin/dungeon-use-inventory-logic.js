@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 
-export function useInventoryLogic({ staticEquipment = [], sessionManager } = {}) {
+export function useInventoryLogic({ staticEquipment = [], sessionManager }) {
   
   const isItemCompatibleWithHero = useCallback((hero, item) => {
     if (hero == null || item == null) {
@@ -18,11 +18,11 @@ export function useInventoryLogic({ staticEquipment = [], sessionManager } = {})
     if (item.solopsg === true && item.solopsgid !== hero.heroId) {
       return false;
     }
-    
+
     if (item.nopsg === true && item.nopsgid === hero.heroId) {
       return false;
     }
-    
+
     return true;
   }, []);
 

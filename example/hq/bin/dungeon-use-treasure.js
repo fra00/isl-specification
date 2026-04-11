@@ -9,7 +9,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
-export function useTreasureSearch(config = {}) {
+export function useTreasureSearch(config) {
   const {
     gameSession,
     visibilityMap,
@@ -21,74 +21,70 @@ export function useTreasureSearch(config = {}) {
   } = config;
 
   const [foundTreasures, setFoundTreasures] = useState([]);
-
+  
   const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
   const stateRef = useRef({
     gameSession,
-    visibilityMap,
-    onNotify,
-    onActionDone,
-    sessionManager,
-    onTreasureCardDrawn,
-    onWanderingMonster,
     foundTreasures,
+    sessionManager,
+    onNotify,
+    onTreasureCardDrawn,
+    onActionDone,
+    onWanderingMonster,
     visibilityCalc
   });
 
   stateRef.current = {
     gameSession,
-    visibilityMap,
-    onNotify,
-    onActionDone,
-    sessionManager,
-    onTreasureCardDrawn,
-    onWanderingMonster,
     foundTreasures,
+    sessionManager,
+    onNotify,
+    onTreasureCardDrawn,
+    onActionDone,
+    onWanderingMonster,
     visibilityCalc
   };
 
   const searchTreasure = useCallback(() => {
-    const state = stateRef.current;
     const {
       gameSession: currentSession,
-      onNotify: currentOnNotify,
-      onActionDone: currentOnActionDone,
+      foundTreasures: currentTreasures,
       sessionManager: currentSessionManager,
+      onNotify: currentOnNotify,
       onTreasureCardDrawn: currentOnTreasureCardDrawn,
-      foundTreasures: currentFoundTreasures,
+      onActionDone: currentOnActionDone,
       visibilityCalc: currentVisibilityCalc
-    } = state;
+    } = stateRef.current;
 
-    if (currentSession == null) return;
+    if (!currentSession) return;
 
-    if (currentSession.monsters != null && currentSession.monsters.length > 0) {
-      currentOnNotify?.("Non puoi cercare tesori con mostri vicini!");
+    if (currentSession.monsters && currentSession.monsters.length > 0) {
+      currentOnNotify("Non puoi cercare tesori con mostri vicini!");
       return;
     }
 
     const currentHero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-    if (currentHero == null) return;
+    if (!currentHero) return;
 
-    const visibleCells = currentVisibilityCalc?.calculateVisibleCells(currentHero.x, currentHero.y) || [];
+    const visibleCells = currentVisibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y);
     let treasureFound = false;
+    let treasureCollectionFailed = false;
 
-    for (let i = 0; i < visibleCells.length; i++) {
-      const cell = visibleCells[i];
+    for (const cell of visibleCells) {
       const mapCell = currentSession.currentMap?.grid?.find(c => c.x === cell.x && c.y === cell.y);
-
-      if (mapCell != null && mapCell.tes != null) {
-        const tes = mapCell.tes;
-        if (tes.mon !== 0 || tes.ogg !== 0 || tes.arma !== 0 || tes.trp !== 0) {
-          const alreadyFound = currentFoundTreasures.some(ft => ft.x === mapCell.x && ft.y === mapCell.y);
-
+      if (mapCell && mapCell.tes) {
+        const { mon, ogg, arma, trp } = mapCell.tes;
+        if (mon !== 0 || ogg !== 0 || arma !== 0 || trp !== 0) {
+          const alreadyFound = currentTreasures.some(t => t.x === mapCell.x && t.y === mapCell.y);
           if (!alreadyFound) {
-            treasureFound = true;
-            setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
-
-            const heroToReward = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-            if (heroToReward != null) {
-              currentSessionManager?.collectTreasureAtCell(heroToReward.heroId, mapCell.x, mapCell.y);
+            const didCollectTreasure = currentSessionManager.collectTreasureAtCell(currentHero.heroId, mapCell.x, mapCell.y);
+            if (didCollectTreasure) {
+              treasureFound = true;
+              setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
+            } else {
+              treasureCollectionFailed = true;
+              currentOnNotify("Errore durante la raccolta del tesoro.");
             }
             break;
           }
@@ -96,18 +92,18 @@ export function useTreasureSearch(config = {}) {
       }
     }
 
-    if (!treasureFound) {
-      if (currentSession.treasureDeck != null && currentSession.treasureDeck.length > 0) {
-        const drawnCard = currentSessionManager?.drawTreasureCard();
+    if (!treasureFound && !treasureCollectionFailed) {
+      if (currentSession.treasureDeck && currentSession.treasureDeck.length > 0) {
+        const drawnCard = currentSessionManager.drawTreasureCard();
         if (drawnCard != null) {
-          currentOnTreasureCardDrawn?.(drawnCard);
+          currentOnTreasureCardDrawn(drawnCard);
         }
       } else {
-        currentOnNotify?.("Nessuna carta tesoro rimasta.");
+        currentOnNotify("Nessuna carta tesoro rimasta.");
       }
     }
 
-    currentOnActionDone?.();
+    currentOnActionDone();
   }, []);
 
   const getFoundTreasures = useCallback(() => {
@@ -115,23 +111,21 @@ export function useTreasureSearch(config = {}) {
   }, []);
 
   const applyTreasureEffect = useCallback((card) => {
-    const state = stateRef.current;
     const { 
       gameSession: currentSession, 
       sessionManager: currentSessionManager, 
       onWanderingMonster: currentOnWanderingMonster 
-    } = state;
-
-    if (currentSession == null) return;
-
+    } = stateRef.current;
+    
+    if (!currentSession) return;
+    
     const currentHero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-    if (currentHero != null) {
-      currentSessionManager?.applyTreasureCardEffect(currentHero.heroId, card, currentOnWanderingMonster);
+    if (currentHero) {
+      currentSessionManager.applyTreasureCardEffect(currentHero.heroId, card, currentOnWanderingMonster);
     }
   }, []);
 
   return {
-    foundTreasures,
     searchTreasure,
     getFoundTreasures,
     applyTreasureEffect

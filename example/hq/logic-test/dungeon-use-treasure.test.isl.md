@@ -17,7 +17,18 @@
   - `sessionManager.collectTreasureAtCell(currentHero.heroId, 6, 6)` is called.
   - The emitted session increases `currentHero.gold` by 50.
   - The emitted session resets the `tes` payload for cell `(6, 6)`.
+  - The local marker `{ x: 6, y: 6, img: "tesoro.jpg" }` is added only after the boundary confirms successful persistence.
   - `onActionDone` is triggered.
+
+## Scenario: Treasure Marker Must Not Desynchronize From Persistence
+
+- **Given**: A visible map cell contains treasure, but `sessionManager.collectTreasureAtCell(...)` returns `false` because persistence failed.
+- **When**: The active hero triggers `searchTreasure()`.
+- **Assert (Expected Outcomes)**:
+  - `foundTreasures` is NOT updated with a local marker for that cell.
+  - `onNotify` is triggered with an error message for treasure collection failure.
+  - The flow does NOT fall back to drawing a treasure card for the same action.
+  - `onActionDone` is still triggered exactly once.
 
 ## Scenario: Treasure Deck Exhaustion
 

@@ -5,6 +5,7 @@ export default function DungeonBoard(props: {
   onCellHover: (x: number, y: number) => void;
   onMonsterClick: (monsterId: number) => void;
   hoveredPath?: Array<{ x: number; y: number }>;
+  hoveredPathVariant?: "valid" | "blocked-by-second-wall" | null;
   secretPassages?: Array<{ x: number; y: number; img: string }>;
   treasures?: Array<{ x: number; y: number; img: string }>;
   triggeredTraps?: Array<{ x: number; y: number; tipo: number }>;

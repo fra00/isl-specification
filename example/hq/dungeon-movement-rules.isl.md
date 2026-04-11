@@ -46,6 +46,7 @@
   - **Bounds Check**: Return FALSE if target coordinates are less than 1 or greater than the map dimensions (using `mapQuery.getMapDimensions`).
   - **Static Obstacles**: Return FALSE if `mapQuery.isBlockedByFurniture(targetX, targetY)`.
   - Resolve `movingHero` from `mapQuery.gameSession.heroes` with `heroId` matching `excludeEntityId`.
+  - `movingHero` MUST be resolved from the `HeroState.heroId` field, not from a generic `id`, because movement permissions for allied-hero traversal depend on correctly identifying the active hero.
   - Resolve `isHeroMovement` as TRUE only if `movingHero` exists.
   - Resolve `canIgnoreOccupants` as TRUE only if `movingHero.activeStatus` contains "InvisiblePassage".
   - **Dynamic Obstacles**:

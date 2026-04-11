@@ -31,6 +31,8 @@
 - `onUpdateSession`: `(session: @GameSession) -> void` OR `((previousSession: @GameSession) -> @GameSession) -> void`
 - `onNotify`: (message: String) -> void
 - `fogOfWarLogic`: @useFogOfWar
+- `staticEquipment`: List<@Equipment>
+- `staticItems`: List<@Item>
 
 ### ⚡ Capabilities
 
@@ -200,49 +202,53 @@
 - **Contract**: Applies a visible map treasure to a specific hero, clears the treasure cell, and persists the resulting session snapshot.
 - **Signature**: `(heroId: Integer, treasureX: Integer, treasureY: Integer) -> Boolean`
 - **Flow**:
-  - IF `gameSession` is null OR `gameSession.currentMap` is null RETURN false.
-  - Find `hero` in `gameSession.heroes` matching `heroId`.
-  - Find `mapCell` in `gameSession.currentMap.grid` matching `treasureX`, `treasureY`.
-  - IF `hero` is null OR `mapCell` is null OR `mapCell.tes` is null RETURN false.
-  - Let `treasure` = `mapCell.tes`.
-  - IF `treasure.mon`, `treasure.ogg`, `treasure.arma`, and `treasure.trp` are all 0 RETURN false.
+  - IF `onUpdateSession` is null RETURN false.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, use the provided latest session snapshot, not the outer `gameSession` closure.
+  - IF the provided session is null OR `currentMap` is null RETURN the provided session unchanged.
+  - Find `hero` in the provided session `heroes` matching `heroId`.
+  - Find `mapCell` in the provided session `currentMap.grid` matching `treasureX`, `treasureY`.
+  - IF `hero` is null OR `mapCell` is null OR `mapCell.tes` is null RETURN the provided session unchanged.
+  - Let updater `treasure` = updater `mapCell.tes`.
+  - IF `treasure.mon`, `treasure.ogg`, `treasure.arma`, and `treasure.trp` are all less than or equal to 0 RETURN the provided session unchanged.
   - Create `updatedHero` as a copy of `hero`.
   - Initialize `notificationParts` as an empty list.
+  - Let `foundItem` = the entry in `staticItems` whose `id` matches `treasure.ogg`, when `treasure.ogg` is greater than 0.
+  - Let `foundWeapon` = the entry in `staticEquipment` whose `id` matches `treasure.arma`, when `treasure.arma` is greater than 0.
   - IF `treasure.mon` > 0:
     - Add `treasure.mon` to `updatedHero.gold`.
     - Add "Hai trovato " + `treasure.mon` + " monete d'oro!" to `notificationParts`.
   - IF `treasure.ogg` > 0:
     - Add `treasure.ogg` to `updatedHero.inventory`.
-    - Add "Hai trovato un oggetto!" to `notificationParts`.
+    - Add "Hai trovato l'oggetto: " + (`foundItem.nome` when available, otherwise "ID " + `treasure.ogg`) + "!" to `notificationParts`.
   - IF `treasure.arma` > 0:
     - Add `treasure.arma` to `updatedHero.equipment`.
-    - Add "Hai trovato un'arma!" to `notificationParts`.
+    - Add `treasure.arma` to `updatedHero.equipped` only if that weapon must become immediately owned-and-equipped by rule.
+    - Add "Hai trovato l'arma: " + (`foundWeapon.nome` when available, otherwise "ID " + `treasure.arma`) + "!" to `notificationParts`.
   - IF `treasure.trp` > 0:
     - Subtract `treasure.trp` from `updatedHero.currentBody`.
     - Add "È una trappola! Subisci " + `treasure.trp` + " danni." to `notificationParts`.
-  - Create `updatedHeroes` as a copy of `gameSession.heroes`.
+  - Create `updatedHeroes` as a copy of the provided session `heroes`.
   - Replace the matching hero with `updatedHero`.
-  - Create `updatedGrid` as a copy of `gameSession.currentMap.grid`.
+  - Create `updatedGrid` as a copy of the provided session `currentMap.grid`.
   - Replace the matching map cell with a copy whose `tes` has all numeric values reset to 0.
-  - Create `updatedMap` as a copy of `gameSession.currentMap`.
+  - Create `updatedMap` as a copy of the provided session `currentMap`.
   - Set `updatedMap.grid` to `updatedGrid`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.heroes` to `updatedHeroes`.
-  - Set `updatedSession.currentMap` to `updatedMap`.
-  - Trigger `onNotify` with `notificationParts` joined by a newline.
-  - Trigger `onUpdateSession(updatedSession)`.
-  - RETURN true.
+  - IF `notificationParts` is not empty:
+    - Trigger `onNotify` with `notificationParts` joined by a newline.
+  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `updatedHeroes`, and setting `currentMap` to `updatedMap`.
+  - RETURN true once the treasure collection request has been accepted for enqueueing; the method MUST NOT reject the request only because an outer `gameSession` closure is stale if the updater can still resolve the treasure from the latest session snapshot.
 
 #### drawTreasureCard
 
 - **Contract**: Draws the top treasure card and persists the shortened deck atomically.
 - **Signature**: `() -> @TreasureCard | null`
 - **Flow**:
-  - IF `gameSession` is null OR `gameSession.treasureDeck` is empty RETURN null.
-  - Let `drawnCard` = first element of `gameSession.treasureDeck`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
-  - Set `updatedSession.treasureDeck` to `gameSession.treasureDeck` without the first card.
-  - Trigger `onUpdateSession(updatedSession)`.
+  - IF outer `gameSession` is null OR outer `gameSession.treasureDeck` is empty RETURN null.
+  - Let `drawnCard` = first element of the outer `gameSession.treasureDeck`.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, IF the provided session is null OR `treasureDeck` is empty RETURN the provided session unchanged.
+  - RETURN a new @GameSession preserving all unrelated properties and setting `treasureDeck` to the provided session `treasureDeck` without the first card.
   - RETURN `drawnCard`.
 
 #### applyTreasureCardEffect
@@ -250,11 +256,16 @@
 - **Contract**: Applies a drawn treasure card to the current hero and persists any resulting session changes.
 - **Signature**: `(heroId: Integer, card: @TreasureCard, onWanderingMonster: (x: Integer, y: Integer) -> void) -> Boolean`
 - **Flow**:
-  - IF `gameSession` is null RETURN false.
-  - Find `hero` in `gameSession.heroes` matching `heroId`.
+  - IF `card` is null OR outer `gameSession` is null OR `onUpdateSession` is null RETURN false.
+  - Find `hero` in the outer `gameSession.heroes` matching `heroId`.
   - IF `hero` is null RETURN false.
+  - Initialize `wanderingMonsterCoords` as null.
+  - IF `card.azione` is `mostro_errante`, set `wanderingMonsterCoords` to the outer hero coordinates immediately so the method does not depend on synchronous execution of the React state updater.
+  - Call `commitSessionUpdate` with an updater.
+  - Inside the updater, IF the provided session is null RETURN the provided session unchanged.
+  - Find `hero` in the provided session `heroes` matching `heroId`.
+  - IF `hero` is null RETURN the provided session unchanged.
   - Create `updatedHero` as a copy of `hero`.
-  - Create `updatedSession` as a new @GameSession preserving all unrelated properties.
   - SWITCH `card.azione`:
     - CASE "aggiungi_oro":
       - Add `card.valore` to `updatedHero.gold`.
@@ -269,14 +280,14 @@
       - Add `card.valore` to `updatedHero.currentBody`.
       - Trigger `onNotify("Trappola! Subisci danni.")`.
     - CASE "mostro_errante":
-      - Trigger `onUpdateSession(updatedSession)`.
-      - Trigger `onWanderingMonster(updatedHero.x, updatedHero.y)`.
-      - RETURN true.
-  - Create `updatedHeroes` as a copy of `gameSession.heroes`.
+      - Set `wanderingMonsterCoords` to `{ x: updatedHero.x, y: updatedHero.y }`.
+      - RETURN the provided session unchanged.
+  - Create `updatedHeroes` as a copy of the provided session `heroes`.
   - Replace the matching hero with `updatedHero`.
-  - Set `updatedSession.heroes` to `updatedHeroes`.
-  - Trigger `onUpdateSession(updatedSession)`.
-  - RETURN true.
+  - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
+  - AFTER `commitSessionUpdate`, IF `wanderingMonsterCoords` is not null:
+    - Trigger `onWanderingMonster(wanderingMonsterCoords.x, wanderingMonsterCoords.y)`.
+  - RETURN true once the treasure-card request has been accepted for enqueueing.
 
 #### updateMonsterState
 

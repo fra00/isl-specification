@@ -6,153 +6,145 @@
  * Edit the ISL file instead.
  */
 
-import React, { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from 'react';
 
 export default function ShopInventory({
-  items = [],
-  selectedItemId = null,
-  canBuy = false,
-  buyReason = "",
-  onSelect = () => {},
-  onBuy = () => {},
-  onEnterDungeon = () => {},
-  onExit = () => {},
+    items = [],
+    selectedItemId = null,
+    canBuy = false,
+    buyReason = '',
+    onSelect = () => {},
+    onBuy = () => {},
+    onEnterDungeon = () => {},
+    onExit = () => {}
 }) {
-  const selectedItem = useMemo(() => {
-    if (!items || !Array.isArray(items)) return null;
-    return items.find((i) => i?.id === selectedItemId) || null;
-  }, [items, selectedItemId]);
+    const selectedItem = useMemo(() => {
+        if (selectedItemId == null) return null;
+        return items?.find(i => i.id === selectedItemId) || null;
+    }, [items, selectedItemId]);
 
-  const handleItemClick = useCallback(
-    (id) => {
-      if (!items || !Array.isArray(items)) return;
-      const itemExists = items.find((i) => i?.id === id);
-      if (itemExists == null) return;
-      onSelect(id);
-    },
-    [items, onSelect],
-  );
+    const handleItemClick = useCallback((id) => {
+        const itemExists = items?.find(i => i.id === id);
+        if (itemExists == null) return;
+        onSelect(id);
+    }, [items, onSelect]);
 
-  const handleBuyClick = useCallback(() => {
-    if (canBuy) {
-      onBuy();
-    }
-  }, [canBuy, onBuy]);
+    const handleBuy = useCallback(() => {
+        if (canBuy) {
+            onBuy();
+        }
+    }, [canBuy, onBuy]);
 
-  const handleEnterDungeonClick = useCallback(() => {
-    onEnterDungeon();
-  }, [onEnterDungeon]);
-
-  const handleExitClick = useCallback(() => {
-    onExit();
-  }, [onExit]);
-
-  return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-hidden text-[#eadfc8]">
-      <div className="border-b border-[rgba(153,117,77,0.25)] pb-3">
-        <span className="text-[11px] uppercase tracking-[0.38em] text-[#b69775]">
-          Emporio del Custode
-        </span>
-      </div>
-
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(0,1.08fr)_minmax(250px,0.92fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-2 shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] xl:row-span-2">
-          <div className="px-2 pb-2 pt-1 text-[11px] uppercase tracking-[0.34em] text-[#b69775]">
-            Equipaggiamenti Disponibili
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
-            {items && items.length > 0 ? (
-              items.map((item) => (
-                <div
-                  key={item?.id}
-                  onClick={() => handleItemClick(item?.id)}
-                  title={item?.disabled ? item?.reason : item?.nome}
-                  className={`mb-2 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all ${
-                    item?.id === selectedItemId
-                      ? "border-[rgba(214,179,106,0.52)] bg-[rgba(79,53,26,0.82)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]"
-                      : "border-[rgba(126,78,60,0.26)] bg-[rgba(16,10,10,0.64)] hover:border-[rgba(214,179,106,0.34)] hover:bg-[rgba(35,22,18,0.74)]"
-                  }`}
-                  style={{ opacity: item?.disabled ? 0.52 : 1 }}
-                >
-                  <span className="font-medium text-lg text-[#f0e2c8]">
-                    {item?.nome || "Oggetto Sconosciuto"}
-                  </span>
-                  <span className="font-bold text-[#e6c27a]">
-                    {item?.prezzo || 0} GC
-                  </span>
+    return (
+        <div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-200 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl w-full max-w-5xl mx-auto">
+            
+            {/* LIST SECTION */}
+            <div className="flex-1 flex flex-col min-w-0">
+                <h2 className="text-2xl font-bold text-yellow-600 mb-4 border-b border-gray-700 pb-2 tracking-wider">
+                    Armeria
+                </h2>
+                <div className="flex-1 overflow-y-auto max-h-[600px] pr-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+                    {!items || items.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 italic border border-dashed border-gray-700 rounded">
+                            Nessun equipaggiamento disponibile al momento.
+                        </div>
+                    ) : (
+                        items.map((item) => {
+                            const isSelected = item.id === selectedItemId;
+                            return (
+                                <div
+                                    key={item.id}
+                                    onClick={() => handleItemClick(item.id)}
+                                    className={`flex justify-between items-center p-3 cursor-pointer rounded transition-all duration-200 border ${
+                                        isSelected 
+                                            ? 'border-yellow-600 bg-gray-800 shadow-inner' 
+                                            : 'border-gray-800 hover:bg-gray-800 hover:border-gray-600'
+                                    }`}
+                                >
+                                    <span className={`font-medium truncate pr-4 ${isSelected ? 'text-yellow-500' : 'text-gray-300'}`}>
+                                        {item.nome}
+                                    </span>
+                                    <span className="text-yellow-600 font-bold text-sm whitespace-nowrap">
+                                        {item.prezzo} MO
+                                    </span>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
-              ))
-            ) : (
-              <div className="p-4 text-center text-[#9f8e78]">
-                Nessun oggetto disponibile
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[1.25rem] border border-[rgba(214,179,106,0.2)] bg-[linear-gradient(180deg,rgba(54,37,22,0.24)_0%,rgba(15,11,11,0.7)_100%)] p-4 text-center shadow-[inset_0_1px_0_rgba(255,222,173,0.05)] xl:min-h-0 xl:justify-start">
-          {selectedItem ? (
-            <>
-              {selectedItem.immagine ? (
-                <img
-                  src={`/img/equip/${selectedItem.immagine}`}
-                  alt={selectedItem.nome || "Anteprima oggetto"}
-                  className="mb-3 max-h-28 max-w-[140px] object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,0.45)] sm:max-h-32 sm:max-w-[160px]"
-                />
-              ) : (
-                <div className="mb-3 flex h-24 w-24 items-center justify-center rounded bg-[rgba(21,14,14,0.72)] text-[#8c7c67] sm:h-28 sm:w-28">
-                  No Image
+            {/* PREVIEW & ACTIONS SECTION */}
+            <div className="w-full md:w-80 flex flex-col gap-6 shrink-0">
+                
+                {/* PREVIEW CARD */}
+                <div className="bg-gray-800 p-5 rounded-lg border border-gray-700 flex flex-col items-center text-center min-h-[320px] shadow-lg relative overflow-hidden">
+                    {selectedItem ? (
+                        <>
+                            <div className="w-40 h-40 mb-5 bg-gray-900 rounded border border-gray-700 flex items-center justify-center overflow-hidden p-2 shadow-inner">
+                                {selectedItem.immagine ? (
+                                    <img 
+                                        src={`/img/equip/${selectedItem.immagine}`} 
+                                        alt={selectedItem.nome} 
+                                        className="max-w-full max-h-full object-contain drop-shadow-md"
+                                    />
+                                ) : (
+                                    <span className="text-gray-600 text-sm italic">Immagine mancante</span>
+                                )}
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-yellow-500 mb-2 leading-tight">
+                                {selectedItem.nome}
+                            </h3>
+                            
+                            <p className="text-md text-gray-300 font-semibold mb-4">
+                                {selectedItem.prezzo} Monete d'Oro
+                            </p>
+                            
+                            {!canBuy && buyReason && (
+                                <div className="mt-auto w-full bg-red-950/80 border border-red-800 rounded p-3 shadow-inner">
+                                    <p className="text-red-400 text-sm font-medium leading-snug">
+                                        {buyReason}
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-500 opacity-70">
+                            <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                            <p className="italic text-sm px-4">Seleziona un oggetto dall'elenco per visualizzarne i dettagli</p>
+                        </div>
+                    )}
                 </div>
-              )}
-              <h3 className="mb-2 text-lg font-bold text-[#f0e2c8] sm:text-xl">
-                {selectedItem.nome || "Senza Nome"}
-              </h3>
-              <p className="text-base font-bold text-[#e6c27a] sm:text-lg">
-                {selectedItem.prezzo || 0} GC
-              </p>
-              {selectedItem?.reason &&
-              !canBuy &&
-              selectedItem.id === selectedItemId ? (
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[#c98b6a]">
-                  {selectedItem.reason}
-                </p>
-              ) : null}
-            </>
-          ) : (
-            <span className="text-center text-[#a69580]">
-              Seleziona un oggetto per visualizzare i dettagli
-            </span>
-          )}
+
+                {/* ACTIONS */}
+                <div className="flex flex-col gap-3 mt-auto">
+                    <button
+                        onClick={handleBuy}
+                        disabled={!selectedItem || !canBuy}
+                        title={!canBuy ? buyReason : ''}
+                        className="w-full py-3 px-4 bg-gradient-to-b from-yellow-700 to-yellow-900 hover:from-yellow-600 hover:to-yellow-800 disabled:from-gray-800 disabled:to-gray-900 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded shadow-md transition-all duration-200 border border-yellow-600 disabled:border-gray-700 uppercase tracking-wide text-sm"
+                    >
+                        Acquista
+                    </button>
+                    
+                    <button
+                        onClick={onEnterDungeon}
+                        className="w-full py-3 px-4 bg-gradient-to-b from-red-800 to-red-950 hover:from-red-700 hover:to-red-900 text-white font-bold rounded shadow-md transition-all duration-200 border border-red-700 uppercase tracking-wide text-sm mt-4"
+                    >
+                        Entra nel dungeon
+                    </button>
+                    
+                    <button
+                        onClick={onExit}
+                        className="w-full py-3 px-4 bg-gradient-to-b from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 font-bold rounded shadow-md transition-all duration-200 border border-gray-600 uppercase tracking-wide text-sm"
+                    >
+                        Indietro
+                    </button>
+                </div>
+            </div>
         </div>
-        <div className="flex flex-col justify-between gap-4 border-t border-[rgba(153,117,77,0.25)] pt-4 xl:border-t-0 xl:pt-0">
-          <button
-            onClick={handleBuyClick}
-            disabled={!canBuy}
-            title={!canBuy ? buyReason : "Acquista oggetto selezionato"}
-            className={`rounded-2xl px-8 py-3 text-lg font-bold uppercase tracking-[0.24em] transition-all ${
-              canBuy
-                ? "border border-[rgba(214,179,106,0.46)] bg-[linear-gradient(180deg,#7a5834_0%,#3f2817_100%)] text-[#f7ecd8] shadow-[0_16px_40px_rgba(0,0,0,0.35)] hover:brightness-110"
-                : "cursor-not-allowed border border-[rgba(109,88,72,0.3)] bg-[rgba(17,12,12,0.82)] text-[#77695a]"
-            }`}
-          >
-            Acquista
-          </button>
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={handleEnterDungeonClick}
-              className="rounded-2xl border border-[rgba(126,78,60,0.5)] bg-[rgba(32,20,18,0.82)] px-6 py-3 font-bold uppercase tracking-[0.24em] text-[#e3d4bb] transition hover:border-[rgba(214,179,106,0.34)] hover:text-[#f0e2c8]"
-            >
-              Entra nel dungeon
-            </button>
-            <button
-              onClick={handleExitClick}
-              className="rounded-2xl border border-[rgba(109,88,72,0.5)] bg-[rgba(17,12,12,0.82)] px-6 py-3 font-bold uppercase tracking-[0.24em] text-[#d5c3a7] transition hover:border-[rgba(214,179,106,0.28)] hover:text-[#f0e2c8]"
-            >
-              Indietro
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

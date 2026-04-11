@@ -41,6 +41,15 @@
   - Validates that hero movement may traverse cells occupied by allied heroes.
   - The final destination must still be validated separately by `isValidDestination`.
 
+## Scenario: Active Hero Resolution Uses HeroState heroId
+
+- **Given**: The moving entity is stored in `gameSession.heroes` as a `HeroState` whose identity field is `heroId`, and another allied hero occupies the only intermediate cell.
+- **When**: `isWalkable(sourceX, sourceY, allyHeroX, allyHeroY, movingHeroId)` is called.
+- **Assert (Expected Outcomes)**:
+  - The movement rules resolve the active hero via `HeroState.heroId`.
+  - `isHeroMovement` becomes `TRUE` for that moving hero.
+  - The allied occupied cell remains traversable as an intermediate step.
+
 ## Scenario: Crossing Rooms Without Door or Status
 
 - **Given**: `VisibilityCell` at (3, 3) has `valo` "RoomA". `VisibilityCell` at (3, 4) has `valo` "RoomB". No door or secret passage exists between these coordinates. The Hero has no special status.

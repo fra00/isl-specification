@@ -39,6 +39,15 @@
   - `Dungeon` MUST NOT pass `null` to `visibilityCalc` in this integration.
   - Board line-of-sight highlights and targeting tracer logic can evaluate against the live visibility calculator instance.
 
+## Scenario: Board Receives Full Hover Path Preview Contract
+
+- **Given**: `hooksTurnLogic.handleBoardHover` has populated a non-empty `hoveredPath` and set `hoveredPathVariant` to `valid` after movement dice were rolled.
+- **When**: `Dungeon` prepares props for `DungeonBoard`.
+- **Assert (Expected Outcomes)**:
+  - `Dungeon` MUST pass both `hooksTurnLogic.hoveredPath` and `hooksTurnLogic.hoveredPathVariant` to `DungeonBoard`.
+  - `Dungeon` MUST NOT pass only `hoveredPathVariant` without `hoveredPath`.
+  - `DungeonBoard` receives the full coordinate list needed to render the movement preview overlay on mouse hover.
+
 ## Scenario: Combat Resolution - Gargoyle Defense
 
 - **Given**: A hero attacks a "Gargoyle" monster.

@@ -13,6 +13,7 @@ export declare function useTurnLogic(config: {
     turnPhase: { HasMoved: boolean; HasPerformedAction: boolean; IsTurnFinished: boolean };
     movementPoints: number | null;
     hoveredPath: Array<{ x: number; y: number }>;
+    hoveredPathVariant: "valid" | "blocked-by-second-wall" | null;
     canAttack: boolean;
     isMoving: boolean;
     canOpenDoor: { found: boolean; destination: { x: number; y: number }; passageCell: { x: number; y: number } } | null;

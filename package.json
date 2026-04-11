@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "test": "npm --prefix example/hq/bin run test -- --run",
+    "test:watch": "npm --prefix example/hq/bin run test",
+    "test:coverage": "npm --prefix example/hq/bin run test:coverage",
+    "test:hq": "npm --prefix example/hq/bin run test -- --run"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
     "tsx": "^4.21.0"

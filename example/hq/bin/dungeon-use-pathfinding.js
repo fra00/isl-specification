@@ -10,14 +10,18 @@ import { useCallback } from 'react';
 import { useDungeonMapQuery } from './dungeon-map-query';
 import { useDungeonMovementRules } from './dungeon-movement-rules';
 
-export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] }) {
+export function usePathfinding(config) {
+    const { gameSession, visibilityMap, foundPassages = [] } = config || {};
+
     const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
     const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
 
-    const { isValidDestination, isWalkable } = movementRules;
-
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (!isValidDestination(targetX, targetY, excludeEntityId)) {
+        if (startX == null || startY == null || targetX == null || targetY == null) {
+            return [];
+        }
+
+        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
             return [];
         }
 
@@ -42,26 +46,24 @@ export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] 
                 continue;
             }
 
-            for (const dir of directions) {
-                const neighborX = current.x + dir.dx;
-                const neighborY = current.y + dir.dy;
-                const neighborKey = `${neighborX},${neighborY}`;
+            for (let i = 0; i < directions.length; i++) {
+                const nx = current.x + directions[i].dx;
+                const ny = current.y + directions[i].dy;
+                const neighborKey = `${nx},${ny}`;
 
-                if (!visited.has(neighborKey)) {
-                    if (isWalkable(current.x, current.y, neighborX, neighborY, excludeEntityId)) {
-                        visited.add(neighborKey);
-                        queue.push({
-                            x: neighborX,
-                            y: neighborY,
-                            path: [...current.path, { x: neighborX, y: neighborY }]
-                        });
-                    }
+                if (!visited.has(neighborKey) && movementRules.isWalkable(current.x, current.y, nx, ny, excludeEntityId)) {
+                    visited.add(neighborKey);
+                    queue.push({
+                        x: nx,
+                        y: ny,
+                        path: [...current.path, { x: nx, y: ny }]
+                    });
                 }
             }
         }
 
         return [];
-    }, [isValidDestination, isWalkable]);
+    }, [movementRules]);
 
     return {
         calculatePath

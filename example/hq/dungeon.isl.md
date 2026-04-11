@@ -81,6 +81,7 @@
     - `onConfirmSelection`: Trigger `confirmSpellSelection`.
 - **Dungeon Board**: Displays `DungeonBoard` with props:
   - `boardVisibilityMap`: `boardVisibilityMap`.
+  - `hoveredPath`: `hooksTurnLogic.hoveredPath`.
   - `hoveredPathVariant`: `hooksTurnLogic.hoveredPathVariant`.
   - `secretPassages`: `hooksSecretPassages.foundPassages`.
   - `treasures`: `hooksTreasure.foundTreasures`.
@@ -88,6 +89,7 @@
   - `targetingSpell`: `targetingSpell`.
   - `visibilityCalc`: `hooksVisibilityCalc`.
   - `visibilityCalc` MUST be the live `hooksVisibilityCalc` instance and MUST NOT be `null` while the board supports line-of-sight highlights, targeting previews, or tracer rendering.
+  - `hoveredPath` MUST be passed together with `hoveredPathVariant`; passing only the variant is invalid because the board highlight is driven by the actual path coordinates.
 - **Turn Controls**:
   - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
   - **Props**:
@@ -171,7 +173,7 @@
 - `drawnTreasureCard`: @TreasureCard (The currently displayed treasure card, null if none).
 - `notificationMessage`: String (Current message to display to the user, null if none).
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
-- `hooksSessionManager`: @useDungeonSessionManager passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, and `hooksFogOfWar`.
+- `hooksSessionManager`: @useDungeonSessionManager passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksFogOfWar`, `staticEquipment`, and `staticItems`.
 - `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment` and `hooksSessionManager`.
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.

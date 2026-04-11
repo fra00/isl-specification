@@ -6,270 +6,192 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import { loadShopData, validatePurchase, executePurchase } from "./shop-logic";
-import HeroSummary from "./hero-summary";
-import ShopInventory from "./shop-inventory";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import { loadShopData, validatePurchase, executePurchase } from './shop-logic';
+import HeroSummary from './hero-summary';
+import ShopInventory from './shop-inventory';
 
-export default function Armory({
-  gameSession,
-  onUpdateSession,
-  onChangePageView,
-}) {
-  const [staticHeroes, setStaticHeroes] = useState([]);
-  const [shopItems, setShopItems] = useState([]);
-  const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function Armory({ gameSession, onUpdateSession, onChangePageView }) {
+    const [staticHeroes, setStaticHeroes] = useState([]);
+    const [shopItems, setShopItems] = useState([]);
+    const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
+    const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize: Load shop data on mount
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
+    // Capability: initialize
+    useEffect(() => {
+        let isMounted = true;
+        setIsLoading(true);
+        
+        loadShopData()
+            .then((data) => {
+                if (isMounted) {
+                    setStaticHeroes(data?.heroes || []);
+                    setShopItems(data?.items || []);
+                    setIsLoading(false);
+                }
+            })
+            .catch((error) => {
+                console.error("Failed to load armory data:", error);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            });
 
-    loadShopData()
-      .then((data) => {
-        if (isMounted) {
-          setStaticHeroes(data?.heroes || []);
-          setShopItems(data?.items || []);
-          setIsLoading(false);
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const currentHeroState = useMemo(() => {
+        if (!gameSession?.heroes || gameSession.heroes.length === 0) return null;
+        // Fallback to 0 if selected index is out of bounds
+        if (selectedHeroIndex >= gameSession.heroes.length) {
+            return gameSession.heroes[0];
         }
-      })
-      .catch((error) => {
-        console.error("Failed to load shop data:", error);
-        if (isMounted) {
-          setIsLoading(false);
+        return gameSession.heroes[selectedHeroIndex];
+    }, [gameSession, selectedHeroIndex]);
+
+    const selectedItem = useMemo(() => {
+        if (selectedEquipmentId == null) return null;
+        return shopItems.find(item => item.id === selectedEquipmentId) || null;
+    }, [shopItems, selectedEquipmentId]);
+
+    const validation = useMemo(() => {
+        if (!currentHeroState || !selectedItem) {
+            return { allowed: false, reason: "" };
         }
-      });
+        return validatePurchase(currentHeroState, selectedItem);
+    }, [currentHeroState, selectedItem]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    // Pre-calculate validation for all items to allow ShopInventory to show visual indications
+    const itemsWithValidation = useMemo(() => {
+        if (!currentHeroState) return shopItems;
+        return shopItems.map(item => {
+            const { allowed, reason } = validatePurchase(currentHeroState, item);
+            return {
+                ...item,
+                isAffordable: allowed,
+                incompatibilityReason: reason
+            };
+        });
+    }, [shopItems, currentHeroState]);
 
-  // Derived state for current hero
-  const currentHeroState = useMemo(() => {
-    return gameSession?.heroes?.[selectedHeroIndex] || null;
-  }, [gameSession, selectedHeroIndex]);
+    // Capability: selectHero
+    const handleSelectHero = useCallback((index) => {
+        setSelectedHeroIndex(index);
+        setSelectedEquipmentId(null);
+    }, []);
 
-  // Derived state for selected item
-  const selectedItem = useMemo(() => {
-    return shopItems.find((item) => item.id === selectedEquipmentId) || null;
-  }, [shopItems, selectedEquipmentId]);
+    // Capability: selectItem
+    const handleSelectItem = useCallback((itemId) => {
+        setSelectedEquipmentId(itemId);
+    }, []);
 
-  // Validation for the currently selected item (used for the Buy button)
-  const purchaseValidation = useMemo(() => {
-    if (!currentHeroState || !selectedItem) {
-      return { allowed: false, reason: "" };
+    // Capability: buyItem
+    const handleBuyItem = useCallback(() => {
+        if (!currentHeroState || !selectedItem || !gameSession) return;
+        
+        const { allowed } = validatePurchase(currentHeroState, selectedItem);
+        if (allowed) {
+            const updatedSession = executePurchase(gameSession, selectedHeroIndex, selectedItem);
+            if (onUpdateSession) {
+                onUpdateSession(updatedSession);
+            }
+        }
+    }, [currentHeroState, selectedItem, gameSession, selectedHeroIndex, onUpdateSession]);
+
+    // Capability: enterDungeon
+    const handleEnterDungeon = useCallback(() => {
+        if (onChangePageView) {
+            onChangePageView(PageNavigationEnum.DUNGEON);
+        }
+    }, [onChangePageView]);
+
+    // Capability: exitShop
+    const handleExitShop = useCallback(() => {
+        if (onChangePageView) {
+            onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+        }
+    }, [onChangePageView]);
+
+    if (isLoading) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-black text-amber-500 font-serif">
+                <p className="text-xl animate-pulse tracking-widest uppercase">Caricamento Armeria...</p>
+            </div>
+        );
     }
-    return validatePurchase(currentHeroState, selectedItem);
-  }, [currentHeroState, selectedItem]);
 
-  // Enrich items with validation data so ShopInventory can display visual indications
-  const displayItems = useMemo(() => {
-    if (!currentHeroState) return shopItems;
-
-    return shopItems.map((item) => {
-      const validation = validatePurchase(currentHeroState, item);
-      return {
-        ...item,
-        disabled: !validation.allowed,
-        reason: validation.reason,
-      };
-    });
-  }, [shopItems, currentHeroState]);
-
-  // Capabilities
-  const handleSelectHero = useCallback((index) => {
-    setSelectedHeroIndex(index);
-    setSelectedEquipmentId(null); // Reset item selection when changing hero
-  }, []);
-
-  const handleSelectItem = useCallback((itemId) => {
-    setSelectedEquipmentId(itemId);
-  }, []);
-
-  const handleBuyItem = useCallback(() => {
-    if (!currentHeroState || !selectedItem || !gameSession) return;
-
-    const validation = validatePurchase(currentHeroState, selectedItem);
-    if (validation.allowed) {
-      const updatedSession = executePurchase(
-        gameSession,
-        selectedHeroIndex,
-        selectedItem,
-      );
-      if (updatedSession && onUpdateSession) {
-        onUpdateSession(updatedSession);
-      }
-    }
-  }, [
-    currentHeroState,
-    selectedItem,
-    gameSession,
-    selectedHeroIndex,
-    onUpdateSession,
-  ]);
-
-  const handleEnterDungeon = useCallback(() => {
-    if (onChangePageView) {
-      onChangePageView(PageNavigationEnum.DUNGEON);
-    }
-  }, [onChangePageView]);
-
-  const handleExitShop = useCallback(() => {
-    if (onChangePageView) {
-      onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-    }
-  }, [onChangePageView]);
-
-  // Render Guards
-  if (isLoading) {
     return (
-      <div className="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-black text-[#efe3c2]">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-45"
-          style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(111,78,55,0.18),transparent_38%),linear-gradient(180deg,rgba(3,3,3,0.35)_0%,rgba(3,3,3,0.82)_48%,rgba(0,0,0,0.96)_100%)]" />
-        <span className="relative z-10 text-xl font-bold uppercase tracking-[0.35em] text-[#d6b36a] animate-pulse">
-          Caricamento Armeria...
-        </span>
-      </div>
-    );
-  }
+        <div className="w-full h-full flex flex-col bg-black text-amber-100 overflow-hidden font-serif relative select-none">
+            {/* Background Overlay */}
+            <div className="absolute inset-0 bg-[url('/img/bg-armory.jpg')] bg-cover bg-center opacity-20 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-black/90 pointer-events-none"></div>
 
-  if (!gameSession || !gameSession.heroes || gameSession.heroes.length === 0) {
-    return (
-      <div className="relative flex h-full min-h-0 items-center justify-center overflow-hidden bg-black text-[#efe3c2]">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-45"
-          style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(111,78,55,0.18),transparent_38%),linear-gradient(180deg,rgba(3,3,3,0.35)_0%,rgba(3,3,3,0.82)_48%,rgba(0,0,0,0.96)_100%)]" />
-        <span className="relative z-10 text-xl font-bold text-[#c9896a]">
-          Nessun eroe disponibile nella sessione corrente.
-        </span>
-      </div>
-    );
-  }
+            {/* Header */}
+            <header className="relative z-10 flex-none p-4 border-b border-amber-700/50 bg-black/60 shadow-md shadow-amber-900/20">
+                <h1 className="text-3xl text-amber-500 font-bold tracking-widest uppercase text-center drop-shadow-md">
+                    Armeria
+                </h1>
+                <p className="text-sm text-amber-300/70 text-center mt-1 italic tracking-wide">
+                    Equipaggia i tuoi eroi prima di affrontare l'oscurità.
+                </p>
+            </header>
 
-  return (
-    <div className="armory-root relative h-full min-h-0 w-full overflow-hidden bg-black text-[#efe3c2]">
-      <style>
-        {`
-                    @keyframes armory-mist-drift {
-                        0% { background-position: 0% 0%; }
-                        100% { background-position: 140% 0%; }
-                    }
-                    @keyframes armory-candle-glow {
-                        0%, 100% { opacity: 0.35; transform: scale(1); }
-                        50% { opacity: 0.6; transform: scale(1.03); }
-                    }
-                    .armory-root,
-                    .armory-root * {
-                        scrollbar-width: thin;
-                        scrollbar-color: rgba(173, 133, 86, 0.92) rgba(12, 8, 8, 0.72);
-                    }
-                    .armory-root::-webkit-scrollbar,
-                    .armory-root *::-webkit-scrollbar {
-                        width: 12px;
-                        height: 12px;
-                    }
-                    .armory-root::-webkit-scrollbar-track,
-                    .armory-root *::-webkit-scrollbar-track {
-                        background: linear-gradient(180deg, rgba(13, 9, 9, 0.96) 0%, rgba(29, 19, 15, 0.88) 100%);
-                    }
-                    .armory-root::-webkit-scrollbar-thumb,
-                    .armory-root *::-webkit-scrollbar-thumb {
-                        background: linear-gradient(180deg, rgba(214, 179, 106, 0.92) 0%, rgba(109, 71, 40, 0.92) 100%);
-                        border: 2px solid rgba(13, 9, 9, 0.95);
-                        border-radius: 999px;
-                    }
-                    .armory-title {
-                        font-family: fantasy;
-                        font-weight: 700;
-                        letter-spacing: 0.12em;
-                        background: linear-gradient(to bottom, #dfc27d 0%, #9b6a3d 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        -webkit-text-stroke: 1px #25160d;
-                        filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.75));
-                    }
-                    .armory-panel {
-                        background: linear-gradient(180deg, rgba(29, 19, 15, 0.92) 0%, rgba(10, 8, 8, 0.94) 100%);
-                        border: 1px solid rgba(150, 108, 64, 0.5);
-                        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 226, 170, 0.06);
-                        backdrop-filter: blur(4px);
-                    }
-                `}
-      </style>
+            {/* Main Content - Two Columns */}
+            <main className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden p-4 gap-6 max-w-screen-2xl mx-auto w-full">
+                
+                {/* Left Column: Hero Summary */}
+                <section className="w-full lg:w-1/3 flex flex-col overflow-hidden bg-gray-900/80 border border-amber-700/50 rounded shadow-lg shadow-black/80">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                        <HeroSummary
+                            heroes={gameSession?.heroes || []}
+                            staticHeroes={staticHeroes}
+                            staticEquipment={shopItems}
+                            selectedIndex={selectedHeroIndex}
+                            onSelect={handleSelectHero}
+                        />
+                    </div>
+                </section>
 
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/img/menusfondo.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,2,2,0.78)_0%,rgba(8,5,5,0.7)_38%,rgba(7,4,4,0.84)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(130,81,39,0.2),transparent_34%),radial-gradient(circle_at_80%_18%,rgba(92,33,24,0.18),transparent_28%),radial-gradient(circle_at_bottom,rgba(0,0,0,0.72),rgba(0,0,0,0.94))]" />
-      <div
-        className="absolute inset-0 opacity-20 mix-blend-screen"
-        style={{
-          backgroundImage: "url('/img/mist.jpeg')",
-          backgroundRepeat: "repeat-x",
-          backgroundSize: "220% 100%",
-          filter: "blur(8px)",
-          animation: "armory-mist-drift 90s linear infinite",
-        }}
-      />
-      <div
-        className="absolute inset-0 mix-blend-screen pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle at 52% 22%, rgba(214, 179, 106, 0.12) 0%, transparent 34%), radial-gradient(circle at 48% 70%, rgba(174, 84, 31, 0.16) 0%, transparent 28%)",
-          animation: "armory-candle-glow 5s ease-in-out infinite",
-        }}
-      />
+                {/* Right Column: Shop Inventory */}
+                <section className="w-full lg:w-2/3 flex flex-col overflow-hidden bg-gray-900/80 border border-amber-700/50 rounded shadow-lg shadow-black/80">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                        <ShopInventory
+                            items={itemsWithValidation}
+                            selectedItemId={selectedEquipmentId}
+                            canBuy={validation.allowed}
+                            buyReason={validation.reason}
+                            onSelect={handleSelectItem}
+                            onBuy={handleBuyItem}
+                            onEnterDungeon={handleEnterDungeon}
+                            onExit={handleExitShop}
+                        />
+                    </div>
+                </section>
 
-      <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6">
-        <div className="mb-3 flex shrink-0 flex-col gap-2 lg:mb-4">
-          <span className="text-[11px] uppercase tracking-[0.4em] text-[#b19374]">
-            Armeria della Spedizione
-          </span>
-          <h1 className="armory-title text-3xl sm:text-4xl lg:text-5xl">
-            Preparazione degli Eroi
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-[#cdbda3] sm:text-[15px]">
-            Esamina gli eroi, valuta l'equipaggiamento disponibile e completa
-            gli acquisti prima di scendere nel dungeon.
-          </p>
+            </main>
+
+            {/* Custom Scrollbar Styles */}
+            <style dangerouslySetInnerHTML={{__html: `
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(0, 0, 0, 0.6);
+                    border-radius: 3px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #92400e; /* amber-800 */
+                    border-radius: 3px;
+                    border: 1px solid #451a03; /* amber-950 */
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #b45309; /* amber-700 */
+                }
+            `}} />
         </div>
-
-        <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)] xl:gap-6">
-          <div className="armory-panel flex min-h-0 flex-col overflow-hidden rounded-[1.5rem] p-4 sm:p-5 lg:p-5">
-            <HeroSummary
-              heroes={gameSession.heroes}
-              staticHeroes={staticHeroes}
-              staticEquipment={shopItems}
-              selectedIndex={selectedHeroIndex}
-              onSelect={handleSelectHero}
-            />
-          </div>
-
-          <div className="armory-panel flex min-h-0 flex-col overflow-hidden rounded-[1.5rem] p-4 sm:p-5 lg:p-5">
-            <ShopInventory
-              items={displayItems}
-              selectedItemId={selectedEquipmentId}
-              canBuy={purchaseValidation.allowed}
-              buyReason={purchaseValidation.reason}
-              onSelect={handleSelectItem}
-              onBuy={handleBuyItem}
-              onEnterDungeon={handleEnterDungeon}
-              onExit={handleExitShop}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

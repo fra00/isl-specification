@@ -8,7 +8,7 @@
 
 export const MapObjectiveCoordinate = (data = {}) => ({
   x: data.x ?? 0,
-  y: data.y ?? 0
+  y: data.y ?? 0,
 });
 
 export const MapHeader = (data = {}) => ({
@@ -17,41 +17,41 @@ export const MapHeader = (data = {}) => ({
   tesoro_finale: MapObjectiveCoordinate(data.tesoro_finale),
   oggetto_f: data.oggetto_f ?? -1,
   arma_f: data.arma_f ?? -1,
-  nfine: data.nfine ?? 0
+  nfine: data.nfine ?? 0,
 });
 
 export const BlockCellArea = (data = {}) => ({
   antroc: !!data.antroc,
-  inv: !!data.inv
+  inv: !!data.inv,
 });
 
 export const MapCellFurniture = (data = {}) => ({
   num: data.num != null ? data.num : null,
-  img: data.img || ""
+  img: data.img || "",
 });
 
 export const MapCellMonster = (data = {}) => ({
   mosid: data.mosid || 0,
   mos: !!data.mos,
-  corpo: data.corpo || 0
+  corpo: data.corpo || 0,
 });
 
 export const MapCellTreasure = (data = {}) => ({
   mon: data.mon || 0,
   ogg: data.ogg || 0,
   arma: data.arma || 0,
-  trp: data.trp || 0
+  trp: data.trp || 0,
 });
 
 export const MapCellPassage = (data = {}) => ({
   ps: data.ps != null ? data.ps : null,
-  oriz: !!data.oriz
+  oriz: !!data.oriz,
 });
 
 export const MapCellTrap = (data = {}) => ({
   tipo: data.tipo || 0,
   rccadex: data.rccadex || 0,
-  rccadey: data.rccadey || 0
+  rccadey: data.rccadey || 0,
 });
 
 export const MapCell = (data = {}) => ({
@@ -63,45 +63,47 @@ export const MapCell = (data = {}) => ({
   tes: MapCellTreasure(data.tes),
   psgg: MapCellPassage(data.psgg),
   trpl: MapCellTrap(data.trpl),
-  fine: data.fine || ""
+  fine: data.fine || "",
 });
 
 export const MapHeroStart = (data = {}) => ({
   id: data.id || 0,
   x: data.x || 0,
-  y: data.y || 0
+  y: data.y || 0,
 });
 
 export const MapDoor = (data = {}) => ({
   x: data.x || 0,
   y: data.y || 0,
-  oriz: !!data.oriz
+  oriz: !!data.oriz,
 });
 
 export const MapScript = (data = {}) => ({
   x: data.x || 0,
   y: data.y || 0,
   text: data.text || "",
-  evento: data.evento || 0
+  evento: data.evento || 0,
 });
 
 export const MapDefinition = (data = {}) => ({
   header: MapHeader(data.header),
   grid: Array.isArray(data.grid) ? data.grid.map(MapCell) : [],
-  eroi_start: Array.isArray(data.eroi_start) ? data.eroi_start.map(MapHeroStart) : [],
+  eroi_start: Array.isArray(data.eroi_start)
+    ? data.eroi_start.map(MapHeroStart)
+    : [],
   porte: Array.isArray(data.porte) ? data.porte.map(MapDoor) : [],
-  scripts: Array.isArray(data.scripts) ? data.scripts.map(MapScript) : []
+  scripts: Array.isArray(data.scripts) ? data.scripts.map(MapScript) : [],
 });
 
 export const Mission = (data = {}) => ({
   ordine: data.ordine || 0,
   file: data.file || "",
-  titolo: data.titolo || ""
+  titolo: data.titolo || "",
 });
 
 export const Campaign = (data = {}) => ({
   nome_campagna: data.nome_campagna || "",
-  missioni: Array.isArray(data.missioni) ? data.missioni.map(Mission) : []
+  missioni: Array.isArray(data.missioni) ? data.missioni.map(Mission) : [],
 });
 
 export const VisibilityCell = (data = {}) => ({
@@ -110,17 +112,17 @@ export const VisibilityCell = (data = {}) => ({
   valo: data.valo || "",
   vis1: data.vis1 || "",
   vis2: data.vis2 || "",
-  fog: data.fog !== undefined ? !!data.fog : true
+  fog: data.fog !== undefined ? !!data.fog : true,
 });
 
 export const VisibilityMap = (data = {}) => ({
   source: data.source || "",
   image: data.image || "",
-  data: Array.isArray(data.data) ? data.data.map(VisibilityCell) : []
+  data: Array.isArray(data.data) ? data.data.map(VisibilityCell) : [],
 });
 
 export const GameScript = (data = {}) => ({
   command: data.command || "",
   params: data.params || 0,
-  isOneTime: !!data.isOneTime
+  isOneTime: !!data.isOneTime,
 });

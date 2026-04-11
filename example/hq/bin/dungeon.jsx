@@ -260,7 +260,10 @@ export default function Dungeon({
       savedCampaign?.nextMissionIndex ?? 0,
       gameSession.currentMissionIndex ?? 0,
     );
-    hooksCampaignManager.saveCampaign(gameSession.heroes, preservedMissionIndex);
+    hooksCampaignManager.saveCampaign(
+      gameSession.heroes,
+      preservedMissionIndex,
+    );
     onChangePageView(PageNavigationEnum.PLAY_GAME);
   }, [hooksCampaignManager, gameSession, onChangePageView]);
 
@@ -286,7 +289,13 @@ export default function Dungeon({
     if (gameSession.currentTurn > gameSession.heroes.length) {
       hooksMonsterAI.runMonsterTurn();
     }
-  }, [gameSession?.currentTurn, gameSession?.heroes, hooksMonsterAI, missionObjectiveCompleted, leaveDungeonAfterRetreat]);
+  }, [
+    gameSession?.currentTurn,
+    gameSession?.heroes,
+    hooksMonsterAI,
+    missionObjectiveCompleted,
+    leaveDungeonAfterRetreat,
+  ]);
 
   const completeMission = useCallback(() => {
     const savedCampaign = hooksCampaignManager.loadCampaign();
@@ -294,10 +303,7 @@ export default function Dungeon({
       savedCampaign?.nextMissionIndex ?? 0,
       (gameSession?.currentMissionIndex ?? 0) + 1,
     );
-    hooksCampaignManager.saveCampaign(
-      gameSession.heroes,
-      nextMissionIndex,
-    );
+    hooksCampaignManager.saveCampaign(gameSession.heroes, nextMissionIndex);
     setIsMissionSummaryOpen(false);
     onChangePageView(PageNavigationEnum.PLAY_GAME);
   }, [hooksCampaignManager, gameSession, onChangePageView]);

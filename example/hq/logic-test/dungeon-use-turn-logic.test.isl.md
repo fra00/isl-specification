@@ -47,6 +47,17 @@
   - `checkMissionObjective()` returns true.
   - The system state is updated to reflect the mission completion.
 
+## Scenario: Mission Objective Requires All Active Header Goals
+
+- **Given**: The current map header can specify a boss objective, a final treasure coordinate, a required item, and a required weapon.
+- **When**: `checkMissionObjective()` is evaluated.
+- **Assert (Expected Outcomes)**:
+  - Boss objectives remain incomplete while the target monster is still alive or still hidden in an unspawned map cell.
+  - Final treasure objectives remain incomplete while the target treasure cell still contains collectible treasure payload.
+  - Item objectives remain incomplete while the required item is still on the map or not yet present in a hero inventory.
+  - Weapon objectives remain incomplete while the required weapon is still on the map or not yet present in a hero equipment list.
+  - The mission is complete only when every active objective in the header has been satisfied.
+
 ## Scenario: Invalid Movement Pathing (Adversarial)
 
 - **Given**: A hero is at (1,1). A wall (Rock) exists at (1,2).
@@ -116,3 +127,13 @@
   - Each traversed step is persisted through `sessionManager.moveCurrentHeroTo(nextX, nextY)`.
   - If the destination cell has `fine` property and `checkMissionObjective` is true, `sessionManager.markCurrentHeroEscaped()` is called and `endTurn` is triggered.
   - The system ensures no "isMoving" flag remains stuck, preventing future actions.
+
+## Scenario: Exit Stairs Allow Confirmed Retreat Before Mission Completion
+
+- **Given**: The active hero reaches a cell whose `fine` flag marks the stairs, but `checkMissionObjective()` is false.
+- **When**: The movement completes on the stairs.
+- **Assert (Expected Outcomes)**:
+  - The system opens a confirmation dialog asking whether the player wants to leave without completing the mission.
+  - If the player confirms, `sessionManager.markCurrentHeroEscaped()` is called and the turn ends normally.
+  - After the confirmed retreat, `endTurn(true)` advances the session to the next eligible hero turn without waiting for `isMoving` to settle asynchronously.
+  - If the player cancels, no escape is persisted and the hero remains available to continue the mission from the stairs cell.

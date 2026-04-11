@@ -32,8 +32,18 @@ Represents the full definition of a game map/mission loaded from JSON.
 Metadata for the map.
 
 - `descrizione`: Description text of the mission (String).
-- `mostro_uscita`: ID of the monster (@Monster) guarding the exit (String).
+- `mostro_uscita`: ID of the monster (@Monster) that must be defeated to complete the mission (Integer, sentinel `-1` means no monster objective).
+- `tesoro_finale`: Coordinate of the treasure cell that must be found to complete the mission (@MapObjectiveCoordinate). Sentinel `{ x: 0, y: 0 }` means no final-treasure objective.
+- `oggetto_f`: ID of the quest item (@Item) that must be recovered to complete the mission (Integer, sentinel `-1` means no item objective).
+- `arma_f`: ID of the quest weapon (@Equipment) that must be recovered to complete the mission (Integer, sentinel `-1` means no weapon objective).
 - `nfine`: End condition identifier (Integer).
+
+#### `MapObjectiveCoordinate`
+
+Coordinate of a mission objective cell.
+
+- `x`: X coordinate (Integer).
+- `y`: Y coordinate (Integer).
 
 #### `MapCell`
 

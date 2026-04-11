@@ -185,6 +185,7 @@
 - `hooksPathfinding`: @usePathfinding passing `gameSession`, `staticVisibilityMap`, and `hooksSecretPassages.getFoundPassages().visiblePassages`.
 - `hooksCombatLogic`: @useCombatLogic.
 - `hooksTurnLogic`: @useTurnLogic passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTraps`, `hooksHeroStats`, `hooksPathfinding`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksVisibilityCalc`, and `hooksSessionManager`.
+- `missionObjectiveCompleted`: Boolean derived from `hooksTurnLogic.isMissionObjectiveCompleted`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, and `staticMonsters`.
 - `hooksMonsterAI`: @useMonsterAI passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksPathfinding`, `hooksCombatLogic`, `hooksHeroStats`, and `hooksSessionManager`.
 - `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
@@ -258,16 +259,30 @@
   - **Victory Check**:
     - Let `escapedHeroes` = heroes where `isEscaped` is true.
     - IF `activeHeroes` length > 0 AND `activeHeroes` length EQUALS `escapedHeroes` length:
-      - Set `isMissionSummaryOpen` to true.
+      - IF `missionObjectiveCompleted` is true:
+        - Set `isMissionSummaryOpen` to true.
+      - ELSE:
+        - Trigger `leaveDungeonAfterRetreat()` so the party retreats without unlocking the next mission.
       - RETURN.
   - IF `gameSession.currentTurn` > `gameSession.heroes.length`:
     - Trigger `hooksMonsterAI.runMonsterTurn()`.
+
+#### leaveDungeonAfterRetreat
+
+- **Contract**: Persists hero progress after a voluntary retreat without advancing the campaign unlock index.
+- **Flow**:
+  - Load the existing campaign save, when available.
+  - Preserve the highest unlocked mission index already saved.
+  - Trigger `hooksCampaignManager.saveCampaign(gameSession.heroes, preservedMissionIndex)`.
+  - Navigate back to @PageNavigationEnum.PLAY_GAME.
 
 #### completeMission
 
 - **Contract**: Saves progress and returns to mission selection.
 - **Flow**:
-  - Call `hooksCampaignManager.saveCampaign(gameSession.heroes, gameSession.currentMissionIndex + 1)`.
+  - Load the existing campaign save, when available.
+  - Let `nextMissionIndex` = the greater of the already unlocked mission index and `gameSession.currentMissionIndex + 1`.
+  - Call `hooksCampaignManager.saveCampaign(gameSession.heroes, nextMissionIndex)`.
   - Set `isMissionSummaryOpen` to false.
   - onChangePageView to @PageNavigationEnum.PLAY_GAME.
 

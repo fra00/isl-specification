@@ -147,6 +147,7 @@ export default function Dungeon({
     sessionManager: hooksSessionManager,
   });
   turnLogicRef.current = hooksTurnLogic;
+  const missionObjectiveCompleted = hooksTurnLogic.isMissionObjectiveCompleted;
 
   const hooksMonsters = useDungeonMonsters({
     gameSession,
@@ -252,6 +253,17 @@ export default function Dungeon({
     setDrawnTreasureCard(null);
   }, [drawnTreasureCard, hooksTreasure]);
 
+  const leaveDungeonAfterRetreat = useCallback(() => {
+    if (!gameSession) return;
+    const savedCampaign = hooksCampaignManager.loadCampaign();
+    const preservedMissionIndex = Math.max(
+      savedCampaign?.nextMissionIndex ?? 0,
+      gameSession.currentMissionIndex ?? 0,
+    );
+    hooksCampaignManager.saveCampaign(gameSession.heroes, preservedMissionIndex);
+    onChangePageView(PageNavigationEnum.PLAY_GAME);
+  }, [hooksCampaignManager, gameSession, onChangePageView]);
+
   useEffect(() => {
     if (!gameSession) return;
     const activeHeroes = gameSession.heroes.filter((h) => h.currentBody > 0);
@@ -264,18 +276,27 @@ export default function Dungeon({
       activeHeroes.length > 0 &&
       activeHeroes.length === escapedHeroes.length
     ) {
-      setIsMissionSummaryOpen(true);
+      if (missionObjectiveCompleted) {
+        setIsMissionSummaryOpen(true);
+      } else {
+        leaveDungeonAfterRetreat();
+      }
       return;
     }
     if (gameSession.currentTurn > gameSession.heroes.length) {
       hooksMonsterAI.runMonsterTurn();
     }
-  }, [gameSession?.currentTurn, gameSession?.heroes, hooksMonsterAI]);
+  }, [gameSession?.currentTurn, gameSession?.heroes, hooksMonsterAI, missionObjectiveCompleted, leaveDungeonAfterRetreat]);
 
   const completeMission = useCallback(() => {
+    const savedCampaign = hooksCampaignManager.loadCampaign();
+    const nextMissionIndex = Math.max(
+      savedCampaign?.nextMissionIndex ?? 0,
+      (gameSession?.currentMissionIndex ?? 0) + 1,
+    );
     hooksCampaignManager.saveCampaign(
       gameSession.heroes,
-      gameSession.currentMissionIndex + 1,
+      nextMissionIndex,
     );
     setIsMissionSummaryOpen(false);
     onChangePageView(PageNavigationEnum.PLAY_GAME);

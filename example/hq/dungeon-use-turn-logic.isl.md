@@ -62,14 +62,36 @@
 - **Signature**: `() -> Boolean`
 - **Flow**:
   - Let `header` = `gameSession.currentMap.header`.
+  - Let `currentMap` = `gameSession.currentMap`.
+  - IF `header` is null OR `currentMap` is null RETURN true.
+  - Resolve `bossObjectiveId` from `header.mostro_uscita` only when it is a positive integer.
+  - Resolve `itemObjectiveId` from `header.oggetto_f` only when it is a positive integer.
+  - Resolve `weaponObjectiveId` from `header.arma_f` only when it is a positive integer.
+  - Resolve `treasureTarget` from `header.tesoro_finale`.
+  - Let `hasTreasureObjective` be true only when `treasureTarget` is defined and is NOT the sentinel `{ x: 0, y: 0 }`.
+  - IF no boss, final-treasure, item, or weapon objective is active RETURN true.
   - **Condition: Kill Boss**:
-    - IF `header.mostro_uscita` is NOT null AND NOT empty:
-      - Check if any monster in `gameSession.monsters` has `monster.id` matching `header.mostro_uscita`.
-      - IF found: RETURN false (Boss is still alive).
-      - ELSE: RETURN true.
-  - **Condition: Simple Escape**:
-    - IF `header.nfine` is a specific code for escape-only: RETURN true.
-  - RETURN true (Default fallback).
+    - IF `bossObjectiveId` is active:
+      - Find the static boss spawn cell in `currentMap.grid` where `mostab.mos` is true and `mostab.mosid` matches `bossObjectiveId`.
+      - Let `bossAlive` = any live monster in `gameSession.monsters` whose `monster.id` matches `bossObjectiveId`.
+      - Let `bossHiddenButUnspawned` = the static boss spawn cell exists and its coordinate is NOT yet listed in `gameSession.spawnedLocations`.
+      - The boss objective is complete only when `bossAlive` is false AND `bossHiddenButUnspawned` is false.
+  - **Condition: Final Treasure**:
+    - IF `hasTreasureObjective` is true:
+      - Find the target cell at `tesoro_finale.x`, `tesoro_finale.y`.
+      - The treasure objective is complete only when the target cell exists and its `tes` payload no longer contains gold, item, weapon, or trap values greater than 0.
+  - **Condition: Recover Item**:
+    - IF `itemObjectiveId` is active:
+      - Let `itemStillOnMap` = any map cell still contains `tes.ogg == itemObjectiveId`.
+      - Let `itemOwned` = any hero inventory contains `itemObjectiveId`.
+      - The item objective is complete only when `itemStillOnMap` is false AND `itemOwned` is true.
+  - **Condition: Recover Weapon**:
+    - IF `weaponObjectiveId` is active:
+      - Let `weaponStillOnMap` = any map cell still contains `tes.arma == weaponObjectiveId`.
+      - Let `weaponOwned` = any hero `equipment` contains `weaponObjectiveId`.
+      - The weapon objective is complete only when `weaponStillOnMap` is false AND `weaponOwned` is true.
+  - RETURN true only when every active mission objective above is complete.
+  - Expose the current result as `isMissionObjectiveCompleted` in the returned hook API so the container can distinguish victory from retreat.
 
 #### updateCanAttack
 
@@ -172,23 +194,37 @@
       - Set `isMoving` to false.
       - Set `activePath` to empty.
     - **Exit Check**:
-      - Find `mapCell` at current hero position.
-      - IF `mapCell.fine` is NOT null AND NOT empty:
-        - IF `checkMissionObjective()` is true:
-          - Call `sessionManager.markCurrentHeroEscaped()`.
-          - Set `turnPhase.IsTurnFinished` to true.
-          - Trigger `onNotify(currentHero.hero.classe + " è uscito dal dungeon!")`.
-          - // Important: The hero should no longer be selectable for turns.
-          - Trigger `endTurn()`.
-          - RETURN.
-        - ELSE:
-          - Trigger `onNotify("Non puoi uscire! Devi prima compiere la missione.")`.
+      - Call `attemptExitFromCurrentCell()`.
+      - IF it returns true RETURN.
     - **Update Final Interactive State**:
       - Let `hero` = find current hero.
       - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
     - IF `movementPoints` <= 0 No movement left, mark action as done:
       - Set `turnPhase.hasMoved` to true.
     - RETURN.
+
+#### attemptExitFromCurrentCell
+
+- **Contract**: Resolves stairs exit for the active hero, including mission-complete escape and confirmed retreat.
+- **Signature**: `() -> Boolean`
+- **Flow**:
+  - Find the current hero from `gameSession.heroes` using `currentTurn`.
+  - Find `mapCell` at the current hero coordinates.
+  - IF the current cell is not a stairs cell (`fine` is empty or zero) RETURN false.
+  - Let `missionObjectiveCompleted` = `checkMissionObjective()`.
+  - IF `missionObjectiveCompleted` is false:
+    - Open a confirmation dialog asking whether the player wants to leave through the stairs even without completing the mission.
+    - IF the user cancels:
+      - Trigger `onNotify("Uscita annullata. Completa la missione o conferma la ritirata dalle scale.")`.
+      - RETURN false.
+  - Call `sessionManager.markCurrentHeroEscaped()`.
+  - Set `turnPhase.IsTurnFinished` to true.
+  - IF `missionObjectiveCompleted` is true:
+    - Trigger `onNotify(currentHero.hero.classe + " è uscito dal dungeon!")`.
+  - ELSE:
+    - Trigger `onNotify(currentHero.hero.classe + " si ritira dalle scale.")`.
+  - Trigger `endTurn(true)` so the turn advances immediately even if the exit is being resolved during movement cleanup and `isMoving` has not been committed to false yet.
+  - RETURN true.
   - Wait 300ms.
   - Get next step `nextPos` = `activePath[1]`.
   - // Store old position to check for Area ID (valo) transition

@@ -6,10 +6,18 @@
  * Edit the ISL file instead.
  */
 
+export const MapObjectiveCoordinate = (data = {}) => ({
+  x: data.x ?? 0,
+  y: data.y ?? 0
+});
+
 export const MapHeader = (data = {}) => ({
-  descrizione: data.descrizione || "",
-  mostro_uscita: data.mostro_uscita || "",
-  nfine: data.nfine || 0
+  descrizione: data.descrizione ?? "",
+  mostro_uscita: data.mostro_uscita ?? -1,
+  tesoro_finale: MapObjectiveCoordinate(data.tesoro_finale),
+  oggetto_f: data.oggetto_f ?? -1,
+  arma_f: data.arma_f ?? -1,
+  nfine: data.nfine ?? 0
 });
 
 export const BlockCellArea = (data = {}) => ({

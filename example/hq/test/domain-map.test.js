@@ -13,6 +13,7 @@ import {
   MapDoor,
   MapHeader,
   MapHeroStart,
+  MapObjectiveCoordinate,
   MapScript,
   Mission,
   VisibilityCell,
@@ -21,8 +22,9 @@ import {
 
 describe('domain-map', () => {
   it('builds map header defaults and overrides', () => {
-    expect(MapHeader()).toEqual({ descrizione: '', mostro_uscita: '', nfine: 0 });
-    expect(MapHeader({ descrizione: 'x', mostro_uscita: 7, nfine: 2 })).toEqual({ descrizione: 'x', mostro_uscita: 7, nfine: 2 });
+    expect(MapObjectiveCoordinate()).toEqual({ x: 0, y: 0 });
+    expect(MapHeader()).toEqual({ descrizione: '', mostro_uscita: -1, tesoro_finale: { x: 0, y: 0 }, oggetto_f: -1, arma_f: -1, nfine: 0 });
+    expect(MapHeader({ descrizione: 'x', mostro_uscita: 7, tesoro_finale: { x: 4, y: 5 }, oggetto_f: 9, arma_f: 12, nfine: 2 })).toEqual({ descrizione: 'x', mostro_uscita: 7, tesoro_finale: { x: 4, y: 5 }, oggetto_f: 9, arma_f: 12, nfine: 2 });
   });
 
   it('normalizes primitive map substructures', () => {
@@ -36,14 +38,14 @@ describe('domain-map', () => {
 
   it('builds map cells and nested definitions recursively', () => {
     const map = MapDefinition({
-      header: { descrizione: 'desc', nfine: 1 },
+      header: { descrizione: 'desc', tesoro_finale: { x: 7, y: 8 }, oggetto_f: 4, arma_f: 6, nfine: 1 },
       grid: [{ x: 1, y: 2, arnt: { antroc: true }, mobili: { num: 1, img: 'box.png' }, mostab: { mosid: 2, mos: true, corpo: 3 }, tes: { mon: 10 }, psgg: { ps: 5, oriz: true }, trpl: { tipo: 2 }, fine: 'EXIT' }],
       eroi_start: [{ id: 1, x: 4, y: 5 }],
       porte: [{ x: 6, y: 7, oriz: true }],
       scripts: [{ x: 8, y: 9, text: 'hello', evento: 3 }],
     });
 
-    expect(map.header).toEqual({ descrizione: 'desc', mostro_uscita: '', nfine: 1 });
+    expect(map.header).toEqual({ descrizione: 'desc', mostro_uscita: -1, tesoro_finale: { x: 7, y: 8 }, oggetto_f: 4, arma_f: 6, nfine: 1 });
     expect(map.grid[0]).toEqual({
       x: 1,
       y: 2,

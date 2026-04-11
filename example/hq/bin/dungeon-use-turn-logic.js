@@ -34,18 +34,65 @@ export function useTurnLogic(config) {
   const [canOpenDoor, setCanOpenDoor] = useState(null);
   const [activePath, setActivePath] = useState([]);
 
+  const hasCollectibleTreasure = useCallback((treasure) => {
+    if (treasure == null) return false;
+    return Number(treasure.mon || 0) > 0 || Number(treasure.ogg || 0) > 0 || Number(treasure.arma || 0) > 0 || Number(treasure.trp || 0) > 0;
+  }, []);
+
   const checkMissionObjective = useCallback(() => {
     const header = gameSession?.currentMap?.header;
-    if (!header) return true;
-    
-    if (header.mostro_uscita != null && header.mostro_uscita !== "") {
-      const bossAlive = gameSession?.monsters?.some(m => String(m.monster?.id) === String(header.mostro_uscita));
-      if (bossAlive) return false;
-      return true;
+    const currentMap = gameSession?.currentMap;
+    if (!header || !currentMap) return true;
+
+    const toPositiveObjectiveId = (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    };
+
+    const bossObjectiveId = toPositiveObjectiveId(header.mostro_uscita);
+    const itemObjectiveId = toPositiveObjectiveId(header.oggetto_f);
+    const weaponObjectiveId = toPositiveObjectiveId(header.arma_f);
+    const treasureTarget = header.tesoro_finale;
+    const treasureTargetX = Number(treasureTarget?.x ?? 0);
+    const treasureTargetY = Number(treasureTarget?.y ?? 0);
+    const hasTreasureObjective = treasureTarget != null && (treasureTargetX !== 0 || treasureTargetY !== 0);
+    const hasAnyObjective = bossObjectiveId != null || itemObjectiveId != null || weaponObjectiveId != null || hasTreasureObjective;
+
+    if (!hasAnyObjective) return true;
+
+    let bossComplete = true;
+    if (bossObjectiveId != null) {
+      const bossSpawnCell = currentMap.grid?.find(cell => cell?.mostab?.mos === true && Number(cell?.mostab?.mosid) === bossObjectiveId);
+      const bossLocationKey = bossSpawnCell ? `${bossSpawnCell.x},${bossSpawnCell.y}` : null;
+      const bossAlive = gameSession?.monsters?.some(m => Number(m?.monster?.id) === bossObjectiveId && Number(m?.currentBody ?? 0) > 0);
+      const bossHiddenButUnspawned = bossLocationKey != null && !(gameSession?.spawnedLocations || []).includes(bossLocationKey);
+      bossComplete = !bossAlive && !bossHiddenButUnspawned;
     }
-    
-    return true;
-  }, [gameSession]);
+
+    let treasureComplete = true;
+    if (hasTreasureObjective) {
+      const treasureCell = currentMap.grid?.find(cell => cell.x === treasureTargetX && cell.y === treasureTargetY);
+      treasureComplete = treasureCell != null && !hasCollectibleTreasure(treasureCell.tes);
+    }
+
+    let itemComplete = true;
+    if (itemObjectiveId != null) {
+      const itemStillOnMap = currentMap.grid?.some(cell => Number(cell?.tes?.ogg) === itemObjectiveId);
+      const itemOwned = gameSession?.heroes?.some(hero => Array.isArray(hero.inventory) && hero.inventory.includes(itemObjectiveId));
+      itemComplete = !itemStillOnMap && itemOwned;
+    }
+
+    let weaponComplete = true;
+    if (weaponObjectiveId != null) {
+      const weaponStillOnMap = currentMap.grid?.some(cell => Number(cell?.tes?.arma) === weaponObjectiveId);
+      const weaponOwned = gameSession?.heroes?.some(hero => Array.isArray(hero.equipment) && hero.equipment.includes(weaponObjectiveId));
+      weaponComplete = !weaponStillOnMap && weaponOwned;
+    }
+
+    return bossComplete && treasureComplete && itemComplete && weaponComplete;
+  }, [gameSession, hasCollectibleTreasure]);
+
+  const isMissionObjectiveCompleted = checkMissionObjective();
 
   const updateCanAttack = useCallback(() => {
     let newCanAttack = false;
@@ -197,8 +244,8 @@ export function useTurnLogic(config) {
     }
   }, [isMoving, movementPoints, hoveredPath, hoveredPathVariant, gameSession, hooksPathfinding, onNotify, mapInteractionLogic]);
 
-  const endTurn = useCallback(() => {
-    if (isMoving) return;
+  const endTurn = useCallback((forceEnd = false) => {
+    if (isMoving && !forceEnd) return;
     
     const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
     if (currentHero?.activeStatus?.includes("FoggyMist")) {
@@ -238,6 +285,38 @@ export function useTurnLogic(config) {
     }
   }, [isMoving, gameSession, onNotify, mapInteractionLogic, sessionManager]);
 
+  const attemptExitFromCurrentCell = useCallback(() => {
+    const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!currentHero) return false;
+
+    const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
+    const isExitCell = mapCell && mapCell.fine != null && mapCell.fine !== '' && Number(mapCell.fine) !== 0;
+
+    if (!isExitCell) return false;
+
+    const missionObjectiveCompleted = checkMissionObjective();
+    let shouldEscape = missionObjectiveCompleted;
+
+    if (!missionObjectiveCompleted) {
+      shouldEscape = typeof globalThis !== 'undefined' && typeof globalThis.confirm === 'function'
+        ? globalThis.confirm('La missione non è ancora completata. Vuoi uscire comunque dalle scale?')
+        : false;
+
+      if (!shouldEscape) {
+        onNotify('Uscita annullata. Completa la missione o conferma la ritirata dalle scale.');
+        return false;
+      }
+    }
+
+    sessionManager.markCurrentHeroEscaped();
+    setTurnPhase(prev => TurnPhase({ ...prev, IsTurnFinished: true }));
+    onNotify(missionObjectiveCompleted
+      ? `${currentHero.hero?.classe || 'Eroe'} è uscito dal dungeon!`
+      : `${currentHero.hero?.classe || 'Eroe'} si ritira dalle scale.`);
+    endTurn(true);
+    return true;
+  }, [gameSession, checkMissionObjective, onNotify, sessionManager, endTurn]);
+
   useEffect(() => {
     if (activePath.length === 0) return;
     
@@ -249,18 +328,9 @@ export function useTurnLogic(config) {
         setIsMoving(false);
         setActivePath([]);
       }
-      
-      const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === currentHero.x && c.y === currentHero.y);
-      if (mapCell && mapCell.fine != null && mapCell.fine !== "") {
-        if (checkMissionObjective()) {
-          sessionManager.markCurrentHeroEscaped();
-          setTurnPhase(prev => TurnPhase({ ...prev, IsTurnFinished: true }));
-          onNotify(`${currentHero.hero?.classe || 'Eroe'} è uscito dal dungeon!`);
-          endTurn();
-          return;
-        } else {
-          onNotify("Non puoi uscire! Devi prima compiere la missione.");
-        }
+
+      if (attemptExitFromCurrentCell()) {
+        return;
       }
       
       setCanOpenDoor(mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, null));
@@ -332,7 +402,7 @@ export function useTurnLogic(config) {
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [activePath, isMoving, gameSession, checkMissionObjective, sessionManager, onNotify, mapInteractionLogic, movementPoints, visibilityMap, trapsLogic, endTurn]);
+  }, [activePath, isMoving, gameSession, attemptExitFromCurrentCell, mapInteractionLogic, movementPoints, visibilityMap, trapsLogic]);
 
   const handleMonsterClick = useCallback((monsterId) => {
     const monster = gameSession?.monsters?.find(m => m.id === monsterId);
@@ -440,6 +510,8 @@ export function useTurnLogic(config) {
   return {
     turnPhase,
     movementPoints,
+    isMissionObjectiveCompleted,
+    attemptExitFromCurrentCell,
     hoveredPath,
     hoveredPathVariant,
     canAttack,

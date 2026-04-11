@@ -6,7 +6,13 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { PageNavigationEnum } from "./domain-core";
 import DungeonBoard from "./dungeon-board";
 import DungeonHeroOrder from "./dungeon-hero-order";
@@ -45,11 +51,12 @@ export default function Dungeon({
   staticEquipment,
   staticItems,
   staticSpells,
-  treasureDeck
+  treasureDeck,
 }) {
   const [isMissionInitialized, setIsMissionInitialized] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isSpellSelectionRequired, setIsSpellSelectionRequired] = useState(false);
+  const [isSpellSelectionRequired, setIsSpellSelectionRequired] =
+    useState(false);
   const [isSpellCastModalOpen, setIsSpellCastModalOpen] = useState(false);
   const [isMissionSummaryOpen, setIsMissionSummaryOpen] = useState(false);
   const [isGameOverOpen, setIsGameOverOpen] = useState(false);
@@ -67,11 +74,17 @@ export default function Dungeon({
     onNotify: setNotificationMessage,
     fogOfWarLogic: hooksFogOfWar,
     staticEquipment,
-    staticItems
+    staticItems,
   });
 
-  const hooksInventoryLogic = useInventoryLogic({ staticEquipment, sessionManager: hooksSessionManager });
-  const hooksItemLogic = useItemLogic({ staticItems, sessionManager: hooksSessionManager });
+  const hooksInventoryLogic = useInventoryLogic({
+    staticEquipment,
+    sessionManager: hooksSessionManager,
+  });
+  const hooksItemLogic = useItemLogic({
+    staticItems,
+    sessionManager: hooksSessionManager,
+  });
   const hooksCampaignManager = useCampaignManager();
 
   const hooksVisibilityCalc = null;
@@ -83,8 +96,10 @@ export default function Dungeon({
 
   const areMonstersVisible = useMemo(() => {
     if (!gameSession?.monsters || !boardVisibilityMap?.data) return false;
-    return gameSession.monsters.some(m => {
-      const cell = boardVisibilityMap.data.find(c => c.x === m.x && c.y === m.y);
+    return gameSession.monsters.some((m) => {
+      const cell = boardVisibilityMap.data.find(
+        (c) => c.x === m.x && c.y === m.y,
+      );
       return cell && !cell.fog;
     });
   }, [gameSession?.monsters, boardVisibilityMap]);
@@ -94,26 +109,26 @@ export default function Dungeon({
     visibilityMap: boardVisibilityMap,
     areMonstersVisible,
     onNotify: setNotificationMessage,
-    onActionDone: handleActionDone
+    onActionDone: handleActionDone,
   });
 
   const hooksSecretPassages = useSecretPassages({
     gameSession,
     visibilityMap: boardVisibilityMap,
     onNotify: setNotificationMessage,
-    onActionDone: handleActionDone
+    onActionDone: handleActionDone,
   });
 
   const hooksMapInteraction = useMapInteraction({
     gameSession,
     foundPassages: hooksSecretPassages.getFoundPassages().visiblePassages,
-    sessionManager: hooksSessionManager
+    sessionManager: hooksSessionManager,
   });
 
   const hooksPathfinding = usePathfinding({
     gameSession,
     visibilityMap: boardVisibilityMap,
-    foundPassages: hooksSecretPassages.getFoundPassages().visiblePassages
+    foundPassages: hooksSecretPassages.getFoundPassages().visiblePassages,
   });
 
   const hooksCombatLogic = useCombatLogic();
@@ -129,7 +144,7 @@ export default function Dungeon({
     combatLogic: hooksCombatLogic,
     mapInteractionLogic: hooksMapInteraction,
     visibilityCalc: hooksVisibilityCalc,
-    sessionManager: hooksSessionManager
+    sessionManager: hooksSessionManager,
   });
   turnLogicRef.current = hooksTurnLogic;
 
@@ -138,7 +153,7 @@ export default function Dungeon({
     visibilityMap: boardVisibilityMap,
     onUpdateSession,
     onNotify: setNotificationMessage,
-    monsterDefinitions: staticMonsters
+    monsterDefinitions: staticMonsters,
   });
 
   const hooksMonsterAI = useMonsterAI({
@@ -148,22 +163,25 @@ export default function Dungeon({
     pathfinding: hooksPathfinding,
     combatLogic: hooksCombatLogic,
     heroStatsLogic: hooksHeroStats,
-    sessionManager: hooksSessionManager
+    sessionManager: hooksSessionManager,
   });
 
   const handleTreasureCardDrawn = useCallback((card) => {
     setDrawnTreasureCard(card);
   }, []);
 
-  const handleWanderingMonster = useCallback((x, y) => {
-    const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
-    if (newMonster) {
-      const hero = gameSession.heroes.find(h => h.x === x && h.y === y);
-      if (hero) {
-        hooksMonsterAI.performInstantAttack(newMonster, hero);
+  const handleWanderingMonster = useCallback(
+    (x, y) => {
+      const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
+      if (newMonster) {
+        const hero = gameSession.heroes.find((h) => h.x === x && h.y === y);
+        if (hero) {
+          hooksMonsterAI.performInstantAttack(newMonster, hero);
+        }
       }
-    }
-  }, [hooksMonsters, hooksMonsterAI, gameSession]);
+    },
+    [hooksMonsters, hooksMonsterAI, gameSession],
+  );
 
   const hooksTreasure = useTreasureSearch({
     gameSession,
@@ -172,7 +190,7 @@ export default function Dungeon({
     onActionDone: handleActionDone,
     sessionManager: hooksSessionManager,
     onTreasureCardDrawn: handleTreasureCardDrawn,
-    onWanderingMonster: handleWanderingMonster
+    onWanderingMonster: handleWanderingMonster,
   });
 
   const hooksMagicLogic = useMagicLogic({
@@ -184,7 +202,7 @@ export default function Dungeon({
     combatLogic: hooksCombatLogic,
     mapInteractionLogic: hooksMapInteraction,
     fogOfWarLogic: hooksFogOfWar,
-    heroStatsLogic: hooksHeroStats
+    heroStatsLogic: hooksHeroStats,
   });
 
   useEffect(() => {
@@ -194,28 +212,34 @@ export default function Dungeon({
     }
   }, [isMissionInitialized, gameSession, hooksSessionManager, treasureDeck]);
 
-  const confirmHeroOrder = useCallback((orderedHeroIds) => {
-    if (gameSession?.isHeroOrderConfirmed) return;
-    hooksSessionManager.confirmHeroOrder(orderedHeroIds);
-    const needsMagic = gameSession.heroes.some(h => {
-      const cls = h.hero?.classe?.toLowerCase();
-      return cls === "mago" || cls === "elfo";
-    });
-    if (needsMagic) {
-      setIsSpellSelectionRequired(true);
-    }
-  }, [gameSession, hooksSessionManager]);
-
-  const confirmSpellSelection = useCallback((selection) => {
-    const updatedHeroes = gameSession.heroes.map(hero => {
-      if (selection.has(hero.heroId)) {
-        return { ...hero, availableSpells: selection.get(hero.heroId) };
+  const confirmHeroOrder = useCallback(
+    (orderedHeroIds) => {
+      if (gameSession?.isHeroOrderConfirmed) return;
+      hooksSessionManager.confirmHeroOrder(orderedHeroIds);
+      const needsMagic = gameSession.heroes.some((h) => {
+        const cls = h.hero?.classe?.toLowerCase();
+        return cls === "mago" || cls === "elfo";
+      });
+      if (needsMagic) {
+        setIsSpellSelectionRequired(true);
       }
-      return hero;
-    });
-    setIsSpellSelectionRequired(false);
-    onUpdateSession({ ...gameSession, heroes: updatedHeroes });
-  }, [gameSession, onUpdateSession]);
+    },
+    [gameSession, hooksSessionManager],
+  );
+
+  const confirmSpellSelection = useCallback(
+    (selection) => {
+      const updatedHeroes = gameSession.heroes.map((hero) => {
+        if (selection.has(hero.heroId)) {
+          return { ...hero, availableSpells: selection.get(hero.heroId) };
+        }
+        return hero;
+      });
+      setIsSpellSelectionRequired(false);
+      onUpdateSession({ ...gameSession, heroes: updatedHeroes });
+    },
+    [gameSession, onUpdateSession],
+  );
 
   const closeCombatResult = useCallback(() => {
     hooksSessionManager.clearLastAttack();
@@ -230,13 +254,16 @@ export default function Dungeon({
 
   useEffect(() => {
     if (!gameSession) return;
-    const activeHeroes = gameSession.heroes.filter(h => h.currentBody > 0);
+    const activeHeroes = gameSession.heroes.filter((h) => h.currentBody > 0);
     if (activeHeroes.length === 0) {
       setIsGameOverOpen(true);
       return;
     }
-    const escapedHeroes = activeHeroes.filter(h => h.isEscaped);
-    if (activeHeroes.length > 0 && activeHeroes.length === escapedHeroes.length) {
+    const escapedHeroes = activeHeroes.filter((h) => h.isEscaped);
+    if (
+      activeHeroes.length > 0 &&
+      activeHeroes.length === escapedHeroes.length
+    ) {
       setIsMissionSummaryOpen(true);
       return;
     }
@@ -246,7 +273,10 @@ export default function Dungeon({
   }, [gameSession?.currentTurn, gameSession?.heroes, hooksMonsterAI]);
 
   const completeMission = useCallback(() => {
-    hooksCampaignManager.saveCampaign(gameSession.heroes, gameSession.currentMissionIndex + 1);
+    hooksCampaignManager.saveCampaign(
+      gameSession.heroes,
+      gameSession.currentMissionIndex + 1,
+    );
     setIsMissionSummaryOpen(false);
     onChangePageView(PageNavigationEnum.PLAY_GAME);
   }, [hooksCampaignManager, gameSession, onChangePageView]);
@@ -264,82 +294,145 @@ export default function Dungeon({
     setIsSpellCastModalOpen(false);
   }, []);
 
-  const handleUseItem = useCallback((heroId, itemId) => {
-    const item = staticItems.find(i => i.id === itemId);
-    if (item?.targetType === "Monster") {
-      setTargetingItem(item);
-      setIsInventoryOpen(false);
-      setNotificationMessage(`Seleziona un mostro bersaglio per ${item.nome}`);
-    } else {
-      hooksItemLogic.useItem(heroId, itemId, gameSession, null);
-    }
-  }, [staticItems, hooksItemLogic, gameSession]);
-
-  const handleCastSpell = useCallback((spellId) => {
-    const spell = staticSpells.find(s => s.id === spellId);
-    if (!spell) return;
-    if (spell.targetType === "Self") {
-      const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
-      if (currentHero) {
-        hooksMagicLogic.castSpell(spellId, currentHero.heroId, null, null, null);
-      }
-      setIsSpellCastModalOpen(false);
-    } else {
-      setTargetingSpell(spell);
-      setIsSpellCastModalOpen(false);
-      if (spell.effetto === "Genio") {
-        setNotificationMessage("Il Genio attende: Clicca su un mostro per attaccare (5 dadi) o su una porta per aprirla.");
+  const handleUseItem = useCallback(
+    (heroId, itemId) => {
+      const item = staticItems.find((i) => i.id === itemId);
+      if (item?.targetType === "Monster") {
+        setTargetingItem(item);
+        setIsInventoryOpen(false);
+        setNotificationMessage(
+          `Seleziona un mostro bersaglio per ${item.nome}`,
+        );
       } else {
-        setNotificationMessage(`Seleziona un bersaglio per ${spell.nome} (Clicca sulla mappa o su un mostro)`);
+        hooksItemLogic.useItem(heroId, itemId, gameSession, null);
       }
-    }
-  }, [staticSpells, gameSession, hooksMagicLogic]);
+    },
+    [staticItems, hooksItemLogic, gameSession],
+  );
 
-  const handleBoardClick = useCallback((x, y) => {
-    if (targetingSpell) {
-      if (targetingSpell.targetType === "Point" || targetingSpell.targetType === "Door" || targetingSpell.effetto === "Genio") {
-        hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y);
-        setTargetingSpell(null);
+  const handleCastSpell = useCallback(
+    (spellId) => {
+      const spell = staticSpells.find((s) => s.id === spellId);
+      if (!spell) return;
+      if (spell.targetType === "Self") {
+        const currentHero = gameSession.heroes.find(
+          (h) => h.turnOrder === gameSession.currentTurn,
+        );
+        if (currentHero) {
+          hooksMagicLogic.castSpell(
+            spellId,
+            currentHero.heroId,
+            null,
+            null,
+            null,
+          );
+        }
+        setIsSpellCastModalOpen(false);
+      } else {
+        setTargetingSpell(spell);
+        setIsSpellCastModalOpen(false);
+        if (spell.effetto === "Genio") {
+          setNotificationMessage(
+            "Il Genio attende: Clicca su un mostro per attaccare (5 dadi) o su una porta per aprirla.",
+          );
+        } else {
+          setNotificationMessage(
+            `Seleziona un bersaglio per ${spell.nome} (Clicca sulla mappa o su un mostro)`,
+          );
+        }
+      }
+    },
+    [staticSpells, gameSession, hooksMagicLogic],
+  );
+
+  const handleBoardClick = useCallback(
+    (x, y) => {
+      if (targetingSpell) {
+        if (
+          targetingSpell.targetType === "Point" ||
+          targetingSpell.targetType === "Door" ||
+          targetingSpell.effetto === "Genio"
+        ) {
+          hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y);
+          setTargetingSpell(null);
+          setNotificationMessage(null);
+        } else if (targetingSpell.targetType === "Hero") {
+          const hero = gameSession.heroes.find((h) => h.x === x && h.y === y);
+          if (hero) {
+            hooksMagicLogic.castSpell(
+              targetingSpell.id,
+              hero.heroId,
+              null,
+              x,
+              y,
+            );
+            setTargetingSpell(null);
+            setNotificationMessage(null);
+          } else {
+            setNotificationMessage("Devi selezionare un Eroe come bersaglio!");
+          }
+        } else {
+          setNotificationMessage(
+            "Bersaglio non valido per questo incantesimo!",
+          );
+        }
+      } else {
+        hooksTurnLogic.handleBoardClick(x, y);
+      }
+    },
+    [targetingSpell, gameSession, hooksMagicLogic, hooksTurnLogic],
+  );
+
+  const handleMonsterClick = useCallback(
+    (monsterId) => {
+      if (targetingItem) {
+        const currentHero = gameSession.heroes.find(
+          (h) => h.turnOrder === gameSession.currentTurn,
+        );
+        if (currentHero) {
+          hooksItemLogic.useItem(
+            currentHero.heroId,
+            targetingItem.id,
+            gameSession,
+            monsterId,
+          );
+        }
+        setTargetingItem(null);
         setNotificationMessage(null);
-      } else if (targetingSpell.targetType === "Hero") {
-        const hero = gameSession.heroes.find(h => h.x === x && h.y === y);
-        if (hero) {
-          hooksMagicLogic.castSpell(targetingSpell.id, hero.heroId, null, x, y);
+        return;
+      }
+      if (targetingSpell) {
+        if (
+          targetingSpell.targetType === "Monster" ||
+          targetingSpell.effetto === "Genio"
+        ) {
+          hooksMagicLogic.castSpell(
+            targetingSpell.id,
+            null,
+            monsterId,
+            null,
+            null,
+          );
           setTargetingSpell(null);
           setNotificationMessage(null);
         } else {
-          setNotificationMessage("Devi selezionare un Eroe come bersaglio!");
+          setNotificationMessage(
+            "Questo incantesimo non può essere lanciato su un mostro!",
+          );
         }
       } else {
-        setNotificationMessage("Bersaglio non valido per questo incantesimo!");
+        hooksTurnLogic.handleMonsterClick(monsterId);
       }
-    } else {
-      hooksTurnLogic.handleBoardClick(x, y);
-    }
-  }, [targetingSpell, gameSession, hooksMagicLogic, hooksTurnLogic]);
-
-  const handleMonsterClick = useCallback((monsterId) => {
-    if (targetingItem) {
-      const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
-      if (currentHero) {
-        hooksItemLogic.useItem(currentHero.heroId, targetingItem.id, gameSession, monsterId);
-      }
-      setTargetingItem(null);
-      setNotificationMessage(null);
-      return;
-    }
-    if (targetingSpell) {
-      if (targetingSpell.targetType === "Monster" || targetingSpell.effetto === "Genio") {
-        hooksMagicLogic.castSpell(targetingSpell.id, null, monsterId, null, null);
-        setTargetingSpell(null);
-        setNotificationMessage(null);
-      } else {
-        setNotificationMessage("Questo incantesimo non può essere lanciato su un mostro!");
-      }
-    } else {
-      hooksTurnLogic.handleMonsterClick(monsterId);
-    }
-  }, [targetingItem, targetingSpell, gameSession, hooksItemLogic, hooksMagicLogic, hooksTurnLogic]);
+    },
+    [
+      targetingItem,
+      targetingSpell,
+      gameSession,
+      hooksItemLogic,
+      hooksMagicLogic,
+      hooksTurnLogic,
+    ],
+  );
 
   const cancelTargeting = useCallback(() => {
     setTargetingSpell(null);
@@ -355,7 +448,11 @@ export default function Dungeon({
   }, []);
 
   const currentHero = useMemo(() => {
-    return gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn) || null;
+    return (
+      gameSession?.heroes?.find(
+        (h) => h.turnOrder === gameSession.currentTurn,
+      ) || null
+    );
   }, [gameSession?.heroes, gameSession?.currentTurn]);
 
   const currentHeroStats = useMemo(() => {
@@ -471,10 +568,7 @@ export default function Dungeon({
       )}
 
       {isGameOverOpen && (
-        <DungeonGameOver
-          isOpen={true}
-          onExit={handleGameOverExit}
-        />
+        <DungeonGameOver isOpen={true} onExit={handleGameOverExit} />
       )}
     </div>
   );

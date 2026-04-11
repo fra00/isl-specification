@@ -9,11 +9,14 @@
 import React, { useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
-  // Safely extract the description, providing a fallback if data is missing
-  const description = gameSession?.currentMap?.header?.descrizione || "La nebbia avvolge questo luogo. Nessuna informazione disponibile.";
+export default function DungeonDescription({
+  gameSession,
+  onChangePageView,
+  onUpdateSession
+}) {
+  // Safe access to the description with a fallback
+  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
 
-  // Handlers wrapped in useCallback for referential stability
   const handleEnter = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.DUNGEON);
@@ -33,69 +36,68 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
   }, [onChangePageView]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-black text-gray-200 overflow-hidden font-serif relative">
-      {/* Decorative background overlay for mist/gothic effect */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-900/20 via-transparent to-transparent"></div>
+    <div className="relative flex flex-col w-full h-full bg-zinc-950 text-amber-100 overflow-hidden font-serif">
+      {/* Background overlay for mist/gradient effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/80 via-zinc-950/90 to-black pointer-events-none" />
 
-      <div className="flex flex-col h-full w-full max-w-5xl mx-auto p-6 md:p-10 z-10">
-        
-        {/* Briefing Header */}
-        <header className="mb-8 text-center shrink-0">
-          <h1 className="text-4xl md:text-5xl font-bold text-yellow-600 drop-shadow-md tracking-wider">
+      {/* Custom Scrollbar Styles for Dark Bronze Palette */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .bronze-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .bronze-scrollbar::-webkit-scrollbar-track {
+          background: #18181b; /* zinc-900 */
+          border-radius: 4px;
+        }
+        .bronze-scrollbar::-webkit-scrollbar-thumb {
+          background: #b45309; /* amber-700 */
+          border-radius: 4px;
+          border: 1px solid #78350f; /* amber-900 */
+        }
+        .bronze-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #d97706; /* amber-600 */
+        }
+      `}} />
+
+      <div className="relative z-10 flex flex-col h-full p-6 md:p-10 max-w-5xl mx-auto w-full">
+        {/* Header */}
+        <div className="flex-shrink-0 mb-8 text-center border-b-2 border-amber-700/40 pb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-700 uppercase tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
             Mission Briefing
           </h1>
-          <div className="h-1 w-32 bg-yellow-700 mx-auto mt-4 rounded-full opacity-50"></div>
-        </header>
+        </div>
 
-        {/* Scrollable Description Text Area */}
-        <main className="flex-1 overflow-y-auto mb-8 pr-4 custom-scrollbar">
-          <div className="bg-gray-900/60 p-6 md:p-8 rounded-lg border border-yellow-900/30 shadow-2xl min-h-full">
-            <p className="text-lg md:text-xl leading-relaxed text-gray-300 whitespace-pre-wrap">
-              {description}
-            </p>
-          </div>
-        </main>
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bronze-scrollbar pr-4 mb-8 bg-zinc-900/50 p-6 md:p-8 rounded-lg border border-amber-900/40 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+          <p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-amber-200/90 whitespace-pre-wrap drop-shadow-md">
+            {description}
+          </p>
+        </div>
 
-        {/* Action Row */}
-        <footer className="shrink-0 flex flex-wrap justify-center gap-4 md:gap-8 pt-4 border-t border-yellow-900/50">
-          <button
-            onClick={handleBack}
-            className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded shadow-lg transition-all duration-200 font-bold uppercase tracking-wide"
-          >
-            Indietro
-          </button>
-          <button
-            onClick={handleShop}
-            className="px-6 py-3 bg-amber-900 hover:bg-amber-800 text-amber-100 border border-amber-700 rounded shadow-lg transition-all duration-200 font-bold uppercase tracking-wide"
-          >
-            Armeria
-          </button>
+        {/* Action Buttons */}
+        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 justify-center items-center mt-auto pt-4">
           <button
             onClick={handleEnter}
-            className="px-8 py-3 bg-yellow-700 hover:bg-yellow-600 text-white border border-yellow-500 rounded shadow-[0_0_15px_rgba(202,138,4,0.4)] transition-all duration-200 font-bold uppercase tracking-wide text-lg"
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-b from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 text-amber-50 font-bold rounded border border-amber-500/50 shadow-[0_0_15px_rgba(180,83,9,0.3)] hover:shadow-[0_0_25px_rgba(180,83,9,0.5)] transition-all duration-200 uppercase tracking-widest text-lg"
           >
             Entra nel dungeon
           </button>
-        </footer>
+          
+          <button
+            onClick={handleShop}
+            className="w-full sm:w-auto px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-semibold rounded border border-amber-800/60 hover:border-amber-600/80 transition-all duration-200 uppercase tracking-wider shadow-lg"
+          >
+            Armeria
+          </button>
+          
+          <button
+            onClick={handleBack}
+            className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-amber-200 font-semibold rounded border border-zinc-700 hover:border-amber-800/50 transition-all duration-200 uppercase tracking-wider shadow-lg"
+          >
+            Indietro
+          </button>
+        </div>
       </div>
-      
-      {/* Inline styles for custom scrollbar to match the dark bronze theme */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(31, 41, 55, 0.5);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(180, 83, 9, 0.8);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(217, 119, 6, 1);
-        }
-      `}} />
     </div>
   );
 }

@@ -6,101 +6,121 @@
  * Edit the ISL file instead.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
-export default function DungeonInventoryModal({ isOpen, hero, onClose }) {
-  if (!isOpen) return null;
+export default function DungeonInventoryModal({ 
+  isOpen = false, 
+  hero = null, 
+  onClose = () => {} 
+}) {
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
-  // Safe access for hero data and defaults
-  const heroData = hero?.hero;
-  const gold = hero?.gold ?? 0;
-  const inventory = hero?.inventory ?? [];
-  const equipment = hero?.equipment ?? [];
+  if (!isOpen || !hero) {
+    return null;
+  }
+
+  const heroData = hero.hero || {};
+  
+  // Fallback to portrait or miniature since 'immagine' is not in the Hero signature
+  const heroImage = heroData.portrait || heroData.miniature || '';
+  
+  // Fallback to classe since 'nome' is not in the Hero signature
+  const heroName = heroData.classe || 'Eroe Sconosciuto';
+  const heroClass = heroData.classe || 'Classe Sconosciuta';
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
-      onClick={onClose}
+      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
     >
       <div 
-        className="bg-gray-900 text-white rounded-lg shadow-2xl max-w-[500px] w-full p-6"
+        className="bg-gray-900 text-white rounded-lg shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Inventario</h2>
+        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+          <h2 className="text-xl font-bold">Inventario</h2>
           <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            onClick={handleClose}
+            className="text-gray-400 hover:text-white transition-colors text-xl leading-none"
             aria-label="Chiudi"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            ✕
           </button>
         </div>
 
-        {/* Hero Identity */}
-        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-700">
-          {heroData?.portrait ? (
-            <img 
-              src={`/img/personaggi/${heroData.portrait}`} 
-              alt={heroData.classe || 'Eroe'} 
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-gray-700 border-2 border-gray-600 flex items-center justify-center">
-              <span className="text-gray-400 text-xs">No Img</span>
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[80vh]">
+          {/* Hero Identity */}
+          <div className="flex items-center gap-4 mb-6">
+            {heroImage ? (
+              <img 
+                src={`/img/personaggi/${heroImage}`} 
+                alt={heroName} 
+                className="w-16 h-16 object-cover rounded-full border-2 border-gray-600 bg-gray-800"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
+                <span className="text-gray-500 text-xs">No Img</span>
+              </div>
+            )}
+            <div>
+              <h3 className="text-lg font-bold">{heroName}</h3>
+              <p className="text-sm text-gray-400">{heroClass}</p>
             </div>
-          )}
+          </div>
+
+          {/* Gold Balance */}
+          <div className="mb-6 bg-gray-800 p-3 rounded-lg border border-yellow-600/30">
+            <p className="text-yellow-500 font-semibold">
+              Monete d'Oro: <span className="text-white ml-2">{hero.gold != null ? hero.gold : 0}</span>
+            </p>
+          </div>
+
+          {/* Items Grid (Oggetti) */}
+          <div className="mb-6">
+            <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Oggetti</h4>
+            {hero.inventory && hero.inventory.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {hero.inventory.map((itemId, index) => (
+                  <div 
+                    key={`item-${itemId}-${index}`} 
+                    className="bg-gray-800 p-3 rounded border border-gray-700 flex flex-col items-center justify-center text-center"
+                  >
+                    {/* Registry not available in context, using placeholder as per ISL "ELSE" condition */}
+                    <span className="text-sm text-gray-400">Unknown Item</span>
+                    <span className="text-xs text-gray-600 mt-1">ID: {itemId}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Nessun oggetto nell'inventario.</p>
+            )}
+          </div>
+
+          {/* Equipment List (Equipaggiamento) */}
           <div>
-            <h3 className="text-xl font-semibold">{heroData?.classe || 'Eroe Sconosciuto'}</h3>
-            <p className="text-gray-400">{heroData?.classe || 'Classe Sconosciuta'}</p>
+            <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Equipaggiamento</h4>
+            {hero.equipment && hero.equipment.length > 0 ? (
+              <ul className="space-y-2">
+                {hero.equipment.map((equipId, index) => (
+                  <li 
+                    key={`equip-${equipId}-${index}`} 
+                    className="bg-gray-800 p-3 rounded border border-gray-700 flex justify-between items-center"
+                  >
+                    {/* Registry not available in context, using placeholder */}
+                    <span className="text-sm text-gray-300">Equipaggiamento Sconosciuto</span>
+                    <span className="text-xs text-gray-500">ID: {equipId}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Nessun equipaggiamento posseduto.</p>
+            )}
           </div>
         </div>
-
-        {/* Gold Balance */}
-        <div className="mb-6">
-          <p className="text-lg flex items-center gap-2">
-            <span>Monete d'Oro:</span>
-            <span className="text-yellow-400 font-bold">{gold}</span>
-          </p>
-        </div>
-
-        {/* Items Grid (Oggetti) */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-3 text-gray-300">Oggetti</h4>
-          {inventory.length > 0 ? (
-            <ul className="grid grid-cols-2 gap-3">
-              {inventory.map((itemId, index) => (
-                <li key={`item-${itemId}-${index}`} className="bg-gray-800 p-3 rounded border border-gray-700 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500">?</div>
-                  <span className="text-sm text-gray-300">Unknown Item (ID: {itemId})</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 italic text-sm">Nessun oggetto nell'inventario.</p>
-          )}
-        </div>
-
-        {/* Equipment List (Equipaggiamento) */}
-        <div>
-          <h4 className="text-lg font-semibold mb-3 text-gray-300">Equipaggiamento</h4>
-          {equipment.length > 0 ? (
-            <ul className="space-y-2">
-              {equipment.map((eqId, index) => (
-                <li key={`eq-${eqId}-${index}`} className="bg-gray-800 p-3 rounded border border-gray-700 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500">?</div>
-                  <span className="text-sm text-gray-300">Unknown Equipment (ID: {eqId})</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 italic text-sm">Nessun equipaggiamento posseduto.</p>
-          )}
-        </div>
-
       </div>
     </div>
   );

@@ -1,1 +1,1 @@
-export default function MainMenu(props: { onChangePageView?: (page: string) => void }): React.ReactElement;
+export default function MainMenu(props: { onChangePageView: (page: string) => void }): React.ReactElement;

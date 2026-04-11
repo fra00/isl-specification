@@ -26,10 +26,12 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
             const doorCoordKey = `${x},${y}`;
             let isVisible = false;
 
+            // Check Persisted Visibility
             if (openedDoors.includes(doorCoordKey)) {
                 isVisible = true;
             }
 
+            // Check Dynamic Visibility (Fog of War)
             if (!isVisible) {
                 const cellsToCheck = [{ x, y }];
                 
@@ -54,6 +56,7 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
                 }
             }
 
+            // Add to Render List
             if (isVisible) {
                 const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
                 result.push({ x, y, img });
@@ -61,7 +64,7 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
         }
 
         return result;
-    }, [gameSession, boardVisibilityMap]);
+    }, [gameSession?.currentMap, gameSession?.openedDoors, boardVisibilityMap]);
 
     return { visibleDoors };
 }

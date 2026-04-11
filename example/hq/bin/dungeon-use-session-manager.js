@@ -6,830 +6,627 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
-export function useDungeonSessionManager(config) {
-  const {
-    gameSession,
-    onUpdateSession,
-    onNotify,
-    fogOfWarLogic,
-    staticEquipment = [],
-    staticItems = [],
-  } = config;
+export function useDungeonSessionManager({
+  gameSession,
+  onUpdateSession,
+  onNotify,
+  fogOfWarLogic,
+  staticEquipment,
+  staticItems
+}) {
 
-  const commitSessionUpdate = useCallback(
-    (updater) => {
-      if (!onUpdateSession) return false;
-      onUpdateSession((previousSession) => {
-        const baseSession =
-          previousSession != null ? previousSession : gameSession;
-        if (baseSession == null) return previousSession;
-        return updater(baseSession);
-      });
-      return true;
-    },
-    [onUpdateSession, gameSession],
-  );
+  const commitSessionUpdate = useCallback((updater) => {
+    if (!onUpdateSession) return false;
+    onUpdateSession((previousSession) => {
+      const baseSession = previousSession != null ? previousSession : gameSession;
+      if (baseSession == null) return previousSession;
+      return updater(baseSession);
+    });
+    return true;
+  }, [onUpdateSession, gameSession]);
 
-  const initializeMission = useCallback(
-    (treasureDeck) => {
-      if (gameSession == null || gameSession.currentMap == null) return;
-      const placedHeroes = gameSession.heroes.map((heroState) => {
-        const spawnPoint = gameSession.currentMap.eroi_start.find(
-          (p) => p.id === heroState.heroId,
-        );
-        if (spawnPoint != null) {
-          return {
-            ...heroState,
-            x: spawnPoint.x,
-            y: spawnPoint.y,
-            isEscaped: false,
-          };
-        }
-        return heroState;
-      });
+  const initializeMission = useCallback((treasureDeck) => {
+    if (!gameSession || !gameSession.currentMap) return;
+    
+    const placedHeroes = (gameSession.heroes || []).map(heroState => {
+      const spawnPoint = gameSession.currentMap.eroi_start?.find(p => p.id === heroState.heroId);
+      if (spawnPoint) {
+        return {
+          ...heroState,
+          x: spawnPoint.x,
+          y: spawnPoint.y,
+          isEscaped: false
+        };
+      }
+      return heroState;
+    });
 
-      const updatedSession = {
-        ...gameSession,
-        heroes: placedHeroes,
-        treasureDeck: treasureDeck,
-      };
-      onUpdateSession(updatedSession);
-    },
-    [gameSession, onUpdateSession],
-  );
-
-  const confirmHeroOrder = useCallback(
-    (orderedHeroIds) => {
-      if (gameSession == null || gameSession.isHeroOrderConfirmed === true)
-        return;
-      const updatedHeroes = gameSession.heroes.map((hero) => {
-        const nextTurnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
-        if (nextTurnOrder > 0) {
-          return { ...hero, turnOrder: nextTurnOrder };
-        }
-        return hero;
-      });
-
-      const updatedSession = {
-        ...gameSession,
-        heroes: updatedHeroes,
-        isHeroOrderConfirmed: true,
-      };
-      fogOfWarLogic.revealInitialVisibility();
-      onUpdateSession(updatedSession);
-    },
-    [gameSession, onUpdateSession, fogOfWarLogic],
-  );
-
-  const clearLastAttack = useCallback(() => {
-    if (gameSession == null || gameSession.lastAttack == null) return;
     const updatedSession = {
       ...gameSession,
-      lastAttack: null,
+      heroes: placedHeroes,
+      treasureDeck: treasureDeck || []
     };
-    onUpdateSession(updatedSession);
+
+    onUpdateSession?.(updatedSession);
   }, [gameSession, onUpdateSession]);
 
-  const openPassage = useCallback(
-    (passageX, passageY, destinationX, destinationY, foundPassages) => {
-      if (gameSession == null || gameSession.currentMap == null) return false;
-      const coordKey = passageX + "," + passageY;
-      const isKnownDoor = gameSession.currentMap.porte.some(
-        (p) => p.x === passageX && p.y === passageY,
-      );
-      const isKnownPassage = foundPassages.some(
-        (p) => p.x === passageX && p.y === passageY,
-      );
+  const confirmHeroOrder = useCallback((orderedHeroIds) => {
+    if (!gameSession || gameSession.isHeroOrderConfirmed) return;
 
-      if (isKnownDoor === false && isKnownPassage === false) return false;
-      if (gameSession.openedDoors.includes(coordKey)) return false;
-
-      try {
-        fogOfWarLogic.revealFromPoint(destinationX, destinationY);
-        const updatedSession = {
-          ...gameSession,
-          openedDoors: [...gameSession.openedDoors, coordKey],
-        };
-        onNotify("Porta aperta.");
-        onUpdateSession(updatedSession);
-        return true;
-      } catch (e) {
-        console.error(
-          "Errore durante l'apertura della porta o rivelazione nebbia.",
-          e,
-        );
-        return false;
+    const updatedHeroes = (gameSession.heroes || []).map(hero => {
+      const nextTurnOrder = orderedHeroIds.indexOf(hero.heroId) + 1;
+      if (nextTurnOrder > 0) {
+        return { ...hero, turnOrder: nextTurnOrder };
       }
-    },
-    [gameSession, onUpdateSession, onNotify, fogOfWarLogic],
-  );
+      return hero;
+    });
 
-  const toggleEquipItem = useCallback(
-    (heroId, itemId, staticEquipment) => {
-      if (gameSession == null || gameSession.heroes == null) return false;
-      const hero = gameSession.heroes.find((h) => h.heroId === heroId);
-      const item = staticEquipment.find((i) => i.id === itemId);
+    const updatedSession = {
+      ...gameSession,
+      heroes: updatedHeroes,
+      isHeroOrderConfirmed: true
+    };
 
-      if (hero == null) return false;
-      if (item == null) {
-        onNotify("Oggetto non trovato.");
-        return false;
-      }
+    fogOfWarLogic?.revealInitialVisibility();
+    onUpdateSession?.(updatedSession);
+  }, [gameSession, fogOfWarLogic, onUpdateSession]);
 
-      let updatedEquipped = [...hero.equipped];
+  const clearLastAttack = useCallback(() => {
+    if (!gameSession || !gameSession.lastAttack) return;
+    const updatedSession = {
+      ...gameSession,
+      lastAttack: null
+    };
+    onUpdateSession?.(updatedSession);
+  }, [gameSession, onUpdateSession]);
 
-      if (updatedEquipped.includes(itemId)) {
-        updatedEquipped = updatedEquipped.filter((id) => id !== itemId);
-      } else {
-        if (item.solopsg === true && item.solopsgid !== hero.heroId) {
-          onNotify("La tua classe non può equipaggiare questo oggetto.");
-          return false;
-        }
-        if (item.nopsg === true && item.nopsgid === hero.heroId) {
-          onNotify("La tua classe non può equipaggiare questo oggetto.");
-          return false;
-        }
-        if (item.noogg > 0) {
-          updatedEquipped = updatedEquipped.filter((id) => id !== item.noogg);
-        }
+  const openPassage = useCallback((passageX, passageY, destinationX, destinationY, foundPassages) => {
+    if (!gameSession || !gameSession.currentMap) return false;
+    
+    const coordKey = `${passageX},${passageY}`;
+    const isKnownDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
+    const isKnownPassage = foundPassages?.some(p => p.x === passageX && p.y === passageY);
 
-        const equippedToRemove = [];
-        for (const equippedId of updatedEquipped) {
-          const equippedItem = staticEquipment.find((i) => i.id === equippedId);
-          if (equippedItem != null && equippedItem.noogg === itemId) {
-            equippedToRemove.push(equippedId);
-            onNotify(
-              "Hai rimosso " + equippedItem.nome + " perché incompatibile.",
-            );
-          }
-        }
-        updatedEquipped = updatedEquipped.filter(
-          (id) => !equippedToRemove.includes(id),
-        );
-        updatedEquipped.push(itemId);
-      }
+    if (!isKnownDoor && !isKnownPassage) return false;
+    if (gameSession.openedDoors?.includes(coordKey)) return false;
 
-      const updatedHeroes = [...gameSession.heroes];
-      const heroIndex = updatedHeroes.findIndex((h) => h.heroId === heroId);
-      if (heroIndex >= 0) {
-        updatedHeroes[heroIndex] = { ...hero, equipped: updatedEquipped };
-      }
-
+    try {
+      fogOfWarLogic?.revealFromPoint(destinationX, destinationY);
       const updatedSession = {
         ...gameSession,
-        heroes: updatedHeroes,
+        openedDoors: [...(gameSession.openedDoors || []), coordKey]
       };
-      onUpdateSession(updatedSession);
+      onNotify?.("Porta aperta.");
+      onUpdateSession?.(updatedSession);
       return true;
-    },
-    [gameSession, onUpdateSession, onNotify],
-  );
+    } catch (error) {
+      console.error("Errore durante l'apertura della porta o rivelazione nebbia.", error);
+      return false;
+    }
+  }, [gameSession, fogOfWarLogic, onNotify, onUpdateSession]);
 
-  const useItem = useCallback(
-    (heroId, itemId, staticItems, targetMonsterId) => {
-      if (gameSession == null || gameSession.heroes == null) return false;
-      const hero = gameSession.heroes.find((h) => h.heroId === heroId);
-      const itemDef = staticItems.find((i) => i.id === itemId);
+  const toggleEquipItem = useCallback((heroId, itemId, staticEquipmentList) => {
+    if (!gameSession || !gameSession.heroes) return false;
+    
+    const hero = gameSession.heroes.find(h => h.heroId === heroId);
+    const item = staticEquipmentList?.find(i => i.id === itemId);
 
-      if (hero == null || itemDef == null) return false;
-
-      const itemIndex = hero.inventory.indexOf(itemId);
-      if (itemIndex < 0) return false;
-
-      const updatedHero = { ...hero };
-      const updatedMonsters = [...(gameSession.monsters || [])];
-
-      if (itemDef.hp !== 0) {
-        updatedHero.currentBody += itemDef.hp;
-        if (updatedHero.currentBody > updatedHero.hero.corpo) {
-          updatedHero.currentBody = updatedHero.hero.corpo;
-        }
-      }
-      if (itemDef.mp !== 0) {
-        updatedHero.currentMind += itemDef.mp;
-        if (updatedHero.currentMind > updatedHero.hero.mente) {
-          updatedHero.currentMind = updatedHero.hero.mente;
-        }
-      }
-
-      if (itemDef.acqua === true) {
-        if (targetMonsterId != null) {
-          const targetMonsterIndex = updatedMonsters.findIndex(
-            (m) => m.id === targetMonsterId,
-          );
-          if (targetMonsterIndex >= 0) {
-            const targetMonster = updatedMonsters[targetMonsterIndex];
-            if (targetMonster.monster.nonmorto === true) {
-              const newMonster = {
-                ...targetMonster,
-                currentBody: targetMonster.currentBody - itemDef.danni,
-              };
-              onNotify(
-                "L'Acqua Santa purifica il non-morto infliggendo " +
-                  itemDef.danni +
-                  " danni!",
-              );
-              if (newMonster.currentBody <= 0) {
-                updatedMonsters.splice(targetMonsterIndex, 1);
-              } else {
-                updatedMonsters[targetMonsterIndex] = newMonster;
-              }
-            } else {
-              onNotify("L'Acqua Santa non ha effetto su questa creatura.");
-            }
-          } else {
-            onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-          }
-        } else {
-          onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
-        }
-      }
-
-      const newInventory = [...updatedHero.inventory];
-      newInventory.splice(itemIndex, 1);
-      updatedHero.inventory = newInventory;
-
-      onNotify("Hai usato " + itemDef.nome + "!");
-
-      const updatedHeroes = [...gameSession.heroes];
-      const heroIndexToUpdate = updatedHeroes.findIndex(
-        (h) => h.heroId === heroId,
-      );
-      if (heroIndexToUpdate >= 0) {
-        updatedHeroes[heroIndexToUpdate] = updatedHero;
-      }
-
-      const updatedSession = {
-        ...gameSession,
-        heroes: updatedHeroes,
-        monsters: updatedMonsters,
-      };
-      onUpdateSession(updatedSession);
-      return true;
-    },
-    [gameSession, onUpdateSession, onNotify],
-  );
-
-  const collectTreasureAtCell = useCallback(
-    (heroId, treasureX, treasureY) => {
-      if (onUpdateSession == null) {
-        return false;
-      }
-
-      commitSessionUpdate((currentSession) => {
-        if (currentSession == null || currentSession.currentMap == null)
-          return currentSession;
-        const hero = currentSession.heroes.find((h) => h.heroId === heroId);
-        const mapCellIndex = currentSession.currentMap.grid.findIndex(
-          (c) => c.x === treasureX && c.y === treasureY,
-        );
-        const mapCell =
-          mapCellIndex >= 0
-            ? currentSession.currentMap.grid[mapCellIndex]
-            : null;
-
-        if (hero == null || mapCell == null || mapCell.tes == null)
-          return currentSession;
-
-        const treasure = mapCell.tes;
-        if (
-          treasure.mon <= 0 &&
-          treasure.ogg <= 0 &&
-          treasure.arma <= 0 &&
-          treasure.trp <= 0
-        )
-          return currentSession;
-
-        const updatedHero = { ...hero };
-        const notificationParts = [];
-        const foundItem =
-          treasure.ogg > 0
-            ? staticItems.find((item) => item.id === treasure.ogg)
-            : null;
-        const foundWeapon =
-          treasure.arma > 0
-            ? staticEquipment.find((item) => item.id === treasure.arma)
-            : null;
-
-        if (treasure.mon > 0) {
-          updatedHero.gold += treasure.mon;
-          notificationParts.push(
-            "Hai trovato " + treasure.mon + " monete d'oro!",
-          );
-        }
-        if (treasure.ogg > 0) {
-          updatedHero.inventory = [...updatedHero.inventory, treasure.ogg];
-          notificationParts.push(
-            "Hai trovato l'oggetto: " +
-              (foundItem?.nome || "ID " + treasure.ogg) +
-              "!",
-          );
-        }
-        if (treasure.arma > 0) {
-          updatedHero.equipment = [...updatedHero.equipment, treasure.arma];
-          notificationParts.push(
-            "Hai trovato l'arma: " +
-              (foundWeapon?.nome || "ID " + treasure.arma) +
-              "!",
-          );
-        }
-        if (treasure.trp > 0) {
-          updatedHero.currentBody -= treasure.trp;
-          notificationParts.push(
-            "È una trappola! Subisci " + treasure.trp + " danni.",
-          );
-        }
-
-        const updatedHeroes = [...currentSession.heroes];
-        const heroIndexToUpdate = updatedHeroes.findIndex(
-          (h) => h.heroId === heroId,
-        );
-        if (heroIndexToUpdate < 0) return currentSession;
-        updatedHeroes[heroIndexToUpdate] = updatedHero;
-
-        const updatedGrid = [...currentSession.currentMap.grid];
-        updatedGrid[mapCellIndex] = {
-          ...mapCell,
-          tes: { ...treasure, mon: 0, ogg: 0, arma: 0, trp: 0 },
-        };
-
-        const updatedMap = {
-          ...currentSession.currentMap,
-          grid: updatedGrid,
-        };
-
-        if (notificationParts.length > 0) {
-          onNotify(notificationParts.join("\n"));
-        }
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-          currentMap: updatedMap,
-        };
-      });
-
-      return true;
-    },
-    [
-      gameSession,
-      onUpdateSession,
-      onNotify,
-      commitSessionUpdate,
-      staticEquipment,
-      staticItems,
-    ],
-  );
-
-  const drawTreasureCard = useCallback(() => {
-    if (
-      gameSession == null ||
-      gameSession.treasureDeck == null ||
-      gameSession.treasureDeck.length === 0
-    ) {
-      return null;
+    if (!hero) return false;
+    if (!item) {
+      onNotify?.("Oggetto non trovato.");
+      return false;
     }
 
-    const drawnCard = gameSession.treasureDeck[0];
+    let updatedEquipped = [...(hero.equipped || [])];
 
-    commitSessionUpdate((currentSession) => {
-      if (
-        currentSession == null ||
-        currentSession.treasureDeck == null ||
-        currentSession.treasureDeck.length === 0
-      ) {
-        return currentSession;
+    if (updatedEquipped.includes(itemId)) {
+      updatedEquipped = updatedEquipped.filter(id => id !== itemId);
+    } else {
+      if (item.solopsg && item.solopsgid !== hero.heroId) {
+        onNotify?.("La tua classe non può equipaggiare questo oggetto.");
+        return false;
+      }
+      if (item.nopsg && item.nopsgid === hero.heroId) {
+        onNotify?.("La tua classe non può equipaggiare questo oggetto.");
+        return false;
+      }
+      if (item.noogg > 0) {
+        updatedEquipped = updatedEquipped.filter(id => id !== item.noogg);
+      }
+      
+      const itemsToRemove = [];
+      for (const equippedId of updatedEquipped) {
+        const equippedItem = staticEquipmentList?.find(i => i.id === equippedId);
+        if (equippedItem && equippedItem.noogg === itemId) {
+          itemsToRemove.push(equippedId);
+          onNotify?.(`Hai rimosso ${equippedItem.nome} perché incompatibile.`);
+        }
+      }
+      updatedEquipped = updatedEquipped.filter(id => !itemsToRemove.includes(id));
+      
+      updatedEquipped.push(itemId);
+    }
+
+    const updatedHeroes = gameSession.heroes.map(h => 
+      h.heroId === heroId ? { ...h, equipped: updatedEquipped } : h
+    );
+
+    const updatedSession = {
+      ...gameSession,
+      heroes: updatedHeroes
+    };
+
+    onUpdateSession?.(updatedSession);
+    return true;
+  }, [gameSession, onNotify, onUpdateSession]);
+
+  const useItem = useCallback((heroId, itemId, staticItemsList, targetMonsterId) => {
+    if (!gameSession || !gameSession.heroes) return false;
+
+    const hero = gameSession.heroes.find(h => h.heroId === heroId);
+    const itemDef = staticItemsList?.find(i => i.id === itemId);
+
+    if (!hero || !itemDef) return false;
+
+    const itemIndex = (hero.inventory || []).indexOf(itemId);
+    if (itemIndex < 0) return false;
+
+    const updatedHero = { ...hero };
+    let updatedMonsters = [...(gameSession.monsters || [])];
+
+    if (itemDef.hp !== 0) {
+      updatedHero.currentBody = Math.min((updatedHero.currentBody || 0) + itemDef.hp, updatedHero.hero?.corpo || 0);
+    }
+    if (itemDef.mp !== 0) {
+      updatedHero.currentMind = Math.min((updatedHero.currentMind || 0) + itemDef.mp, updatedHero.hero?.mente || 0);
+    }
+
+    if (itemDef.acqua) {
+      if (targetMonsterId != null) {
+        const targetMonsterIndex = updatedMonsters.findIndex(m => m.id === targetMonsterId);
+        if (targetMonsterIndex >= 0) {
+          const targetMonster = updatedMonsters[targetMonsterIndex];
+          if (targetMonster.monster?.nonmorto) {
+            const newBody = (targetMonster.currentBody || 0) - (itemDef.danni || 0);
+            onNotify?.(`L'Acqua Santa purifica il non-morto infliggendo ${itemDef.danni} danni!`);
+            if (newBody <= 0) {
+              updatedMonsters = updatedMonsters.filter(m => m.id !== targetMonsterId);
+            } else {
+              updatedMonsters[targetMonsterIndex] = { ...targetMonster, currentBody: newBody };
+            }
+          } else {
+            onNotify?.("L'Acqua Santa non ha effetto su questa creatura.");
+          }
+        } else {
+          onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
+        }
+      } else {
+        onNotify?.("Hai usato l'Acqua Santa, ma non hai colpito nulla!");
+      }
+    }
+
+    const newInventory = [...(updatedHero.inventory || [])];
+    newInventory.splice(itemIndex, 1);
+    updatedHero.inventory = newInventory;
+
+    onNotify?.(`Hai usato ${itemDef.nome}!`);
+
+    const updatedHeroes = gameSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+
+    const updatedSession = {
+      ...gameSession,
+      heroes: updatedHeroes,
+      monsters: updatedMonsters
+    };
+
+    onUpdateSession?.(updatedSession);
+    return true;
+  }, [gameSession, onNotify, onUpdateSession]);
+
+  const collectTreasureAtCell = useCallback((heroId, treasureX, treasureY) => {
+    if (!onUpdateSession) return false;
+
+    commitSessionUpdate((providedSession) => {
+      if (!providedSession || !providedSession.currentMap) return providedSession;
+
+      const hero = providedSession.heroes?.find(h => h.heroId === heroId);
+      const mapCell = providedSession.currentMap.grid?.find(c => c.x === treasureX && c.y === treasureY);
+
+      if (!hero || !mapCell || !mapCell.tes) return providedSession;
+
+      const treasure = mapCell.tes;
+      if ((treasure.mon || 0) <= 0 && (treasure.ogg || 0) <= 0 && (treasure.arma || 0) <= 0 && (treasure.trp || 0) <= 0) {
+        return providedSession;
+      }
+
+      const updatedHero = { ...hero };
+      const notificationParts = [];
+
+      const foundItem = treasure.ogg > 0 ? staticItems?.find(i => i.id === treasure.ogg) : null;
+      const foundWeapon = treasure.arma > 0 ? staticEquipment?.find(e => e.id === treasure.arma) : null;
+
+      if (treasure.mon > 0) {
+        updatedHero.gold = (updatedHero.gold || 0) + treasure.mon;
+        notificationParts.push(`Hai trovato ${treasure.mon} monete d'oro!`);
+      }
+      if (treasure.ogg > 0) {
+        updatedHero.inventory = [...(updatedHero.inventory || []), treasure.ogg];
+        notificationParts.push(`Hai trovato l'oggetto: ${foundItem?.nome || `ID ${treasure.ogg}`}!`);
+      }
+      if (treasure.arma > 0) {
+        updatedHero.equipment = [...(updatedHero.equipment || []), treasure.arma];
+        notificationParts.push(`Hai trovato l'arma: ${foundWeapon?.nome || `ID ${treasure.arma}`}!`);
+      }
+      if (treasure.trp > 0) {
+        updatedHero.currentBody = (updatedHero.currentBody || 0) - treasure.trp;
+        notificationParts.push(`È una trappola! Subisci ${treasure.trp} danni.`);
+      }
+
+      const updatedHeroes = providedSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+      
+      const updatedGrid = providedSession.currentMap.grid.map(c => {
+        if (c.x === treasureX && c.y === treasureY) {
+          return {
+            ...c,
+            tes: { ...c.tes, mon: 0, ogg: 0, arma: 0, trp: 0 }
+          };
+        }
+        return c;
+      });
+
+      const updatedMap = {
+        ...providedSession.currentMap,
+        grid: updatedGrid
+      };
+
+      if (notificationParts.length > 0) {
+        onNotify?.(notificationParts.join("\n"));
       }
 
       return {
-        ...currentSession,
-        treasureDeck: currentSession.treasureDeck.slice(1),
+        ...providedSession,
+        heroes: updatedHeroes,
+        currentMap: updatedMap
+      };
+    });
+
+    return true;
+  }, [onUpdateSession, commitSessionUpdate, staticItems, staticEquipment, onNotify]);
+
+  const drawTreasureCard = useCallback(() => {
+    if (!gameSession || !gameSession.treasureDeck || gameSession.treasureDeck.length === 0) return null;
+    
+    const drawnCard = gameSession.treasureDeck[0];
+
+    commitSessionUpdate((providedSession) => {
+      if (!providedSession || !providedSession.treasureDeck || providedSession.treasureDeck.length === 0) {
+        return providedSession;
+      }
+      return {
+        ...providedSession,
+        treasureDeck: providedSession.treasureDeck.slice(1)
       };
     });
 
     return drawnCard;
   }, [gameSession, commitSessionUpdate]);
 
-  const applyTreasureCardEffect = useCallback(
-    (heroId, card, onWanderingMonster) => {
-      if (card == null || gameSession == null || onUpdateSession == null)
-        return false;
+  const applyTreasureCardEffect = useCallback((heroId, card, onWanderingMonster) => {
+    if (!card || !gameSession || !onUpdateSession) return false;
 
-      const currentHero = gameSession.heroes?.find((h) => h.heroId === heroId);
-      if (currentHero == null) return false;
+    const hero = gameSession.heroes?.find(h => h.heroId === heroId);
+    if (!hero) return false;
 
-      const wanderingMonsterCoords =
-        card.azione === "mostro_errante"
-          ? { x: currentHero.x, y: currentHero.y }
-          : null;
+    let wanderingMonsterCoords = null;
+    if (card.azione === "mostro_errante") {
+      wanderingMonsterCoords = { x: hero.x, y: hero.y };
+    }
 
-      commitSessionUpdate((currentSession) => {
-        if (currentSession == null) return currentSession;
-        const hero = currentSession.heroes.find((h) => h.heroId === heroId);
-        if (hero == null) return currentSession;
+    commitSessionUpdate((providedSession) => {
+      if (!providedSession) return providedSession;
+      
+      const currentHero = providedSession.heroes?.find(h => h.heroId === heroId);
+      if (!currentHero) return providedSession;
 
-        const updatedHero = { ...hero };
+      const updatedHero = { ...currentHero };
 
-        switch (card.azione) {
-          case "aggiungi_oro":
-            updatedHero.gold += card.valore;
-            onNotify("Hai trovato " + card.valore + " monete d'oro!");
-            break;
-          case "aggiungi_oggetto":
-            updatedHero.inventory = [...updatedHero.inventory, card.valore];
-            onNotify("Hai trovato un oggetto: " + card.valore);
-            break;
-          case "modifica_hp":
-            updatedHero.currentBody += card.valore;
-            onNotify("Punti Corpo modificati!");
-            break;
-          case "trappola_e_fine":
-            updatedHero.currentBody += card.valore;
-            onNotify("Trappola! Subisci danni.");
-            break;
-          case "mostro_errante":
-            return currentSession;
-          default:
-            return currentSession;
-        }
-
-        const updatedHeroes = [...currentSession.heroes];
-        const heroIndexToUpdate = updatedHeroes.findIndex(
-          (h) => h.heroId === heroId,
-        );
-        if (heroIndexToUpdate < 0) return currentSession;
-
-        updatedHeroes[heroIndexToUpdate] = updatedHero;
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-        };
-      });
-
-      if (wanderingMonsterCoords != null) {
-        onWanderingMonster(wanderingMonsterCoords.x, wanderingMonsterCoords.y);
+      switch (card.azione) {
+        case "aggiungi_oro":
+          updatedHero.gold = (updatedHero.gold || 0) + (card.valore || 0);
+          onNotify?.(`Hai trovato ${card.valore} monete d'oro!`);
+          break;
+        case "aggiungi_oggetto":
+          updatedHero.inventory = [...(updatedHero.inventory || []), card.valore];
+          onNotify?.(`Hai trovato un oggetto: ${card.valore}`);
+          break;
+        case "modifica_hp":
+          updatedHero.currentBody = (updatedHero.currentBody || 0) + (card.valore || 0);
+          onNotify?.("Punti Corpo modificati!");
+          break;
+        case "trappola_e_fine":
+          updatedHero.currentBody = (updatedHero.currentBody || 0) + (card.valore || 0);
+          onNotify?.("Trappola! Subisci danni.");
+          break;
+        case "mostro_errante":
+          wanderingMonsterCoords = { x: updatedHero.x, y: updatedHero.y };
+          return providedSession;
+        default:
+          break;
       }
 
-      return true;
-    },
-    [gameSession, onUpdateSession, commitSessionUpdate, onNotify],
-  );
+      const updatedHeroes = providedSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
 
-  const updateMonsterState = useCallback(
-    (monsterId, nextX, nextY, statusesToRemove) => {
-      return commitSessionUpdate((currentSession) => {
-        const monsterIndex = currentSession.monsters.findIndex(
-          (m) => m.id === monsterId,
-        );
-        if (monsterIndex < 0) return currentSession;
-        const monster = currentSession.monsters[monsterIndex];
+      return {
+        ...providedSession,
+        heroes: updatedHeroes
+      };
+    });
 
-        if (nextX != null && nextY != null) {
-          const otherMonster = currentSession.monsters.find(
-            (m) => m.id !== monsterId && m.x === nextX && m.y === nextY,
-          );
-          if (otherMonster != null) return currentSession;
-        }
+    if (wanderingMonsterCoords) {
+      onWanderingMonster?.(wanderingMonsterCoords.x, wanderingMonsterCoords.y);
+    }
 
-        const updatedMonster = { ...monster };
-        if (nextX != null) updatedMonster.x = nextX;
-        if (nextY != null) updatedMonster.y = nextY;
+    return true;
+  }, [gameSession, onUpdateSession, commitSessionUpdate, onNotify]);
 
-        if (statusesToRemove != null && statusesToRemove.length > 0) {
-          updatedMonster.activeStatus = updatedMonster.activeStatus.filter(
-            (s) => !statusesToRemove.includes(s),
-          );
-        }
+  const updateMonsterState = useCallback((monsterId, nextX, nextY, statusesToRemove) => {
+    commitSessionUpdate((providedSession) => {
+      const monster = providedSession.monsters?.find(m => m.id === monsterId);
+      if (!monster) return providedSession;
 
-        const updatedMonsters = [...currentSession.monsters];
-        updatedMonsters[monsterIndex] = updatedMonster;
+      if (nextX != null && nextY != null) {
+        const collision = providedSession.monsters?.some(m => m.id !== monsterId && m.x === nextX && m.y === nextY && (m.currentBody || 0) > 0);
+        if (collision) return providedSession;
+      }
 
-        return {
-          ...currentSession,
-          monsters: updatedMonsters,
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
+      const updatedMonster = { ...monster };
+      if (nextX != null) updatedMonster.x = nextX;
+      if (nextY != null) updatedMonster.y = nextY;
 
-  const resolveMonsterAttack = useCallback(
-    (monsterId, heroId, combatResult) => {
-      return commitSessionUpdate((currentSession) => {
-        const monster = currentSession.monsters.find((m) => m.id === monsterId);
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.heroId === heroId,
-        );
+      if (statusesToRemove && statusesToRemove.length > 0) {
+        updatedMonster.activeStatus = (updatedMonster.activeStatus || []).filter(s => !statusesToRemove.includes(s));
+      }
 
-        if (monster == null || heroIndex < 0) return currentSession;
-        const hero = currentSession.heroes[heroIndex];
+      const updatedMonsters = providedSession.monsters.map(m => m.id === monsterId ? updatedMonster : m);
 
-        const updatedHero = { ...hero };
-        updatedHero.currentBody -= combatResult.damageDealt;
+      return {
+        ...providedSession,
+        monsters: updatedMonsters
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
 
-        if (
-          combatResult.damageDealt > 0 &&
-          updatedHero.activeStatus.includes("RockSkin")
-        ) {
-          updatedHero.activeStatus = updatedHero.activeStatus.filter(
-            (s) => s !== "RockSkin",
-          );
-        }
+  const resolveMonsterAttack = useCallback((monsterId, heroId, combatResult) => {
+    commitSessionUpdate((providedSession) => {
+      const monster = providedSession.monsters?.find(m => m.id === monsterId);
+      const hero = providedSession.heroes?.find(h => h.heroId === heroId);
 
-        const updatedHeroes = [...currentSession.heroes];
-        updatedHeroes[heroIndex] = updatedHero;
+      if (!monster || !hero) return providedSession;
 
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-          lastAttack: {
-            hero: updatedHero,
-            monster: monster,
-            combatResult: combatResult,
-          },
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
+      const updatedHero = { ...hero };
+      updatedHero.currentBody = (updatedHero.currentBody || 0) - (combatResult?.damageDealt || 0);
+
+      if ((combatResult?.damageDealt || 0) > 0 && updatedHero.activeStatus?.includes("RockSkin")) {
+        updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
+      }
+
+      const updatedHeroes = providedSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
+
+      return {
+        ...providedSession,
+        heroes: updatedHeroes,
+        lastAttack: { hero: updatedHero, monster, combatResult }
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
 
   const startNextHeroRound = useCallback(() => {
-    return commitSessionUpdate((currentSession) => {
-      const updatedHeroes = currentSession.heroes.map((hero) => ({
+    commitSessionUpdate((providedSession) => {
+      const updatedHeroes = (providedSession.heroes || []).map(hero => ({
         ...hero,
         turnPhase: {
-          ...hero.turnPhase,
+          ...(hero.turnPhase || {}),
           HasMoved: false,
           HasPerformedAction: false,
-          IsTurnFinished: false,
-        },
+          IsTurnFinished: false
+        }
       }));
 
       return {
-        ...currentSession,
+        ...providedSession,
         currentTurn: 1,
-        heroes: updatedHeroes,
+        heroes: updatedHeroes
       };
     });
   }, [commitSessionUpdate]);
 
-  const clearHeroStatusEverywhere = useCallback(
-    (statusName) => {
-      return commitSessionUpdate((currentSession) => {
-        let didChange = false;
-        const updatedHeroes = currentSession.heroes.map((hero) => {
-          if (hero.activeStatus && hero.activeStatus.includes(statusName)) {
-            didChange = true;
-            return {
-              ...hero,
-              activeStatus: hero.activeStatus.filter((s) => s !== statusName),
-            };
-          }
-          return hero;
-        });
-
-        if (didChange === false) return currentSession;
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
-
-  const moveCurrentHeroTo = useCallback(
-    (nextX, nextY) => {
-      return commitSessionUpdate((currentSession) => {
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.turnOrder === currentSession.currentTurn,
-        );
-        if (heroIndex < 0) return currentSession;
-
-        const hero = currentSession.heroes[heroIndex];
-        const updatedHero = { ...hero, x: nextX, y: nextY };
-
-        const updatedHeroes = [...currentSession.heroes];
-        updatedHeroes[heroIndex] = updatedHero;
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
-
-  const clearCurrentHeroStatus = useCallback(
-    (statusName) => {
-      return commitSessionUpdate((currentSession) => {
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.turnOrder === currentSession.currentTurn,
-        );
-        if (heroIndex < 0) return currentSession;
-
-        const hero = currentSession.heroes[heroIndex];
-        if (
-          hero.activeStatus == null ||
-          !hero.activeStatus.includes(statusName)
-        )
-          return currentSession;
-
-        const updatedHero = {
-          ...hero,
-          activeStatus: hero.activeStatus.filter((s) => s !== statusName),
-        };
-
-        const updatedHeroes = [...currentSession.heroes];
-        updatedHeroes[heroIndex] = updatedHero;
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
-
-  const resolveMovementTrap = useCallback(
-    (nextX, nextY, trapType, rockFallX, rockFallY) => {
-      return commitSessionUpdate((currentSession) => {
-        if (currentSession.currentMap == null) return currentSession;
-
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.turnOrder === currentSession.currentTurn,
-        );
-        if (heroIndex < 0) return currentSession;
-
-        const hero = currentSession.heroes[heroIndex];
-        const updatedHero = { ...hero, x: nextX, y: nextY };
-        updatedHero.currentBody -= 1;
-
-        if (
-          updatedHero.activeStatus &&
-          updatedHero.activeStatus.includes("RockSkin")
-        ) {
-          updatedHero.activeStatus = updatedHero.activeStatus.filter(
-            (s) => s !== "RockSkin",
-          );
+  const clearHeroStatusEverywhere = useCallback((statusName) => {
+    commitSessionUpdate((providedSession) => {
+      let didChange = false;
+      const updatedHeroes = (providedSession.heroes || []).map(hero => {
+        if (hero.activeStatus?.includes(statusName)) {
+          didChange = true;
+          return {
+            ...hero,
+            activeStatus: hero.activeStatus.filter(s => s !== statusName)
+          };
         }
-
-        const updatedHeroes = [...currentSession.heroes];
-        updatedHeroes[heroIndex] = updatedHero;
-
-        const updatedMap = { ...currentSession.currentMap };
-        const updatedGrid = [...currentSession.currentMap.grid];
-
-        if (trapType === 3 && rockFallX != null && rockFallY != null) {
-          const cellIndex = updatedGrid.findIndex(
-            (c) => c.x === rockFallX && c.y === rockFallY,
-          );
-          if (cellIndex >= 0) {
-            updatedGrid[cellIndex] = {
-              ...updatedGrid[cellIndex],
-              arnt: {
-                ...updatedGrid[cellIndex].arnt,
-                antroc: true,
-              },
-            };
-          }
-        }
-
-        updatedMap.grid = updatedGrid;
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-          currentMap: updatedMap,
-        };
+        return hero;
       });
-    },
-    [commitSessionUpdate],
-  );
+
+      if (!didChange) return providedSession;
+      return {
+        ...providedSession,
+        heroes: updatedHeroes
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
+
+  const moveCurrentHeroTo = useCallback((nextX, nextY) => {
+    commitSessionUpdate((providedSession) => {
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      if (!hero) return providedSession;
+
+      const updatedHero = { ...hero, x: nextX, y: nextY };
+      const updatedHeroes = providedSession.heroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
+
+      return {
+        ...providedSession,
+        heroes: updatedHeroes
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
+
+  const clearCurrentHeroStatus = useCallback((statusName) => {
+    commitSessionUpdate((providedSession) => {
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      if (!hero || !hero.activeStatus?.includes(statusName)) return providedSession;
+
+      const updatedHero = {
+        ...hero,
+        activeStatus: hero.activeStatus.filter(s => s !== statusName)
+      };
+      const updatedHeroes = providedSession.heroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
+
+      return {
+        ...providedSession,
+        heroes: updatedHeroes
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
+
+  const resolveMovementTrap = useCallback((nextX, nextY, trapType, rockFallX, rockFallY) => {
+    commitSessionUpdate((providedSession) => {
+      if (!providedSession.currentMap) return providedSession;
+
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      if (!hero) return providedSession;
+
+      const updatedHero = { ...hero, x: nextX, y: nextY };
+      updatedHero.currentBody = (updatedHero.currentBody || 0) - 1;
+
+      if (updatedHero.activeStatus?.includes("RockSkin")) {
+        updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
+      }
+
+      const updatedHeroes = providedSession.heroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
+
+      const updatedGrid = [...(providedSession.currentMap.grid || [])];
+      if (trapType === 3 && rockFallX != null && rockFallY != null) {
+        const cellIndex = updatedGrid.findIndex(c => c.x === rockFallX && c.y === rockFallY);
+        if (cellIndex >= 0) {
+          updatedGrid[cellIndex] = {
+            ...updatedGrid[cellIndex],
+            arnt: { ...(updatedGrid[cellIndex].arnt || {}), antroc: true }
+          };
+        }
+      }
+
+      const updatedMap = {
+        ...providedSession.currentMap,
+        grid: updatedGrid
+      };
+
+      return {
+        ...providedSession,
+        heroes: updatedHeroes,
+        currentMap: updatedMap
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
 
   const markCurrentHeroEscaped = useCallback(() => {
-    return commitSessionUpdate((currentSession) => {
-      const heroIndex = currentSession.heroes.findIndex(
-        (h) => h.turnOrder === currentSession.currentTurn,
-      );
-      if (heroIndex < 0) return currentSession;
+    commitSessionUpdate((providedSession) => {
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      if (!hero) return providedSession;
 
-      const hero = currentSession.heroes[heroIndex];
       const updatedHero = {
         ...hero,
         isEscaped: true,
         turnPhase: {
-          ...hero.turnPhase,
-          IsTurnFinished: true,
-        },
+          ...(hero.turnPhase || {}),
+          IsTurnFinished: true
+        }
       };
 
-      const updatedHeroes = [...currentSession.heroes];
-      updatedHeroes[heroIndex] = updatedHero;
+      const updatedHeroes = providedSession.heroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
 
       return {
-        ...currentSession,
-        heroes: updatedHeroes,
+        ...providedSession,
+        heroes: updatedHeroes
       };
     });
+    return true;
   }, [commitSessionUpdate]);
 
-  const resolveHeroAttack = useCallback(
-    (monsterId, combatResult, statusesToRemove, consumedWeaponId) => {
-      return commitSessionUpdate((currentSession) => {
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.turnOrder === currentSession.currentTurn,
-        );
-        const monsterIndex = currentSession.monsters.findIndex(
-          (m) => m.id === monsterId,
-        );
+  const resolveHeroAttack = useCallback((monsterId, combatResult, statusesToRemove, consumedWeaponId) => {
+    commitSessionUpdate((providedSession) => {
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      const monster = providedSession.monsters?.find(m => m.id === monsterId);
 
-        if (heroIndex < 0 || monsterIndex < 0) return currentSession;
+      if (!hero || !monster) return providedSession;
 
-        const hero = currentSession.heroes[heroIndex];
-        const monster = currentSession.monsters[monsterIndex];
+      const updatedHero = { ...hero };
+      if (consumedWeaponId != null) {
+        updatedHero.equipped = (updatedHero.equipped || []).filter(id => id !== consumedWeaponId);
+        updatedHero.equipment = (updatedHero.equipment || []).filter(id => id !== consumedWeaponId);
+      }
 
-        const updatedHero = { ...hero };
-        if (consumedWeaponId != null) {
-          updatedHero.equipped = updatedHero.equipped.filter(
-            (id) => id !== consumedWeaponId,
-          );
-          updatedHero.equipment = updatedHero.equipment.filter(
-            (id) => id !== consumedWeaponId,
-          );
-        }
+      const updatedMonster = { ...monster };
+      updatedMonster.currentBody = (updatedMonster.currentBody || 0) - (combatResult?.damageDealt || 0);
 
-        const updatedMonster = { ...monster };
-        updatedMonster.currentBody -= combatResult.damageDealt;
+      if (statusesToRemove && statusesToRemove.length > 0) {
+        updatedMonster.activeStatus = (updatedMonster.activeStatus || []).filter(s => !statusesToRemove.includes(s));
+      }
 
-        if (statusesToRemove != null && statusesToRemove.length > 0) {
-          updatedMonster.activeStatus = updatedMonster.activeStatus.filter(
-            (s) => !statusesToRemove.includes(s),
-          );
-        }
+      const updatedHeroes = providedSession.heroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
+      
+      let updatedMonsters = [...(providedSession.monsters || [])];
+      if (updatedMonster.currentBody <= 0) {
+        updatedMonsters = updatedMonsters.filter(m => m.id !== monsterId);
+      } else {
+        updatedMonsters = updatedMonsters.map(m => m.id === monsterId ? updatedMonster : m);
+      }
 
-        const updatedHeroes = [...currentSession.heroes];
-        updatedHeroes[heroIndex] = updatedHero;
+      return {
+        ...providedSession,
+        heroes: updatedHeroes,
+        monsters: updatedMonsters,
+        lastAttack: { hero: updatedHero, monster: updatedMonster, combatResult }
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
 
-        const updatedMonsters = [...currentSession.monsters];
-        if (updatedMonster.currentBody <= 0) {
-          updatedMonsters.splice(monsterIndex, 1);
-        } else {
-          updatedMonsters[monsterIndex] = updatedMonster;
-        }
+  const advanceTurn = useCallback((nextTurn, clearStatusName) => {
+    commitSessionUpdate((providedSession) => {
+      const hero = providedSession.heroes?.find(h => h.turnOrder === providedSession.currentTurn);
+      let updatedHeroes = [...(providedSession.heroes || [])];
 
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-          monsters: updatedMonsters,
-          lastAttack: {
-            hero: updatedHero,
-            monster: updatedMonster,
-            combatResult: combatResult,
-          },
+      if (hero && clearStatusName != null && hero.activeStatus?.includes(clearStatusName)) {
+        const updatedHero = {
+          ...hero,
+          activeStatus: hero.activeStatus.filter(s => s !== clearStatusName)
         };
-      });
-    },
-    [commitSessionUpdate],
-  );
+        updatedHeroes = updatedHeroes.map(h => h.turnOrder === providedSession.currentTurn ? updatedHero : h);
+      }
 
-  const advanceTurn = useCallback(
-    (nextTurn, clearStatusName) => {
-      return commitSessionUpdate((currentSession) => {
-        const heroIndex = currentSession.heroes.findIndex(
-          (h) => h.turnOrder === currentSession.currentTurn,
-        );
-        const updatedHeroes = [...currentSession.heroes];
-
-        if (heroIndex >= 0 && clearStatusName != null) {
-          const hero = currentSession.heroes[heroIndex];
-          if (
-            hero.activeStatus &&
-            hero.activeStatus.includes(clearStatusName)
-          ) {
-            updatedHeroes[heroIndex] = {
-              ...hero,
-              activeStatus: hero.activeStatus.filter(
-                (s) => s !== clearStatusName,
-              ),
-            };
-          }
-        }
-
-        return {
-          ...currentSession,
-          heroes: updatedHeroes,
-          currentTurn: nextTurn,
-        };
-      });
-    },
-    [commitSessionUpdate],
-  );
+      return {
+        ...providedSession,
+        heroes: updatedHeroes,
+        currentTurn: nextTurn
+      };
+    });
+    return true;
+  }, [commitSessionUpdate]);
 
   return {
     commitSessionUpdate,
@@ -851,6 +648,6 @@ export function useDungeonSessionManager(config) {
     resolveMovementTrap,
     markCurrentHeroEscaped,
     resolveHeroAttack,
-    advanceTurn,
+    advanceTurn
   };
 }

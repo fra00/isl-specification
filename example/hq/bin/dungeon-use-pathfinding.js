@@ -6,34 +6,21 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
-import { useDungeonMapQuery } from './dungeon-map-query';
-import { useDungeonMovementRules } from './dungeon-movement-rules';
+import { useCallback } from "react";
+import { useDungeonMapQuery } from "./dungeon-map-query";
+import { useDungeonMovementRules } from "./dungeon-movement-rules";
 
-export function usePathfinding(config) {
-    const { gameSession, visibilityMap, foundPassages = [] } = config || {};
-
+export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] }) {
     const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
-    const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
+    const movementRules = useDungeonMovementRules({ mapQuery });
 
     const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (startX == null || startY == null || targetX == null || targetY == null) {
-            return [];
-        }
-
         if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
             return [];
         }
 
         const queue = [{ x: startX, y: startY, path: [] }];
         const visited = new Set([`${startX},${startY}`]);
-
-        const directions = [
-            { dx: 0, dy: -1 }, // Up
-            { dx: 0, dy: 1 },  // Down
-            { dx: -1, dy: 0 }, // Left
-            { dx: 1, dy: 0 }   // Right
-        ];
 
         while (queue.length > 0) {
             const current = queue.shift();
@@ -46,24 +33,48 @@ export function usePathfinding(config) {
                 continue;
             }
 
-            for (let i = 0; i < directions.length; i++) {
-                const nx = current.x + directions[i].dx;
-                const ny = current.y + directions[i].dy;
-                const neighborKey = `${nx},${ny}`;
+            const neighbors = [
+                { x: current.x, y: current.y - 1 }, // Up
+                { x: current.x, y: current.y + 1 }, // Down
+                { x: current.x - 1, y: current.y }, // Left
+                { x: current.x + 1, y: current.y }  // Right
+            ];
 
-                if (!visited.has(neighborKey) && movementRules.isWalkable(current.x, current.y, nx, ny, excludeEntityId)) {
-                    visited.add(neighborKey);
-                    queue.push({
-                        x: nx,
-                        y: ny,
-                        path: [...current.path, { x: nx, y: ny }]
-                    });
+            for (const neighbor of neighbors) {
+                const neighborKey = `${neighbor.x},${neighbor.y}`;
+                
+                if (!visited.has(neighborKey)) {
+                    let canWalk = movementRules.isWalkable(current.x, current.y, neighbor.x, neighbor.y, excludeEntityId);
+
+                    // Passage Validation: Ensure Secret Passages are only walkable if they have been found
+                    if (canWalk) {
+                        const isSourceSP = mapQuery.isSecretPassage(current.x, current.y);
+                        const isTargetSP = mapQuery.isSecretPassage(neighbor.x, neighbor.y);
+
+                        if (isSourceSP || isTargetSP) {
+                            const isSourceFound = foundPassages?.some(p => p.x === current.x && p.y === current.y);
+                            const isTargetFound = foundPassages?.some(p => p.x === neighbor.x && p.y === neighbor.y);
+
+                            if ((isSourceSP && !isSourceFound) || (isTargetSP && !isTargetFound)) {
+                                canWalk = false;
+                            }
+                        }
+                    }
+
+                    if (canWalk) {
+                        visited.add(neighborKey);
+                        queue.push({
+                            x: neighbor.x,
+                            y: neighbor.y,
+                            path: [...current.path, { x: neighbor.x, y: neighbor.y }]
+                        });
+                    }
                 }
             }
         }
 
         return [];
-    }, [movementRules]);
+    }, [movementRules, mapQuery, foundPassages]);
 
     return {
         calculatePath

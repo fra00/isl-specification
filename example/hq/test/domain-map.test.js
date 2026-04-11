@@ -29,6 +29,7 @@ describe("domain-map", () => {
       tesoro_finale: { x: 0, y: 0 },
       oggetto_f: -1,
       arma_f: -1,
+      merr: 1,
       nfine: 0,
     });
     expect(
@@ -38,6 +39,7 @@ describe("domain-map", () => {
         tesoro_finale: { x: 4, y: 5 },
         oggetto_f: 9,
         arma_f: 12,
+        merr: 6,
         nfine: 2,
       }),
     ).toEqual({
@@ -46,6 +48,7 @@ describe("domain-map", () => {
       tesoro_finale: { x: 4, y: 5 },
       oggetto_f: 9,
       arma_f: 12,
+      merr: 6,
       nfine: 2,
     });
   });
@@ -85,6 +88,7 @@ describe("domain-map", () => {
         tesoro_finale: { x: 7, y: 8 },
         oggetto_f: 4,
         arma_f: 6,
+        merr: 3,
         nfine: 1,
       },
       grid: [
@@ -111,6 +115,7 @@ describe("domain-map", () => {
       tesoro_finale: { x: 7, y: 8 },
       oggetto_f: 4,
       arma_f: 6,
+      merr: 3,
       nfine: 1,
     });
     expect(map.grid[0]).toEqual({

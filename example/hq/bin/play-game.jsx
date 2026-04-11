@@ -6,236 +6,250 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
-import { GameSession, HeroState } from './domain-session';
-import { useCampaignManager } from './dungeon-use-campaign-manager';
+import React, { useState, useEffect, useCallback } from "react";
+import { PageNavigationEnum } from "./domain-core";
+import { useCampaignManager } from "./dungeon-use-campaign-manager";
 
 export default function PlayGame({
-    gameSession,
-    onChangePageView,
-    onUpdateSession,
-    campaign,
-    staticHeroes,
-    staticEquipment
+  gameSession,
+  onChangePageView,
+  onUpdateSession,
+  campaign,
+  staticHeroes,
+  staticEquipment
 }) {
-    const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
-    const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);
-    const [isInitialized, setIsInitialized] = useState(false);
-    
-    const { loadCampaign, saveCampaign } = useCampaignManager();
+  const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
+  const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);
+  const [isStarting, setIsStarting] = useState(false);
 
-    // Capability: initSession
-    useEffect(() => {
-        if (isInitialized || !staticHeroes || !staticEquipment) return;
+  const { loadCampaign, saveCampaign } = useCampaignManager();
 
-        const savedData = loadCampaign();
-        if (savedData != null) {
-            setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
-        } else {
-            const defaultHeroes = staticHeroes.map(hero => {
-                let targetId = null;
-                if (hero.classe === "Barbaro") targetId = 13;
-                else if (hero.classe === "Nano") targetId = 2;
-                else if (hero.classe === "Elfo") targetId = 12;
-                else if (hero.classe === "Mago") targetId = 4;
+  // initSession
+  useEffect(() => {
+    if (!staticHeroes || !staticEquipment) return;
 
-                const initialEquipment = (targetId !== null && staticEquipment.some(e => e.id === targetId))
-                    ? [targetId]
-                    : [];
+    const savedData = loadCampaign();
+    if (savedData) {
+      setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
+    } else {
+      const defaultHeroes = staticHeroes.map((hero) => {
+        let initialEquipmentIds = [];
+        if (hero.classe === "Barbaro") initialEquipmentIds = [13];
+        else if (hero.classe === "Nano") initialEquipmentIds = [2];
+        else if (hero.classe === "Elfo") initialEquipmentIds = [12];
+        else if (hero.classe === "Mago") initialEquipmentIds = [4];
 
-                return HeroState({
-                    heroId: hero.id,
-                    hero: hero,
-                    currentBody: hero.corpo,
-                    currentMind: hero.mente,
-                    gold: 0,
-                    inventory: [],
-                    equipment: initialEquipment,
-                    equipped: initialEquipment,
-                    availableSpells: [],
-                    activeStatus: [],
-                    turnOrder: 0,
-                    x: 0,
-                    y: 0,
-                    isEscaped: false
-                });
-            });
-            saveCampaign(defaultHeroes, 0);
-            setMaxUnlockedMissionIndex(0);
-        }
-        setIsInitialized(true);
-    }, [isInitialized, staticHeroes, staticEquipment, loadCampaign, saveCampaign]);
+        const validEquipment = staticEquipment
+          .filter((eq) => initialEquipmentIds.includes(eq.id))
+          .map((eq) => eq.id);
 
-    // Capability: syncFocusedMission
-    useEffect(() => {
-        if (!campaign?.missioni?.length) return;
-        if (focusedMissionIndex >= campaign.missioni.length) {
-            setFocusedMissionIndex(Math.max(0, Math.min(maxUnlockedMissionIndex, campaign.missioni.length - 1)));
-        }
-    }, [campaign, maxUnlockedMissionIndex, focusedMissionIndex]);
+        return {
+          heroId: hero.id,
+          turnOrder: 0,
+          currentBody: hero.corpo,
+          currentMind: hero.mente,
+          gold: 0,
+          inventory: [],
+          equipment: validEquipment,
+          equipped: validEquipment,
+          availableSpells: [],
+          activeStatus: [],
+          isEscaped: false,
+          x: 0,
+          y: 0,
+          hero: hero
+        };
+      });
 
-    // Capability: selectMission
-    const selectMission = useCallback(async (index) => {
-        const savedData = loadCampaign();
-        const maxAccessibleIndex = maxUnlockedMissionIndex;
-
-        if (index <= maxAccessibleIndex && savedData != null && campaign?.missioni) {
-            const mission = campaign.missioni[index];
-            if (!mission) return;
-
-            try {
-                const response = await fetch(`/jsonData/map/${mission.file}`);
-                if (!response.ok) throw new Error("Network response was not ok");
-                const mapData = await response.json();
-
-                const updatedSession = GameSession({
-                    campaignName: campaign.nome_campagna || "Campaign",
-                    currentMap: mapData,
-                    currentMissionIndex: index,
-                    heroes: savedData.heroes,
-                    monsters: [],
-                    openedDoors: [],
-                    spawnedLocations: [],
-                    currentTurn: 1,
-                    isHeroOrderConfirmed: false,
-                    lastAttack: null,
-                    treasureDeck: []
-                });
-
-                onUpdateSession(updatedSession);
-                onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-            } catch (error) {
-                console.error("Failed to load map data", error);
-            }
-        }
-    }, [loadCampaign, maxUnlockedMissionIndex, campaign, onUpdateSession, onChangePageView]);
-
-    // Capability: focusMission
-    const focusMission = useCallback((index) => {
-        setFocusedMissionIndex(index);
-    }, []);
-
-    // Capability: goBack
-    const goBack = useCallback(() => {
-        onChangePageView(PageNavigationEnum.MAIN_MENU);
-    }, [onChangePageView]);
-
-    if (!campaign || !staticHeroes || !isInitialized) {
-        return (
-            <div className="w-full h-full flex items-center justify-center bg-stone-900 text-amber-500 font-serif text-2xl">
-                Caricamento Archivio...
-            </div>
-        );
+      saveCampaign(defaultHeroes, 0);
+      setMaxUnlockedMissionIndex(0);
     }
+  }, [staticHeroes, staticEquipment, loadCampaign, saveCampaign]);
 
-    const focusedMission = campaign.missioni?.[focusedMissionIndex];
-    const isFocusedLocked = focusedMissionIndex > maxUnlockedMissionIndex;
-    const isFocusedCompleted = focusedMissionIndex < maxUnlockedMissionIndex;
+  // syncFocusedMission
+  useEffect(() => {
+    if (!campaign?.missioni?.length) return;
+    const maxValid = campaign.missioni.length - 1;
+    if (focusedMissionIndex > maxValid) {
+      setFocusedMissionIndex(Math.min(maxUnlockedMissionIndex, maxValid));
+    }
+  }, [campaign, maxUnlockedMissionIndex, focusedMissionIndex]);
 
+  // selectMission
+  const selectMission = useCallback(async (index) => {
+    const savedData = loadCampaign();
+    if (index <= maxUnlockedMissionIndex && savedData && campaign?.missioni) {
+      setIsStarting(true);
+      const missionFile = campaign.missioni[index].file;
+      
+      try {
+        const response = await fetch(`/jsonData/map/${missionFile}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load map: ${missionFile}`);
+        }
+        const mapData = await response.json();
+
+        const updatedSession = {
+          ...(gameSession || {}),
+          campaignName: campaign.nome_campagna,
+          currentMap: mapData,
+          currentMissionIndex: index,
+          heroes: savedData.heroes,
+          monsters: [],
+          openedDoors: [],
+          spawnedLocations: [],
+          currentTurn: 1,
+          isHeroOrderConfirmed: false,
+          lastAttack: null,
+          treasureDeck: []
+        };
+
+        onUpdateSession?.(updatedSession);
+        onChangePageView?.(PageNavigationEnum.DUNGEON_DESCRIPTION);
+      } catch (error) {
+        console.error("Error loading mission:", error);
+        setIsStarting(false);
+      }
+    }
+  }, [campaign, maxUnlockedMissionIndex, loadCampaign, gameSession, onUpdateSession, onChangePageView]);
+
+  // focusMission
+  const focusMission = useCallback((index) => {
+    setFocusedMissionIndex(index);
+  }, []);
+
+  // goBack
+  const goBack = useCallback(() => {
+    onChangePageView?.(PageNavigationEnum.MAIN_MENU);
+  }, [onChangePageView]);
+
+  const getMissionStatus = useCallback((index) => {
+    if (index < maxUnlockedMissionIndex) return "COMPLETED";
+    if (index === maxUnlockedMissionIndex) return "AVAILABLE";
+    return "LOCKED";
+  }, [maxUnlockedMissionIndex]);
+
+  if (!campaign || !staticHeroes) {
     return (
-        <div className="w-full h-full flex flex-col bg-gradient-to-b from-stone-900 via-stone-800 to-black text-stone-200 overflow-hidden font-serif">
-            {/* Header */}
-            <div className="flex-shrink-0 p-4 text-center border-b border-amber-700/50 bg-stone-900/80 shadow-md">
-                <h1 className="text-3xl text-amber-500 tracking-wider uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                    {campaign.nome_campagna || "Archivio Missioni"}
-                </h1>
-            </div>
-
-            {/* Content */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left Column: Mission List */}
-                <div className="w-1/3 overflow-y-auto border-r border-amber-700/50 p-4 space-y-4">
-                    {campaign.missioni?.map((mission, index) => {
-                        const isLocked = index > maxUnlockedMissionIndex;
-                        const isCompleted = index < maxUnlockedMissionIndex;
-                        const isFocused = index === focusedMissionIndex;
-
-                        let statusText = "Disponibile";
-                        let statusColor = "text-amber-400 border-amber-400";
-                        if (isLocked) {
-                            statusText = "Sigillata";
-                            statusColor = "text-stone-500 border-stone-500";
-                        } else if (isCompleted) {
-                            statusText = "Completata";
-                            statusColor = "text-green-600 border-green-600";
-                        }
-
-                        return (
-                            <div
-                                key={index}
-                                onClick={() => focusMission(index)}
-                                className={`relative p-4 rounded border transition-all duration-300 cursor-pointer overflow-hidden
-                                    ${isFocused ? 'bg-stone-700 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-stone-800/80 border-amber-900/50 hover:bg-stone-700/80 hover:border-amber-700/80'}
-                                    ${isLocked ? 'opacity-70' : 'opacity-100'}
-                                `}
-                            >
-                                <div className="flex flex-col space-y-2 relative z-10">
-                                    <h3 className={`text-lg font-bold ${isLocked ? 'text-stone-400' : 'text-amber-100'}`}>
-                                        {mission.titolo}
-                                    </h3>
-                                    <div className="flex justify-center">
-                                        <span className={`text-xs px-2 py-1 border rounded uppercase tracking-widest ${statusColor}`}>
-                                            {statusText}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Right Column: Mission Details */}
-                <div className="w-2/3 overflow-y-auto p-8 flex flex-col items-center justify-center relative">
-                    {/* Decorative background element */}
-                    <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
-                        <div className="w-96 h-96 rounded-full bg-amber-900 blur-[100px]"></div>
-                    </div>
-
-                    {focusedMission ? (
-                        <div className="relative z-10 flex flex-col items-center max-w-lg w-full bg-stone-900/90 p-8 rounded-lg border border-amber-700/40 shadow-2xl text-center space-y-8">
-                            <div className="space-y-4">
-                                <h2 className="text-4xl text-amber-500 font-bold drop-shadow-md">
-                                    {focusedMission.titolo}
-                                </h2>
-                                <p className="text-stone-400 text-sm font-mono">
-                                    Rif: {focusedMission.file}
-                                </p>
-                            </div>
-
-                            <div className="text-stone-300 italic text-lg leading-relaxed">
-                                {isFocusedLocked && "Questa missione è sigillata. Completa le sfide precedenti per svelarne i segreti."}
-                                {isFocusedCompleted && "Hai già trionfato in questo luogo oscuro. Puoi farvi ritorno se lo desideri."}
-                                {!isFocusedLocked && !isFocusedCompleted && "L'oscurità attende. Prepara i tuoi eroi per questa nuova sfida."}
-                            </div>
-
-                            <div className="flex flex-col w-full space-y-4 pt-4">
-                                <button
-                                    onClick={() => selectMission(focusedMissionIndex)}
-                                    disabled={isFocusedLocked}
-                                    className={`w-full py-3 px-6 rounded font-bold text-lg tracking-wider transition-all duration-300
-                                        ${isFocusedLocked 
-                                            ? 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed' 
-                                            : 'bg-amber-900 hover:bg-amber-800 text-amber-100 border border-amber-600 shadow-[0_0_10px_rgba(180,83,9,0.5)] hover:shadow-[0_0_20px_rgba(180,83,9,0.8)]'
-                                        }
-                                    `}
-                                >
-                                    {isFocusedLocked ? 'Sigillata' : 'Inizia Missione'}
-                                </button>
-                                
-                                <button
-                                    onClick={goBack}
-                                    className="w-full py-3 px-6 rounded font-bold text-sm tracking-wider bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-600 transition-colors duration-300"
-                                >
-                                    Torna al Menu
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-stone-500 italic">Nessuna missione selezionata</div>
-                    )}
-                </div>
-            </div>
-        </div>
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-600 font-serif text-2xl tracking-widest">
+        Caricamento Archivi...
+      </div>
     );
+  }
+
+  const focusedMission = campaign.missioni?.[focusedMissionIndex];
+  const focusedStatus = focusedMission ? getMissionStatus(focusedMissionIndex) : null;
+
+  return (
+    <div className="h-screen w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 via-stone-900 to-black text-stone-300 font-serif flex flex-col overflow-hidden select-none">
+      
+      {/* Header */}
+      <header className="flex-none py-6 border-b border-stone-700/50 bg-stone-950/50 shadow-lg shadow-black/50 z-10">
+        <h1 className="text-center text-3xl md:text-4xl text-amber-600 tracking-[0.2em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          {campaign.nome_campagna || "Archivio Missioni"}
+        </h1>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex overflow-hidden">
+        
+        {/* Left Column: Mission List */}
+        <aside className="w-1/3 max-w-md border-r border-stone-700/50 bg-stone-900/40 overflow-y-auto overflow-x-hidden p-6 space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-stone-700">
+          {campaign.missioni?.map((mission, index) => {
+            const status = getMissionStatus(index);
+            const isFocused = index === focusedMissionIndex;
+            
+            let cardStyle = "border-stone-700 bg-stone-900/60 text-stone-400";
+            let statusText = "Sigillata";
+            let statusColor = "text-stone-600";
+
+            if (status === "COMPLETED") {
+              cardStyle = "border-stone-500 bg-stone-800/80 text-stone-300 hover:border-stone-400";
+              statusText = "Completata";
+              statusColor = "text-stone-400";
+            } else if (status === "AVAILABLE") {
+              cardStyle = "border-amber-700 bg-stone-800 text-amber-100 shadow-[0_0_15px_rgba(180,83,9,0.2)] hover:border-amber-500";
+              statusText = "Disponibile";
+              statusColor = "text-amber-500";
+            }
+
+            if (isFocused) {
+              cardStyle += " ring-2 ring-amber-600/50 scale-[1.02]";
+            }
+
+            return (
+              <div
+                key={index}
+                onClick={() => focusMission(index)}
+                className={`p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center ${cardStyle}`}
+              >
+                <span className="text-sm tracking-widest mb-2 opacity-80">Capitolo {index + 1}</span>
+                <h3 className="text-xl font-bold mb-3">{mission.titolo}</h3>
+                <div className={`text-xs uppercase tracking-widest px-3 py-1 border border-current rounded-sm ${statusColor}`}>
+                  {statusText}
+                </div>
+              </div>
+            );
+          })}
+        </aside>
+
+        {/* Right Column: Focused Mission Details */}
+        <section className="flex-1 p-8 md:p-12 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center relative [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-stone-700">
+          
+          {focusedMission ? (
+            <div className="max-w-2xl w-full bg-stone-900/80 border border-stone-700 p-10 shadow-2xl flex flex-col items-center text-center space-y-8 relative">
+              
+              {/* Decorative corners */}
+              <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-700/50 m-2"></div>
+              <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-700/50 m-2"></div>
+              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-700/50 m-2"></div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-700/50 m-2"></div>
+
+              <div className="space-y-2">
+                <span className="text-amber-700 tracking-[0.3em] text-sm uppercase">
+                  Dossier: {focusedMission.file}
+                </span>
+                <h2 className="text-4xl md:text-5xl text-amber-500 drop-shadow-md">
+                  {focusedMission.titolo}
+                </h2>
+              </div>
+
+              <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-700 to-transparent"></div>
+
+              <div className="text-lg text-stone-400 leading-relaxed max-w-lg min-h-[4rem]">
+                {focusedStatus === "LOCKED" && "Questa missione è sigillata. Devi completare le sfide precedenti per svelarne i segreti."}
+                {focusedStatus === "AVAILABLE" && "L'oscurità attende. Prepara i tuoi eroi per questa nuova discesa nell'abisso."}
+                {focusedStatus === "COMPLETED" && "Hai già trionfato in queste sale, ma il male potrebbe essersi risvegliato. Puoi esplorarle nuovamente."}
+              </div>
+
+              <div className="pt-8 flex flex-col sm:flex-row gap-6 w-full justify-center">
+                <button
+                  onClick={goBack}
+                  className="px-8 py-3 bg-stone-950 border border-stone-600 text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition-colors uppercase tracking-widest text-sm"
+                >
+                  Indietro
+                </button>
+                
+                {focusedStatus !== "LOCKED" && (
+                  <button
+                    onClick={() => selectMission(focusedMissionIndex)}
+                    disabled={isStarting}
+                    className="px-8 py-3 bg-stone-800 border border-amber-700 text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors uppercase tracking-widest text-sm shadow-[0_0_10px_rgba(180,83,9,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isStarting ? "Preparazione..." : "Esamina Missione"}
+                  </button>
+                )}
+              </div>
+
+            </div>
+          ) : (
+            <div className="text-stone-500 text-xl tracking-widest">
+              Nessuna missione selezionata
+            </div>
+          )}
+
+        </section>
+      </main>
+    </div>
+  );
 }

@@ -6,15 +6,12 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from 'react';
-import PageContent from './page-presentation';
-import { VisibilityMap } from './domain-map';
-import { getAllSpells } from './domain-spells-data';
+import React, { useState, useEffect } from "react";
+import PageContent from "./page-presentation";
+import { getAllSpells } from "./domain-spells-data";
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
-  const [error, setError] = useState(null);
-  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalHeroes, setGlobalHeroes] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
@@ -23,6 +20,7 @@ export default function MainContent() {
   const [globalSpells, setGlobalSpells] = useState([]);
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,52 +33,55 @@ export default function MainContent() {
           boardDataRes,
           equipmentRes,
           itemsRes,
-          treasureDeckRes,
+          treasureRes,
           campaignRes
         ] = await Promise.all([
-          fetch('/jsonData/monsters.json'),
-          fetch('/jsonData/heroes.json'),
-          fetch('/jsonData/tabellone/default.json'),
-          fetch('/jsonData/equipment.json'),
-          fetch('/jsonData/items.json'),
-          fetch('/jsonData/treasure-card.json'),
-          fetch('/jsonData/campagne.json')
+          fetch("/jsonData/monsters.json"),
+          fetch("/jsonData/heroes.json"),
+          fetch("/jsonData/tabellone/default.json"),
+          fetch("/jsonData/equipment.json"),
+          fetch("/jsonData/items.json"),
+          fetch("/jsonData/treasure-card.json"),
+          fetch("/jsonData/campagne.json")
         ]);
 
-        if (!monstersRes.ok) throw new Error(`monsters.json: ${monstersRes.statusText}`);
-        if (!heroesRes.ok) throw new Error(`heroes.json: ${heroesRes.statusText}`);
-        if (!boardDataRes.ok) throw new Error(`tabellone/default.json: ${boardDataRes.statusText}`);
-        if (!equipmentRes.ok) throw new Error(`equipment.json: ${equipmentRes.statusText}`);
-        if (!itemsRes.ok) throw new Error(`items.json: ${itemsRes.statusText}`);
-        if (!treasureDeckRes.ok) throw new Error(`treasure-card.json: ${treasureDeckRes.statusText}`);
-        if (!campaignRes.ok) throw new Error(`campagne.json: ${campaignRes.statusText}`);
+        if (
+          !monstersRes.ok ||
+          !heroesRes.ok ||
+          !boardDataRes.ok ||
+          !equipmentRes.ok ||
+          !itemsRes.ok ||
+          !treasureRes.ok ||
+          !campaignRes.ok
+        ) {
+          throw new Error("Network response was not ok during assets fetch.");
+        }
 
-        const monstersData = await monstersRes.json();
-        const heroesData = await heroesRes.json();
-        const boardDataJson = await boardDataRes.json();
-        const equipmentData = await equipmentRes.json();
-        const itemsData = await itemsRes.json();
-        const treasureDeckData = await treasureDeckRes.json();
-        const campaignData = await campaignRes.json();
+        const monsters = await monstersRes.json();
+        const heroes = await heroesRes.json();
+        const boardData = await boardDataRes.json();
+        const equipment = await equipmentRes.json();
+        const items = await itemsRes.json();
+        const treasureDeck = await treasureRes.json();
+        const campaign = await campaignRes.json();
 
         if (!isMounted) return;
 
-        setGlobalMonsters(monstersData);
-        setGlobalHeroes(heroesData);
-        setGlobalEquipment(equipmentData);
-        setGlobalItems(itemsData);
-        setGlobalTreasureDeck(treasureDeckData);
-        setGlobalCampaign(campaignData);
-
-        const normalizedBoardData = VisibilityMap({
-          ...boardDataJson,
-          data: (boardDataJson?.data || []).map(cell => ({
+        const normalizedBoardData = {
+          ...boardData,
+          data: boardData?.data?.map((cell) => ({
             ...cell,
-            fog: cell?.fog !== undefined ? cell.fog : true
-          }))
-        });
-        setGlobalBoardData(normalizedBoardData);
+            fog: true
+          })) || []
+        };
 
+        setGlobalMonsters(monsters);
+        setGlobalHeroes(heroes);
+        setGlobalBoardData(normalizedBoardData);
+        setGlobalEquipment(equipment);
+        setGlobalItems(items);
+        setGlobalTreasureDeck(treasureDeck);
+        setGlobalCampaign(campaign);
         setGlobalSpells(getAllSpells());
 
         setIsAppReady(true);
@@ -101,7 +102,7 @@ export default function MainContent() {
   if (error) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-4 text-center">
-        <p>{error}</p>
+        <p className="text-xl font-bold">{error}</p>
       </div>
     );
   }
@@ -109,7 +110,7 @@ export default function MainContent() {
   if (!isAppReady) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p>Inizializzazione Sistema...</p>
+        <p className="text-2xl animate-pulse">Inizializzazione Sistema...</p>
       </div>
     );
   }

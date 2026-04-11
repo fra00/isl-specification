@@ -23,12 +23,12 @@ export const HeroState = (data = {}) => ({
   isEscaped: data.isEscaped ?? false,
   x: data.x ?? 0,
   y: data.y ?? 0,
-  hero: data.hero ? Hero(data.hero) : null
+  hero: data.hero ? Hero(data.hero) : Hero()
 });
 
 export const MonsterState = (data = {}) => ({
   id: data.id ?? 0,
-  monster: data.monster ? Monster(data.monster) : null,
+  monster: data.monster ? Monster(data.monster) : Monster(),
   x: data.x ?? 0,
   y: data.y ?? 0,
   currentBody: data.currentBody ?? 0,
@@ -38,7 +38,7 @@ export const MonsterState = (data = {}) => ({
 
 export const GameSession = (data = {}) => ({
   campaignName: data.campaignName ?? "",
-  currentMap: data.currentMap ? MapDefinition(data.currentMap) : null,
+  currentMap: data.currentMap ? MapDefinition(data.currentMap) : MapDefinition(),
   currentMissionIndex: data.currentMissionIndex ?? 0,
   heroes: Array.isArray(data.heroes) ? data.heroes.map(h => HeroState(h)) : [],
   monsters: Array.isArray(data.monsters) ? data.monsters.map(m => MonsterState(m)) : [],
@@ -46,7 +46,7 @@ export const GameSession = (data = {}) => ({
   spawnedLocations: Array.isArray(data.spawnedLocations) ? [...data.spawnedLocations] : [],
   currentTurn: data.currentTurn ?? 1,
   isHeroOrderConfirmed: data.isHeroOrderConfirmed ?? false,
-  lastAttack: data.lastAttack ? { ...data.lastAttack } : null,
+  lastAttack: data.lastAttack ?? null,
   treasureDeck: Array.isArray(data.treasureDeck) ? data.treasureDeck.map(t => TreasureCard(t)) : []
 });
 

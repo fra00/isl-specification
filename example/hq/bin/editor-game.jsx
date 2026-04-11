@@ -11,9 +11,11 @@ import React from 'react';
 export default function EditorGame() {
   return (
     <div className="flex items-center justify-center w-full h-full min-h-screen bg-gray-100 p-4">
-      <h1 className="text-3xl font-bold text-gray-800">
-        Editor Game
-      </h1>
+      <div className="bg-white shadow-md rounded-lg p-8">
+        <h1 className="text-3xl font-bold text-gray-800 text-center">
+          Editor Game
+        </h1>
+      </div>
     </div>
   );
 }

@@ -6,265 +6,275 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function useMonsterAI(config) {
-    const {
-        gameSession,
-        visibilityMap,
-        onNotify,
-        pathfinding,
-        combatLogic,
-        heroStatsLogic,
-        sessionManager
-    } = config;
+  const {
+    gameSession,
+    visibilityMap,
+    onNotify,
+    pathfinding,
+    combatLogic,
+    heroStatsLogic,
+    sessionManager
+  } = config;
 
-    const [isMonsterTurnInProgress, setIsMonsterTurnInProgress] = useState(false);
-    const isMonsterTurnInProgressRef = useRef(isMonsterTurnInProgress);
+  const [isMonsterTurnInProgress, setIsMonsterTurnInProgress] = useState(false);
+  const isMonsterTurnInProgressRef = useRef(false);
 
-    useEffect(() => {
-        isMonsterTurnInProgressRef.current = isMonsterTurnInProgress;
-    }, [isMonsterTurnInProgress]);
+  const gameSessionRef = useRef(gameSession);
+  useEffect(() => {
+    gameSessionRef.current = gameSession;
+  }, [gameSession]);
 
-    const findNearestHero = useCallback((monster) => {
-        if (!gameSession?.heroes || !visibilityMap?.data) return null;
+  const visibilityMapRef = useRef(visibilityMap);
+  useEffect(() => {
+    visibilityMapRef.current = visibilityMap;
+  }, [visibilityMap]);
 
-        const visibleHeroes = gameSession.heroes.filter(h => {
-            const cell = visibilityMap.data.find(c => c.x === h.x && c.y === h.y);
-            return cell && cell.fog === false;
-        });
+  const isCellVisible = useCallback((x, y) => {
+    const cell = visibilityMapRef.current?.data?.find(c => c.x === x && c.y === y);
+    return cell ? !cell.fog : false;
+  }, []);
 
-        if (visibleHeroes.length === 0) return null;
+  const isTopologicallyAdjacent = useCallback((x1, y1, x2, y2, currentSession) => {
+    const manhattan = Math.abs((x1 || 0) - (x2 || 0)) + Math.abs((y1 || 0) - (y2 || 0));
+    if (manhattan !== 1) return false;
 
-        let bestHero = null;
-        let minApproachLength = Infinity;
+    const cell1 = visibilityMapRef.current?.data?.find(c => c.x === x1 && c.y === y1);
+    const cell2 = visibilityMapRef.current?.data?.find(c => c.x === x2 && c.y === y2);
 
-        for (const hero of visibleHeroes) {
-            // Check if already topologically adjacent (approach cost 0)
-            const path = pathfinding?.calculatePath(monster.x, monster.y, hero.x, hero.y, 1, hero.heroId);
-            if (path && path.length === 1) {
-                return hero; 
+    if (!cell1 || !cell2) return false;
+    if (cell1.valo === cell2.valo) return true;
+
+    const isDoor1 = currentSession.currentMap?.porte?.some(p => p.x === x1 && p.y === y1);
+    const isDoor2 = currentSession.currentMap?.porte?.some(p => p.x === x2 && p.y === y2);
+    
+    const isPassage1 = currentSession.currentMap?.grid?.some(c => c.x === x1 && c.y === y1 && c.psgg?.ps != null);
+    const isPassage2 = currentSession.currentMap?.grid?.some(c => c.x === x2 && c.y === y2 && c.psgg?.ps != null);
+
+    return isDoor1 || isDoor2 || isPassage1 || isPassage2;
+  }, []);
+
+  const isOccupied = useCallback((x, y, excludeMonsterId, currentSession) => {
+    const heroOccupies = currentSession.heroes?.some(h => h.x === x && h.y === y);
+    const monsterOccupies = currentSession.monsters?.some(m => m.id !== excludeMonsterId && m.x === x && m.y === y);
+    return heroOccupies || monsterOccupies;
+  }, []);
+
+  const findNearestHero = useCallback((monster, currentSession) => {
+    const visibleHeroes = currentSession.heroes?.filter(h => isCellVisible(h.x, h.y)) || [];
+    if (visibleHeroes.length === 0) return null;
+
+    let bestHero = null;
+    let minApproachLength = Infinity;
+    let minManhattan = Infinity;
+    let fallbackHero = null;
+
+    for (const hero of visibleHeroes) {
+      const manhattan = Math.abs((monster.x || 0) - (hero.x || 0)) + Math.abs((monster.y || 0) - (hero.y || 0));
+      if (manhattan < minManhattan) {
+        minManhattan = manhattan;
+        fallbackHero = hero;
+      }
+
+      if (isTopologicallyAdjacent(monster.x, monster.y, hero.x, hero.y, currentSession)) {
+        return hero; 
+      }
+
+      const adjacentCells = [
+        { x: hero.x, y: hero.y - 1 },
+        { x: hero.x, y: hero.y + 1 },
+        { x: hero.x - 1, y: hero.y },
+        { x: hero.x + 1, y: hero.y }
+      ];
+
+      let bestHeroApproach = Infinity;
+
+      for (const cell of adjacentCells) {
+        if (isOccupied(cell.x, cell.y, monster.id, currentSession)) continue;
+        if (!isTopologicallyAdjacent(cell.x, cell.y, hero.x, hero.y, currentSession)) continue;
+
+        const path = pathfinding.calculatePath(monster.x, monster.y, cell.x, cell.y, 100, monster.id);
+        if (path.length > 0 && path[path.length - 1].x === cell.x && path[path.length - 1].y === cell.y) {
+          if (path.length < bestHeroApproach) {
+            bestHeroApproach = path.length;
+          }
+        }
+      }
+
+      if (bestHeroApproach < minApproachLength) {
+        minApproachLength = bestHeroApproach;
+        bestHero = hero;
+      }
+    }
+
+    return bestHero || fallbackHero;
+  }, [isCellVisible, isTopologicallyAdjacent, isOccupied, pathfinding]);
+
+  const runMonsterTurn = useCallback(async () => {
+    if (isMonsterTurnInProgressRef.current) return;
+    
+    setIsMonsterTurnInProgress(true);
+    isMonsterTurnInProgressRef.current = true;
+
+    if (onNotify) {
+      onNotify("Turno del Master: i mostri si muovono...");
+    }
+
+    const initialMonsters = gameSessionRef.current?.monsters || [];
+    const monsterIds = initialMonsters.map(m => m.id);
+
+    for (const monsterId of monsterIds) {
+      await sleep(800);
+
+      const currentSession = gameSessionRef.current;
+      if (!currentSession) continue;
+
+      const monster = currentSession.monsters?.find(m => m.id === monsterId);
+      if (!monster) continue;
+
+      if (monster.activeStatus?.includes("Sleep")) {
+        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} sta dormendo e salta il turno.`);
+        continue;
+      }
+
+      if (monster.activeStatus?.includes("Tempest")) {
+        sessionManager.updateMonsterState(monster.id, null, null, ["Tempest"]);
+        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} è bloccato dalla tempesta e salta il turno!`);
+        continue;
+      }
+
+      const hero = findNearestHero(monster, currentSession);
+      if (!hero) continue;
+
+      let navigationTarget = null;
+
+      if (isTopologicallyAdjacent(monster.x, monster.y, hero.x, hero.y, currentSession)) {
+        navigationTarget = { x: monster.x, y: monster.y };
+      } else {
+        const adjacentCells = [
+          { x: hero.x, y: hero.y - 1 },
+          { x: hero.x, y: hero.y + 1 },
+          { x: hero.x - 1, y: hero.y },
+          { x: hero.x + 1, y: hero.y }
+        ];
+
+        let bestCell = null;
+        let shortestPathLen = Infinity;
+
+        for (const cell of adjacentCells) {
+          if (isOccupied(cell.x, cell.y, monster.id, currentSession)) continue;
+          if (!isTopologicallyAdjacent(cell.x, cell.y, hero.x, hero.y, currentSession)) continue;
+
+          const path = pathfinding.calculatePath(monster.x, monster.y, cell.x, cell.y, 100, monster.id);
+          if (path.length > 0 && path[path.length - 1].x === cell.x && path[path.length - 1].y === cell.y) {
+            if (path.length < shortestPathLen) {
+              shortestPathLen = path.length;
+              bestCell = cell;
             }
-
-            const adjacents = [
-                { x: hero.x, y: hero.y - 1 },
-                { x: hero.x, y: hero.y + 1 },
-                { x: hero.x - 1, y: hero.y },
-                { x: hero.x + 1, y: hero.y }
-            ];
-
-            let heroBestApproach = Infinity;
-
-            for (const adj of adjacents) {
-                // Check if adj is topologically adjacent to hero (no walls between them)
-                const adjToHero = pathfinding?.calculatePath(adj.x, adj.y, hero.x, hero.y, 1, hero.heroId);
-                if (!adjToHero || adjToHero.length === 0) continue;
-
-                // Check if unoccupied
-                const isOccupied = gameSession.heroes.some(h => h.x === adj.x && h.y === adj.y) ||
-                                   gameSession.monsters.some(m => m.x === adj.x && m.y === adj.y);
-                if (isOccupied) continue;
-
-                // Calculate approach from monster to adj
-                const approach = pathfinding?.calculatePath(monster.x, monster.y, adj.x, adj.y, 100, monster.id);
-                if (approach && approach.length > 0 && approach.length < heroBestApproach) {
-                    heroBestApproach = approach.length;
-                }
-            }
-
-            if (heroBestApproach < minApproachLength) {
-                minApproachLength = heroBestApproach;
-                bestHero = hero;
-            }
+          }
         }
 
-        if (bestHero) return bestHero;
-
-        // Fallback to Manhattan distance
-        let fallbackHero = null;
-        let bestManhattan = Infinity;
-        for (const hero of visibleHeroes) {
-            const manhattan = Math.abs(monster.x - hero.x) + Math.abs(monster.y - hero.y);
-            if (manhattan < bestManhattan) {
-                bestManhattan = manhattan;
-                fallbackHero = hero;
-            }
+        if (bestCell) {
+          navigationTarget = bestCell;
+        } else {
+          navigationTarget = { x: hero.x, y: hero.y };
         }
-        return fallbackHero;
-    }, [gameSession, visibilityMap, pathfinding]);
+      }
 
-    const runMonsterTurn = useCallback(async () => {
-        if (isMonsterTurnInProgressRef.current) return;
-        setIsMonsterTurnInProgress(true);
-        onNotify?.("Turno del Master: i mostri si muovono...");
+      let path = [];
+      if (navigationTarget.x !== monster.x || navigationTarget.y !== monster.y) {
+        path = pathfinding.calculatePath(monster.x, monster.y, navigationTarget.x, navigationTarget.y, 100, monster.id);
+      }
 
-        // Maintain local occupancy map to prevent monsters from moving into each other's new positions during the async loop
-        const currentOccupancy = {
-            heroes: gameSession?.heroes?.map(h => ({ id: h.heroId, x: h.x, y: h.y })) || [],
-            monsters: gameSession?.monsters?.map(m => ({ id: m.id, x: m.x, y: m.y })) || []
-        };
+      let finalMonsterX = monster.x;
+      let finalMonsterY = monster.y;
 
-        for (const monster of (gameSession?.monsters || [])) {
-            await new Promise(r => setTimeout(r, 800));
-
-            if (monster.activeStatus?.includes("Sleep")) {
-                onNotify?.(`${monster.monster?.nome} sta dormendo e salta il turno.`);
-                continue;
-            }
-            if (monster.activeStatus?.includes("Tempest")) {
-                sessionManager?.updateMonsterState(monster.id, null, null, ["Tempest"]);
-                onNotify?.(`${monster.monster?.nome} è bloccato dalla tempesta e salta il turno!`);
-                continue;
-            }
-
-            const hero = findNearestHero(monster);
-            if (!hero) continue;
-
-            let navigationTarget = null;
-            const isAdjacent = pathfinding?.calculatePath(monster.x, monster.y, hero.x, hero.y, 1, hero.heroId)?.length === 1;
-
-            if (isAdjacent) {
-                navigationTarget = { x: monster.x, y: monster.y };
-            } else {
-                const adjacents = [
-                    { x: hero.x, y: hero.y - 1 },
-                    { x: hero.x, y: hero.y + 1 },
-                    { x: hero.x - 1, y: hero.y },
-                    { x: hero.x + 1, y: hero.y }
-                ];
-                let bestAdj = null;
-                let shortestPath = Infinity;
-
-                for (const adj of adjacents) {
-                    const adjToHero = pathfinding?.calculatePath(adj.x, adj.y, hero.x, hero.y, 1, hero.heroId);
-                    if (!adjToHero || adjToHero.length === 0) continue;
-
-                    const isOccupied = currentOccupancy.heroes.some(h => h.x === adj.x && h.y === adj.y) ||
-                                       currentOccupancy.monsters.some(m => m.id !== monster.id && m.x === adj.x && m.y === adj.y);
-                    if (isOccupied) continue;
-
-                    const approach = pathfinding?.calculatePath(monster.x, monster.y, adj.x, adj.y, 100, monster.id);
-                    if (approach && approach.length > 0 && approach.length < shortestPath) {
-                        shortestPath = approach.length;
-                        bestAdj = adj;
-                    }
-                }
-
-                if (bestAdj) {
-                    navigationTarget = bestAdj;
-                } else {
-                    navigationTarget = { x: hero.x, y: hero.y };
-                }
-            }
-
-            let path = [];
-            if (navigationTarget.x !== monster.x || navigationTarget.y !== monster.y) {
-                path = pathfinding?.calculatePath(monster.x, monster.y, navigationTarget.x, navigationTarget.y, 100, monster.id) || [];
-            }
-
-            let finalX = monster.x;
-            let finalY = monster.y;
-
-            if (path.length > 0) {
-                let movPoints = monster.monster?.movimento || 0;
-                let isEntangled = monster.activeStatus?.includes("Entangled");
-                if (isEntangled) {
-                    movPoints = 1;
-                    onNotify?.(`${monster.monster?.nome} è intralciato e si muove a fatica.`);
-                }
-
-                let reachablePath = [];
-                for (const step of path) {
-                    const cellVis = visibilityMap?.data?.find(c => c.x === step.x && c.y === step.y);
-                    if (cellVis?.fog) break;
-                    reachablePath.push(step);
-                    if (reachablePath.length >= movPoints) break;
-                }
-
-                let statusesToRemove = [];
-                if (isEntangled) statusesToRemove.push("Entangled");
-
-                let targetCell = null;
-                for (let i = reachablePath.length - 1; i >= 0; i--) {
-                    const step = reachablePath[i];
-                    const isOccupied = currentOccupancy.heroes.some(h => h.x === step.x && h.y === step.y) ||
-                                       currentOccupancy.monsters.some(m => m.id !== monster.id && m.x === step.x && m.y === step.y);
-                    if (!isOccupied) {
-                        targetCell = step;
-                        break;
-                    }
-                }
-
-                if (targetCell && (targetCell.x !== monster.x || targetCell.y !== monster.y)) {
-                    sessionManager?.updateMonsterState(monster.id, targetCell.x, targetCell.y, statusesToRemove);
-                    finalX = targetCell.x;
-                    finalY = targetCell.y;
-                    
-                    const mIndex = currentOccupancy.monsters.findIndex(m => m.id === monster.id);
-                    if (mIndex !== -1) {
-                        currentOccupancy.monsters[mIndex].x = finalX;
-                        currentOccupancy.monsters[mIndex].y = finalY;
-                    }
-                } else if (isEntangled) {
-                    sessionManager?.updateMonsterState(monster.id, null, null, ["Entangled"]);
-                }
-
-                await new Promise(r => setTimeout(r, 400));
-            }
-
-            const isNowAdjacent = pathfinding?.calculatePath(finalX, finalY, hero.x, hero.y, 1, hero.heroId)?.length === 1;
-            if (isNowAdjacent) {
-                const heroStats = heroStatsLogic?.calculateStats(hero);
-                const attackDice = monster.monster?.attacco || 0;
-                const defenseDice = heroStats?.difesa || 0;
-                const combatResult = combatLogic?.resolveCombat(attackDice, defenseDice, true);
-
-                if (combatResult?.damageDealt > 0 && hero.activeStatus?.includes("RockSkin")) {
-                    onNotify?.(`La pelle di pietra di ${hero.hero?.classe} si frantuma!`);
-                }
-                onNotify?.(`${monster.monster?.nome} attacca ${hero.hero?.classe}!`);
-
-                sessionManager?.resolveMonsterAttack(monster.id, hero.heroId, combatResult);
-
-                if ((hero.currentBody - (combatResult?.damageDealt || 0)) <= 0) {
-                    onNotify?.(`${hero.hero?.classe} è caduto in battaglia!`);
-                }
-            }
+      if (path.length > 0) {
+        let movPoints = monster.monster?.movimento || 0;
+        let isEntangled = monster.activeStatus?.includes("Entangled");
+        if (isEntangled) {
+          movPoints = 1;
+          if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} è intralciato e si muove a fatica.`);
         }
 
-        setIsMonsterTurnInProgress(false);
-        sessionManager?.startNextHeroRound();
-        onNotify?.("Nuovo Turno! Tocca agli eroi.");
-
-    }, [gameSession, visibilityMap, onNotify, pathfinding, combatLogic, heroStatsLogic, sessionManager, findNearestHero]);
-
-    const performInstantAttack = useCallback(async (monster, hero) => {
-        if (!monster || !hero) return;
-        
-        onNotify?.(`Il Mostro Errante (${monster.monster?.nome}) attacca immediatamente!`);
-
-        const heroStats = heroStatsLogic?.calculateStats(hero);
-        const attackDice = monster.monster?.attacco || 0;
-        const defenseDice = heroStats?.difesa || 0;
-        const combatResult = combatLogic?.resolveCombat(attackDice, defenseDice, true);
-
-        if (combatResult?.damageDealt > 0 && hero.activeStatus?.includes("RockSkin")) {
-            onNotify?.(`La pelle di pietra di ${hero.hero?.classe} si frantuma!`);
+        const visiblePath = [];
+        for (const step of path) {
+          if (!isCellVisible(step.x, step.y)) break;
+          visiblePath.push(step);
         }
 
-        sessionManager?.resolveMonsterAttack(monster.id, hero.heroId, combatResult);
+        const reachablePath = visiblePath.slice(0, movPoints);
+        const statusesToRemove = isEntangled ? ["Entangled"] : [];
+        let targetCell = null;
 
-        if ((hero.currentBody - (combatResult?.damageDealt || 0)) <= 0) {
-            onNotify?.(`${hero.hero?.classe} è caduto sotto i colpi del Mostro Errante!`);
+        for (let i = reachablePath.length - 1; i >= 0; i--) {
+          const cell = reachablePath[i];
+          if (!isOccupied(cell.x, cell.y, monster.id, currentSession)) {
+            targetCell = cell;
+            break;
+          }
         }
 
-        await new Promise(r => setTimeout(r, 1000));
-    }, [onNotify, heroStatsLogic, combatLogic, sessionManager]);
+        if (targetCell && (targetCell.x !== monster.x || targetCell.y !== monster.y)) {
+          sessionManager.updateMonsterState(monster.id, targetCell.x, targetCell.y, statusesToRemove);
+          finalMonsterX = targetCell.x;
+          finalMonsterY = targetCell.y;
+          await sleep(400);
+        } else if (isEntangled) {
+          sessionManager.updateMonsterState(monster.id, null, null, ["Entangled"]);
+        }
+      }
 
-    return {
-        isMonsterTurnInProgress,
-        runMonsterTurn,
-        performInstantAttack,
-        findNearestHero
-    };
+      if (isTopologicallyAdjacent(finalMonsterX, finalMonsterY, hero.x, hero.y, currentSession)) {
+        const heroStats = heroStatsLogic.calculateStats(hero);
+        const combatResult = combatLogic.resolveCombat(monster.monster?.attacco || 0, heroStats?.difesa || 0, true);
+
+        if (combatResult.damageDealt > 0 && hero.activeStatus?.includes("RockSkin")) {
+          if (onNotify) onNotify(`La pelle di pietra di ${hero.hero?.classe || 'Eroe'} si frantuma!`);
+        }
+        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} attacca ${hero.hero?.classe || 'Eroe'}!`);
+
+        sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult);
+
+        if ((hero.currentBody || 0) - combatResult.damageDealt <= 0) {
+          if (onNotify) onNotify(`${hero.hero?.classe || 'Eroe'} è caduto in battaglia!`);
+        }
+      }
+    }
+
+    setIsMonsterTurnInProgress(false);
+    isMonsterTurnInProgressRef.current = false;
+    sessionManager.startNextHeroRound();
+    if (onNotify) onNotify("Nuovo Turno! Tocca agli eroi.");
+
+  }, [onNotify, findNearestHero, isTopologicallyAdjacent, isOccupied, pathfinding, isCellVisible, sessionManager, heroStatsLogic, combatLogic]);
+
+  const performInstantAttack = useCallback(async (monster, hero) => {
+    if (onNotify) onNotify(`Il Mostro Errante (${monster.monster?.nome || 'Mostro'}) attacca immediatamente!`);
+    
+    const heroStats = heroStatsLogic.calculateStats(hero);
+    const combatResult = combatLogic.resolveCombat(monster.monster?.attacco || 0, heroStats?.difesa || 0, true);
+
+    if (combatResult.damageDealt > 0 && hero.activeStatus?.includes("RockSkin")) {
+      if (onNotify) onNotify(`La pelle di pietra di ${hero.hero?.classe || 'Eroe'} si frantuma!`);
+    }
+
+    sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult);
+
+    if ((hero.currentBody || 0) - combatResult.damageDealt <= 0) {
+      if (onNotify) onNotify(`${hero.hero?.classe || 'Eroe'} è caduto sotto i colpi del Mostro Errante!`);
+    }
+
+    await sleep(1000);
+  }, [onNotify, heroStatsLogic, combatLogic, sessionManager]);
+
+  return {
+    isMonsterTurnInProgress,
+    runMonsterTurn,
+    performInstantAttack
+  };
 }

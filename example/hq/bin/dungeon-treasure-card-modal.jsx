@@ -13,15 +13,20 @@ export default function TreasureCardModal({
     card = null, 
     onClose = () => {} 
 }) {
-    const [modalState, setModalState] = useState('open');
+    const [modalState, setModalState] = useState('closed');
 
     useEffect(() => {
         if (isOpen) {
             setModalState('open');
+        } else {
+            setModalState('closed');
         }
     }, [isOpen]);
 
-    const handleClose = useCallback(() => {
+    const handleClose = useCallback((e) => {
+        if (e) {
+            e.stopPropagation();
+        }
         if (modalState !== 'closing') {
             setModalState('closing');
             onClose();
@@ -29,10 +34,10 @@ export default function TreasureCardModal({
     }, [modalState, onClose]);
 
     const handleImageError = useCallback((e) => {
-        e.target.src = '/img/placeholder.png';
+        e.currentTarget.src = '/img/placeholder.png';
     }, []);
 
-    if (!isOpen || card == null) {
+    if (!isOpen || !card) {
         return null;
     }
 
@@ -43,16 +48,13 @@ export default function TreasureCardModal({
             role="dialog"
             aria-modal="true"
         >
-            <div 
-                className="relative flex items-center justify-center p-4"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <img
-                    src={`/img/cartetesoro/${card.immagine}`}
-                    alt={card.effetto || 'Treasure Card'}
+            <div className="relative flex items-center justify-center max-w-full max-h-full p-4">
+                <img 
+                    src={`/img/cartetesoro/${card?.immagine || ''}`} 
+                    alt={card?.effetto || 'Treasure Card'} 
                     onError={handleImageError}
+                    className="max-w-full max-h-[90vh] object-contain cursor-pointer"
                     onClick={handleClose}
-                    className="max-w-full max-h-[90vh] object-contain cursor-pointer rounded-xl shadow-2xl"
                 />
             </div>
         </div>

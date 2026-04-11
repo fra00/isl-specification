@@ -8,30 +8,30 @@
 
 import { useCallback } from 'react';
 
-export function useInventoryLogic({ staticEquipment = [], sessionManager }) {
+export function useInventoryLogic({ staticEquipment = [], sessionManager = null } = {}) {
   
   const isItemCompatibleWithHero = useCallback((hero, item) => {
-    if (hero == null || item == null) {
+    if (!hero || !item) {
       return false;
     }
 
     if (item.solopsg === true && item.solopsgid !== hero.heroId) {
       return false;
     }
-
+    
     if (item.nopsg === true && item.nopsgid === hero.heroId) {
       return false;
     }
-
+    
     return true;
   }, []);
 
   const toggleEquipItem = useCallback((heroId, itemId, gameSession) => {
-    if (gameSession == null) {
+    if (!gameSession) {
       return false;
     }
-
-    if (sessionManager?.toggleEquipItem == null) {
+    
+    if (!sessionManager || typeof sessionManager.toggleEquipItem !== 'function') {
       return false;
     }
 

@@ -1,10 +1,10 @@
-export declare function useDungeonMonsters(config: {
+export function useDungeonMonsters(config: {
   gameSession: any;
   visibilityMap: any;
   onUpdateSession: (session: any) => void;
   onNotify: (message: string) => void;
-  monsterDefinitions: Array<any>;
+  monsterDefinitions: any[];
 }): {
-  spawnMonsters: () => void;
+  spawnedLocations: string[];
   spawnWanderingMonster: (heroX: number, heroY: number) => any | null;
 };

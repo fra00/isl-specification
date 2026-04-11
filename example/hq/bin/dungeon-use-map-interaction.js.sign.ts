@@ -1,4 +1,4 @@
-export declare function useMapInteraction(config: {
+export function useMapInteraction(config: {
   gameSession: any;
   foundPassages: Array<{ x: number; y: number }>;
   sessionManager: any;

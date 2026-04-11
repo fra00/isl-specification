@@ -16,136 +16,124 @@ export default function DungeonMissionSummary({
   onClose
 }) {
   const handleFinalize = useCallback(() => {
-    if (onClose) {
+    if (typeof onClose === 'function') {
       onClose();
     }
   }, [onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
-  // Filter heroes who have not died (currentBody > 0)
-  const survivingHeroes = heroes?.filter(h => h?.currentBody > 0) || [];
+  const survivingHeroes = heroes.filter(heroState => heroState != null && heroState.currentBody > 0);
 
   const getItemName = (id) => {
-    const item = allItems?.find(i => i?.id === id);
-    return item?.nome || `Oggetto Sconosciuto (${id})`;
+    const item = allItems.find(i => i?.id === id);
+    return item?.nome || 'Oggetto Sconosciuto';
   };
 
   const getEquipmentName = (id) => {
-    const eq = allEquipment?.find(e => e?.id === id);
-    return eq?.nome || `Equipaggiamento Sconosciuto (${id})`;
+    const equipment = allEquipment.find(e => e?.id === id);
+    return equipment?.nome || 'Equipaggiamento Sconosciuto';
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 overflow-hidden">
-      <div className="bg-stone-900 border-8 border-double border-amber-700 rounded-xl p-6 md:p-10 max-w-7xl w-full max-h-[95vh] overflow-y-auto shadow-2xl shadow-black">
+    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="bg-stone-900 border-4 border-yellow-700 rounded-xl p-6 sm:p-10 max-w-7xl w-full shadow-2xl shadow-black relative">
         
-        {/* Title Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-amber-500 tracking-widest mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-500 tracking-wider mb-2 drop-shadow-md">
             MISSIONE COMPIUTA
           </h1>
-          <h2 className="text-xl md:text-3xl font-serif text-stone-400 uppercase tracking-wider">
+          <h2 className="text-xl sm:text-2xl text-stone-300 font-serif italic">
             Riepilogo Missione
           </h2>
         </div>
 
-        {/* Hero Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {survivingHeroes.map((heroState, idx) => {
-            const heroDef = heroState?.hero;
-            if (!heroDef) return null;
-
-            return (
+        {survivingHeroes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {survivingHeroes.map((heroState) => (
               <div 
-                key={`hero-${heroState.heroId || idx}`} 
-                className="bg-stone-800 border border-stone-700 rounded-lg p-5 flex flex-col items-center shadow-lg relative overflow-hidden"
+                key={heroState.heroId || Math.random()} 
+                className="bg-stone-800 border border-stone-600 rounded-lg p-5 flex flex-col items-center shadow-lg"
               >
-                {/* Portrait */}
-                <div className="w-32 h-32 rounded-full border-4 border-stone-600 mb-4 overflow-hidden bg-stone-900 shadow-inner flex-shrink-0">
-                  {heroDef.portrait ? (
-                    <img
-                      src={heroDef.portrait}
-                      alt={heroDef.classe}
+                <div className="w-32 h-32 rounded-full border-4 border-stone-500 overflow-hidden mb-4 bg-stone-950 flex-shrink-0">
+                  {heroState.hero?.portrait ? (
+                    <img 
+                      src={heroState.hero.portrait} 
+                      alt={heroState.hero?.classe || 'Eroe'} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-stone-500">
-                      ?
+                    <div className="w-full h-full flex items-center justify-center text-stone-600">
+                      N/A
                     </div>
                   )}
                 </div>
-
-                {/* Name & Class */}
-                <h3 className="text-xl font-bold text-amber-600 mb-6 text-center capitalize">
-                  {heroDef.nome ? `${heroDef.nome} - ` : ''}{heroDef.classe}
+                
+                <h3 className="text-2xl font-bold text-stone-100 capitalize mb-4 text-center">
+                  {heroState.hero?.classe || 'Eroe Sconosciuto'}
                 </h3>
 
-                {/* Gold Section */}
-                <div className="w-full bg-stone-900 rounded-md p-3 mb-6 flex items-center justify-between border border-stone-700 shadow-inner">
-                  <div className="flex items-center">
-                    <span className="text-2xl mr-2" role="img" aria-label="gold">🪙</span>
-                    <span className="text-stone-400 font-semibold uppercase text-sm tracking-wider">Oro</span>
+                <div className="w-full space-y-4">
+                  <div className="flex items-center justify-between bg-stone-900 p-3 rounded border border-stone-700">
+                    <span className="text-yellow-500 font-bold flex items-center gap-2">
+                      <span className="text-xl">🪙</span> Oro
+                    </span>
+                    <span className="text-yellow-400 font-bold text-lg">
+                      {heroState.gold || 0}
+                    </span>
                   </div>
-                  <span className="text-yellow-500 font-bold text-xl">{heroState.gold || 0}</span>
-                </div>
 
-                {/* Loot Section */}
-                <div className="w-full flex-1 flex flex-col">
-                  <h4 className="text-sm font-bold text-stone-500 uppercase tracking-widest mb-3 border-b border-stone-700 pb-2 text-center">
-                    Bottino Recuperato
-                  </h4>
-                  
-                  <div className="space-y-4 text-sm flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                    {(!heroState.inventory?.length && !heroState.equipment?.length) && (
-                      <p className="text-stone-600 italic text-center py-4">Nessun oggetto recuperato</p>
-                    )}
+                  <div className="bg-stone-900 p-3 rounded border border-stone-700">
+                    <h4 className="font-bold text-sm text-stone-400 mb-2 uppercase tracking-wider border-b border-stone-700 pb-1">
+                      Oggetti Trovati
+                    </h4>
+                    <ul className="text-sm text-stone-300 space-y-1 max-h-32 overflow-y-auto pr-1">
+                      {heroState.inventory?.length > 0 ? (
+                        heroState.inventory.map((itemId, idx) => (
+                          <li key={`item-${itemId}-${idx}`} className="flex items-start gap-2">
+                            <span className="text-stone-500">•</span>
+                            <span>{getItemName(itemId)}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-stone-500 italic">Nessun oggetto</li>
+                      )}
+                    </ul>
+                  </div>
 
-                    {heroState.inventory?.length > 0 && (
-                      <div>
-                        <span className="text-amber-700/80 text-xs font-bold uppercase tracking-wider block mb-1">Oggetti:</span>
-                        <ul className="list-disc list-inside text-stone-300 space-y-1">
-                          {heroState.inventory.map((itemId, i) => (
-                            <li key={`item-${itemId}-${i}`} className="truncate" title={getItemName(itemId)}>
-                              {getItemName(itemId)}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {heroState.equipment?.length > 0 && (
-                      <div>
-                        <span className="text-amber-700/80 text-xs font-bold uppercase tracking-wider block mb-1">Equipaggiamento:</span>
-                        <ul className="list-disc list-inside text-stone-300 space-y-1">
-                          {heroState.equipment.map((eqId, i) => (
-                            <li key={`eq-${eqId}-${i}`} className="truncate" title={getEquipmentName(eqId)}>
-                              {getEquipmentName(eqId)}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div className="bg-stone-900 p-3 rounded border border-stone-700">
+                    <h4 className="font-bold text-sm text-stone-400 mb-2 uppercase tracking-wider border-b border-stone-700 pb-1">
+                      Equipaggiamento
+                    </h4>
+                    <ul className="text-sm text-stone-300 space-y-1 max-h-32 overflow-y-auto pr-1">
+                      {heroState.equipment?.length > 0 ? (
+                        heroState.equipment.map((eqId, idx) => (
+                          <li key={`eq-${eqId}-${idx}`} className="flex items-start gap-2">
+                            <span className="text-stone-500">•</span>
+                            <span>{getEquipmentName(eqId)}</span>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-stone-500 italic">Nessun equipaggiamento</li>
+                      )}
+                    </ul>
                   </div>
                 </div>
               </div>
-            );
-          })}
-          
-          {survivingHeroes.length === 0 && (
-            <div className="col-span-full text-center py-16 bg-stone-800/50 rounded-lg border border-stone-700 border-dashed">
-              <p className="text-stone-500 italic text-2xl font-serif">
-                Nessun eroe è sopravvissuto a questa missione...
-              </p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-stone-400 italic mb-10 p-10 bg-stone-800 rounded-lg border border-stone-700">
+            Nessun eroe è sopravvissuto a questa missione...
+          </div>
+        )}
 
-        {/* Actions */}
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center">
           <button
             onClick={handleFinalize}
-            className="bg-amber-800 hover:bg-amber-700 text-amber-100 font-bold py-4 px-12 rounded-lg shadow-[0_0_15px_rgba(180,83,9,0.5)] border-2 border-amber-600 transition-all duration-200 text-xl uppercase tracking-widest hover:scale-105 active:scale-95"
+            className="bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-4 px-10 rounded-lg border-2 border-yellow-500 transition-all transform hover:scale-105 shadow-lg shadow-black/50 text-lg uppercase tracking-wide"
           >
             Torna al Villaggio
           </button>

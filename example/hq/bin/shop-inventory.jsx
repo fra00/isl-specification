@@ -6,145 +6,136 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 export default function ShopInventory({
-    items = [],
-    selectedItemId = null,
-    canBuy = false,
-    buyReason = '',
-    onSelect = () => {},
-    onBuy = () => {},
-    onEnterDungeon = () => {},
-    onExit = () => {}
+  items = [],
+  selectedItemId = null,
+  canBuy = false,
+  buyReason = "",
+  onSelect = () => {},
+  onBuy = () => {},
+  onEnterDungeon = () => {},
+  onExit = () => {}
 }) {
-    const selectedItem = useMemo(() => {
-        if (selectedItemId == null) return null;
-        return items?.find(i => i.id === selectedItemId) || null;
-    }, [items, selectedItemId]);
+  const selectedItem = useMemo(() => {
+    return items.find(i => i?.id === selectedItemId);
+  }, [items, selectedItemId]);
 
-    const handleItemClick = useCallback((id) => {
-        const itemExists = items?.find(i => i.id === id);
-        if (itemExists == null) return;
-        onSelect(id);
-    }, [items, onSelect]);
+  const handleItemClick = useCallback((id) => {
+    if (!items.find(i => i?.id === id)) return;
+    onSelect(id);
+  }, [items, onSelect]);
 
-    const handleBuy = useCallback(() => {
-        if (canBuy) {
-            onBuy();
-        }
-    }, [canBuy, onBuy]);
+  const handleBuyClick = useCallback(() => {
+    if (canBuy) {
+      onBuy();
+    }
+  }, [canBuy, onBuy]);
 
-    return (
-        <div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-200 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl w-full max-w-5xl mx-auto">
+  const handleEnterDungeonClick = useCallback(() => {
+    onEnterDungeon();
+  }, [onEnterDungeon]);
+
+  const handleExitClick = useCallback(() => {
+    onExit();
+  }, [onExit]);
+
+  return (
+    <div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-300 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl">
+      {/* LIST COLUMN */}
+      <div className="flex-1 flex flex-col">
+        <h2 className="text-2xl font-bold text-yellow-500 mb-4 border-b border-gray-700 pb-2 tracking-wider uppercase">
+          Armeria
+        </h2>
+        <div className="overflow-y-auto max-h-[500px] pr-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+          {items.map((item) => {
+            if (!item) return null;
+            const isSelected = item.id === selectedItemId;
             
-            {/* LIST SECTION */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <h2 className="text-2xl font-bold text-yellow-600 mb-4 border-b border-gray-700 pb-2 tracking-wider">
-                    Armeria
-                </h2>
-                <div className="flex-1 overflow-y-auto max-h-[600px] pr-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                    {!items || items.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500 italic border border-dashed border-gray-700 rounded">
-                            Nessun equipaggiamento disponibile al momento.
-                        </div>
-                    ) : (
-                        items.map((item) => {
-                            const isSelected = item.id === selectedItemId;
-                            return (
-                                <div
-                                    key={item.id}
-                                    onClick={() => handleItemClick(item.id)}
-                                    className={`flex justify-between items-center p-3 cursor-pointer rounded transition-all duration-200 border ${
-                                        isSelected 
-                                            ? 'border-yellow-600 bg-gray-800 shadow-inner' 
-                                            : 'border-gray-800 hover:bg-gray-800 hover:border-gray-600'
-                                    }`}
-                                >
-                                    <span className={`font-medium truncate pr-4 ${isSelected ? 'text-yellow-500' : 'text-gray-300'}`}>
-                                        {item.nome}
-                                    </span>
-                                    <span className="text-yellow-600 font-bold text-sm whitespace-nowrap">
-                                        {item.prezzo} MO
-                                    </span>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-            </div>
-
-            {/* PREVIEW & ACTIONS SECTION */}
-            <div className="w-full md:w-80 flex flex-col gap-6 shrink-0">
-                
-                {/* PREVIEW CARD */}
-                <div className="bg-gray-800 p-5 rounded-lg border border-gray-700 flex flex-col items-center text-center min-h-[320px] shadow-lg relative overflow-hidden">
-                    {selectedItem ? (
-                        <>
-                            <div className="w-40 h-40 mb-5 bg-gray-900 rounded border border-gray-700 flex items-center justify-center overflow-hidden p-2 shadow-inner">
-                                {selectedItem.immagine ? (
-                                    <img 
-                                        src={`/img/equip/${selectedItem.immagine}`} 
-                                        alt={selectedItem.nome} 
-                                        className="max-w-full max-h-full object-contain drop-shadow-md"
-                                    />
-                                ) : (
-                                    <span className="text-gray-600 text-sm italic">Immagine mancante</span>
-                                )}
-                            </div>
-                            
-                            <h3 className="text-xl font-bold text-yellow-500 mb-2 leading-tight">
-                                {selectedItem.nome}
-                            </h3>
-                            
-                            <p className="text-md text-gray-300 font-semibold mb-4">
-                                {selectedItem.prezzo} Monete d'Oro
-                            </p>
-                            
-                            {!canBuy && buyReason && (
-                                <div className="mt-auto w-full bg-red-950/80 border border-red-800 rounded p-3 shadow-inner">
-                                    <p className="text-red-400 text-sm font-medium leading-snug">
-                                        {buyReason}
-                                    </p>
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-500 opacity-70">
-                            <svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                            </svg>
-                            <p className="italic text-sm px-4">Seleziona un oggetto dall'elenco per visualizzarne i dettagli</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* ACTIONS */}
-                <div className="flex flex-col gap-3 mt-auto">
-                    <button
-                        onClick={handleBuy}
-                        disabled={!selectedItem || !canBuy}
-                        title={!canBuy ? buyReason : ''}
-                        className="w-full py-3 px-4 bg-gradient-to-b from-yellow-700 to-yellow-900 hover:from-yellow-600 hover:to-yellow-800 disabled:from-gray-800 disabled:to-gray-900 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded shadow-md transition-all duration-200 border border-yellow-600 disabled:border-gray-700 uppercase tracking-wide text-sm"
-                    >
-                        Acquista
-                    </button>
-                    
-                    <button
-                        onClick={onEnterDungeon}
-                        className="w-full py-3 px-4 bg-gradient-to-b from-red-800 to-red-950 hover:from-red-700 hover:to-red-900 text-white font-bold rounded shadow-md transition-all duration-200 border border-red-700 uppercase tracking-wide text-sm mt-4"
-                    >
-                        Entra nel dungeon
-                    </button>
-                    
-                    <button
-                        onClick={onExit}
-                        className="w-full py-3 px-4 bg-gradient-to-b from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 font-bold rounded shadow-md transition-all duration-200 border border-gray-600 uppercase tracking-wide text-sm"
-                    >
-                        Indietro
-                    </button>
-                </div>
-            </div>
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className={`flex justify-between items-center p-3 rounded cursor-pointer transition-all border ${
+                  isSelected
+                    ? 'bg-gray-800 border-yellow-600 shadow-[0_0_10px_rgba(202,138,4,0.2)]'
+                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-700 hover:border-gray-500'
+                }`}
+              >
+                <span className="font-medium text-lg">{item.nome}</span>
+                <span className="text-yellow-500 font-bold">
+                  {item.prezzo} <span className="text-sm text-yellow-700">MO</span>
+                </span>
+              </div>
+            );
+          })}
+          {items.length === 0 && (
+             <div className="text-center text-gray-500 py-8 italic">
+               Nessun oggetto disponibile.
+             </div>
+          )}
         </div>
-    );
+      </div>
+
+      {/* PREVIEW & ACTIONS COLUMN */}
+      <div className="w-full md:w-80 flex flex-col gap-6">
+        {/* PREVIEW CARD */}
+        <div className="bg-gray-800 border-2 border-gray-700 rounded-lg p-4 flex flex-col items-center min-h-[280px] justify-center relative shadow-inner">
+          {selectedItem ? (
+            <>
+              <h3 className="text-xl font-bold text-yellow-500 mb-4 text-center">
+                {selectedItem.nome}
+              </h3>
+              {selectedItem.immagine && (
+                <img
+                  src={`/img/equip/${selectedItem.immagine}`}
+                  alt={selectedItem.nome}
+                  className="w-32 h-32 object-contain mb-4 drop-shadow-lg"
+                />
+              )}
+              <div className="text-yellow-400 font-bold text-2xl mb-2">
+                {selectedItem.prezzo} <span className="text-lg text-yellow-600">MO</span>
+              </div>
+              {!canBuy && buyReason && (
+                <div className="mt-auto w-full bg-red-900/40 border border-red-800 text-red-200 text-sm p-2 rounded text-center">
+                  {buyReason}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-gray-500 italic text-center px-4">
+              Seleziona un oggetto dall'inventario per visualizzarne i dettagli.
+            </div>
+          )}
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex flex-col gap-3 mt-auto">
+          <button
+            onClick={handleBuyClick}
+            disabled={!canBuy || !selectedItem}
+            title={!canBuy ? buyReason : "Acquista oggetto"}
+            className="w-full py-3 px-4 bg-gradient-to-r from-yellow-800 to-yellow-600 hover:from-yellow-700 hover:to-yellow-500 disabled:from-gray-800 disabled:to-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded border border-yellow-900 disabled:border-gray-600 transition-all shadow-lg uppercase tracking-wider"
+          >
+            Acquista
+          </button>
+          
+          <button
+            onClick={handleEnterDungeonClick}
+            className="w-full py-3 px-4 bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 text-white font-bold rounded border border-red-950 transition-all shadow-lg uppercase tracking-wider mt-2"
+          >
+            Entra nel dungeon
+          </button>
+          
+          <button
+            onClick={handleExitClick}
+            className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded border border-gray-600 transition-all uppercase tracking-wider text-sm mt-1"
+          >
+            Indietro
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

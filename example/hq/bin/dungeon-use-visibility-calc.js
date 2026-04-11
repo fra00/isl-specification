@@ -6,148 +6,155 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback } from "react";
 
 export function useVisibilityCalc({ gameSession, visibilityMap }) {
-    const calculateVisibleCells = useCallback((startX, startY) => {
-        const visibleCells = [];
-        if (!visibilityMap?.data) return visibleCells;
+  const calculateVisibleCells = useCallback((startX, startY) => {
+    const visibleCells = [];
+    const startVisCell = visibilityMap?.data?.find(
+      (c) => c.x === startX && c.y === startY
+    );
 
-        const startVisCell = visibilityMap.data.find(c => c.x === startX && c.y === startY);
-        if (!startVisCell) return visibleCells;
+    if (!startVisCell) {
+      return visibleCells;
+    }
 
-        visibleCells.push({ x: startX, y: startY });
+    visibleCells.push({ x: startX, y: startY });
 
-        // Phase 1: Room Visibility
-        if (startVisCell.valo !== "1") {
-            for (let i = 0; i < visibilityMap.data.length; i++) {
-                const cell = visibilityMap.data[i];
-                if (
-                    cell.valo === startVisCell.vis1 ||
-                    cell.valo === startVisCell.vis2 ||
-                    cell.valo === startVisCell.valo
-                ) {
-                    // Avoid duplicating the start cell
-                    if (cell.x !== startX || cell.y !== startY) {
-                        visibleCells.push({ x: cell.x, y: cell.y });
-                    }
-                }
-            }
-            return visibleCells;
+    // Phase 1: Room Visibility
+    if (startVisCell.valo !== "1") {
+      visibilityMap?.data?.forEach((cell) => {
+        if (
+          cell.valo === startVisCell.vis1 ||
+          cell.valo === startVisCell.vis2 ||
+          cell.valo === startVisCell.valo
+        ) {
+          // Prevent duplicating the start cell
+          if (cell.x !== startX || cell.y !== startY) {
+            visibleCells.push({ x: cell.x, y: cell.y });
+          }
+        }
+      });
+      return visibleCells;
+    }
+
+    // Phase 2: Corridor Visibility (Ray Casting)
+    const directions = [
+      { x: 0, y: -1 }, // Up
+      { x: 0, y: 1 },  // Down
+      { x: -1, y: 0 }, // Left
+      { x: 1, y: 0 },  // Right
+    ];
+
+    directions.forEach((dir) => {
+      let currentX = startX;
+      let currentY = startY;
+
+      while (true) {
+        currentX += dir.x;
+        currentY += dir.y;
+
+        const visCell = visibilityMap?.data?.find(
+          (c) => c.x === currentX && c.y === currentY
+        );
+
+        if (!visCell) {
+          break;
         }
 
-        // Phase 2: Corridor Visibility (Ray Casting)
-        const directions = [
-            { x: 0, y: -1 }, // Up
-            { x: 0, y: 1 },  // Down
-            { x: -1, y: 0 }, // Left
-            { x: 1, y: 0 }   // Right
-        ];
-
-        for (let i = 0; i < directions.length; i++) {
-            const dir = directions[i];
-            let currentX = startX;
-            let currentY = startY;
-
-            while (true) {
-                currentX += dir.x;
-                currentY += dir.y;
-
-                const visCell = visibilityMap.data.find(c => c.x === currentX && c.y === currentY);
-                if (!visCell) break;
-
-                // Rule 1: Room Boundary (Stop)
-                if (visCell.valo !== "1") {
-                    break;
-                }
-
-                // Rule 2: Obstacle (Stop)
-                const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === currentX && c.y === currentY);
-                if (mapCell?.arnt?.antroc === true) {
-                    visibleCells.push({ x: currentX, y: currentY });
-                    break;
-                }
-
-                // Rule 3: Corridor (Propagate)
-                visibleCells.push({ x: currentX, y: currentY });
-            }
+        // Rule 1: Room Boundary (Stop)
+        if (visCell.valo !== "1") {
+          break;
         }
 
-        return visibleCells;
-    }, [gameSession, visibilityMap]);
+        // Rule 2: Obstacle (Stop)
+        const mapCell = gameSession?.currentMap?.grid?.find(
+          (c) => c.x === currentX && c.y === currentY
+        );
 
-    const hasLineOfSight = useCallback((startX, startY, targetX, targetY) => {
-        if (!visibilityMap?.data || !gameSession?.currentMap?.grid) return false;
-
-        let x0 = startX;
-        let y0 = startY;
-        const x1 = targetX;
-        const y1 = targetY;
-
-        const dx = Math.abs(x1 - x0);
-        const dy = Math.abs(y1 - y0);
-        const sx = x0 < x1 ? 1 : -1;
-        const sy = y0 < y1 ? 1 : -1;
-        let err = dx - dy;
-
-        let currentValo = visibilityMap.data.find(c => c.x === x0 && c.y === y0)?.valo;
-        let prevX = x0;
-        let prevY = y0;
-
-        while (true) {
-            const visCell = visibilityMap.data.find(c => c.x === x0 && c.y === y0);
-            const mapCell = gameSession.currentMap.grid.find(c => c.x === x0 && c.y === y0);
-
-            if (!visCell) return false;
-
-            // Check Wall Transition (Area ID valo changes without an open door)
-            if (currentValo !== undefined && visCell.valo !== currentValo) {
-                const isCurrentDoor = gameSession.openedDoors?.includes(`${x0},${y0}`);
-                const isPrevDoor = gameSession.openedDoors?.includes(`${prevX},${prevY}`);
-                
-                if (!isCurrentDoor && !isPrevDoor) {
-                    return false;
-                }
-                currentValo = visCell.valo;
-            }
-
-            const isStart = x0 === startX && y0 === startY;
-            const isTarget = x0 === targetX && y0 === targetY;
-
-            // Exclude start and target cells from blocking themselves
-            if (!isStart && !isTarget) {
-                // Check Furniture
-                if (mapCell?.mobili?.num != null) {
-                    return false;
-                }
-
-                // Check Rock
-                if (mapCell?.arnt?.antroc === true) {
-                    return false;
-                }
-            }
-
-            if (x0 === x1 && y0 === y1) break;
-
-            prevX = x0;
-            prevY = y0;
-
-            const e2 = 2 * err;
-            if (e2 > -dy) {
-                err -= dy;
-                x0 += sx;
-            }
-            if (e2 < dx) {
-                err += dx;
-                y0 += sy;
-            }
+        if (mapCell && mapCell.arnt?.antroc === true) {
+          visibleCells.push({ x: currentX, y: currentY });
+          break;
         }
 
-        return true;
-    }, [gameSession, visibilityMap]);
+        // Rule 3: Corridor (Propagate)
+        visibleCells.push({ x: currentX, y: currentY });
+      }
+    });
 
-    return {
-        calculateVisibleCells,
-        hasLineOfSight
-    };
+    return visibleCells;
+  }, [gameSession, visibilityMap]);
+
+  const hasLineOfSight = useCallback((startX, startY, targetX, targetY) => {
+    let x0 = startX;
+    let y0 = startY;
+    const x1 = targetX;
+    const y1 = targetY;
+
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+
+    let prevValo = null;
+    let prevX = null;
+    let prevY = null;
+
+    while (true) {
+      const visCell = visibilityMap?.data?.find((c) => c.x === x0 && c.y === y0);
+      const mapCell = gameSession?.currentMap?.grid?.find((c) => c.x === x0 && c.y === y0);
+
+      if (visCell) {
+        if (prevValo !== null && prevValo !== visCell.valo) {
+          const currentDoor = `${x0},${y0}`;
+          const prevDoor = `${prevX},${prevY}`;
+          const hasOpenDoor =
+            gameSession?.openedDoors?.includes(currentDoor) ||
+            gameSession?.openedDoors?.includes(prevDoor);
+            
+          if (!hasOpenDoor) {
+            return false;
+          }
+        }
+        prevValo = visCell.valo;
+      }
+
+      if (mapCell) {
+        // Exclude the starting cell from blocking its own line of sight
+        if (x0 !== startX || y0 !== startY) {
+          if (mapCell.mobili?.num != null) {
+            return false;
+          }
+          if (mapCell.arnt?.antroc === true) {
+            return false;
+          }
+        }
+      }
+
+      if (x0 === x1 && y0 === y1) {
+        break;
+      }
+
+      prevX = x0;
+      prevY = y0;
+
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+
+    return true;
+  }, [gameSession, visibilityMap]);
+
+  return {
+    calculateVisibleCells,
+    hasLineOfSight,
+  };
 }

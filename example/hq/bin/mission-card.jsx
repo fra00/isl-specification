@@ -8,100 +8,101 @@
 
 import React, { useCallback } from 'react';
 
-const CheckIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-);
-
-const PlayIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-  </svg>
-);
-
 export default function MissionCard({ mission, index = 0, status = 'LOCKED', onSelect }) {
-  const handleInteraction = useCallback((e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    if (mission == null) return;
+  const handleInteraction = useCallback(() => {
+    if (!mission) return;
     if (status === 'LOCKED') return;
-    
     if (typeof onSelect === 'function') {
       onSelect(index);
     }
   }, [mission, status, index, onSelect]);
 
-  if (mission == null) {
+  if (!mission) {
     return null;
   }
 
-  const statusConfig = {
-    COMPLETED: {
-      containerClass: 'border-green-500 bg-green-50 text-green-900',
-      icon: <CheckIcon />,
-      btnLabel: 'Replay',
-      btnClass: 'bg-green-600 hover:bg-green-700 text-white'
-    },
-    AVAILABLE: {
-      containerClass: 'border-yellow-500 bg-yellow-50 text-yellow-900 ring-2 ring-yellow-400',
-      icon: <PlayIcon />,
-      btnLabel: 'Start',
-      btnClass: 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-sm'
-    },
-    LOCKED: {
-      containerClass: 'border-gray-300 bg-gray-100 text-gray-500 opacity-60 cursor-not-allowed',
-      icon: <LockIcon />,
-      btnLabel: 'Locked',
-      btnClass: 'bg-gray-300 text-gray-500 cursor-not-allowed'
-    }
-  };
+  const isCompleted = status === 'COMPLETED';
+  const isAvailable = status === 'AVAILABLE';
+  const isLocked = status === 'LOCKED';
 
-  const currentConfig = statusConfig[status] || statusConfig.LOCKED;
-  const subtitle = `Mission ${mission?.ordine ?? (index + 1)}`;
-  const title = mission?.titolo || 'Unknown Mission';
+  let cardClasses = 'p-4 rounded-xl shadow-md border-2 transition-all duration-200 flex flex-col gap-4 relative overflow-hidden ';
+  let icon = null;
+  let buttonText = '';
+  let buttonClasses = 'px-5 py-2 rounded-lg font-bold text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ';
+
+  if (isCompleted) {
+    cardClasses += 'border-green-500 bg-green-50 text-green-900 cursor-pointer hover:bg-green-100 hover:shadow-lg';
+    buttonText = 'Replay';
+    buttonClasses += 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500';
+    icon = (
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-green-200 text-green-700">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    );
+  } else if (isAvailable) {
+    cardClasses += 'border-yellow-400 bg-yellow-50 text-yellow-900 cursor-pointer hover:bg-yellow-100 hover:shadow-lg shadow-yellow-200/50';
+    buttonText = 'Start';
+    buttonClasses += 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-400';
+    icon = (
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-yellow-200 text-yellow-700">
+        <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </div>
+    );
+  } else {
+    cardClasses += 'border-gray-200 bg-gray-50 text-gray-500 opacity-75 cursor-not-allowed';
+    buttonText = 'Locked';
+    buttonClasses += 'bg-gray-300 text-gray-500 cursor-not-allowed';
+    icon = (
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-gray-500">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+    );
+  }
+
+  const subtitle = `Mission ${mission.ordine != null ? mission.ordine : index + 1}`;
 
   return (
     <div 
-      className={`p-4 rounded-lg shadow border transition-all duration-200 flex flex-col gap-3 ${currentConfig.containerClass}`}
+      className={cardClasses}
       onClick={handleInteraction}
-      role="button"
-      tabIndex={status === 'LOCKED' ? -1 : 0}
-      onKeyDown={(e) => { 
+      role={isLocked ? 'presentation' : 'button'}
+      tabIndex={isLocked ? -1 : 0}
+      onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          handleInteraction(e);
+          e.preventDefault();
+          handleInteraction();
         }
       }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0">
-            {currentConfig.icon}
-          </div>
-          <div>
-            <h3 className="font-bold text-lg leading-tight">{title}</h3>
-            <p className="text-sm opacity-80">{subtitle}</p>
-          </div>
+      <div className="flex items-center gap-4">
+        {icon}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-lg leading-tight truncate" title={mission.titolo || 'Unknown Mission'}>
+            {mission.titolo || 'Unknown Mission'}
+          </h3>
+          <p className="text-sm font-medium opacity-80 mt-0.5">{subtitle}</p>
         </div>
       </div>
       
-      <button 
-        onClick={handleInteraction}
-        disabled={status === 'LOCKED'}
-        className={`mt-2 py-2 px-4 rounded font-semibold transition-colors w-full ${currentConfig.btnClass}`}
-      >
-        {currentConfig.btnLabel}
-      </button>
+      <div className="mt-1 flex justify-end">
+        <button 
+          className={buttonClasses}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleInteraction();
+          }}
+          disabled={isLocked}
+          aria-label={`${buttonText} ${mission.titolo || 'Mission'}`}
+        >
+          {buttonText}
+        </button>
+      </div>
     </div>
   );
 }

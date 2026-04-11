@@ -7,49 +7,58 @@
  */
 
 import { useCallback } from 'react';
+import { HeroState } from './domain-session';
 
-export function useCampaignManager(config = {}) {
-  const STORAGE_KEY = "hq_campaign_data";
-
+export const useCampaignManager = (config = {}) => {
+  
   const saveCampaign = useCallback((heroes, nextMissionIndex) => {
     const campaignData = {
-      heroes: heroes != null ? heroes : [],
+      heroes: heroes || [],
       nextMissionIndex: nextMissionIndex != null ? nextMissionIndex : 0,
       timestamp: Date.now()
     };
 
     try {
       const jsonString = JSON.stringify(campaignData);
-      localStorage.setItem(STORAGE_KEY, jsonString);
+      localStorage.setItem("hq_campaign_data", jsonString);
     } catch (error) {
       console.error("Error saving campaign:", error);
-      alert("Could not save progress");
+      if (typeof config?.onError === 'function') {
+        config.onError("Could not save progress");
+      } else {
+        console.warn("Could not save progress");
+      }
     }
-  }, []);
+  }, [config]);
 
   const loadCampaign = useCallback(() => {
-    const item = localStorage.getItem(STORAGE_KEY);
+    const item = localStorage.getItem("hq_campaign_data");
     
-    if (!item) {
+    if (!item || item.trim() === "") {
       return null;
     }
 
     try {
       const campaignData = JSON.parse(item);
+      
+      if (campaignData && Array.isArray(campaignData.heroes)) {
+        campaignData.heroes = campaignData.heroes.map(heroData => HeroState(heroData));
+      }
+      
       return campaignData;
     } catch (error) {
-      console.error("Error parsing campaign data:", error);
+      console.error("Error loading campaign:", error);
       return null;
     }
   }, []);
 
   const hasSavedCampaign = useCallback(() => {
-    const item = localStorage.getItem(STORAGE_KEY);
-    return item != null && item !== "";
+    const item = localStorage.getItem("hq_campaign_data");
+    return item != null && item.trim() !== "";
   }, []);
 
   const resetCampaign = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("hq_campaign_data");
   }, []);
 
   return {
@@ -58,4 +67,4 @@ export function useCampaignManager(config = {}) {
     hasSavedCampaign,
     resetCampaign
   };
-}
+};

@@ -6,48 +6,49 @@
  * Edit the ISL file instead.
  */
 
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
-export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
-    const visibleFurniture = useMemo(() => {
-        if (!gameSession?.currentMap || !boardVisibilityMap) {
-            return [];
+export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
+  const visibleFurniture = useMemo(() => {
+    if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
+      return [];
+    }
+
+    const visibleItems = [];
+    const visibilityLookup = new Map();
+
+    for (let i = 0; i < boardVisibilityMap.data.length; i++) {
+      const cell = boardVisibilityMap.data[i];
+      visibilityLookup.set(`${cell.x},${cell.y}`, cell);
+    }
+
+    const grid = gameSession.currentMap.grid;
+    
+    for (let i = 0; i < grid.length; i++) {
+      const mapCell = grid[i];
+      const visCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+
+      if (visCell && visCell.fog === false) {
+        if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
+          visibleItems.push({
+            x: mapCell.x,
+            y: mapCell.y,
+            img: "../cell/pietra.jpg"
+          });
+        } else if (mapCell.mobili?.num != null) {
+          visibleItems.push({
+            x: mapCell.x,
+            y: mapCell.y,
+            img: mapCell.mobili.img
+          });
         }
+      }
+    }
 
-        const grid = gameSession.currentMap.grid || [];
-        const visibilityData = boardVisibilityMap.data || [];
-        const visibleItems = [];
+    return visibleItems;
+  }, [gameSession?.currentMap, boardVisibilityMap]);
 
-        // Create a lookup map for faster visibility cell retrieval
-        const visibilityLookup = new Map();
-        for (const vCell of visibilityData) {
-            visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
-        }
-
-        for (const mapCell of grid) {
-            const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
-
-            if (vCell && vCell.fog === false) {
-                if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
-                    visibleItems.push({
-                        x: mapCell.x,
-                        y: mapCell.y,
-                        img: "../cell/pietra.jpg"
-                    });
-                } else if (mapCell.mobili?.num != null) {
-                    visibleItems.push({
-                        x: mapCell.x,
-                        y: mapCell.y,
-                        img: mapCell.mobili.img
-                    });
-                }
-            }
-        }
-
-        return visibleItems;
-    }, [gameSession?.currentMap, boardVisibilityMap]);
-
-    return {
-        visibleFurniture
-    };
-};
+  return {
+    visibleFurniture
+  };
+}

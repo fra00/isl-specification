@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 
-export const useDungeonMapQuery = ({ gameSession, visibilityMap = null }) => {
+export function useDungeonMapQuery({ gameSession, visibilityMap = null }) {
     const getMapCell = useCallback((x, y) => {
         if (!gameSession?.currentMap?.grid) return null;
         return gameSession.currentMap.grid.find(cell => cell.x === x && cell.y === y) || null;
@@ -36,18 +36,14 @@ export const useDungeonMapQuery = ({ gameSession, visibilityMap = null }) => {
 
     const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
         if (!gameSession?.monsters) return false;
-        const monster = gameSession.monsters.find(
-            m => m.x === x && m.y === y && m.id !== excludeEntityId
-        );
-        return monster != null && monster.currentBody > 0;
+        const monster = gameSession.monsters.find(m => m.x === x && m.y === y && m.id !== excludeEntityId);
+        return !!(monster && monster.currentBody > 0);
     }, [gameSession]);
 
     const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
         if (!gameSession?.heroes) return false;
-        const hero = gameSession.heroes.find(
-            h => h.x === x && h.y === y && h.heroId !== excludeEntityId
-        );
-        return hero != null;
+        const hero = gameSession.heroes.find(h => h.x === x && h.y === y && h.heroId !== excludeEntityId);
+        return !!hero;
     }, [gameSession]);
 
     const isBlockedByRock = useCallback((x, y) => {
@@ -74,4 +70,4 @@ export const useDungeonMapQuery = ({ gameSession, visibilityMap = null }) => {
             visibilityMap
         }
     };
-};
+}

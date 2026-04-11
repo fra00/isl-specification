@@ -1,1 +1,10 @@
-export default function PageContent(props: { monsters?: Array<any>; heroes?: Array<any>; boardData?: any; equipment?: Array<any>; items?: Array<any>; spells?: Array<any>; treasureDeck?: Array<any>; campaign?: any }): React.ReactElement;
+export default function PageContent(props: {
+  monsters?: any[];
+  heroes?: any[];
+  boardData?: any;
+  equipment?: any[];
+  items?: any[];
+  spells?: any[];
+  treasureDeck?: any[];
+  campaign?: any;
+}): React.ReactElement;

@@ -6,124 +6,123 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
-export function useTreasureSearch(config) {
-  const {
-    gameSession,
-    visibilityMap,
-    onNotify,
-    onActionDone,
-    sessionManager,
-    onTreasureCardDrawn,
-    onWanderingMonster
-  } = config;
-
+export function useTreasureSearch({
+  gameSession,
+  visibilityMap,
+  onNotify,
+  onActionDone,
+  sessionManager,
+  onTreasureCardDrawn,
+  onWanderingMonster
+}) {
   const [foundTreasures, setFoundTreasures] = useState([]);
-  
+
   const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
-  const stateRef = useRef({
-    gameSession,
-    foundTreasures,
-    sessionManager,
-    onNotify,
-    onTreasureCardDrawn,
-    onActionDone,
-    onWanderingMonster,
-    visibilityCalc
-  });
-
-  stateRef.current = {
-    gameSession,
-    foundTreasures,
-    sessionManager,
-    onNotify,
-    onTreasureCardDrawn,
-    onActionDone,
-    onWanderingMonster,
-    visibilityCalc
-  };
-
   const searchTreasure = useCallback(() => {
-    const {
-      gameSession: currentSession,
-      foundTreasures: currentTreasures,
-      sessionManager: currentSessionManager,
-      onNotify: currentOnNotify,
-      onTreasureCardDrawn: currentOnTreasureCardDrawn,
-      onActionDone: currentOnActionDone,
-      visibilityCalc: currentVisibilityCalc
-    } = stateRef.current;
-
-    if (!currentSession) return;
-
-    if (currentSession.monsters && currentSession.monsters.length > 0) {
-      currentOnNotify("Non puoi cercare tesori con mostri vicini!");
+    if (gameSession?.monsters && gameSession.monsters.length > 0) {
+      onNotify("Non puoi cercare tesori con mostri vicini!");
       return;
     }
 
-    const currentHero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
-    if (!currentHero) return;
+    const currentHero = gameSession?.heroes?.find(
+      (h) => h.turnOrder === gameSession?.currentTurn
+    );
 
-    const visibleCells = currentVisibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y);
+    if (!currentHero) {
+      return;
+    }
+
+    const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y);
+
     let treasureFound = false;
     let treasureCollectionFailed = false;
 
     for (const cell of visibleCells) {
-      const mapCell = currentSession.currentMap?.grid?.find(c => c.x === cell.x && c.y === cell.y);
+      const mapCell = gameSession?.currentMap?.grid?.find(
+        (c) => c.x === cell.x && c.y === cell.y
+      );
+
       if (mapCell && mapCell.tes) {
         const { mon, ogg, arma, trp } = mapCell.tes;
+        
         if (mon !== 0 || ogg !== 0 || arma !== 0 || trp !== 0) {
-          const alreadyFound = currentTreasures.some(t => t.x === mapCell.x && t.y === mapCell.y);
+          const alreadyFound = foundTreasures.some(
+            (t) => t.x === mapCell.x && t.y === mapCell.y
+          );
+
           if (!alreadyFound) {
-            const didCollectTreasure = currentSessionManager.collectTreasureAtCell(currentHero.heroId, mapCell.x, mapCell.y);
+            const didCollectTreasure = sessionManager.collectTreasureAtCell(
+              currentHero.heroId,
+              mapCell.x,
+              mapCell.y
+            );
+
             if (didCollectTreasure) {
               treasureFound = true;
-              setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
+              setFoundTreasures((prev) => [
+                ...prev,
+                { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }
+              ]);
             } else {
               treasureCollectionFailed = true;
-              currentOnNotify("Errore durante la raccolta del tesoro.");
+              onNotify("Errore durante la raccolta del tesoro.");
             }
-            break;
+            
+            break; // Only one treasure per search action
           }
         }
       }
     }
 
-    if (!treasureFound && !treasureCollectionFailed) {
-      if (currentSession.treasureDeck && currentSession.treasureDeck.length > 0) {
-        const drawnCard = currentSessionManager.drawTreasureCard();
+    if (treasureFound) {
+      // Specific notifications are handled inside the loop/sessionManager
+    } else if (treasureCollectionFailed) {
+      // Keep the action flow deterministic without spawning a treasure card fallback
+    } else {
+      if (gameSession?.treasureDeck && gameSession.treasureDeck.length > 0) {
+        const drawnCard = sessionManager.drawTreasureCard();
         if (drawnCard != null) {
-          currentOnTreasureCardDrawn(drawnCard);
+          onTreasureCardDrawn(drawnCard);
         }
       } else {
-        currentOnNotify("Nessuna carta tesoro rimasta.");
+        onNotify("Nessuna carta tesoro rimasta.");
       }
     }
 
-    currentOnActionDone();
-  }, []);
+    onActionDone();
+  }, [
+    gameSession,
+    visibilityCalc,
+    foundTreasures,
+    sessionManager,
+    onNotify,
+    onTreasureCardDrawn,
+    onActionDone
+  ]);
 
   const getFoundTreasures = useCallback(() => {
-    return stateRef.current.foundTreasures;
-  }, []);
+    return foundTreasures;
+  }, [foundTreasures]);
 
   const applyTreasureEffect = useCallback((card) => {
-    const { 
-      gameSession: currentSession, 
-      sessionManager: currentSessionManager, 
-      onWanderingMonster: currentOnWanderingMonster 
-    } = stateRef.current;
-    
-    if (!currentSession) return;
-    
-    const currentHero = currentSession.heroes?.find(h => h.turnOrder === currentSession.currentTurn);
+    if (!card) return;
+
+    const currentHero = gameSession?.heroes?.find(
+      (h) => h.turnOrder === gameSession?.currentTurn
+    );
+
     if (currentHero) {
-      currentSessionManager.applyTreasureCardEffect(currentHero.heroId, card, currentOnWanderingMonster);
+      sessionManager.applyTreasureCardEffect(
+        currentHero.heroId,
+        card,
+        onWanderingMonster
+      );
     }
-  }, []);
+  }, [gameSession, sessionManager, onWanderingMonster]);
 
   return {
     searchTreasure,

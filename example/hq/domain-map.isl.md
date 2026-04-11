@@ -36,6 +36,7 @@ Metadata for the map.
 - `tesoro_finale`: Coordinate of the treasure cell that must be found to complete the mission (@MapObjectiveCoordinate). Sentinel `{ x: 0, y: 0 }` means no final-treasure objective.
 - `oggetto_f`: ID of the quest item (@Item) that must be recovered to complete the mission (Integer, sentinel `-1` means no item objective).
 - `arma_f`: ID of the quest weapon (@Equipment) that must be recovered to complete the mission (Integer, sentinel `-1` means no weapon objective).
+- `merr`: ID of the wandering monster (@Monster) used by the quest when a wandering-monster card is drawn (Integer). Default `1` preserves the historical Orc fallback; sentinel `-1` means the quest uses a special wandering event with no standard monster spawn.
 - `nfine`: End condition identifier (Integer).
 
 #### `MapObjectiveCoordinate`

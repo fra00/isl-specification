@@ -39,7 +39,7 @@ export const Equipment = (data = {}) => ({
   daddif: data.daddif || 0,
   daddifex: data.daddifex || 0,
   numdadicontr: data.numdadicontr || 0,
-  targetMonster: data.targetMonster || 0,
+  targetMonster: data.targetMonster || "",
   doppioatt: Boolean(data.doppioatt),
   mosdoppio: data.mosdoppio || 0,
   puntimente: data.puntimente || 0,

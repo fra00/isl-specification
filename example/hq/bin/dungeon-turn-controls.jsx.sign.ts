@@ -3,7 +3,7 @@ export default function DungeonTurnControls(props: {
   currentHeroStats?: { attacco: number; difesa: number; movimento: number; mente: number; corpo: number; canAttackDiagonal: boolean; canAttackRanged: boolean; canDisarmTraps: boolean; hasDoubleAttack: boolean } | null;
   movementPoints?: number | null;
   turnPhase?: any;
-  canOpenDoor?: { found: boolean } | null;
+  canOpenDoor?: any;
   isTargeting?: boolean;
   isMoving?: boolean;
   onRollMovement?: () => void;

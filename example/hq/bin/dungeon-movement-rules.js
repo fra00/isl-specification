@@ -6,117 +6,102 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
 export function useDungeonMovementRules({ mapQuery }) {
-  const isValidDestination = useCallback(
-    (x, y, excludeEntityId) => {
-      if (!mapQuery) return false;
+  
+  const isValidDestination = useCallback((x, y, excludeEntityId) => {
+    if (!mapQuery) return false;
 
-      const cell = mapQuery.getMapCell(x, y);
-      if (!cell) {
+    if (!mapQuery.getMapCell(x, y)) return false;
+    if (mapQuery.isBlockedByFurniture(x, y)) return false;
+    if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) return false;
+    if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) return false;
+    if (mapQuery.isBlockedByRock(x, y)) return false;
+
+    return true;
+  }, [mapQuery]);
+
+  const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId) => {
+    if (!mapQuery) return false;
+
+    // Bounds Check
+    const dims = mapQuery.getMapDimensions();
+    if (targetX < 1 || targetX > dims?.width || targetY < 1 || targetY > dims?.height) {
+      return false;
+    }
+
+    // Static Obstacles
+    if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
+      return false;
+    }
+
+    // Resolve movingHero
+    const heroes = mapQuery.exposedContext?.gameSession?.heroes || [];
+    const movingHero = heroes.find(h => h.heroId === excludeEntityId);
+    
+    const isHeroMovement = !!movingHero;
+    const canIgnoreOccupants = movingHero?.activeStatus?.includes("InvisiblePassage") || false;
+
+    // Dynamic Obstacles
+    if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
+      if (!canIgnoreOccupants) {
         return false;
       }
+    }
 
-      if (mapQuery.isBlockedByFurniture(x, y)) {
+    if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
+      if (!isHeroMovement && !canIgnoreOccupants) {
+        return false;
+      } else if (isHeroMovement && !canIgnoreOccupants) {
+        // Hero movement may pass through allied heroes, but isValidDestination still forbids ending on an occupied hero cell.
+      } else if (canIgnoreOccupants) {
         return false;
       }
+    }
 
-      if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) {
-        return false;
-      }
+    // Rock Obstacles
+    if (mapQuery.isBlockedByRock(targetX, targetY)) {
+      return false;
+    }
 
-      if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) {
-        return false;
-      }
+    // Room/Wall Logic
+    const sourceVis = mapQuery.getVisibilityCell(sourceX, sourceY);
+    const targetVis = mapQuery.getVisibilityCell(targetX, targetY);
+    
+    const sourceValo = sourceVis?.valo;
+    const targetValo = targetVis?.valo;
 
-      if (mapQuery.isBlockedByRock(x, y)) {
-        return false;
-      }
+    if (sourceValo == null || targetValo == null) {
+      return true; // Assume open space if visibility data missing
+    }
 
-      return true;
-    },
-    [mapQuery],
-  );
-
-  const isWalkable = useCallback(
-    (sourceX, sourceY, targetX, targetY, excludeEntityId) => {
-      if (!mapQuery) return false;
-
-      const { width, height } = mapQuery.getMapDimensions();
-      if (targetX < 1 || targetX > width || targetY < 1 || targetY > height) {
-        return false;
-      }
-
-      if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
-        return false;
-      }
-
-      const heroes = mapQuery.exposedContext?.gameSession?.heroes || [];
-      const movingHero = heroes.find((h) => h.heroId === excludeEntityId);
-
-      const isHeroMovement = movingHero != null;
-      const canIgnoreOccupants =
-        movingHero?.activeStatus?.includes("InvisiblePassage") ?? false;
-
-      if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
-        if (!canIgnoreOccupants) {
-          return false;
-        }
-      }
-
-      if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
-        if (!isHeroMovement && !canIgnoreOccupants) {
-          return false;
-        } else if (isHeroMovement && !canIgnoreOccupants) {
-          // Hero movement may pass through allied heroes, but `isValidDestination` still forbids ending on an occupied hero cell.
-        } else if (canIgnoreOccupants) {
-          return false;
-        }
-      }
-
-      if (mapQuery.isBlockedByRock(targetX, targetY)) {
-        return false;
-      }
-
-      const sourceCell = mapQuery.getVisibilityCell(sourceX, sourceY);
-      const targetCell = mapQuery.getVisibilityCell(targetX, targetY);
-
-      const sourceValo = sourceCell?.valo;
-      const targetValo = targetCell?.valo;
-
-      if (sourceValo == null || targetValo == null) {
+    // (Crossing Rooms)
+    if (sourceValo !== targetValo) {
+      if (
+        mapQuery.isDoor(sourceX, sourceY) || 
+        mapQuery.isDoor(targetX, targetY) || 
+        mapQuery.isSecretPassage(sourceX, sourceY) || 
+        mapQuery.isSecretPassage(targetX, targetY)
+      ) {
         return true;
       }
 
-      if (sourceValo !== targetValo) {
-        if (
-          mapQuery.isDoor(sourceX, sourceY) ||
-          mapQuery.isDoor(targetX, targetY) ||
-          mapQuery.isSecretPassage(sourceX, sourceY) ||
-          mapQuery.isSecretPassage(targetX, targetY)
-        ) {
-          return true;
-        }
-
-        if (
-          movingHero &&
-          (movingHero.activeStatus?.includes("WallPass") ||
-            movingHero.activeStatus?.includes("InvisiblePassage"))
-        ) {
-          return true;
-        }
-
-        return false;
+      if (
+        movingHero && 
+        (movingHero.activeStatus?.includes("WallPass") || movingHero.activeStatus?.includes("InvisiblePassage"))
+      ) {
+        return true;
       }
 
-      return true;
-    },
-    [mapQuery],
-  );
+      return false;
+    }
+
+    return true;
+  }, [mapQuery]);
 
   return {
     isValidDestination,
-    isWalkable,
+    isWalkable
   };
 }

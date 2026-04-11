@@ -92,10 +92,10 @@
           - ELSE: add a red warning highlight (bg-red-500/40).
 - **Furniture**: Visual elements for map furniture.
   - **Data Source**: Derive `visibleFurniture` using `useDungeonFurniture(@GameSession, @VisibilityMap)`.
-  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/mobili/` + `img`. do not scale.
+  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/mobili/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
 - **Doors**: Visual elements for map doors.
   - **Data Source**: Derive `visibleDoors` using `useDungeonDoors(@GameSession, @VisibilityMap)`.
-  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. do not scale
+  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
 - **Monsters**: Visual tokens for `@GameSession.monsters` (@MonsterState) at their x,y coordinates (start from 1).
   - **Data Source**: Derive `visibleMonsters` using `useDungeonVisibleMonsters(@GameSession, @VisibilityMap)`.
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
@@ -112,16 +112,16 @@
       - Apply a green web overlay icon.
 - **Secret Passages**: Visual elements for discovered secret passages.
   - **Data Source**: `secretPassages` prop.
-  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
 - **Treasures**: Visual elements for discovered treasures.
   - **Data Source**: `treasures` prop.
-  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. do not scale.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
 - **Activated Traps**: Visual elements for triggered traps.
   - **Data Source**: `triggeredTraps` prop.
   - **Render**:
-    - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`.
-    - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`.
-    - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`.
+    - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`, using intrinsic asset dimensions.
+    - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`, using intrinsic asset dimensions.
+    - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`, using intrinsic asset dimensions.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **Body Points Indicator**:

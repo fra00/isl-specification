@@ -10,7 +10,7 @@ import { useCallback } from 'react';
 
 export function useItemLogic({ staticItems = [], sessionManager }) {
   const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
-    if (!gameSession) {
+    if (gameSession == null) {
       return false;
     }
     

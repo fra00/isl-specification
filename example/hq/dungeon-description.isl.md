@@ -35,7 +35,7 @@
 ### 🔍 Appearance
 
 - **Layout**: Full-page dark gothic briefing screen visually aligned with the mission selection page.
-- **Background**: Reuse the original HeroQuest artwork with dark gradients, mist, and warm bronze highlights.
+- **Background**: Use an abstract black-stone gradient field with mist, low-contrast rune haze, and warm bronze highlights. The page background must not depend on figurative or original franchise artwork.
 - **Title**: Large fantasy/bronze heading for the mission briefing.
 - **Text**: The `description` text from the current map in `@gameSession.currentMap.header.descrizione`, scrollable if long.
 - **Actions**: Compact action row near the bottom of the panel.

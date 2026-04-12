@@ -361,7 +361,7 @@ export default function DungeonBoard({
         ))}
         {triggeredTraps?.map((tr, i) => {
           let imgSrc = "";
-          if (tr.tipo === 1) imgSrc = "abisso.jpg";
+          if (tr.tipo === 1) imgSrc = "caduta.png";
           else if (tr.tipo === 2) imgSrc = "lancia.jpg";
           else if (tr.tipo === 3) imgSrc = "rocciacad.jpg";
           if (!imgSrc) return null;
@@ -435,7 +435,9 @@ export default function DungeonBoard({
               onClick={(e) => handleMonsterClick(e, m.id)}
               title={`HP: ${m.currentBody}/${m.monster?.corpo} | MP: ${m.currentMind}/${m.monster?.mente}`}
             >
-              <div className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}>
+              <div
+                className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}
+              >
                 <img
                   src={`/img/mostri/${m.monster?.immagine}`}
                   alt={m.monster?.nome}
@@ -484,7 +486,9 @@ export default function DungeonBoard({
               onClick={(e) => handleHeroTargetClick(e, h)}
               title={`HP: ${h.currentBody}/${h.hero?.corpo}`}
             >
-              <div className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}>
+              <div
+                className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}
+              >
                 {isActiveTurn && (
                   <div className="absolute inset-[-6px] rounded-full bg-amber-300/25 blur-md animate-pulse pointer-events-none" />
                 )}
@@ -564,10 +568,24 @@ export default function DungeonBoard({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <linearGradient id="target-trace-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient
+              id="target-trace-gradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.85" />
-              <stop offset="55%" stopColor={getTracerColor()} stopOpacity="0.95" />
-              <stop offset="100%" stopColor={getTracerColor()} stopOpacity="0.55" />
+              <stop
+                offset="55%"
+                stopColor={getTracerColor()}
+                stopOpacity="0.95"
+              />
+              <stop
+                offset="100%"
+                stopColor={getTracerColor()}
+                stopOpacity="0.55"
+              />
             </linearGradient>
           </defs>
           <line

@@ -68,7 +68,10 @@ export default function MainMenu({ onChangePageView }) {
         activeHint: "Ingresso alla campagna",
         accent: "from-amber-500/24 via-red-900/12 to-transparent",
         destination: PageNavigationEnum.PLAY_GAME,
-        hoverImg: "/img/main-menu/nuova.jpg",
+        backdrop:
+          "radial-gradient(circle at 18% 22%, rgba(251,191,36,0.26) 0%, transparent 30%), radial-gradient(circle at 78% 18%, rgba(239,68,68,0.18) 0%, transparent 34%), radial-gradient(circle at 62% 74%, rgba(180,83,9,0.2) 0%, transparent 38%), linear-gradient(135deg, rgba(28,25,23,0.98) 0%, rgba(41,37,36,0.92) 42%, rgba(17,24,39,0.8) 100%)",
+        veil:
+          "linear-gradient(120deg, rgba(251,191,36,0.14) 0%, transparent 42%, rgba(120,53,15,0.28) 100%)",
       },
       {
         id: "editor",
@@ -78,7 +81,10 @@ export default function MainMenu({ onChangePageView }) {
         activeHint: "Officina di authoring",
         accent: "from-sky-500/20 via-indigo-900/16 to-transparent",
         destination: PageNavigationEnum.EDITOR_GAME,
-        hoverImg: "/img/main-menu/editor.jpg",
+        backdrop:
+          "radial-gradient(circle at 24% 20%, rgba(56,189,248,0.2) 0%, transparent 28%), radial-gradient(circle at 76% 24%, rgba(99,102,241,0.22) 0%, transparent 34%), radial-gradient(circle at 62% 72%, rgba(14,165,233,0.12) 0%, transparent 38%), linear-gradient(135deg, rgba(15,23,42,0.96) 0%, rgba(30,41,59,0.9) 40%, rgba(23,37,84,0.84) 100%)",
+        veil:
+          "linear-gradient(120deg, rgba(56,189,248,0.16) 0%, transparent 46%, rgba(49,46,129,0.3) 100%)",
       },
     ],
     [],
@@ -208,17 +214,36 @@ export default function MainMenu({ onChangePageView }) {
       `}</style>
 
       <div className="absolute inset-0 z-[0] overflow-hidden">
-        <img
-          src="/img/menusfondo.jpg"
-          alt="HeroQuest background"
-          className="h-full w-full object-cover"
-          style={{ animation: "backdropFloat 26s ease-in-out infinite" }}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 50% 18%, rgba(120,113,108,0.16) 0%, transparent 30%), linear-gradient(135deg, rgba(12,10,9,0.98) 0%, rgba(24,24,27,0.95) 34%, rgba(9,9,11,1) 100%)",
+            animation: "backdropFloat 26s ease-in-out infinite",
+          }}
         />
-        <img
-          src={activePreviewItem.hoverImg}
-          alt={activePreviewItem.label}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
-          style={{ opacity: hoveredMenuId ? 0.42 : 0.26, animation: "backdropFloat 18s ease-in-out infinite" }}
+        <div
+          className="absolute inset-0 opacity-[0.16]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(168,162,158,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,0.18) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
+        <div
+          className="absolute inset-0 transition-opacity duration-500"
+          style={{
+            backgroundImage: activePreviewItem.backdrop,
+            opacity: hoveredMenuId ? 0.92 : 0.78,
+            animation: "backdropFloat 18s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="absolute inset-0 mix-blend-screen transition-opacity duration-500"
+          style={{
+            backgroundImage: activePreviewItem.veil,
+            opacity: hoveredMenuId ? 0.88 : 0.72,
+          }}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.16),_transparent_38%),linear-gradient(180deg,_rgba(0,0,0,0.16),_rgba(0,0,0,0.82))]" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(0,0,0,0.76),_rgba(0,0,0,0.28)_52%,_rgba(0,0,0,0.74))]" />

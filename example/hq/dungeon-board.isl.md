@@ -125,7 +125,7 @@
 - **Activated Traps**: Visual elements for triggered traps.
   - **Data Source**: `triggeredTraps` prop.
   - **Render**:
-    - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`, using intrinsic asset dimensions.
+    - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/caduta.png`, using intrinsic asset dimensions.
     - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`, using intrinsic asset dimensions.
     - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`, using intrinsic asset dimensions.
   - Triggered trap markers SHOULD cast a soft drop shadow so they remain legible over the board texture.

@@ -8,7 +8,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "goblin.gif",
-    "immalarge": "goblinimg.gif",
+    "immalarge": "goblinimg.png",
     "nonmorto": false
   },
   {
@@ -20,7 +20,7 @@
     "corpo": 1,
     "mente": 2,
     "immagine": "orco.gif",
-    "immalarge": "orcoimg.gif",
+    "immalarge": "orcoimg.png",
     "nonmorto": false
   },
   {
@@ -32,7 +32,7 @@
     "corpo": 1,
     "mente": 3,
     "immagine": "guerriero.gif",
-    "immalarge": "guerrieroimg.gif",
+    "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
   {
@@ -44,7 +44,7 @@
     "corpo": 1,
     "mente": 3,
     "immagine": "fimir.gif",
-    "immalarge": "fimirimg.gif",
+    "immalarge": "fimirimg.png",
     "nonmorto": false
   },
   {
@@ -56,7 +56,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "scheletro.gif",
-    "immalarge": "scheletroimg.gif",
+    "immalarge": "scheletroimg.png",
     "nonmorto": true
   },
   {
@@ -68,7 +68,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "zombie.gif",
-    "immalarge": "zombiimg.gif",
+    "immalarge": "zombiimg.png",
     "nonmorto": true
   },
   {
@@ -80,7 +80,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "mummia.gif",
-    "immalarge": "mummiaimg.gif",
+    "immalarge": "mummiaimg.png",
     "nonmorto": true
   },
   {
@@ -92,7 +92,7 @@
     "corpo": 1,
     "mente": 4,
     "immagine": "gargoyle.gif",
-    "immalarge": "gargolaimg.gif",
+    "immalarge": "gargolaimg.png",
     "nonmorto": false
   },
   {
@@ -104,7 +104,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "mummia.gif",
-    "immalarge": "mummiaimg.gif",
+    "immalarge": "mummiaimg.png",
     "nonmorto": true
   },
   {
@@ -116,7 +116,7 @@
     "corpo": 1,
     "mente": 3,
     "immagine": "guerriero.gif",
-    "immalarge": "guerrieroimg.gif",
+    "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
   {
@@ -128,7 +128,7 @@
     "corpo": 1,
     "mente": 3,
     "immagine": "guerriero.gif",
-    "immalarge": "guerrieroimg.gif",
+    "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
   {
@@ -140,7 +140,7 @@
     "corpo": 1,
     "mente": 3,
     "immagine": "orco.gif",
-    "immalarge": "orcoimg.gif",
+    "immalarge": "orcoimg.png",
     "nonmorto": false
   },
   {
@@ -152,7 +152,7 @@
     "corpo": 1,
     "mente": 0,
     "immagine": "zombie.gif",
-    "immalarge": "zombiimg.gif",
+    "immalarge": "zombiimg.png",
     "nonmorto": true
   },
   {
@@ -188,7 +188,7 @@
     "corpo": 5,
     "mente": 0,
     "immagine": "fimir.gif",
-    "immalarge": "fimirimg.gif",
+    "immalarge": "fimirimg.png",
     "nonmorto": false
   },
   {
@@ -200,7 +200,7 @@
     "corpo": 1,
     "mente": 1,
     "immagine": "goblin.gif",
-    "immalarge": "gargolaimg.gif",
+    "immalarge": "gargolaimg.png",
     "nonmorto": true
   },
   {
@@ -211,8 +211,8 @@
     "difesa": 1,
     "corpo": 1,
     "mente": 1,
-    "immagine": "fimirimg.gif",
-    "immalarge": "gargolaimg.gif",
+    "immagine": "fimirimg.png",
+    "immalarge": "gargolaimg.png",
     "nonmorto": false
   }
 ]

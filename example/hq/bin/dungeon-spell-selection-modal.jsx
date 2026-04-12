@@ -125,7 +125,7 @@ export default function DungeonSpellSelectionModal({
                 }`}
               >
                 <img
-                  src={`/img/cinc/${elemento}00_Dorso.jpg`}
+                  src={`/img/cinc/${elemento}00_Dorso.png`}
                   alt={`Dorso incantesimi di ${elemento}`}
                   className="aspect-[2/3] w-full max-w-[128px] rounded-lg border-2 border-stone-700 object-cover md:max-w-[150px] xl:max-w-[180px]"
                   onError={(e) => {

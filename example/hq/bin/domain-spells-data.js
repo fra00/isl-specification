@@ -17,9 +17,9 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Palla di Fuoco",
     valore: 2,
-    immagine: "Fuoco01.jpg",
-    dorso: "Fuoco00_Dorso.jpg",
-    descrizione: "Infligge 2 danni diretti a un mostro."
+    immagine: "Fuoco01.png",
+    dorso: "Fuoco00_Dorso.png",
+    descrizione: "Infligge 2 danni diretti a un mostro.",
   }),
   Spell({
     id: 2,
@@ -28,9 +28,9 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Frecce di Fuoco",
     valore: 1,
-    immagine: "Fuoco02.jpg",
-    dorso: "Fuoco00_Dorso.jpg",
-    descrizione: "Infligge 1 danno diretto a un mostro."
+    immagine: "Fuoco02.png",
+    dorso: "Fuoco00_Dorso.png",
+    descrizione: "Infligge 1 danno diretto a un mostro.",
   }),
   Spell({
     id: 3,
@@ -39,9 +39,10 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Coraggio",
     valore: 2,
-    immagine: "Fuoco03.jpg",
-    dorso: "Fuoco00_Dorso.jpg",
-    descrizione: "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri."
+    immagine: "Fuoco03.png",
+    dorso: "Fuoco00_Dorso.png",
+    descrizione:
+      "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri.",
   }),
 
   // Acqua
@@ -52,9 +53,9 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Acqua Guaritrice",
     valore: 4,
-    immagine: "Acqua01.jpg",
-    dorso: "Acqua00_Dorso.jpg",
-    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio."
+    immagine: "Acqua01.png",
+    dorso: "Acqua00_Dorso.png",
+    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio.",
   }),
   Spell({
     id: 5,
@@ -63,9 +64,10 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Nebbia Caliginosa",
     valore: 0,
-    immagine: "Acqua02.jpg",
-    dorso: "Acqua00_Dorso.jpg",
-    descrizione: "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno."
+    immagine: "Acqua02.png",
+    dorso: "Acqua00_Dorso.png",
+    descrizione:
+      "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno.",
   }),
   Spell({
     id: 6,
@@ -74,9 +76,10 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Sonno",
     valore: 0,
-    immagine: "Acqua03.jpg",
-    dorso: "Acqua00_Dorso.jpg",
-    descrizione: "Fa addormentare un mostro (salta il turno) finché non viene attaccato."
+    immagine: "Acqua03.png",
+    dorso: "Acqua00_Dorso.png",
+    descrizione:
+      "Fa addormentare un mostro (salta il turno) finché non viene attaccato.",
   }),
 
   // Terra
@@ -87,9 +90,9 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Pelle di Pietra",
     valore: 1,
-    immagine: "Terra01.jpg",
-    dorso: "Terra00_Dorso.jpg",
-    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni."
+    immagine: "Terra01.png",
+    dorso: "Terra00_Dorso.png",
+    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni.",
   }),
   Spell({
     id: 8,
@@ -98,9 +101,10 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Passapareti",
     valore: 0,
-    immagine: "Terra02.jpg",
-    dorso: "Terra00_Dorso.jpg",
-    descrizione: "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi."
+    immagine: "Terra02.png",
+    dorso: "Terra00_Dorso.png",
+    descrizione:
+      "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi.",
   }),
   Spell({
     id: 9,
@@ -109,9 +113,10 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Genio",
     valore: 5,
-    immagine: "Terra03.jpg",
-    dorso: "Terra00_Dorso.jpg",
-    descrizione: "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza."
+    immagine: "Terra03.png",
+    dorso: "Terra00_Dorso.png",
+    descrizione:
+      "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza.",
   }),
 
   // Aria
@@ -122,9 +127,10 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Tempesta",
     valore: 0,
-    immagine: "Aria01.jpg",
-    dorso: "Aria00_Dorso.jpg",
-    descrizione: "Il mostro viene avvolto dai venti e salta il suo prossimo turno."
+    immagine: "Aria01.png",
+    dorso: "Aria00_Dorso.png",
+    descrizione:
+      "Il mostro viene avvolto dai venti e salta il suo prossimo turno.",
   }),
   Spell({
     id: 11,
@@ -133,9 +139,10 @@ export const staticSpells = [
     targetType: "Hero",
     effetto: "Passaggio Invisibile",
     valore: 0,
-    immagine: "Aria02.jpg",
-    dorso: "Aria00_Dorso.jpg",
-    descrizione: "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento."
+    immagine: "Aria02.png",
+    dorso: "Aria00_Dorso.png",
+    descrizione:
+      "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento.",
   }),
   Spell({
     id: 12,
@@ -144,10 +151,10 @@ export const staticSpells = [
     targetType: "Monster",
     effetto: "Intralcio",
     valore: 1,
-    immagine: "Aria03.jpg",
-    dorso: "Aria00_Dorso.jpg",
-    descrizione: "Riduce il movimento del mostro a 1 sola casella."
-  })
+    immagine: "Aria03.png",
+    dorso: "Aria00_Dorso.png",
+    descrizione: "Riduce il movimento del mostro a 1 sola casella.",
+  }),
 ];
 
 export const getAllSpells = () => {

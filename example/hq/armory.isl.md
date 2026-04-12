@@ -38,7 +38,7 @@
 ### 🔍 Appearance
 
 - **Layout**: Full-page dark gothic armory aligned with mission selection and briefing screens.
-- **Background**: Reuse the original HeroQuest artwork with dark overlays, mist and bronze highlights.
+- **Background**: Use an abstract forge-like black-stone gradient field with mist, ember glow, and bronze highlights. The page background must not depend on figurative or original franchise artwork.
 - **Header**: Compact bronze fantasy heading and short descriptive copy.
 - **Columns**: Two-column responsive layout.
   - **Left Column**: Contains `HeroSummary` inside a dark panel.

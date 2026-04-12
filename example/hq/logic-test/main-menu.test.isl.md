@@ -12,7 +12,7 @@
 ## Domain Concepts
 
 - `menu action plaque`: compact clickable entry for one destination on the home screen.
-- `active backdrop`: background image and small active-state indicators driven by hover/focus.
+- `active backdrop`: abstract atmospheric treatment and small active-state indicators driven by hover/focus.
 - `ultra-compact viewport mode`: very-low-height branch where secondary copy is removed and the two main plaques share one row.
 
 ## Component: MainMenuLogicTests
@@ -39,14 +39,14 @@
 - **Given**: The menu is in its default state.
 - **When**: The user hovers or focuses the `GIOCA` action plaque.
 - **Assert (Expected Outcomes)**:
-    - The active backdrop resolves to `/img/main-menu/nuova.jpg`.
+    - The active backdrop resolves to the primary warm campaign palette.
     - The active state pill shows the `Campagna` path.
 
 ## Scenario: Hover Activates Editor Backdrop
 - **Given**: The menu is in its default state.
 - **When**: The user hovers or focuses the `EDITOR` action plaque.
 - **Assert (Expected Outcomes)**:
-    - The active backdrop resolves to `/img/main-menu/editor.jpg`.
+    - The active backdrop resolves to the colder forge palette.
     - The active state pill shows the `Forgia` path.
 
 ## Scenario: Active State Falls Back To Default After Leave

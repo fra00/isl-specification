@@ -47,7 +47,7 @@ Represents the visual progression state of a mission in the selection screen.
 ### 🔍 Appearance
 
 - A full-screen gothic mission archive aligned with the main menu visual language.
-- Background: reuse the original HeroQuest artwork from the home screen, darkened with shadow gradients, mist, and warm candle-like highlights.
+- Background: use an abstract black-stone gradient field with mist, ember haze, and warm bronze highlights. The page background must not depend on figurative or original franchise artwork.
 - Title area: compact bronze/fantasy heading with reduced vertical footprint.
 - **State: Mission List**:
   - A left column containing vertically stacked mission cards inside a dark panel.

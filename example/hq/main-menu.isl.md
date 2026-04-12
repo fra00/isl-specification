@@ -14,7 +14,7 @@ Short description
 ## Domain Concepts
 
 - `menu action plaque`: primary clickable card for one destination of the home screen.
-- `active backdrop`: full-screen hover/focus image that changes with the selected action and defaults to the `GIOCA` entry.
+- `active backdrop`: full-screen atmospheric backdrop treatment that changes with the selected action and defaults to the `GIOCA` entry.
 - `compact viewport mode`: low-height home variant for heights up to about `720px`; it reduces spacing and card height so title and both main actions remain inside the fixed runtime stage.
 - `ultra-compact viewport mode`: very-low-height branch for heights up to about `460px`; it removes non-essential copy, shrinks badges, and forces the two main plaques into one two-column action row.
 
@@ -33,10 +33,10 @@ Main Menu Screen
 - Full width landing screen with dark fantasy styling.
 - Height: exactly the viewport height.
 - Overflow: hidden. The home screen MUST stay inside the fixed runtime stage and MUST NOT require page scrollbars.
-- `BackgroundLayer`: cinematic base image `/img/menusfondo.jpg`, always visible, with slow breathing motion.
-- `ActiveBackdropLayer`: hovered action image crossfades above the base background.
-  - Default state uses the `GIOCA` artwork.
-  - Hover/focus on `EDITOR` switches the active backdrop to `/img/main-menu/editor.jpg`.
+- `BackgroundLayer`: abstract black-stone and ember gradient field, always visible, with slow breathing motion and no figurative artwork.
+- `ActiveBackdropLayer`: hovered action backdrop treatment crossfades above the base background.
+  - Default state uses the `GIOCA` warm ember/campaign palette.
+  - Hover/focus on `EDITOR` switches the active backdrop to a colder forge/steel palette.
 - `AtmosphereLayer`: sparse ember particles and warm glow accents. Decorative only; they must not make the screen visually noisy.
 - `HeaderPlaque`: compact top block with:
   - eyebrow text `Portale del Regno`
@@ -110,7 +110,7 @@ Mouse over or focus voce di menu
 
 **Side Effects**:
 - Marks the hovered item as active.
-- Updates the active backdrop image.
+- Updates the active backdrop treatment.
 - Updates the active state pill and optional status plaque.
 
 #### clearPreviewState
@@ -123,7 +123,7 @@ Mouse leave or blur on menu item.
 
 **Side Effects**:
 - Clear hovered state.
-- Active backdrop returns to the primary `GIOCA` entry.
+- Active backdrop returns to the primary `GIOCA` palette.
 - Active state pill returns to the primary `GIOCA` hint.
 
 #### compactViewportResolution

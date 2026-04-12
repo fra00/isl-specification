@@ -43,10 +43,10 @@ Contenitore delle pagine, al suo interno vengono visualizzate le varie `PageView
 
 ### 🔍 Appearance
 
-width: 2/3 full width
-height: 100vh
-background : black
-overflow nascosto
+- Outer shell: full width, black background.
+- Height: fixed viewport shell (`100vh`).
+- Overflow: hidden, because the runtime keeps every page inside the fullscreen stage.
+- Content width: full width, constrained to `2/3` on large layouts.
 
 ### 📦 Content
 
@@ -106,3 +106,4 @@ Carica il componente PageView visualizzare
    CASE `SHOP` Render `@Armory` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
    CASE `DUNGEON` Render `@Dungeon` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`, `staticMonsters` = `monsters`, `staticVisibilityMap` = `boardData`, `staticEquipment` = `equipment`, `staticItems` = `items`, `staticSpells` = `spells`, `treasureDeck` = `treasureDeck`.
    CASE `DUNGEON_DESCRIPTION` Render `@DungeonDescription` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
+

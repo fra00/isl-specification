@@ -6,12 +6,12 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 
 export default function DungeonSpellSelectionModal({
   heroes = [],
   allSpells = [],
-  onConfirmSelection
+  onConfirmSelection,
 }) {
   const [pickedElements, setPickedElements] = useState([]);
   const [currentHeroPicking, setCurrentHeroPicking] = useState(null);
@@ -19,11 +19,13 @@ export default function DungeonSpellSelectionModal({
   const allElements = ["Fuoco", "Acqua", "Terra", "Aria"];
 
   useEffect(() => {
-    const wizard = heroes.find(h => h?.hero?.classe?.toLowerCase() === 'mago');
+    const wizard = heroes.find(
+      (h) => h?.hero?.classe?.toLowerCase() === "mago",
+    );
     if (wizard) {
       setCurrentHeroPicking(wizard);
     } else {
-      const elf = heroes.find(h => h?.hero?.classe?.toLowerCase() === 'elfo');
+      const elf = heroes.find((h) => h?.hero?.classe?.toLowerCase() === "elfo");
       if (elf) {
         setCurrentHeroPicking(elf);
       } else {
@@ -33,73 +35,82 @@ export default function DungeonSpellSelectionModal({
     setPickedElements([]);
   }, [heroes]);
 
-  const selectElement = useCallback((elemento) => {
-    if (!currentHeroPicking) return;
-    if (pickedElements.includes(elemento)) return;
+  const selectElement = useCallback(
+    (elemento) => {
+      if (!currentHeroPicking) return;
+      if (pickedElements.includes(elemento)) return;
 
-    const newPicked = [...pickedElements, elemento];
-    setPickedElements(newPicked);
+      const newPicked = [...pickedElements, elemento];
+      setPickedElements(newPicked);
 
-    const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();
+      const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();
 
-    if (heroClass === 'mago' && newPicked.length === 3) {
-      const elf = heroes.find(h => h?.hero?.classe?.toLowerCase() === 'elfo');
-      let finalPicked = [...newPicked];
-      const selectionMap = new Map();
+      if (heroClass === "mago" && newPicked.length === 3) {
+        const elf = heroes.find(
+          (h) => h?.hero?.classe?.toLowerCase() === "elfo",
+        );
+        let finalPicked = [...newPicked];
+        const selectionMap = new Map();
 
-      const wizardSpells = allSpells
-        .filter(spell => finalPicked.slice(0, 3).includes(spell?.elemento))
-        .map(spell => spell?.id);
-      
-      selectionMap.set(currentHeroPicking.heroId, wizardSpells);
+        const wizardSpells = allSpells
+          .filter((spell) => finalPicked.slice(0, 3).includes(spell?.elemento))
+          .map((spell) => spell?.id);
 
-      if (elf) {
-        const remaining = allElements.find(el => !finalPicked.includes(el));
-        if (remaining) {
-          finalPicked.push(remaining);
-          const elfSpells = allSpells
-            .filter(spell => spell?.elemento === remaining)
-            .map(spell => spell?.id);
-          selectionMap.set(elf.heroId, elfSpells);
+        selectionMap.set(currentHeroPicking.heroId, wizardSpells);
+
+        if (elf) {
+          const remaining = allElements.find((el) => !finalPicked.includes(el));
+          if (remaining) {
+            finalPicked.push(remaining);
+            const elfSpells = allSpells
+              .filter((spell) => spell?.elemento === remaining)
+              .map((spell) => spell?.id);
+            selectionMap.set(elf.heroId, elfSpells);
+          }
+        }
+
+        if (typeof onConfirmSelection === "function") {
+          onConfirmSelection(selectionMap);
+        }
+      } else if (heroClass === "elfo" && newPicked.length === 1) {
+        const selectionMap = new Map();
+        const elfSpells = allSpells
+          .filter((spell) => spell?.elemento === elemento)
+          .map((spell) => spell?.id);
+
+        selectionMap.set(currentHeroPicking.heroId, elfSpells);
+
+        if (typeof onConfirmSelection === "function") {
+          onConfirmSelection(selectionMap);
         }
       }
-
-      if (typeof onConfirmSelection === 'function') {
-        onConfirmSelection(selectionMap);
-      }
-    } else if (heroClass === 'elfo' && newPicked.length === 1) {
-      const selectionMap = new Map();
-      const elfSpells = allSpells
-        .filter(spell => spell?.elemento === elemento)
-        .map(spell => spell?.id);
-      
-      selectionMap.set(currentHeroPicking.heroId, elfSpells);
-      
-      if (typeof onConfirmSelection === 'function') {
-        onConfirmSelection(selectionMap);
-      }
-    }
-  }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);
+    },
+    [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection],
+  );
 
   return (
     <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/90 p-4">
       <div className="mx-auto my-4 flex w-full max-w-4xl flex-col items-center rounded-xl border-2 border-amber-600 bg-stone-900 p-4 shadow-2xl sm:p-5 md:p-6">
-          <h2 className="mb-2 text-center text-2xl font-bold uppercase tracking-wider text-amber-500 md:text-3xl">
-            Selezione Incantesimi
-          </h2>
-          
-          <div className="mb-4 min-h-[2rem] text-center text-base text-stone-300 md:mb-6 md:text-xl">
-            {currentHeroPicking ? (
-              <span>
-                Turno di selezione: <strong className="text-amber-400">{currentHeroPicking.hero?.classe}</strong>
-                {currentHeroPicking.hero?.classe?.toLowerCase() === 'mago' && ` (${3 - pickedElements.length} rimanenti)`}
-              </span>
-            ) : (
-              <span>Nessun eroe magico presente</span>
-            )}
-          </div>
+        <h2 className="mb-2 text-center text-2xl font-bold uppercase tracking-wider text-amber-500 md:text-3xl">
+          Selezione Incantesimi
+        </h2>
 
-          <div className="grid w-full grid-cols-2 justify-items-center gap-3 md:grid-cols-4 md:gap-5">
+        <div className="mb-4 min-h-[2rem] text-center text-base text-stone-300 md:mb-6 md:text-xl">
+          {currentHeroPicking ? (
+            <span>
+              Turno di selezione:{" "}
+              <strong className="text-amber-400">
+                {currentHeroPicking.hero?.classe}
+              </strong>
+              {currentHeroPicking.hero?.classe?.toLowerCase() === "mago" &&
+                ` (${3 - pickedElements.length} rimanenti)`}
+            </span>
+          ) : (
+            <span>Nessun eroe magico presente</span>
+          )}
+        </div>
+
+        <div className="grid w-full grid-cols-2 justify-items-center gap-3 md:grid-cols-4 md:gap-5">
           {allElements.map((elemento) => {
             const isPicked = pickedElements.includes(elemento);
             return (
@@ -108,17 +119,18 @@ export default function DungeonSpellSelectionModal({
                 onClick={() => selectElement(elemento)}
                 disabled={isPicked || !currentHeroPicking}
                 className={`relative flex w-full min-w-0 flex-col items-center rounded-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 ${
-                  isPicked 
-                    ? 'opacity-30 cursor-not-allowed grayscale' 
-                    : 'hover:scale-105 hover:shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer'
+                  isPicked
+                    ? "opacity-30 cursor-not-allowed grayscale"
+                    : "hover:scale-105 hover:shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer"
                 }`}
               >
-                <img 
-                  src={`/img/cinc/${elemento}00_Dorso.jpg`} 
+                <img
+                  src={`/img/cinc/${elemento}00_Dorso.jpg`}
                   alt={`Dorso incantesimi di ${elemento}`}
                   className="aspect-[2/3] w-full max-w-[128px] rounded-lg border-2 border-stone-700 object-cover md:max-w-[150px] xl:max-w-[180px]"
                   onError={(e) => {
-                    e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" fill="%23292524"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23a8a29e" text-anchor="middle" font-family="sans-serif">Immagine Mancante</text></svg>';
+                    e.target.src =
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" fill="%23292524"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23a8a29e" text-anchor="middle" font-family="sans-serif">Immagine Mancante</text></svg>';
                   }}
                 />
                 <span className="mt-2 rounded-full border border-stone-600 bg-stone-800 px-3 py-1 text-sm font-semibold text-amber-100 md:mt-3 md:px-4 md:text-base xl:text-lg">
@@ -127,7 +139,7 @@ export default function DungeonSpellSelectionModal({
               </button>
             );
           })}
-          </div>
+        </div>
       </div>
     </div>
   );

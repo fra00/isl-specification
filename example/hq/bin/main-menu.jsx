@@ -6,41 +6,77 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { PageNavigationEnum } from "./domain-core";
 
 export default function MainMenu({ onChangePageView }) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hoverImage, setHoverImage] = useState(null);
+  const [hoveredMenuId, setHoveredMenuId] = useState(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerHeight <= 720;
+  });
+  const [isUltraCompactViewport, setIsUltraCompactViewport] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerHeight <= 460;
+  });
 
-  // Lazy initialization of dust particles to ensure referential stability and avoid re-calculation
   const [dustParticles] = useState(() => {
     const particles = [];
-    for (let i = 0; i < 80; i++) {
+    for (let index = 0; index < 24; index += 1) {
       particles.push({
-        id: i,
-        size: Math.random() * 2 + 1, // 1px to 3px
-        left: Math.random() * 100, // 0% to 100%
-        durationY: Math.random() * 10 + 15, // 15s to 25s
-        delayY: -(Math.random() * 25), // Negative delay to start already on screen
-        durationX: Math.random() * 3 + 2, // 2s to 5s for the sine wave drift
-        delayX: -(Math.random() * 5),
+        id: index,
+        size: Math.random() * 2 + 1,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        duration: Math.random() * 4 + 6,
+        delay: -(Math.random() * 8),
       });
     }
     return particles;
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const updateViewportMode = () => {
+      setIsCompactViewport(window.innerHeight <= 720);
+      setIsUltraCompactViewport(window.innerHeight <= 460);
+    };
+
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportMode);
+    };
+  }, []);
 
   const menuItems = useMemo(
     () => [
       {
         id: "play",
         label: "GIOCA",
+        eyebrow: "Campagna",
+        teaser: "Missioni e dungeon",
+        activeHint: "Ingresso alla campagna",
+        accent: "from-amber-500/24 via-red-900/12 to-transparent",
         destination: PageNavigationEnum.PLAY_GAME,
         hoverImg: "/img/main-menu/nuova.jpg",
       },
       {
         id: "editor",
         label: "EDITOR",
+        eyebrow: "Forgia",
+        teaser: "Mappe e strumenti",
+        activeHint: "Officina di authoring",
+        accent: "from-sky-500/20 via-indigo-900/16 to-transparent",
         destination: PageNavigationEnum.EDITOR_GAME,
         hoverImg: "/img/main-menu/editor.jpg",
       },
@@ -48,9 +84,14 @@ export default function MainMenu({ onChangePageView }) {
     [],
   );
 
+  const activePreviewItem = useMemo(() => {
+    return menuItems.find((item) => item.id === hoveredMenuId) || menuItems[0];
+  }, [hoveredMenuId, menuItems]);
+
   const handleItemClick = useCallback(
     (destination) => {
       if (isProcessing) return;
+      if (!Object.values(PageNavigationEnum).includes(destination)) return;
 
       setIsProcessing(true);
       if (onChangePageView) {
@@ -61,141 +102,184 @@ export default function MainMenu({ onChangePageView }) {
     [isProcessing, onChangePageView],
   );
 
-  const handleMouseEnter = useCallback((img) => {
-    setHoverImage(img);
+  const handleMouseEnter = useCallback((menuId) => {
+    setHoveredMenuId(menuId);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    setHoverImage(null);
+    setHoveredMenuId(null);
   }, []);
 
+  const renderActionCard = (item, index) => {
+    const isActive = activePreviewItem.id === item.id;
+    const cardSizeClass = isUltraCompactViewport
+      ? "min-h-[92px] rounded-[22px] px-3 py-2.5"
+      : isCompactViewport
+        ? "min-h-[112px] rounded-[24px] px-3.5 py-3.5"
+        : "min-h-[148px] rounded-[28px] px-4 py-4 sm:px-5 sm:py-5";
+    const titleClass = isUltraCompactViewport
+      ? "mt-1 text-[1.55rem]"
+      : isCompactViewport
+        ? "mt-1.5 text-[1.9rem]"
+        : "mt-2 text-3xl sm:text-[2.6rem]";
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        disabled={isProcessing}
+        className={`group relative overflow-hidden border text-left transition-all duration-300 ${cardSizeClass} ${isProcessing ? "cursor-wait opacity-70" : "cursor-pointer"} ${
+          isActive
+            ? "border-amber-500/70 bg-stone-950/82 shadow-[0_0_0_1px_rgba(251,191,36,0.15),0_18px_40px_rgba(0,0,0,0.34)]"
+            : "border-stone-700/70 bg-black/25 hover:border-amber-700/60 hover:bg-stone-950/70"
+        }`}
+        onClick={() => handleItemClick(item.destination)}
+        onMouseEnter={() => handleMouseEnter(item.id)}
+        onMouseLeave={handleMouseLeave}
+        onFocus={() => handleMouseEnter(item.id)}
+        onBlur={handleMouseLeave}
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${item.accent} opacity-80 transition-opacity ${isActive ? "" : "group-hover:opacity-95"}`} />
+
+        <div className="relative flex h-full flex-col justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{item.eyebrow}</div>
+              <div className={`menu-option-title ${titleClass}`}>
+                {item.label}
+              </div>
+            </div>
+
+            <div className={`inline-flex shrink-0 items-center justify-center rounded-full border text-[11px] font-bold uppercase tracking-[0.24em] ${
+              isUltraCompactViewport ? "h-7 w-7 text-[10px]" : isCompactViewport ? "h-8 w-8" : "h-10 w-10"
+            } ${
+              isActive ? "border-amber-500/60 bg-amber-500/10 text-amber-200" : "border-stone-600 bg-stone-900/70 text-stone-400"
+            }`}>
+              {String(index + 1).padStart(2, "0")}
+            </div>
+          </div>
+
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className={`text-stone-200/90 ${isUltraCompactViewport ? "text-[11px] leading-4" : isCompactViewport ? "text-xs leading-5" : "text-sm leading-6"}`}>
+                {item.teaser}
+              </div>
+              {!isUltraCompactViewport && (
+                <div className="mt-1 text-[10px] uppercase tracking-[0.24em] text-stone-500">{item.activeHint}</div>
+              )}
+            </div>
+
+            {!isUltraCompactViewport && (
+              <div className="shrink-0 rounded-full border border-stone-700/70 bg-stone-950/75 px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] text-stone-400">
+                Entra
+              </div>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* Injected Styles for Custom Keyframes and Typography */}
+    <div className="relative h-screen overflow-hidden bg-black text-stone-100">
       <style>{`
-        @keyframes respiro {
-          0% { transform: scale(1.0); }
-          100% { transform: scale(1.08); }
+        @keyframes backdropFloat {
+          0%, 100% { transform: scale(1.03); }
+          50% { transform: scale(1.08); }
         }
-        @keyframes derivaNebbia {
-          0% { background-position-x: 0%; }
-          100% { background-position-x: 100%; }
+        @keyframes emberPulse {
+          0%, 100% { opacity: 0.35; transform: translate3d(0, 0, 0); }
+          50% { opacity: 0.95; transform: translate3d(0, -10px, 0); }
         }
-        @keyframes baglioreVivo {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.02); }
+        .heroquest-title {
+          font-family: Georgia, "Times New Roman", serif;
+          color: #f3bf69;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          text-shadow: 0 0 28px rgba(251, 191, 36, 0.14), 0 3px 0 rgba(120, 53, 15, 0.95), 0 16px 36px rgba(0, 0, 0, 0.82);
         }
-        @keyframes dustY {
-          0% { top: 110%; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: -10%; opacity: 0; }
-        }
-        @keyframes dustX {
-          0%, 100% { transform: translateX(-20px); }
-          50% { transform: translateX(20px); }
-        }
-        .menu-text {
-          font-family: fantasy;
-          font-weight: bold;
-          font-size: 4rem;
-          background: linear-gradient(to bottom, #D6B36A 0%, #8C6239 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          -webkit-text-stroke: 2px #2a2a2a;
-          filter: drop-shadow(4px 4px 2px rgba(0,0,0,1));
-          transition: all 0.3s ease;
-          cursor: pointer;
-          margin: 1rem 0;
-          text-align: center;
-        }
-        .menu-text:hover {
-          transform: scale(1.1) translateX(10px);
-          -webkit-text-stroke: 1px #5a5a5a;
-          filter: drop-shadow(4px 4px 2px rgba(0,0,0,1)) drop-shadow(0 0 15px rgba(214, 179, 106, 0.6));
+        .menu-option-title {
+          font-family: Georgia, "Times New Roman", serif;
+          color: #f6d394;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          text-shadow: 0 2px 0 rgba(69, 26, 3, 0.95), 0 10px 24px rgba(0, 0, 0, 0.55);
         }
       `}</style>
 
-      {/* BackgroundLayer (z-index 0) */}
-      <div
-        className="absolute inset-0 z-[0]"
-        style={{
-          backgroundImage: "url(/img/menusfondo.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          animation: "respiro 30s ease-in-out infinite alternate",
-        }}
-      />
-
-      {/* MouseOverImageLayer (z-index 2) */}
-      <div className="absolute top-0 right-0 h-[30%] w-auto z-[2] opacity-80 pointer-events-none">
-        {hoverImage && (
-          <img
-            src={hoverImage}
-            alt="Menu Preview"
-            className="h-full w-auto object-contain"
-          />
-        )}
+      <div className="absolute inset-0 z-[0] overflow-hidden">
+        <img
+          src="/img/menusfondo.jpg"
+          alt="HeroQuest background"
+          className="h-full w-full object-cover"
+          style={{ animation: "backdropFloat 26s ease-in-out infinite" }}
+        />
+        <img
+          src={activePreviewItem.hoverImg}
+          alt={activePreviewItem.label}
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
+          style={{ opacity: hoveredMenuId ? 0.42 : 0.26, animation: "backdropFloat 18s ease-in-out infinite" }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.16),_transparent_38%),linear-gradient(180deg,_rgba(0,0,0,0.16),_rgba(0,0,0,0.82))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(0,0,0,0.76),_rgba(0,0,0,0.28)_52%,_rgba(0,0,0,0.74))]" />
       </div>
 
-      {/* MistOverlay (z-index 5) */}
-      <div
-        className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"
-        style={{
-          backgroundImage: "url(/img/mist.jpeg)",
-          backgroundRepeat: "repeat-x",
-          backgroundSize: "200% 100%",
-          filter: "blur(5px)",
-          animation: "derivaNebbia 60s linear infinite",
-        }}
-      />
-
-      {/* DustOverlay (z-index 8) */}
-      <div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen">
-        {dustParticles.map((p) => (
+      <div className="absolute inset-0 z-[8] pointer-events-none">
+        {dustParticles.map((particle) => (
           <div
-            key={p.id}
-            className="absolute"
+            key={particle.id}
+            className="absolute rounded-full bg-amber-300/80"
             style={{
-              left: `${p.left}%`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              animation: `dustY ${p.durationY}s linear ${p.delayY}s infinite`,
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              boxShadow: "0 0 10px rgba(251, 191, 36, 0.6)",
+              animation: `emberPulse ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
             }}
-          >
-            <div
-              className="w-full h-full rounded-full bg-[#FFD700]"
-              style={{
-                animation: `dustX ${p.durationX}s ease-in-out ${p.delayX}s infinite alternate`,
-              }}
-            />
-          </div>
+          />
         ))}
       </div>
 
-      {/* CandleLightOverlay (z-index 10) */}
-      <div
-        className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)",
-          animation: "baglioreVivo 4s ease-in-out infinite",
-        }}
-      />
+      <div className="absolute -left-12 top-16 z-[9] h-40 w-40 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute right-0 bottom-0 z-[9] h-52 w-52 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
 
-      {/* UIContent (z-index 20) */}
-      <div className="absolute inset-0 z-[20] flex flex-col items-center justify-end pb-[15vh]">
-        {menuItems.map((item) => (
-          <div
-            key={item.id}
-            className="menu-text"
-            onClick={() => handleItemClick(item.destination)}
-            onMouseEnter={() => handleMouseEnter(item.hoverImg)}
-            onMouseLeave={handleMouseLeave}
-          >
-            {item.label}
+      <div className={`relative z-[20] mx-auto flex h-full w-full max-w-6xl flex-col justify-between ${isCompactViewport ? "px-4 py-4 sm:px-5 sm:py-5" : "px-5 py-5 sm:px-7 sm:py-7 lg:px-10 lg:py-9"}`}>
+        <div className={isCompactViewport ? "max-w-lg" : "max-w-3xl"}>
+          <div className={`inline-flex items-center rounded-full border border-amber-900/60 bg-stone-950/60 text-amber-200 shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-sm ${isCompactViewport ? "px-3 py-1 text-[9px] tracking-[0.28em]" : "px-3.5 py-1.5 text-[10px] tracking-[0.34em]"}`}>
+            Portale del Regno
           </div>
-        ))}
+
+          <h1 className={`heroquest-title ${isUltraCompactViewport ? "mt-2.5 text-[2.45rem]" : isCompactViewport ? "mt-3 text-4xl sm:text-5xl" : "mt-4 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.3rem]"}`}>
+            HeroQuest
+          </h1>
+
+          {!isUltraCompactViewport && (
+            <p className={`mt-3 max-w-xl text-stone-200/88 ${isCompactViewport ? "text-sm leading-5" : "text-base leading-6 sm:text-lg"}`}>
+              Scegli il cammino e entra.
+            </p>
+          )}
+
+          <div className={`mt-${isUltraCompactViewport ? "2" : "3"} inline-flex items-center gap-2 rounded-full border border-stone-700/70 bg-black/35 text-stone-300 backdrop-blur-sm ${isUltraCompactViewport ? "px-2.5 py-1 text-[9px] tracking-[0.16em]" : isCompactViewport ? "px-3 py-1.5 text-[10px] tracking-[0.2em]" : "px-3.5 py-2 text-[10px] tracking-[0.24em]"}`}>
+            <span className="uppercase text-amber-300">{activePreviewItem.eyebrow}</span>
+            <span className="h-1 w-1 rounded-full bg-amber-400/70" />
+            <span className="uppercase text-stone-400">{activePreviewItem.activeHint}</span>
+          </div>
+        </div>
+
+        <div className={isCompactViewport ? "grid gap-2.5" : "flex items-end gap-6 xl:gap-8"}>
+          <div className={isCompactViewport ? "grid grid-cols-2 gap-2.5" : "grid flex-1 gap-4 md:grid-cols-2"}>
+            {menuItems.map((item, index) => renderActionCard(item, index))}
+          </div>
+
+          {!isCompactViewport && (
+            <div className="hidden w-[240px] shrink-0 rounded-[28px] border border-amber-900/50 bg-[linear-gradient(180deg,_rgba(18,18,18,0.76),_rgba(10,10,10,0.72))] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.38)] backdrop-blur-sm md:block">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">Scena attiva</div>
+              <div className="menu-option-title mt-2 text-3xl">{activePreviewItem.label}</div>
+              <div className="mt-2 text-sm leading-6 text-stone-300">{activePreviewItem.activeHint}</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

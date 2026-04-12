@@ -39,8 +39,10 @@ Componente fullscreen sarà l'entry point e il contenitore principale dell'appli
 ### 🔍 Appearance
 
 width: full width
-height : 100vh
-allinea il contenuto al centro si orizzontale che verticale
+- height: `100vh`
+- fullscreen black shell with hidden overflow
+- loading and fatal-error screens stay centered in the viewport
+- ready-state content is hosted inside the fixed runtime stage
 
 ### 📦 Content
 

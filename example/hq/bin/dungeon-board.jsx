@@ -110,13 +110,6 @@ export default function DungeonBoard({
     return hasLOS === false ? "#ef4444" : "#3b82f6"; // red or magic-blue
   }, [targetingSpell, hoveredCell, activeHero, visibilityCalc]);
 
-  const hoveredVisCell = useMemo(() => {
-    if (!hoveredCell || !boardVisibilityMap?.data) return null;
-    return boardVisibilityMap.data.find(
-      (c) => c.x === hoveredCell.x + 1 && c.y === hoveredCell.y + 1,
-    );
-  }, [hoveredCell, boardVisibilityMap]);
-
   const renderGrid = () => {
     const cells = [];
     for (let y = 0; y < 19; y++) {
@@ -477,22 +470,6 @@ export default function DungeonBoard({
         </svg>
       )}
 
-      {/* Layer 60: Debug Panel */}
-      <div className="fixed right-0 top-1/4 w-[250px] bg-black/80 text-white p-4 text-xs font-mono z-60 border-l border-gray-700 pointer-events-none">
-        <h3 className="text-sm font-bold mb-2 text-green-400">Debug Info</h3>
-        <p>
-          Mouse X,Y:{" "}
-          {hoveredCell ? `${hoveredCell.x + 1}, ${hoveredCell.y + 1}` : "N/A"}
-        </p>
-        <p>Vis1: {hoveredVisCell?.vis1 || "N/A"}</p>
-        <p>Vis2: {hoveredVisCell?.vis2 || "N/A"}</p>
-        <p>Viso (valo): {hoveredVisCell?.valo || "N/A"}</p>
-        <p>
-          Fog:{" "}
-          {hoveredVisCell ? (hoveredVisCell.fog ? "true" : "false") : "N/A"}
-        </p>
-        <p>Current Turn: {gameSession?.currentTurn || "N/A"}</p>
-      </div>
     </div>
   );
 }

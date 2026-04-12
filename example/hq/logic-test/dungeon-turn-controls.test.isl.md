@@ -95,34 +95,18 @@ This document outlines the logical test scenarios for the `DungeonTurnControls` 
 - **Given**: `currentHero` is `null`.
 - **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-  - The Info Section displays "Unknown" for the class.
+  - The panel still renders as an actions-only shell without any hero summary section.
   - The component does not crash (graceful degradation).
-  - All action buttons are disabled to prevent invalid state triggers.
+  - The "Magic" button is not shown because no valid hero class is available.
 
-## Scenario: Effective Defense Display Includes RockSkin
+## Scenario: Compact Action-Only Layout
 
-- **Given**: `currentHero.hero.difesa` is 2 and `currentHeroStats.difesa` is 3 because `RockSkin` is active.
+- **Given**: The component renders during normal gameplay.
 - **When**: The component renders.
 - **Assert (Expected Outcomes)**:
-  - The Defense value shown in the Info Section is 3, not the base 2.
-  - The displayed defense reflects active effects and equipped bonuses already resolved by business logic.
-
-## Scenario: Effective Attack Display Includes Courage
-
-- **Given**: `currentHero.hero.attacco` is 2 and `currentHeroStats.attacco` is 4 because `Courage` is active.
-- **When**: The component renders.
-- **Assert (Expected Outcomes)**:
-  - The Attack value shown in the Info Section is 4, not the base 2.
-  - The displayed attack reflects active effects and equipped bonuses already resolved by business logic.
-
-## Scenario: Active Effects List Shows Movement Buffs
-
-- **Given**: `currentHero.activeStatus` contains `WallPass` and `FoggyMist`.
-- **When**: The component renders at the start of that hero's turn.
-- **Assert (Expected Outcomes)**:
-  - The Info Section displays both active effects.
-  - Movement-related spell effects remain visible without opening any secondary panel.
-  - The UI makes it immediately clear that the hero still has a temporary traversal effect available.
+  - The left floating panel contains only the inventory entry point and the turn action buttons.
+  - Hero statistics and status effects are not rendered inside `DungeonTurnControls`.
+  - `Fine Turno` remains the first anchored action in the button stack.
 
 ## Scenario: Guaranteed Cleanup on Unmount
 

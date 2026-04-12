@@ -34,7 +34,7 @@
   - The second mist image layer MUST be rotated by 180 degrees.
   - The cell at (2, 2) MUST show moving mist above the black fog overlay and MUST NOT appear as flat black only.
   - The cell at (3, 3) MUST render with full transparency for the black fog overlay, while the global mist overlay remains visible above it.
-  - The visual stack MUST be, from back to front: board background, black fog overlays, global mist overlay, entities, targeting tracer, debug panel.
+  - The visual stack MUST be, from back to front: board background, black fog overlays, global mist overlay, entities, targeting tracer.
   - The `fog` state must be strictly derived from the `boardVisibilityMap` prop.
 
 ## Scenario: Mist Animation Matches Runtime

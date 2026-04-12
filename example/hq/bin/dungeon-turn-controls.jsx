@@ -88,111 +88,83 @@ export default function DungeonTurnControls({
   const heroClass = (currentHero?.hero?.classe || '').toLowerCase();
   const canUseMagic = heroClass === 'mago' || heroClass === 'elfo';
   const showOpenDoor = canOpenDoor === true || canOpenDoor?.found === true;
-  const activeEffects = currentHero?.activeStatus?.length > 0 ? currentHero.activeStatus.join(', ') : 'None';
 
   return (
     <div
-      className="fixed w-[250px] bg-gray-800 text-white rounded-lg shadow-xl z-50 flex flex-col overflow-hidden"
+      className="fixed w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
       {/* Header / Drag Handle */}
       <div
-        className={`bg-gray-900 p-2 text-center font-bold select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
       >
-        Turn Controls
+        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">HeroQuest</div>
+        <div className="text-center text-lg font-bold uppercase tracking-[0.14em] text-amber-500 drop-shadow-sm">
+          Controlli Turno
+        </div>
       </div>
 
       {/* Body */}
-      <div className="p-4 flex flex-col gap-4">
-        
-        {/* Info Section */}
-        <div className="text-sm flex flex-col gap-1 bg-gray-700 p-2 rounded">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Class:</span>
-            <span className="font-semibold capitalize">{currentHero?.hero?.classe || 'Unknown'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Movement:</span>
-            <span className="font-semibold">{movementPoints ?? '-'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Gold:</span>
-            <span className="font-semibold text-yellow-400">{currentHero?.gold ?? 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Health:</span>
-            <span className="font-semibold text-red-400">{currentHero?.currentBody ?? 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Intelligence:</span>
-            <span className="font-semibold text-blue-400">{currentHero?.currentMind ?? 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Attack:</span>
-            <span className="font-semibold">{currentHeroStats?.attacco ?? currentHero?.hero?.attacco ?? 0}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Defense:</span>
-            <span className="font-semibold">{currentHeroStats?.difesa ?? currentHero?.hero?.difesa ?? 0}</span>
-          </div>
-          <div className="flex flex-col mt-1 pt-1 border-t border-gray-600">
-            <span className="text-gray-400 text-xs">Active Effects:</span>
-            <span className="font-semibold text-xs text-purple-300">{activeEffects}</span>
-          </div>
-        </div>
-
+      <div className="p-3 md:p-4 flex flex-col gap-3">
         {/* Inventory Section */}
         <div>
           <button
             onClick={onOpenInventory}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            className="w-full py-2 px-3 rounded-lg font-semibold border border-stone-700 bg-stone-800 hover:bg-stone-700 text-stone-100 transition-colors"
           >
-            Inventory
+            Inventario
           </button>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           <button
+            onClick={onEndTurn}
+            className="w-full py-2 px-3 rounded-lg font-bold uppercase tracking-[0.12em] bg-red-800 hover:bg-red-700 text-white shadow-[0_0_14px_rgba(127,29,29,0.28)] transition-colors"
+          >
+            Fine Turno
+          </button>
+
+          <button
             onClick={onRollMovement}
             disabled={!!turnPhase?.HasMoved || movementPoints != null}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-3 rounded-lg font-semibold bg-amber-700 hover:bg-amber-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Roll Movement
+            Tira Movimento
           </button>
 
           <button
             onClick={onSearchPassages}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Search Passages
+            Cerca Passaggi
           </button>
 
           <button
             onClick={onSearchTreasure}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Search Treasure
+            Cerca Tesori
           </button>
 
           <button
             onClick={onSearchTraps}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Search Trap
+            Cerca Trappole
           </button>
 
           {canDisarmTrap && (
             <button
               onClick={onDisarmTrap}
               disabled={!!turnPhase?.HasPerformedAction || isMoving || isTargeting}
-              className="w-full py-1.5 px-2 rounded font-semibold bg-amber-700 hover:bg-amber-800 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2 px-3 rounded-lg font-semibold bg-orange-700 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Disarm Trap
+              Disinnesca Trappola
             </button>
           )}
 
@@ -200,36 +172,29 @@ export default function DungeonTurnControls({
             <button
               onClick={onOpenMagic}
               disabled={!!turnPhase?.HasPerformedAction || isMoving || isTargeting}
-              className="w-full py-1.5 px-2 rounded font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2 px-3 rounded-lg font-semibold bg-indigo-700 hover:bg-indigo-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Magic
+              Magia
             </button>
           )}
 
           {isTargeting && (
             <button
               onClick={onCancelTargeting}
-              className="w-full py-1.5 px-2 rounded font-semibold bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+              className="w-full py-2 px-3 rounded-lg font-semibold bg-stone-700 hover:bg-stone-600 text-white transition-colors"
             >
-              Cancel Targeting
+              Annulla Bersaglio
             </button>
           )}
 
           {showOpenDoor && (
             <button
               onClick={onOpenDoor}
-              className="w-full py-1.5 px-2 rounded font-semibold bg-green-600 hover:bg-green-700 text-white transition-colors"
+              className="w-full py-2 px-3 rounded-lg font-semibold bg-green-700 hover:bg-green-600 text-white transition-colors"
             >
-              Open Door
+              Apri Porta
             </button>
           )}
-
-          <button
-            onClick={onEndTurn}
-            className="w-full py-1.5 px-2 rounded font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors mt-2"
-          >
-            End Turn
-          </button>
         </div>
       </div>
     </div>

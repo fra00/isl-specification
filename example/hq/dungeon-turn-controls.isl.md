@@ -11,8 +11,7 @@
 
 ## Domain Concepts
 
-- `currentHeroStats`: Effective hero stats already resolved by business logic, including equipment bonuses and temporary effects such as `RockSkin` and `Courage`.
-- `activeEffects`: The list of current hero status effects from `currentHero.activeStatus`, used to surface temporary spell effects such as `WallPass`, `FoggyMist`, `RockSkin`, and `Courage`.
+- This component is the compact left-side action panel for the active hero turn.
 
 ## Component: DungeonTurnControls
 
@@ -42,66 +41,59 @@
 
 - **Type**: Draggable Floating Dialog.
 - **Position**: Fixed.
-- **Styling**: Dark theme (`bg-gray-800`), white text, rounded corners, shadow-xl.
-- **Width**: 250px.
+- **Styling**: Stone-and-bronze gothic panel aligned with the Armory and mission pages, with serif typography, amber dividers, and a dark translucent body.
+- **Width**: Compact floating panel around 235-250px.
 - **Cursor**: `grab` on header, `grabbing` while dragging.
+- **Action Layout**: The primary danger action `Fine Turno` must appear first in the action stack and remain visually anchored before all expandable feature buttons, so adding future actions does not move it downward.
 
 ### 📦 Content
 
 - **Header**:
-  - Text: "Turn Controls".
+  - Text: "Controlli Turno".
   - Behavior: Acts as the drag handle.
-- **Info Section**:
-  - Display `currentHero.hero.classe` (or "Unknown" if null).
-  - Display `movementPoints`.
-  - Display Gold.
-  - Display Health.
-  - Display Intelligence.
-  - Display Attack using `currentHeroStats.attacco` when available; otherwise fall back to the base hero value.
-  - Display Defense using `currentHeroStats.difesa` when available; otherwise fall back to the base hero value.
-  - Display the active temporary effects from `currentHero.activeStatus`, if any, so movement-related spells remain visible when the affected hero starts the turn.
-- **Inventary Section**
+- **Inventory Section**
   - **Inventory button**
-    - Style: Blue primary button.
+    - Style: Neutral stone utility button.
     - OnClick: Trigger `onOpenInventory`.
 - **Action Buttons**:
+  - **End Turn**:
+    - Position: First action in the stack.
+    - Style: Red danger button with stronger visual emphasis than the other actions.
+    - OnClick: Trigger `onEndTurn`.
   - **Roll Movement**:
     - Disabled IF `turnPhase.HasMoved` is true OR `movementPoints` is NOT null.
-    - Style: Blue primary button.
+    - Style: Bronze primary button.
     - OnClick: Trigger `onRollMovement`.
   - **Search Passages**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Yellow/Orange button.
+    - Style: Amber exploration button.
     - OnClick: Trigger `onSearchPassages`.
   - **Search Treasure**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Yellow/Orange button.
+    - Style: Amber exploration button.
     - OnClick: Trigger `onSearchTreasure`.
   - **Search Trap**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Yellow/Orange button.
+    - Style: Amber exploration button.
     - OnClick: Trigger `onSearchTraps`.
   - **Disarm Trap**:
     - Visible IF `canDisarmTrap` is true.
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
-    - Style: Amber button.
+    - Style: Amber utility button.
     - OnClick: Trigger `onDisarmTrap`.
   - **Magic**:
     - Visible IF `currentHero.hero.classe.toLowerCase()` IN ["mago", "elfo"].
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
-    - Style: Purple/Indigo button.
+    - Style: Indigo accent button.
     - OnClick: Trigger `onOpenMagic`.
   - **Cancel Targeting**:
     - Visible IF `isTargeting` is true.
-    - Style: Gray/Neutral secondary button.
+    - Style: Neutral secondary button.
     - OnClick: Trigger `onCancelTargeting`.
   - **Open Door**:
     - Visible IF `canOpenDoor` is NOT null AND `canOpenDoor.found` is true.
     - Style: Green success button.
     - OnClick: Trigger `onOpenDoor`.
-  - **End Turn**:
-    - Style: Red danger button.
-    - OnClick: Trigger `onEndTurn`.
 
 ### ⚡ Capabilities
 

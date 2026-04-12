@@ -18,6 +18,7 @@ import { useFogOfWar } from './dungeon-use-fog-of-war';
 import { useDungeonMonsters } from './dungeon-use-monsters';
 import CombatResultModal from './dungeon-combat-result-modal';
 import DungeonTurnControls from './dungeon-turn-controls';
+import DungeonHeroInfoPanel from './dungeon-hero-info-panel';
 import { useSecretPassages } from './dungeon-use-secret-passages';
 import { useTreasureSearch } from './dungeon-use-treasure';
 import { useInventoryLogic } from './dungeon-use-inventory-logic';
@@ -443,26 +444,33 @@ export default function Dungeon(props) {
             />
 
             {gameSession?.isHeroOrderConfirmed && currentHero && (
-                <DungeonTurnControls
-                    currentHero={currentHero}
-                    currentHeroStats={currentHeroStats}
-                    movementPoints={hooksTurnLogic.movementPoints}
-                    turnPhase={hooksTurnLogic.turnPhase}
-                    canOpenDoor={hooksTurnLogic.canOpenDoor != null}
-                    isTargeting={targetingSpell != null}
-                    isMoving={hooksTurnLogic.isMoving}
-                    onRollMovement={hooksTurnLogic.rollMovement}
-                    onEndTurn={hooksTurnLogic.endTurn}
-                    onSearchPassages={hooksSecretPassages.searchPassages}
-                    onSearchTreasure={hooksTreasure.searchTreasure}
-                    onSearchTraps={hooksTraps.searchTraps}
-                    canDisarmTrap={canDisarmAdjacentTrap}
-                    onDisarmTrap={handleDisarmTrap}
-                    onOpenMagic={openMagicModal}
-                    onOpenInventory={openInventory}
-                    onCancelTargeting={cancelTargeting}
-                    onOpenDoor={hooksTurnLogic.handleOpenDoor}
-                />
+                <>
+                    <DungeonTurnControls
+                        currentHero={currentHero}
+                        currentHeroStats={currentHeroStats}
+                        movementPoints={hooksTurnLogic.movementPoints}
+                        turnPhase={hooksTurnLogic.turnPhase}
+                        canOpenDoor={hooksTurnLogic.canOpenDoor != null}
+                        isTargeting={targetingSpell != null}
+                        isMoving={hooksTurnLogic.isMoving}
+                        onRollMovement={hooksTurnLogic.rollMovement}
+                        onEndTurn={hooksTurnLogic.endTurn}
+                        onSearchPassages={hooksSecretPassages.searchPassages}
+                        onSearchTreasure={hooksTreasure.searchTreasure}
+                        onSearchTraps={hooksTraps.searchTraps}
+                        canDisarmTrap={canDisarmAdjacentTrap}
+                        onDisarmTrap={handleDisarmTrap}
+                        onOpenMagic={openMagicModal}
+                        onOpenInventory={openInventory}
+                        onCancelTargeting={cancelTargeting}
+                        onOpenDoor={hooksTurnLogic.handleOpenDoor}
+                    />
+                    <DungeonHeroInfoPanel
+                        currentHero={currentHero}
+                        currentHeroStats={currentHeroStats}
+                        movementPoints={hooksTurnLogic.movementPoints}
+                    />
+                </>
             )}
 
             {gameSession?.lastAttack && (

@@ -77,7 +77,7 @@
       - The first mist layer MUST animate with keyframes `translate3d(-28px, -18px, 0)` to `translate3d(16px, 12px, 0)` to `translate3d(34px, -20px, 0)` over `14s` with `ease-in-out`, `infinite`, and `alternate`.
       - The second mist layer MUST animate with keyframes `rotate(180deg) translate3d(-32px, 18px, 0)` to `rotate(180deg) translate3d(14px, -12px, 0)` to `rotate(180deg) translate3d(30px, 22px, 0)` over `18s` with `ease-in-out`, `infinite`, and `alternate`.
     - **Unfogging Logic**: The black overlay MUST disappear ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`. The mist layers remain global and visible across both revealed and fogged areas.
-    - **Layer Order**: The visual stack MUST be, from back to front: board background, per-cell black fog overlays, global mist overlay, board entities, targeting tracer, debug panel.
+    - **Layer Order**: The visual stack MUST be, from back to front: board background, per-cell black fog overlays, global mist overlay, board entities, targeting tracer.
     - **Path Highlight**:
       - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "valid", add a semi-transparent green overlay.
       - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "blocked-by-second-wall", add a semi-transparent red overlay.
@@ -152,13 +152,6 @@
     - IF `@HeroState.activeStatus` contains "InvisiblePassage":
       - Apply a pulsing cyan glow (aura).
   - **Style**: Apply CSS transition `top 0.3s linear, left 0.3s linear` to the container for smooth movement.
-- **debug panel**: Display an "fixed" "right" side bar containing these Debug information (fixed width:250px):
-  - cell coordinates x,y of current mouse position
-  - vis1
-  - vis2
-  - viso
-  - fog
-  - currentTurn
 - **Targeting Tracer**:
   - Visible ONLY IF `targetingSpell` is NOT null AND `hoveredCell` is NOT null.
   - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.

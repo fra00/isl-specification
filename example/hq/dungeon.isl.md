@@ -22,6 +22,7 @@
 > **Reference**: @useDungeonMonsters in `./dungeon-use-monsters.isl.md`
 > **Reference**: @CombatResultModal in `./dungeon-combat-result-modal.isl.md`
 > **Reference**: @DungeonTurnControls in `./dungeon-turn-controls.isl.md`
+> **Reference**: @DungeonHeroInfoPanel in `./dungeon-hero-info-panel.isl.md`
 > **Reference**: @useSecretPassages in `./dungeon-use-secret-passages.isl.md`
 > **Reference**: @useTreasureSearch in `./dungeon-use-treasure.isl.md`
 > **Reference**: @useInventoryLogic in `./dungeon-use-inventory-logic.isl.md`
@@ -111,6 +112,12 @@
     - `canOpenDoor`: `hooksTurnLogic.canOpenDoor` is NOT null.
     - `onOpenDoor`: `hooksTurnLogic.handleOpenDoor`.
     - `onOpenInventory`: Trigger `openInventory`.
+- **Hero Info Panel**:
+  - Displays `@DungeonHeroInfoPanel` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
+  - **Props**:
+    - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
+    - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
+    - `movementPoints`: `hooksTurnLogic.movementPoints`.
 - **Combat Result**: Displays `CombatResultModal` if `gameSession.lastAttack` is not null.
   - **Props**:
     - `isOpen`: true.

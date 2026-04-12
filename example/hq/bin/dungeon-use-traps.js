@@ -15,6 +15,8 @@ export function useTraps({
   areMonstersVisible,
   onNotify,
   onActionDone,
+  onForceTurnEnd,
+  sessionManager,
 }) {
   const [triggeredTraps, setTriggeredTrapsState] = useState([]);
   const triggeredTrapsRef = useRef(triggeredTraps);
@@ -180,6 +182,21 @@ export function useTraps({
 
     if (!currentHero) return;
 
+    const scriptResult = sessionManager?.executeMissionScripts?.({
+      baseSession: gameSession,
+      eventType: 4,
+      visibilityMap,
+    });
+
+    if (scriptResult?.handled) {
+      if (scriptResult.effects?.forceFinishTurn) {
+        onForceTurnEnd?.();
+      } else {
+        onActionDone?.();
+      }
+      return;
+    }
+
     const visibleCells =
       visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y) || [];
     let trapsFound = false;
@@ -227,6 +244,8 @@ export function useTraps({
     visibilityCalc,
     onNotify,
     onActionDone,
+    onForceTurnEnd,
+    sessionManager,
     setTriggeredTraps,
   ]);
 

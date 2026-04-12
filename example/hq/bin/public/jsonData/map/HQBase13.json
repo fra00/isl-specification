@@ -19566,65 +19566,65 @@
     {
       "x": 14,
       "y": 17,
-      "text": "serand",
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
       "evento": 1,
-      "unavolta": 6,
-      "morto": "1;",
-      "idmosc": "msg"
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "Il",
-      "y": "soffitto",
-      "text": "�",
-      "evento": "pericolante",
-      "unavolta": "ma",
-      "morto": "passi",
-      "idmosc": "indenne;"
+      "x": 13,
+      "y": 15,
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "end;",
-      "y": "serand",
-      "text": 1,
-      "evento": 6,
-      "unavolta": "2;",
-      "morto": "msg",
-      "idmosc": "Il"
-    },
-    {
-      "x": "soffitto",
-      "y": "�",
-      "text": "pericolante",
-      "evento": "ma",
-      "unavolta": "passi",
-      "morto": "indenne;",
-      "idmosc": "end;"
-    },
-    {
-      "x": "serand",
-      "y": 1,
-      "text": 6,
-      "evento": "3;",
-      "unavolta": "msg",
-      "morto": "Il",
-      "idmosc": "soffitto"
-    },
-    {
-      "x": "�",
-      "y": "pericolante",
-      "text": "ma",
-      "evento": "passi",
-      "unavolta": "indenne;",
-      "morto": "end;",
-      "idmosc": "serand"
+      "x": 20,
+      "y": 18,
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
       "x": 1,
-      "y": 6,
-      "text": "4;",
-      "evento": "msg",
-      "unavolta": "Il",
-      "morto": "soffitto",
-      "idmosc": "�"
+      "y": 10,
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 10,
+      "y": 12,
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 20,
+      "y": 10,
+      "text": "serand 1,6,1;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,2;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,3;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,4;\nmsg Il soffitto � pericolante ma passi indenne;\nend;\nserand 1,6,5;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;\nserand 1,6,6;\nmsg una parte di muro ti � crollata addosso perdi un punto corpo;\nagghp -1;\nend;",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

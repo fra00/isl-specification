@@ -84,6 +84,9 @@ export const MapScript = (data = {}) => ({
   y: data.y ?? 0,
   text: data.text ?? "",
   evento: data.evento ?? 0,
+  unavolta: Boolean(data.unavolta),
+  morto: Boolean(data.morto),
+  idmosc: data.idmosc ?? 0,
 });
 
 export const MapDefinition = (data = {}) => ({

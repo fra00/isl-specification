@@ -11,6 +11,11 @@
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
 > **Reference**: @MapCellPassage in `./domain-map.isl.md`
 > **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
+
+## Domain Concepts
+
+- `foundPassages`: Runtime collection of secret passages already revealed to the player and still eligible for rendering when visible.
 
 ## Component: useSecretPassages
 
@@ -22,11 +27,14 @@
 - `visibilityMap`: @VisibilityMap
 - `onNotify`: (message: String) -> void (Callback to show notification).
 - `onActionDone`: () -> void (Callback to mark turn action as done).
+- `onForceTurnEnd`: () -> void (Callback to exhaust the current turn immediately when a mission script requests it).
+- `sessionManager`: @useDungeonSessionManager
 
 ### ⚡ Capabilities
 
 #### internalState
 
+- **Contract**: Stores locally revealed secret passages while leaving persistent mission mutations to the dungeon session boundary.
 - `foundPassages`: List of {x: Integer, y: Integer, img: String} (Stores discovered secret passages).
 - `visibilityCalc`: @useVisibilityCalc (Hook instance for visibility calculations).
 
@@ -35,10 +43,12 @@
 - **Contract**: Scans visible area for secret passages.
 - **Trigger**: User clicks "Cerca Passaggi".
 - **Flow**:
+  - Call `sessionManager.executeMissionScripts({ baseSession: gameSession, eventType: 5, visibilityMap })` before normal secret-passage discovery.
+  - Let `activeSession` = the script result session when scripts were handled, otherwise `gameSession`.
   - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
   - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
   - Initialize `foundInThisSearch` as false.
-  - Iterate through all potential passages in `gameSession.currentMap.grid` (cells where `psgg.ps > 0`).
+  - Iterate through all potential passages in `activeSession.currentMap.grid` (cells where `psgg.ps > 0`).
   - FOR EACH `potentialPassage`:
     - Let `px` = `potentialPassage.x`, `py` = `potentialPassage.y`.
     - // Determine if this passage is adjacent to any currently visible cell.
@@ -53,7 +63,11 @@
         - ELSE `img` = "psv.jpg".
       - Add {x: px, y: py, img: img} to `foundPassages`.
       - Set `foundInThisSearch` to true.
-
+  - IF the mission script result is `handled` true:
+    - Persist any newly discoverable passages from `activeSession` into local `foundPassages`.
+    - IF the runtime requests `forceFinishTurn`, trigger `onForceTurnEnd()`.
+    - ELSE trigger `onActionDone()`.
+    - RETURN.
   - IF `foundInThisSearch` is true:
     - Trigger `onNotify("Hai trovato un passaggio segreto!")`.
     - Trigger `onActionDone()`.

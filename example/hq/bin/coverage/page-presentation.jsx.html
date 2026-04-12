@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/121</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/121</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -164,45 +164,7 @@
 <a name='L99'></a><a href='#L99'>99</a>
 <a name='L100'></a><a href='#L100'>100</a>
 <a name='L101'></a><a href='#L101'>101</a>
-<a name='L102'></a><a href='#L102'>102</a>
-<a name='L103'></a><a href='#L103'>103</a>
-<a name='L104'></a><a href='#L104'>104</a>
-<a name='L105'></a><a href='#L105'>105</a>
-<a name='L106'></a><a href='#L106'>106</a>
-<a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a>
-<a name='L109'></a><a href='#L109'>109</a>
-<a name='L110'></a><a href='#L110'>110</a>
-<a name='L111'></a><a href='#L111'>111</a>
-<a name='L112'></a><a href='#L112'>112</a>
-<a name='L113'></a><a href='#L113'>113</a>
-<a name='L114'></a><a href='#L114'>114</a>
-<a name='L115'></a><a href='#L115'>115</a>
-<a name='L116'></a><a href='#L116'>116</a>
-<a name='L117'></a><a href='#L117'>117</a>
-<a name='L118'></a><a href='#L118'>118</a>
-<a name='L119'></a><a href='#L119'>119</a>
-<a name='L120'></a><a href='#L120'>120</a>
-<a name='L121'></a><a href='#L121'>121</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L102'></a><a href='#L102'>102</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -311,7 +273,7 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import React, { useState, useCallback, useEffect } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import React, { useState, useCallback } from 'react';</span>
 <span class="cstat-no" title="statement not covered" >import { PageNavigationEnum } from './domain-core';</span>
 <span class="cstat-no" title="statement not covered" >import PlayGame from './play-game';</span>
 <span class="cstat-no" title="statement not covered" >import EditorGame from './editor-game';</span>
@@ -329,46 +291,31 @@
 <span class="cstat-no" title="statement not covered" >  spells = [],</span>
 <span class="cstat-no" title="statement not covered" >  treasureDeck = [],</span>
 <span class="cstat-no" title="statement not covered" >  campaign = null</span>
-<span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >  const [currentPageView, setCurrentPageView] = useState(PageNavigationEnum.MAIN_MENU);</span>
+<span class="cstat-no" title="statement not covered" >} = {}) {</span>
+<span class="cstat-no" title="statement not covered" >  const [currentPageView, setCurrentPageView] = useState(() =&gt; PageNavigationEnum.MAIN_MENU);</span>
 <span class="cstat-no" title="statement not covered" >  const [gameSession, setGameSession] = useState(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // FirstLoad: Inizializzazione della pagina</span>
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!currentPageView) {</span>
-<span class="cstat-no" title="statement not covered" >      setCurrentPageView(PageNavigationEnum.MAIN_MENU);</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }, [currentPageView]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // changePageView: Cambia la PageView corrente</span>
 <span class="cstat-no" title="statement not covered" >  const changePageView = useCallback((nextPageView) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setCurrentPageView(nextPageView);</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // updateSession: Updates the global game session state</span>
-<span class="cstat-no" title="statement not covered" >  const updateSession = useCallback((sessionOrUpdater) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    setGameSession(sessionOrUpdater);</span>
+<span class="cstat-no" title="statement not covered" >  const updateSession = useCallback((session) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setGameSession(session);</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // startMission: Handles the start of a mission</span>
 <span class="cstat-no" title="statement not covered" >  const startMission = useCallback((missionIndex) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    console.log(`Starting mission index: ${missionIndex}`);</span>
+<span class="cstat-no" title="statement not covered" >    console.log("Mission started:", missionIndex);</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // showPageView: Mostra la PageView corrente</span>
-<span class="cstat-no" title="statement not covered" >  const renderPageView = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const showPageView = () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (currentPageView) {</span>
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.MAIN_MENU:</span>
-<span class="cstat-no" title="statement not covered" >        return (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;MainMenu </span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView} </span>
-<span class="cstat-no" title="statement not covered" >          /&gt;</span>
-<span class="cstat-no" title="statement not covered" >        );</span>
+<span class="cstat-no" title="statement not covered" >        return &lt;MainMenu onChangePageView={changePageView} /&gt;;</span>
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.PLAY_GAME:</span>
 <span class="cstat-no" title="statement not covered" >        return (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;PlayGame</span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            gameSession={gameSession}</span>
+<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            onUpdateSession={updateSession}</span>
 <span class="cstat-no" title="statement not covered" >            campaign={campaign}</span>
 <span class="cstat-no" title="statement not covered" >            staticHeroes={heroes}</span>
@@ -376,22 +323,20 @@
 <span class="cstat-no" title="statement not covered" >          /&gt;</span>
 <span class="cstat-no" title="statement not covered" >        );</span>
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.EDITOR_GAME:</span>
-<span class="cstat-no" title="statement not covered" >        return (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;EditorGame /&gt;</span>
-<span class="cstat-no" title="statement not covered" >        );</span>
+<span class="cstat-no" title="statement not covered" >        return &lt;EditorGame /&gt;;</span>
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.SHOP:</span>
 <span class="cstat-no" title="statement not covered" >        return (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;Armory</span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            gameSession={gameSession}</span>
+<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            onUpdateSession={updateSession}</span>
 <span class="cstat-no" title="statement not covered" >          /&gt;</span>
 <span class="cstat-no" title="statement not covered" >        );</span>
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.DUNGEON:</span>
 <span class="cstat-no" title="statement not covered" >        return (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;Dungeon</span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            gameSession={gameSession}</span>
+<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            onUpdateSession={updateSession}</span>
 <span class="cstat-no" title="statement not covered" >            staticMonsters={monsters}</span>
 <span class="cstat-no" title="statement not covered" >            staticVisibilityMap={boardData}</span>
@@ -404,23 +349,21 @@
 <span class="cstat-no" title="statement not covered" >      case PageNavigationEnum.DUNGEON_DESCRIPTION:</span>
 <span class="cstat-no" title="statement not covered" >        return (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;DungeonDescription</span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            gameSession={gameSession}</span>
+<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView}</span>
 <span class="cstat-no" title="statement not covered" >            onUpdateSession={updateSession}</span>
 <span class="cstat-no" title="statement not covered" >          /&gt;</span>
 <span class="cstat-no" title="statement not covered" >        );</span>
 <span class="cstat-no" title="statement not covered" >      default:</span>
-<span class="cstat-no" title="statement not covered" >        return (</span>
-<span class="cstat-no" title="statement not covered" >          &lt;MainMenu </span>
-<span class="cstat-no" title="statement not covered" >            onChangePageView={changePageView} </span>
-<span class="cstat-no" title="statement not covered" >          /&gt;</span>
-<span class="cstat-no" title="statement not covered" >        );</span>
+<span class="cstat-no" title="statement not covered" >        return &lt;MainMenu onChangePageView={changePageView} /&gt;;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="w-2/3 h-screen bg-black overflow-hidden mx-auto"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      {renderPageView()}</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="w-full h-screen bg-black overflow-hidden flex justify-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="w-full lg:w-2/3 h-full"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {showPageView()}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
@@ -430,7 +373,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

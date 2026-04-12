@@ -11,6 +11,7 @@
 > **Reference**: @GameSession in `./domain-session.isl.md`
 > **Reference**: @VisibilityMap in `./domain-map.isl.md`
 > **Reference**: @useVisibilityCalc in `./dungeon-use-visibility-calc.isl.md`
+> **Reference**: @useDungeonSessionManager in `./dungeon-use-session-manager.isl.md`
 
 ## Domain Concepts
 
@@ -31,6 +32,8 @@
 - `areMonstersVisible`: Boolean
 - `onNotify`: (message: String) -> void
 - `onActionDone`: () -> void
+- `onForceTurnEnd`: () -> void
+- `sessionManager`: @useDungeonSessionManager
 
 ### ⚡ Capabilities
 
@@ -133,6 +136,11 @@
     - Trigger `onNotify("Non puoi cercare trappole con mostri vicini!")`.
     - RETURN.
   - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
+  - Call `sessionManager.executeMissionScripts({ baseSession: gameSession, eventType: 4, visibilityMap })` before normal trap discovery.
+  - IF the mission script result is `handled` true:
+    - IF the runtime requests `forceFinishTurn`, trigger `onForceTurnEnd()`.
+    - ELSE trigger `onActionDone()`.
+    - RETURN.
   - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
   - Initialize `trapsFound` as false.
   - FOR each `cell` in `visibleCells`:

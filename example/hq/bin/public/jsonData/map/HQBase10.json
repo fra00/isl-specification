@@ -19542,101 +19542,101 @@
     {
       "x": 5,
       "y": 15,
-      "text": "serand",
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
       "evento": 1,
-      "unavolta": 12,
-      "morto": "2;",
-      "idmosc": "pospsg"
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": 4,
-      "y": 15,
-      "text": "1;",
-      "evento": "end;",
-      "unavolta": "serand",
-      "morto": 1,
-      "idmosc": 12
-    },
-    {
-      "x": "3;",
-      "y": "pospsg",
-      "text": 11,
-      "evento": 3,
-      "unavolta": "1;",
-      "morto": "end;",
-      "idmosc": "serand"
-    },
-    {
-      "x": 1,
+      "x": 7,
       "y": 12,
-      "text": "4;",
-      "evento": "pospsg",
-      "unavolta": 4,
-      "morto": 7,
-      "idmosc": "1;"
-    },
-    {
-      "x": "end;",
-      "y": "serand",
-      "text": 1,
-      "evento": 12,
-      "unavolta": "5;",
-      "morto": "pospsg",
-      "idmosc": 6
-    },
-    {
-      "x": 12,
-      "y": "1;",
-      "text": "end;",
-      "evento": "serand",
-      "unavolta": 1,
-      "morto": 12,
-      "idmosc": "6;"
-    },
-    {
-      "x": "pospsg",
-      "y": 11,
-      "text": 16,
-      "evento": "1;",
-      "unavolta": "end;",
-      "morto": "serand",
-      "idmosc": 1
-    },
-    {
-      "x": 12,
-      "y": "7;",
-      "text": "pospsg",
-      "evento": 15,
-      "unavolta": 10,
-      "morto": "1;",
-      "idmosc": "end;"
-    },
-    {
-      "x": "serand",
-      "y": 1,
-      "text": 12,
-      "evento": "8;",
-      "unavolta": "pospsg",
-      "morto": 16,
-      "idmosc": 3
-    },
-    {
-      "x": "1;",
-      "y": "end;",
-      "text": "serand",
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
       "evento": 1,
-      "unavolta": 12,
-      "morto": "9;",
-      "idmosc": "pospsg"
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 10,
+      "y": 3,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 16,
+      "y": 10,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
       "x": 17,
+      "y": 3,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 10,
+      "y": 16,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 18,
       "y": 17,
-      "text": "1;",
-      "evento": "end;",
-      "unavolta": "serand",
-      "morto": 1,
-      "idmosc": 12
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 23,
+      "y": 14,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 23,
+      "y": 5,
+      "text": "serand 1,12,2;\npospsg 4,15,1;\nend;\nserand 1,12,3;\npospsg 11,3,1;\nend;\nserand 1,12,4;\npospsg 4,7,1;\nend;\nserand 1,12,5;\npospsg 6,12,1;\nend;\nserand 1,12,6;\npospsg 11,16,1;\nend;\nserand 1,12,7;\npospsg 15,10,1;\nend;\nserand 1,12,8;\npospsg 16,3,1;\nend;\nserand 1,12,9;\npospsg 17,17,1;\nend;\nserand 1,12,10;\npospsg 23,13,1;\nend;\nserand 1,12,11;\npospsg 23,4,1;\nend;\nserand 1,12,12;\npospsg 4,15,1;\nend;\n",
+      "evento": 1,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

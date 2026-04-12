@@ -275,12 +275,32 @@
             - Set `turnPhase.hasPerformedAction` to true.
           - End Movement: Set `activePath` to empty list.
           - RETURN.
-    - Call `sessionManager.moveCurrentHeroTo(nextPos.x, nextPos.y)`.
-  - Set `activePath` to `activePath` starting from index 1.
+    - Build `movedSession` as a full-session snapshot where the active hero is already at `nextPos`.
+    - Persist the normal movement through `sessionManager.moveCurrentHeroTo(nextPos.x, nextPos.y, gameSession)`.
+    - Call `sessionManager.executeMissionScripts({ baseSession: movedSession, eventType: 1, context: { previousPosition: oldPos }, visibilityMap })`.
+    - IF the movement script runtime returns `movementDelta`, add it to the remaining movement points.
+    - IF the movement script runtime returns `forceFinishTurn`, call `forceTurnExhausted(finalHeroPosition)` and RETURN.
+    - IF the movement script runtime returns `stopMovement`, stop consuming the remaining `activePath` immediately.
+    - Compare the room id (`valo`) of `oldPos` and the final hero position after any movement-script side effect.
+    - IF the room id changed:
+      - Call `sessionManager.executeMissionScripts({ baseSession: sessionAfterMovementScripts, eventType: 8, context: { roomId: newRoomId }, visibilityMap })`.
+      - Apply `movementDelta`, `forceFinishTurn`, and `stopMovement` from that room-entry result exactly as for event 1.
+  - Set `activePath` to `activePath` starting from index 1 only if no script stopped the movement sequence.
   - **Update Manual Door State**:
     - // Rule 4.5: Always update interactive state during movement to enable UI
-    - Let `hero` = find current hero.
+    - Let `hero` = the final active hero position after any movement-script side effect.
     - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
+
+#### forceTurnExhausted
+
+- **Contract**: Consumes the rest of the current hero turn immediately without advancing to the next hero.
+- **Signature**: `(positionOverride?: {x: Integer, y: Integer}) -> void`
+- **Flow**:
+  - Set `movementPoints` to 0.
+  - Clear `hoveredPath`, `hoveredPathVariant`, and `activePath`.
+  - Set `isMoving` and `isMovingStarted` to false.
+  - Set `turnPhase.hasMoved` and `turnPhase.hasPerformedAction` to true.
+  - Recompute `canOpenDoor` using `positionOverride` when provided, otherwise the current hero coordinates.
 
 #### handleMonsterClick
 
@@ -302,6 +322,9 @@
       - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `isValidTarget` to true.
 
   - IF monster is found AND hero is found AND `isValidTarget` is true AND `isMoving` is false AND `turnPhase.hasPerformedAction` is false:
+    - Call `sessionManager.executeMissionScripts({ baseSession: gameSession, eventType: 2, context: { monsterTypeId: monster.monster.id, onDeath: false }, visibilityMap })` before rolling combat dice.
+    - Let `attackBaseSession` = the script result session when scripts were handled, otherwise `gameSession`.
+    - IF the script runtime returns `attackBlocked` true RETURN without consuming the hero action.
     - Let `attackDice` = `heroStatsLogic.calculateAttackDice(hero, monster.monster)`.
     - Let `defenseDice` = `monster.monster.difesa`.
     - **Special Ability: Gargoyle Defense**:
@@ -337,7 +360,10 @@
         - Request `consumedId` from `heroStatsLogic.getConsumableWeaponId(hero)`.
         - IF `consumedId` is NOT null:
           - Trigger `onNotify("Hai lanciato l'arma e l'hai persa!")`.
-          - Call `sessionManager.resolveHeroAttack(monsterId, combatResult, statusesToRemove, consumedId)`.
+    - Call `sessionManager.resolveHeroAttack(monsterId, combatResult, statusesToRemove, consumedId, attackBaseSession)`.
+    - Build `afterAttackSession` from the same `attackBaseSession` plus the resolved combat result.
+    - IF the target monster was killed:
+      - Call `sessionManager.executeMissionScripts({ baseSession: afterAttackSession, eventType: 2, context: { monsterTypeId: monster.monster.id, onDeath: true }, visibilityMap })`.
 
 #### handleOpenDoor
 
@@ -386,4 +412,4 @@
   - ELSE:
     - Call `sessionManager.advanceTurn(nextTurn, null)`.
 
-- **Return**: `{ turnPhase, movementPoints, hoveredPath, hoveredPathVariant, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, endTurn }`
+- **Return**: `{ turnPhase, movementPoints, hoveredPath, hoveredPathVariant, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, forceTurnExhausted, endTurn }`

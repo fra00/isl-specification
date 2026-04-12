@@ -19506,20 +19506,20 @@
     {
       "x": 15,
       "y": 18,
-      "text": "sestanza",
-      "evento": "13;",
-      "unavolta": "msg",
-      "morto": "stanza13;",
-      "idmosc": "end;"
+      "text": "sestanza 13;\nmsg stanza13;\nend;",
+      "evento": 8,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": 8,
-      "y": "#FALSE#",
-      "text": "#FALSE#",
+      "x": 0,
+      "y": 0,
+      "text": "",
       "evento": 0,
-      "unavolta": 0,
-      "morto": 0,
-      "idmosc": ""
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

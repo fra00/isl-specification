@@ -19567,38 +19567,38 @@
     {
       "x": 2,
       "y": 9,
-      "text": "msg",
-      "evento": "cercando",
-      "unavolta": "nella",
-      "morto": "stanza",
-      "idmosc": "hai"
+      "text": "msg cercando nella stanza hai trovato la chiave di Melar, ma appena la tocchi questa sparisce.;\nposps 0,5,8;",
+      "evento": 3,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "trovato",
-      "y": "la",
-      "text": "chiave",
-      "evento": "di",
-      "unavolta": "Melar",
-      "morto": "ma",
-      "idmosc": "appena"
+      "x": 3,
+      "y": 11,
+      "text": "img \\img\\mostri\\gargoyle.gif,5,12;\nmsg Due occhi nell'oscurit� ti fissano , la Gargola rimane li immobile, � pietrificata;\n",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "la",
-      "y": "tocchi",
-      "text": "questa",
-      "evento": "sparisce.;",
-      "unavolta": "posps",
-      "morto": 0,
-      "idmosc": 5
+      "x": 4,
+      "y": 15,
+      "text": "posmostro 7,5,12;\nmsg lo scricchilio attira la tua attenzione giusto il tempo per vedere la Gargola che si risveglia e viene verso di te.;\n",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "8;",
-      "y": 3,
-      "text": true,
-      "evento": false,
-      "unavolta": 0,
-      "morto": 3,
-      "idmosc": 11
+      "x": 0,
+      "y": 0,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

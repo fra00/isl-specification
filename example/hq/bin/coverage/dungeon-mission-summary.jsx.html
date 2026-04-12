@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/157</span>
+                <span class='fraction'>0/145</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/157</span>
+                <span class='fraction'>0/145</span>
             </div>
         
             
@@ -207,31 +207,7 @@
 <a name='L142'></a><a href='#L142'>142</a>
 <a name='L143'></a><a href='#L143'>143</a>
 <a name='L144'></a><a href='#L144'>144</a>
-<a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a>
-<a name='L148'></a><a href='#L148'>148</a>
-<a name='L149'></a><a href='#L149'>149</a>
-<a name='L150'></a><a href='#L150'>150</a>
-<a name='L151'></a><a href='#L151'>151</a>
-<a name='L152'></a><a href='#L152'>152</a>
-<a name='L153'></a><a href='#L153'>153</a>
-<a name='L154'></a><a href='#L154'>154</a>
-<a name='L155'></a><a href='#L155'>155</a>
-<a name='L156'></a><a href='#L156'>156</a>
-<a name='L157'></a><a href='#L157'>157</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L145'></a><a href='#L145'>145</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -393,136 +369,124 @@
 <span class="cstat-no" title="statement not covered" >  onClose</span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
 <span class="cstat-no" title="statement not covered" >  const handleFinalize = useCallback(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (onClose) {</span>
+<span class="cstat-no" title="statement not covered" >    if (typeof onClose === 'function') {</span>
 <span class="cstat-no" title="statement not covered" >      onClose();</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >  }, [onClose]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  if (!isOpen) return null;</span>
+<span class="cstat-no" title="statement not covered" >  if (!isOpen) {</span>
+<span class="cstat-no" title="statement not covered" >    return null;</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Filter heroes who have not died (currentBody &gt; 0)</span>
-<span class="cstat-no" title="statement not covered" >  const survivingHeroes = heroes?.filter(h =&gt; h?.currentBody &gt; 0) || [];</span>
+<span class="cstat-no" title="statement not covered" >  const survivingHeroes = heroes.filter(heroState =&gt; heroState != null &amp;&amp; heroState.currentBody &gt; 0);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const getItemName = (id) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const item = allItems?.find(i =&gt; i?.id === id);</span>
-<span class="cstat-no" title="statement not covered" >    return item?.nome || `Oggetto Sconosciuto (${id})`;</span>
+<span class="cstat-no" title="statement not covered" >    const item = allItems.find(i =&gt; i?.id === id);</span>
+<span class="cstat-no" title="statement not covered" >    return item?.nome || 'Oggetto Sconosciuto';</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  const getEquipmentName = (id) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    const eq = allEquipment?.find(e =&gt; e?.id === id);</span>
-<span class="cstat-no" title="statement not covered" >    return eq?.nome || `Equipaggiamento Sconosciuto (${id})`;</span>
+<span class="cstat-no" title="statement not covered" >    const equipment = allEquipment.find(e =&gt; e?.id === id);</span>
+<span class="cstat-no" title="statement not covered" >    return equipment?.nome || 'Equipaggiamento Sconosciuto';</span>
 <span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 overflow-hidden"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="bg-stone-900 border-8 border-double border-amber-700 rounded-xl p-6 md:p-10 max-w-7xl w-full max-h-[95vh] overflow-y-auto shadow-2xl shadow-black"&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="bg-stone-900 border-4 border-yellow-700 rounded-xl p-6 sm:p-10 max-w-7xl w-full shadow-2xl shadow-black relative"&gt;</span>
 <span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        {/* Title Section */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="text-center mb-12"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;h1 className="text-4xl md:text-6xl font-serif font-bold text-amber-500 tracking-widest mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="text-center mb-10"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;h1 className="text-4xl sm:text-5xl font-extrabold text-yellow-500 tracking-wider mb-2 drop-shadow-md"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            MISSIONE COMPIUTA</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;h2 className="text-xl md:text-3xl font-serif text-stone-400 uppercase tracking-wider"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;h2 className="text-xl sm:text-2xl text-stone-300 font-serif italic"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            Riepilogo Missione</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/h2&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Hero Grid */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          {survivingHeroes.map((heroState, idx) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >            const heroDef = heroState?.hero;</span>
-<span class="cstat-no" title="statement not covered" >            if (!heroDef) return null;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            return (</span>
+<span class="cstat-no" title="statement not covered" >        {survivingHeroes.length &gt; 0 ? (</span>
+<span class="cstat-no" title="statement not covered" >          &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {survivingHeroes.map((heroState) =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >              &lt;div </span>
-<span class="cstat-no" title="statement not covered" >                key={`hero-${heroState.heroId || idx}`} </span>
-<span class="cstat-no" title="statement not covered" >                className="bg-stone-800 border border-stone-700 rounded-lg p-5 flex flex-col items-center shadow-lg relative overflow-hidden"</span>
+<span class="cstat-no" title="statement not covered" >                key={heroState.heroId || Math.random()} </span>
+<span class="cstat-no" title="statement not covered" >                className="bg-stone-800 border border-stone-600 rounded-lg p-5 flex flex-col items-center shadow-lg"</span>
 <span class="cstat-no" title="statement not covered" >              &gt;</span>
-<span class="cstat-no" title="statement not covered" >                {/* Portrait */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="w-32 h-32 rounded-full border-4 border-stone-600 mb-4 overflow-hidden bg-stone-900 shadow-inner flex-shrink-0"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  {heroDef.portrait ? (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;img</span>
-<span class="cstat-no" title="statement not covered" >                      src={heroDef.portrait}</span>
-<span class="cstat-no" title="statement not covered" >                      alt={heroDef.classe}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className="w-32 h-32 rounded-full border-4 border-stone-500 overflow-hidden mb-4 bg-stone-950 flex-shrink-0"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {heroState.hero?.portrait ? (</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;img </span>
+<span class="cstat-no" title="statement not covered" >                      src={heroState.hero.portrait} </span>
+<span class="cstat-no" title="statement not covered" >                      alt={heroState.hero?.classe || 'Eroe'} </span>
 <span class="cstat-no" title="statement not covered" >                      className="w-full h-full object-cover"</span>
 <span class="cstat-no" title="statement not covered" >                    /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  ) : (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="w-full h-full flex items-center justify-center text-stone-500"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      ?</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;div className="w-full h-full flex items-center justify-center text-stone-600"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      N/A</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  )}</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                {/* Name &amp; Class */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;h3 className="text-xl font-bold text-amber-600 mb-6 text-center capitalize"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  {heroDef.nome ? `${heroDef.nome} - ` : ''}{heroDef.classe}</span>
+<span class="cstat-no" title="statement not covered" >                </span>
+<span class="cstat-no" title="statement not covered" >                &lt;h3 className="text-2xl font-bold text-stone-100 capitalize mb-4 text-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {heroState.hero?.classe || 'Eroe Sconosciuto'}</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                {/* Gold Section */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="w-full bg-stone-900 rounded-md p-3 mb-6 flex items-center justify-between border border-stone-700 shadow-inner"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;div className="flex items-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;span className="text-2xl mr-2" role="img" aria-label="gold"&gt;🪙&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;span className="text-stone-400 font-semibold uppercase text-sm tracking-wider"&gt;Oro&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className="w-full space-y-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="flex items-center justify-between bg-stone-900 p-3 rounded border border-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;span className="text-yellow-500 font-bold flex items-center gap-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;span className="text-xl"&gt;🪙&lt;/span&gt; Oro</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;span className="text-yellow-400 font-bold text-lg"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      {heroState.gold || 0}</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/span&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;span className="text-yellow-500 font-bold text-xl"&gt;{heroState.gold || 0}&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                {/* Loot Section */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="w-full flex-1 flex flex-col"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;h4 className="text-sm font-bold text-stone-500 uppercase tracking-widest mb-3 border-b border-stone-700 pb-2 text-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    Bottino Recuperato</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;/h4&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  </span>
-<span class="cstat-no" title="statement not covered" >                  &lt;div className="space-y-4 text-sm flex-1 overflow-y-auto pr-2 custom-scrollbar"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {(!heroState.inventory?.length &amp;&amp; !heroState.equipment?.length) &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;p className="text-stone-600 italic text-center py-4"&gt;Nessun oggetto recuperato&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="bg-stone-900 p-3 rounded border border-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;h4 className="font-bold text-sm text-stone-400 mb-2 uppercase tracking-wider border-b border-stone-700 pb-1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      Oggetti Trovati</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/h4&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;ul className="text-sm text-stone-300 space-y-1 max-h-32 overflow-y-auto pr-1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      {heroState.inventory?.length &gt; 0 ? (</span>
+<span class="cstat-no" title="statement not covered" >                        heroState.inventory.map((itemId, idx) =&gt; (</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;li key={`item-${itemId}-${idx}`} className="flex items-start gap-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;span className="text-stone-500"&gt;•&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;span&gt;{getItemName(itemId)}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        ))</span>
+<span class="cstat-no" title="statement not covered" >                      ) : (</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="text-stone-500 italic"&gt;Nessun oggetto&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      )}</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/ul&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                    {heroState.inventory?.length &gt; 0 &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;span className="text-amber-700/80 text-xs font-bold uppercase tracking-wider block mb-1"&gt;Oggetti:&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;ul className="list-disc list-inside text-stone-300 space-y-1"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                          {heroState.inventory.map((itemId, i) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;li key={`item-${itemId}-${i}`} className="truncate" title={getItemName(itemId)}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                              {getItemName(itemId)}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                          ))}</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/ul&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                    {heroState.equipment?.length &gt; 0 &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;span className="text-amber-700/80 text-xs font-bold uppercase tracking-wider block mb-1"&gt;Equipaggiamento:&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;ul className="list-disc list-inside text-stone-300 space-y-1"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                          {heroState.equipment.map((eqId, i) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;li key={`eq-${eqId}-${i}`} className="truncate" title={getEquipmentName(eqId)}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                              {getEquipmentName(eqId)}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                          ))}</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/ul&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;div className="bg-stone-900 p-3 rounded border border-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;h4 className="font-bold text-sm text-stone-400 mb-2 uppercase tracking-wider border-b border-stone-700 pb-1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      Equipaggiamento</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/h4&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;ul className="text-sm text-stone-300 space-y-1 max-h-32 overflow-y-auto pr-1"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      {heroState.equipment?.length &gt; 0 ? (</span>
+<span class="cstat-no" title="statement not covered" >                        heroState.equipment.map((eqId, idx) =&gt; (</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;li key={`eq-${eqId}-${idx}`} className="flex items-start gap-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;span className="text-stone-500"&gt;•&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                            &lt;span&gt;{getEquipmentName(eqId)}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                          &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        ))</span>
+<span class="cstat-no" title="statement not covered" >                      ) : (</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;li className="text-stone-500 italic"&gt;Nessun equipaggiamento&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      )}</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/ul&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            );</span>
-<span class="cstat-no" title="statement not covered" >          })}</span>
-<span class="cstat-no" title="statement not covered" >          </span>
-<span class="cstat-no" title="statement not covered" >          {survivingHeroes.length === 0 &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="col-span-full text-center py-16 bg-stone-800/50 rounded-lg border border-stone-700 border-dashed"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;p className="text-stone-500 italic text-2xl font-serif"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                Nessun eroe è sopravvissuto a questa missione...</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >          )}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            ))}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >        ) : (</span>
+<span class="cstat-no" title="statement not covered" >          &lt;div className="text-center text-stone-400 italic mb-10 p-10 bg-stone-800 rounded-lg border border-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            Nessun eroe è sopravvissuto a questa missione...</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >        )}</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Actions */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="flex justify-center mt-8"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex justify-center"&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;button</span>
 <span class="cstat-no" title="statement not covered" >            onClick={handleFinalize}</span>
-<span class="cstat-no" title="statement not covered" >            className="bg-amber-800 hover:bg-amber-700 text-amber-100 font-bold py-4 px-12 rounded-lg shadow-[0_0_15px_rgba(180,83,9,0.5)] border-2 border-amber-600 transition-all duration-200 text-xl uppercase tracking-widest hover:scale-105 active:scale-95"</span>
+<span class="cstat-no" title="statement not covered" >            className="bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-4 px-10 rounded-lg border-2 border-yellow-500 transition-all transform hover:scale-105 shadow-lg shadow-black/50 text-lg uppercase tracking-wide"</span>
 <span class="cstat-no" title="statement not covered" >          &gt;</span>
 <span class="cstat-no" title="statement not covered" >            Torna al Villaggio</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
@@ -538,7 +502,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

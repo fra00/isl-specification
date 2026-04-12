@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/150</span>
+                <span class='fraction'>0/141</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/150</span>
+                <span class='fraction'>0/141</span>
             </div>
         
             
@@ -203,25 +203,7 @@
 <a name='L138'></a><a href='#L138'>138</a>
 <a name='L139'></a><a href='#L139'>139</a>
 <a name='L140'></a><a href='#L140'>140</a>
-<a name='L141'></a><a href='#L141'>141</a>
-<a name='L142'></a><a href='#L142'>142</a>
-<a name='L143'></a><a href='#L143'>143</a>
-<a name='L144'></a><a href='#L144'>144</a>
-<a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a>
-<a name='L148'></a><a href='#L148'>148</a>
-<a name='L149'></a><a href='#L149'>149</a>
-<a name='L150'></a><a href='#L150'>150</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -369,147 +351,138 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import { useCallback, useMemo } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import React, { useCallback, useMemo } from 'react';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export default function ShopInventory({</span>
-<span class="cstat-no" title="statement not covered" >    items = [],</span>
-<span class="cstat-no" title="statement not covered" >    selectedItemId = null,</span>
-<span class="cstat-no" title="statement not covered" >    canBuy = false,</span>
-<span class="cstat-no" title="statement not covered" >    buyReason = '',</span>
-<span class="cstat-no" title="statement not covered" >    onSelect = () =&gt; {},</span>
-<span class="cstat-no" title="statement not covered" >    onBuy = () =&gt; {},</span>
-<span class="cstat-no" title="statement not covered" >    onEnterDungeon = () =&gt; {},</span>
-<span class="cstat-no" title="statement not covered" >    onExit = () =&gt; {}</span>
+<span class="cstat-no" title="statement not covered" >  items = [],</span>
+<span class="cstat-no" title="statement not covered" >  selectedItemId = null,</span>
+<span class="cstat-no" title="statement not covered" >  canBuy = false,</span>
+<span class="cstat-no" title="statement not covered" >  buyReason = "",</span>
+<span class="cstat-no" title="statement not covered" >  onSelect = () =&gt; {},</span>
+<span class="cstat-no" title="statement not covered" >  onBuy = () =&gt; {},</span>
+<span class="cstat-no" title="statement not covered" >  onEnterDungeon = () =&gt; {},</span>
+<span class="cstat-no" title="statement not covered" >  onExit = () =&gt; {}</span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >    const selectedItem = useMemo(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (selectedItemId == null) return null;</span>
-<span class="cstat-no" title="statement not covered" >        return items?.find(i =&gt; i.id === selectedItemId) || null;</span>
-<span class="cstat-no" title="statement not covered" >    }, [items, selectedItemId]);</span>
+<span class="cstat-no" title="statement not covered" >  const selectedItem = useMemo(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    return items.find(i =&gt; i?.id === selectedItemId);</span>
+<span class="cstat-no" title="statement not covered" >  }, [items, selectedItemId]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const handleItemClick = useCallback((id) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        const itemExists = items?.find(i =&gt; i.id === id);</span>
-<span class="cstat-no" title="statement not covered" >        if (itemExists == null) return;</span>
-<span class="cstat-no" title="statement not covered" >        onSelect(id);</span>
-<span class="cstat-no" title="statement not covered" >    }, [items, onSelect]);</span>
+<span class="cstat-no" title="statement not covered" >  const handleItemClick = useCallback((id) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!items.find(i =&gt; i?.id === id)) return;</span>
+<span class="cstat-no" title="statement not covered" >    onSelect(id);</span>
+<span class="cstat-no" title="statement not covered" >  }, [items, onSelect]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const handleBuy = useCallback(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (canBuy) {</span>
-<span class="cstat-no" title="statement not covered" >            onBuy();</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >    }, [canBuy, onBuy]);</span>
+<span class="cstat-no" title="statement not covered" >  const handleBuyClick = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (canBuy) {</span>
+<span class="cstat-no" title="statement not covered" >      onBuy();</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [canBuy, onBuy]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-200 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl w-full max-w-5xl mx-auto"&gt;</span>
+<span class="cstat-no" title="statement not covered" >  const handleEnterDungeonClick = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    onEnterDungeon();</span>
+<span class="cstat-no" title="statement not covered" >  }, [onEnterDungeon]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const handleExitClick = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    onExit();</span>
+<span class="cstat-no" title="statement not covered" >  }, [onExit]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-300 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* LIST COLUMN */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="flex-1 flex flex-col"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;h2 className="text-2xl font-bold text-yellow-500 mb-4 border-b border-gray-700 pb-2 tracking-wider uppercase"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          Armeria</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="overflow-y-auto max-h-[500px] pr-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {items.map((item) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            if (!item) return null;</span>
+<span class="cstat-no" title="statement not covered" >            const isSelected = item.id === selectedItemId;</span>
 <span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            {/* LIST SECTION */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-1 flex flex-col min-w-0"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;h2 className="text-2xl font-bold text-yellow-600 mb-4 border-b border-gray-700 pb-2 tracking-wider"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    Armeria</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="flex-1 overflow-y-auto max-h-[600px] pr-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {!items || items.length === 0 ? (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="p-4 text-center text-gray-500 italic border border-dashed border-gray-700 rounded"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            Nessun equipaggiamento disponibile al momento.</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    ) : (</span>
-<span class="cstat-no" title="statement not covered" >                        items.map((item) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                            const isSelected = item.id === selectedItemId;</span>
-<span class="cstat-no" title="statement not covered" >                            return (</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;div</span>
-<span class="cstat-no" title="statement not covered" >                                    key={item.id}</span>
-<span class="cstat-no" title="statement not covered" >                                    onClick={() =&gt; handleItemClick(item.id)}</span>
-<span class="cstat-no" title="statement not covered" >                                    className={`flex justify-between items-center p-3 cursor-pointer rounded transition-all duration-200 border ${</span>
-<span class="cstat-no" title="statement not covered" >                                        isSelected </span>
-<span class="cstat-no" title="statement not covered" >                                            ? 'border-yellow-600 bg-gray-800 shadow-inner' </span>
-<span class="cstat-no" title="statement not covered" >                                            : 'border-gray-800 hover:bg-gray-800 hover:border-gray-600'</span>
-<span class="cstat-no" title="statement not covered" >                                    }`}</span>
-<span class="cstat-no" title="statement not covered" >                                &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;span className={`font-medium truncate pr-4 ${isSelected ? 'text-yellow-500' : 'text-gray-300'}`}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        {item.nome}</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;span className="text-yellow-600 font-bold text-sm whitespace-nowrap"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        {item.prezzo} MO</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            );</span>
-<span class="cstat-no" title="statement not covered" >                        })</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            {/* PREVIEW &amp; ACTIONS SECTION */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="w-full md:w-80 flex flex-col gap-6 shrink-0"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                </span>
-<span class="cstat-no" title="statement not covered" >                {/* PREVIEW CARD */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="bg-gray-800 p-5 rounded-lg border border-gray-700 flex flex-col items-center text-center min-h-[320px] shadow-lg relative overflow-hidden"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {selectedItem ? (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div className="w-40 h-40 mb-5 bg-gray-900 rounded border border-gray-700 flex items-center justify-center overflow-hidden p-2 shadow-inner"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                {selectedItem.immagine ? (</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;img </span>
-<span class="cstat-no" title="statement not covered" >                                        src={`/img/equip/${selectedItem.immagine}`} </span>
-<span class="cstat-no" title="statement not covered" >                                        alt={selectedItem.nome} </span>
-<span class="cstat-no" title="statement not covered" >                                        className="max-w-full max-h-full object-contain drop-shadow-md"</span>
-<span class="cstat-no" title="statement not covered" >                                    /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                ) : (</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;span className="text-gray-600 text-sm italic"&gt;Immagine mancante&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                )}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            </span>
-<span class="cstat-no" title="statement not covered" >                            &lt;h3 className="text-xl font-bold text-yellow-500 mb-2 leading-tight"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                {selectedItem.nome}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/h3&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            </span>
-<span class="cstat-no" title="statement not covered" >                            &lt;p className="text-md text-gray-300 font-semibold mb-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                {selectedItem.prezzo} Monete d'Oro</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            </span>
-<span class="cstat-no" title="statement not covered" >                            {!canBuy &amp;&amp; buyReason &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;div className="mt-auto w-full bg-red-950/80 border border-red-800 rounded p-3 shadow-inner"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;p className="text-red-400 text-sm font-medium leading-snug"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        {buyReason}</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            )}</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    ) : (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="flex-1 flex flex-col items-center justify-center text-gray-500 opacity-70"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;svg className="w-16 h-16 mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"&gt;&lt;/path&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;p className="italic text-sm px-4"&gt;Seleziona un oggetto dall'elenco per visualizzarne i dettagli&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                {/* ACTIONS */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="flex flex-col gap-3 mt-auto"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;button</span>
-<span class="cstat-no" title="statement not covered" >                        onClick={handleBuy}</span>
-<span class="cstat-no" title="statement not covered" >                        disabled={!selectedItem || !canBuy}</span>
-<span class="cstat-no" title="statement not covered" >                        title={!canBuy ? buyReason : ''}</span>
-<span class="cstat-no" title="statement not covered" >                        className="w-full py-3 px-4 bg-gradient-to-b from-yellow-700 to-yellow-900 hover:from-yellow-600 hover:to-yellow-800 disabled:from-gray-800 disabled:to-gray-900 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded shadow-md transition-all duration-200 border border-yellow-600 disabled:border-gray-700 uppercase tracking-wide text-sm"</span>
-<span class="cstat-no" title="statement not covered" >                    &gt;</span>
-<span class="cstat-no" title="statement not covered" >                        Acquista</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    </span>
-<span class="cstat-no" title="statement not covered" >                    &lt;button</span>
-<span class="cstat-no" title="statement not covered" >                        onClick={onEnterDungeon}</span>
-<span class="cstat-no" title="statement not covered" >                        className="w-full py-3 px-4 bg-gradient-to-b from-red-800 to-red-950 hover:from-red-700 hover:to-red-900 text-white font-bold rounded shadow-md transition-all duration-200 border border-red-700 uppercase tracking-wide text-sm mt-4"</span>
-<span class="cstat-no" title="statement not covered" >                    &gt;</span>
-<span class="cstat-no" title="statement not covered" >                        Entra nel dungeon</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    </span>
-<span class="cstat-no" title="statement not covered" >                    &lt;button</span>
-<span class="cstat-no" title="statement not covered" >                        onClick={onExit}</span>
-<span class="cstat-no" title="statement not covered" >                        className="w-full py-3 px-4 bg-gradient-to-b from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-gray-200 font-bold rounded shadow-md transition-all duration-200 border border-gray-600 uppercase tracking-wide text-sm"</span>
-<span class="cstat-no" title="statement not covered" >                    &gt;</span>
-<span class="cstat-no" title="statement not covered" >                        Indietro</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            return (</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div</span>
+<span class="cstat-no" title="statement not covered" >                key={item.id}</span>
+<span class="cstat-no" title="statement not covered" >                onClick={() =&gt; handleItemClick(item.id)}</span>
+<span class="cstat-no" title="statement not covered" >                className={`flex justify-between items-center p-3 rounded cursor-pointer transition-all border ${</span>
+<span class="cstat-no" title="statement not covered" >                  isSelected</span>
+<span class="cstat-no" title="statement not covered" >                    ? 'bg-gray-800 border-yellow-600 shadow-[0_0_10px_rgba(202,138,4,0.2)]'</span>
+<span class="cstat-no" title="statement not covered" >                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-700 hover:border-gray-500'</span>
+<span class="cstat-no" title="statement not covered" >                }`}</span>
+<span class="cstat-no" title="statement not covered" >              &gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="font-medium text-lg"&gt;{item.nome}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="text-yellow-500 font-bold"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {item.prezzo} &lt;span className="text-sm text-yellow-700"&gt;MO&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            );</span>
+<span class="cstat-no" title="statement not covered" >          })}</span>
+<span class="cstat-no" title="statement not covered" >          {items.length === 0 &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >             &lt;div className="text-center text-gray-500 py-8 italic"&gt;</span>
+<span class="cstat-no" title="statement not covered" >               Nessun oggetto disponibile.</span>
+<span class="cstat-no" title="statement not covered" >             &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >          )}</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      {/* PREVIEW &amp; ACTIONS COLUMN */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="w-full md:w-80 flex flex-col gap-6"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {/* PREVIEW CARD */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="bg-gray-800 border-2 border-gray-700 rounded-lg p-4 flex flex-col items-center min-h-[280px] justify-center relative shadow-inner"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {selectedItem ? (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;h3 className="text-xl font-bold text-yellow-500 mb-4 text-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {selectedItem.nome}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/h3&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {selectedItem.immagine &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                &lt;img</span>
+<span class="cstat-no" title="statement not covered" >                  src={`/img/equip/${selectedItem.immagine}`}</span>
+<span class="cstat-no" title="statement not covered" >                  alt={selectedItem.nome}</span>
+<span class="cstat-no" title="statement not covered" >                  className="w-32 h-32 object-contain mb-4 drop-shadow-lg"</span>
+<span class="cstat-no" title="statement not covered" >                /&gt;</span>
+<span class="cstat-no" title="statement not covered" >              )}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="text-yellow-400 font-bold text-2xl mb-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {selectedItem.prezzo} &lt;span className="text-lg text-yellow-600"&gt;MO&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {!canBuy &amp;&amp; buyReason &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className="mt-auto w-full bg-red-900/40 border border-red-800 text-red-200 text-sm p-2 rounded text-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {buyReason}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              )}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/&gt;</span>
+<span class="cstat-no" title="statement not covered" >          ) : (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="text-gray-500 italic text-center px-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              Seleziona un oggetto dall'inventario per visualizzarne i dettagli.</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >          )}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        {/* ACTIONS */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex flex-col gap-3 mt-auto"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleBuyClick}</span>
+<span class="cstat-no" title="statement not covered" >            disabled={!canBuy || !selectedItem}</span>
+<span class="cstat-no" title="statement not covered" >            title={!canBuy ? buyReason : "Acquista oggetto"}</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full py-3 px-4 bg-gradient-to-r from-yellow-800 to-yellow-600 hover:from-yellow-700 hover:to-yellow-500 disabled:from-gray-800 disabled:to-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded border border-yellow-900 disabled:border-gray-600 transition-all shadow-lg uppercase tracking-wider"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Acquista</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleEnterDungeonClick}</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full py-3 px-4 bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 text-white font-bold rounded border border-red-950 transition-all shadow-lg uppercase tracking-wider mt-2"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Entra nel dungeon</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleExitClick}</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded border border-gray-600 transition-all uppercase tracking-wider text-sm mt-1"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Indietro</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -517,7 +490,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

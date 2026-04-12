@@ -330,6 +330,22 @@ export default function DungeonBoard({
             />
           );
         })}
+        {(gameSession?.scriptImages || [])
+          .filter((image) => {
+            const visibilityCell = boardVisibilityMap?.data?.find(
+              (cell) => cell.x === image.x && cell.y === image.y,
+            );
+            return visibilityCell && visibilityCell.fog === false;
+          })
+          .map((image, i) => (
+            <img
+              key={`script-img-${i}`}
+              src={image.src}
+              alt="Script"
+              className="absolute max-w-none h-auto"
+              style={{ left: (image.x - 1) * 34, top: (image.y - 1) * 34 }}
+            />
+          ))}
       </div>
 
       {/* Layer 40: Dynamic Entities (Monsters, Heroes) */}

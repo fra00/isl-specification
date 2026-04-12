@@ -90,7 +90,9 @@ export default function Dungeon(props) {
         gameSession,
         visibilityMap: boardVisibilityMap,
         onNotify: setNotificationMessage,
-        onActionDone: () => hooksTurnLogic?.markActionDone()
+        onActionDone: () => hooksTurnLogic?.markActionDone(),
+        onForceTurnEnd: () => hooksTurnLogic?.forceTurnExhausted(),
+        sessionManager: hooksSessionManager
     });
 
     const hooksMapInteraction = useMapInteraction({
@@ -114,7 +116,9 @@ export default function Dungeon(props) {
         visibilityMap: boardVisibilityMap,
         areMonstersVisible,
         onNotify: setNotificationMessage,
-        onActionDone: () => hooksTurnLogic?.markActionDone()
+        onActionDone: () => hooksTurnLogic?.markActionDone(),
+        onForceTurnEnd: () => hooksTurnLogic?.forceTurnExhausted(),
+        sessionManager: hooksSessionManager
     });
 
     hooksTurnLogic = useTurnLogic({
@@ -169,6 +173,7 @@ export default function Dungeon(props) {
         visibilityMap: boardVisibilityMap,
         onNotify: setNotificationMessage,
         onActionDone: () => hooksTurnLogic?.markActionDone(),
+        onForceTurnEnd: () => hooksTurnLogic?.forceTurnExhausted(),
         sessionManager: hooksSessionManager,
         onTreasureCardDrawn: handleTreasureCardDrawn,
         onWanderingMonster: handleWanderingMonster
@@ -261,21 +266,39 @@ export default function Dungeon(props) {
         );
     }, [currentHero, currentHeroStats?.canDisarmTraps, gameSession?.currentMap?.grid, hooksSessionManager, hooksTraps]);
 
+    const runMissionEndScripts = useCallback((baseSession, context = {}) => {
+        const scriptResult = hooksSessionManager.executeMissionScripts?.({
+            baseSession,
+            eventType: 7,
+            context,
+            visibilityMap: boardVisibilityMap,
+        });
+        return scriptResult?.handled && scriptResult.session ? scriptResult.session : baseSession;
+    }, [hooksSessionManager, boardVisibilityMap]);
+
     const leaveDungeonAfterRetreat = useCallback(() => {
+        const missionEndSession = runMissionEndScripts(gameSession, {
+            missionObjectiveCompleted: false,
+            isRetreat: true,
+        });
         const savedData = hooksCampaignManager.loadCampaign();
-        const preservedMissionIndex = savedData ? savedData.nextMissionIndex : gameSession?.currentMissionIndex;
-        hooksCampaignManager.saveCampaign(gameSession?.heroes || [], preservedMissionIndex);
+        const preservedMissionIndex = savedData ? savedData.nextMissionIndex : missionEndSession?.currentMissionIndex;
+        hooksCampaignManager.saveCampaign(missionEndSession?.heroes || [], preservedMissionIndex);
         onChangePageView(PageNavigationEnum.PLAY_GAME);
-    }, [hooksCampaignManager, gameSession, onChangePageView]);
+    }, [hooksCampaignManager, gameSession, onChangePageView, runMissionEndScripts]);
 
     const completeMission = useCallback(() => {
+        const missionEndSession = runMissionEndScripts(gameSession, {
+            missionObjectiveCompleted: true,
+            isRetreat: false,
+        });
         const savedData = hooksCampaignManager.loadCampaign();
         const savedIndex = savedData ? savedData.nextMissionIndex : 0;
-        const nextMissionIndex = Math.max(savedIndex, (gameSession?.currentMissionIndex || 0) + 1);
-        hooksCampaignManager.saveCampaign(gameSession?.heroes || [], nextMissionIndex);
+        const nextMissionIndex = Math.max(savedIndex, (missionEndSession?.currentMissionIndex || 0) + 1);
+        hooksCampaignManager.saveCampaign(missionEndSession?.heroes || [], nextMissionIndex);
         setIsMissionSummaryOpen(false);
         onChangePageView(PageNavigationEnum.PLAY_GAME);
-    }, [hooksCampaignManager, gameSession, onChangePageView]);
+    }, [hooksCampaignManager, gameSession, onChangePageView, runMissionEndScripts]);
 
     useEffect(() => {
         if (!gameSession?.heroes) return;

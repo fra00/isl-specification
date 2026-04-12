@@ -9,7 +9,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
-export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone }) {
+export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActionDone, onForceTurnEnd, sessionManager }) {
   const [foundPassages, setFoundPassages] = useState([]);
   const foundPassagesRef = useRef(foundPassages);
 
@@ -19,50 +19,74 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
 
   const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
 
-  const searchPassages = useCallback(() => {
-    if (!gameSession?.heroes || !gameSession?.currentMap?.grid) return;
+  const collectDiscoverablePassages = useCallback((session, visibleCells) => {
+    const discoverablePassages = [];
+    const potentialPassages = session?.currentMap?.grid?.filter(
+      (cell) => cell.psgg != null && cell.psgg.ps != null && cell.psgg.ps > 0,
+    ) || [];
 
-    const currentHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
-    if (!currentHero) return;
+    const isCellVisible = (x, y) => visibleCells.some((cell) => cell.x === x && cell.y === y);
 
-    const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
-    let foundInThisSearch = false;
-    const newPassages = [];
-
-    const potentialPassages = gameSession.currentMap.grid.filter(
-      cell => cell.psgg != null && cell.psgg.ps != null && cell.psgg.ps > 0
-    );
-
-    potentialPassages.forEach(potentialPassage => {
+    potentialPassages.forEach((potentialPassage) => {
       const px = potentialPassage.x;
       const py = potentialPassage.y;
       const isOriz = potentialPassage.psgg.oriz === true;
-      let isDiscoverable = false;
 
-      const isCellVisible = (x, y) => visibleCells.some(c => c.x === x && c.y === y);
+      const isDiscoverable = isOriz
+        ? isCellVisible(px, py - 1) || isCellVisible(px, py + 1)
+        : isCellVisible(px - 1, py) || isCellVisible(px + 1, py);
 
-      if (isOriz) {
-        if (isCellVisible(px, py - 1) || isCellVisible(px, py + 1)) {
-          isDiscoverable = true;
-        }
-      } else {
-        if (isCellVisible(px - 1, py) || isCellVisible(px + 1, py)) {
-          isDiscoverable = true;
-        }
+      if (!isDiscoverable) {
+        return;
       }
 
-      if (isDiscoverable) {
-        const alreadyFound = 
-          foundPassagesRef.current.some(p => p.x === px && p.y === py) || 
-          newPassages.some(p => p.x === px && p.y === py);
-          
-        if (!alreadyFound) {
-          const img = isOriz ? "pso.jpg" : "psv.jpg";
-          newPassages.push({ x: px, y: py, img, oriz: isOriz });
-          foundInThisSearch = true;
-        }
+      const alreadyFound = foundPassagesRef.current.some((passage) => passage.x === px && passage.y === py)
+        || discoverablePassages.some((passage) => passage.x === px && passage.y === py);
+
+      if (alreadyFound) {
+        return;
       }
+
+      discoverablePassages.push({
+        x: px,
+        y: py,
+        img: isOriz ? 'pso.jpg' : 'psv.jpg',
+        oriz: isOriz,
+      });
     });
+
+    return discoverablePassages;
+  }, []);
+
+  const searchPassages = useCallback(() => {
+    if (!gameSession?.heroes || !gameSession?.currentMap?.grid) return;
+
+    const scriptResult = sessionManager?.executeMissionScripts?.({
+      baseSession: gameSession,
+      eventType: 5,
+      visibilityMap,
+    });
+    const activeSession = scriptResult?.handled && scriptResult.session ? scriptResult.session : gameSession;
+
+    const currentHero = activeSession.heroes.find(h => h.turnOrder === activeSession.currentTurn);
+    if (!currentHero) return;
+
+    const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y) || [];
+    const newPassages = collectDiscoverablePassages(activeSession, visibleCells);
+    const foundInThisSearch = newPassages.length > 0;
+
+    if (scriptResult?.handled) {
+      if (foundInThisSearch) {
+        setFoundPassages((prev) => [...prev, ...newPassages]);
+      }
+
+      if (scriptResult.effects?.forceFinishTurn) {
+        onForceTurnEnd?.();
+      } else {
+        onActionDone?.();
+      }
+      return;
+    }
 
     if (foundInThisSearch) {
       setFoundPassages(prev => [...prev, ...newPassages]);
@@ -72,7 +96,7 @@ export function useSecretPassages({ gameSession, visibilityMap, onNotify, onActi
       if (onNotify) onNotify("Nessun passaggio segreto trovato.");
       if (onActionDone) onActionDone();
     }
-  }, [gameSession, calculateVisibleCells, onNotify, onActionDone]);
+  }, [gameSession, visibilityMap, calculateVisibleCells, collectDiscoverablePassages, onNotify, onActionDone, onForceTurnEnd, sessionManager]);
 
   const getFoundPassages = useCallback(() => {
     const visiblePassages = [];

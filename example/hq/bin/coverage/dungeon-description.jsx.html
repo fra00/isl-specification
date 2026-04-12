@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/101</span>
+                <span class='fraction'>0/103</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/101</span>
+                <span class='fraction'>0/103</span>
             </div>
         
             
@@ -163,7 +163,11 @@
 <a name='L98'></a><a href='#L98'>98</a>
 <a name='L99'></a><a href='#L99'>99</a>
 <a name='L100'></a><a href='#L100'>100</a>
-<a name='L101'></a><a href='#L101'>101</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -274,11 +278,14 @@
 <span class="cstat-no" title="statement not covered" >import React, { useCallback } from 'react';</span>
 <span class="cstat-no" title="statement not covered" >import { PageNavigationEnum } from './domain-core';</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {</span>
-<span class="cstat-no" title="statement not covered" >  // Safely extract the description, providing a fallback if data is missing</span>
-<span class="cstat-no" title="statement not covered" >  const description = gameSession?.currentMap?.header?.descrizione || "La nebbia avvolge questo luogo. Nessuna informazione disponibile.";</span>
+<span class="cstat-no" title="statement not covered" >export default function DungeonDescription({</span>
+<span class="cstat-no" title="statement not covered" >  gameSession,</span>
+<span class="cstat-no" title="statement not covered" >  onChangePageView,</span>
+<span class="cstat-no" title="statement not covered" >  onUpdateSession</span>
+<span class="cstat-no" title="statement not covered" >}) {</span>
+<span class="cstat-no" title="statement not covered" >  // Safe access to the description with a fallback</span>
+<span class="cstat-no" title="statement not covered" >  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Handlers wrapped in useCallback for referential stability</span>
 <span class="cstat-no" title="statement not covered" >  const handleEnter = useCallback(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (onChangePageView) {</span>
 <span class="cstat-no" title="statement not covered" >      onChangePageView(PageNavigationEnum.DUNGEON);</span>
@@ -298,69 +305,68 @@
 <span class="cstat-no" title="statement not covered" >  }, [onChangePageView]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="w-full h-full flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-black text-gray-200 overflow-hidden font-serif relative"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      {/* Decorative background overlay for mist/gothic effect */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-900/20 via-transparent to-transparent"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="relative flex flex-col w-full h-full bg-zinc-950 text-amber-100 overflow-hidden font-serif"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* Background overlay for mist/gradient effect */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="absolute inset-0 bg-gradient-to-b from-zinc-900/80 via-zinc-950/90 to-black pointer-events-none" /&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="flex flex-col h-full w-full max-w-5xl mx-auto p-6 md:p-10 z-10"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        {/* Briefing Header */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;header className="mb-8 text-center shrink-0"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;h1 className="text-4xl md:text-5xl font-bold text-yellow-600 drop-shadow-md tracking-wider"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* Custom Scrollbar Styles for Dark Bronze Palette */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;style dangerouslySetInnerHTML={{__html: `</span>
+<span class="cstat-no" title="statement not covered" >        .bronze-scrollbar::-webkit-scrollbar {</span>
+<span class="cstat-no" title="statement not covered" >          width: 8px;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        .bronze-scrollbar::-webkit-scrollbar-track {</span>
+<span class="cstat-no" title="statement not covered" >          background: #18181b; /* zinc-900 */</span>
+<span class="cstat-no" title="statement not covered" >          border-radius: 4px;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        .bronze-scrollbar::-webkit-scrollbar-thumb {</span>
+<span class="cstat-no" title="statement not covered" >          background: #b45309; /* amber-700 */</span>
+<span class="cstat-no" title="statement not covered" >          border-radius: 4px;</span>
+<span class="cstat-no" title="statement not covered" >          border: 1px solid #78350f; /* amber-900 */</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        .bronze-scrollbar::-webkit-scrollbar-thumb:hover {</span>
+<span class="cstat-no" title="statement not covered" >          background: #d97706; /* amber-600 */</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      `}} /&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="relative z-10 flex flex-col h-full p-6 md:p-10 max-w-5xl mx-auto w-full"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {/* Header */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex-shrink-0 mb-8 text-center border-b-2 border-amber-700/40 pb-6"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-700 uppercase tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            Mission Briefing</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="h-1 w-32 bg-yellow-700 mx-auto mt-4 rounded-full opacity-50"&gt;&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/header&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Scrollable Description Text Area */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;main className="flex-1 overflow-y-auto mb-8 pr-4 custom-scrollbar"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="bg-gray-900/60 p-6 md:p-8 rounded-lg border border-yellow-900/30 shadow-2xl min-h-full"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;p className="text-lg md:text-xl leading-relaxed text-gray-300 whitespace-pre-wrap"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              {description}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/main&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {/* Scrollable Content Area */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex-1 overflow-y-auto overflow-x-hidden bronze-scrollbar pr-4 mb-8 bg-zinc-900/50 p-6 md:p-8 rounded-lg border border-amber-900/40 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;p className="text-lg md:text-xl lg:text-2xl leading-relaxed text-amber-200/90 whitespace-pre-wrap drop-shadow-md"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            {description}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/p&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        {/* Action Row */}</span>
-<span class="cstat-no" title="statement not covered" >        &lt;footer className="shrink-0 flex flex-wrap justify-center gap-4 md:gap-8 pt-4 border-t border-yellow-900/50"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;button</span>
-<span class="cstat-no" title="statement not covered" >            onClick={handleBack}</span>
-<span class="cstat-no" title="statement not covered" >            className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 rounded shadow-lg transition-all duration-200 font-bold uppercase tracking-wide"</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            Indietro</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;button</span>
-<span class="cstat-no" title="statement not covered" >            onClick={handleShop}</span>
-<span class="cstat-no" title="statement not covered" >            className="px-6 py-3 bg-amber-900 hover:bg-amber-800 text-amber-100 border border-amber-700 rounded shadow-lg transition-all duration-200 font-bold uppercase tracking-wide"</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            Armeria</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {/* Action Buttons */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 justify-center items-center mt-auto pt-4"&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;button</span>
 <span class="cstat-no" title="statement not covered" >            onClick={handleEnter}</span>
-<span class="cstat-no" title="statement not covered" >            className="px-8 py-3 bg-yellow-700 hover:bg-yellow-600 text-white border border-yellow-500 rounded shadow-[0_0_15px_rgba(202,138,4,0.4)] transition-all duration-200 font-bold uppercase tracking-wide text-lg"</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-b from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 text-amber-50 font-bold rounded border border-amber-500/50 shadow-[0_0_15px_rgba(180,83,9,0.3)] hover:shadow-[0_0_25px_rgba(180,83,9,0.5)] transition-all duration-200 uppercase tracking-widest text-lg"</span>
 <span class="cstat-no" title="statement not covered" >          &gt;</span>
 <span class="cstat-no" title="statement not covered" >            Entra nel dungeon</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/footer&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleShop}</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full sm:w-auto px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-semibold rounded border border-amber-800/60 hover:border-amber-600/80 transition-all duration-200 uppercase tracking-wider shadow-lg"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Armeria</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleBack}</span>
+<span class="cstat-no" title="statement not covered" >            className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-amber-200 font-semibold rounded border border-zinc-700 hover:border-amber-800/50 transition-all duration-200 uppercase tracking-wider shadow-lg"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Indietro</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >      </span>
-<span class="cstat-no" title="statement not covered" >      {/* Inline styles for custom scrollbar to match the dark bronze theme */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;style dangerouslySetInnerHTML={{__html: `</span>
-<span class="cstat-no" title="statement not covered" >        .custom-scrollbar::-webkit-scrollbar {</span>
-<span class="cstat-no" title="statement not covered" >          width: 8px;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        .custom-scrollbar::-webkit-scrollbar-track {</span>
-<span class="cstat-no" title="statement not covered" >          background: rgba(31, 41, 55, 0.5);</span>
-<span class="cstat-no" title="statement not covered" >          border-radius: 4px;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        .custom-scrollbar::-webkit-scrollbar-thumb {</span>
-<span class="cstat-no" title="statement not covered" >          background: rgba(180, 83, 9, 0.8);</span>
-<span class="cstat-no" title="statement not covered" >          border-radius: 4px;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        .custom-scrollbar::-webkit-scrollbar-thumb:hover {</span>
-<span class="cstat-no" title="statement not covered" >          background: rgba(217, 119, 6, 1);</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >      `}} /&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
@@ -370,7 +376,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

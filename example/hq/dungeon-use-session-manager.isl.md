@@ -9,11 +9,13 @@
 
 > **Reference**: @GameSession in `./domain-session.isl.md`
 > **Reference**: @HeroState, @MonsterState in `./domain-session.isl.md`
+> **Reference**: @VisibilityMap in `./domain-map.isl.md`
 > **Reference**: @TreasureCard in `./domain-ruleset.isl.md`
 > **Reference**: @Equipment in `./domain-ruleset.isl.md`
 > **Reference**: @Item in `./domain-ruleset.isl.md`
 > **Reference**: @CombatResult in `./dungeon-use-combat.isl.md`
 > **Reference**: @useFogOfWar in `./dungeon-use-fog-of-war.isl.md`
+> **Reference**: @DungeonScriptResult in `./dungeon-script-runtime.isl.md`
 
 ## Domain Concepts
 
@@ -55,17 +57,18 @@
 - **Signature**: `(treasureDeck: List<@TreasureCard>) -> void`
 - **Flow**:
   - IF `gameSession` is null OR `gameSession.currentMap` is null RETURN.
-  - Call `commitSessionUpdate` with an updater.
-  - Inside the updater, use the provided latest session snapshot.
-  - IF the provided session is null OR `currentMap` is null RETURN the provided session unchanged.
-  - Create `placedHeroes` by mapping the provided session `heroes`.
+  - Create `placedHeroes` by mapping `gameSession.heroes`.
   - FOR EACH `heroState` in `placedHeroes`:
-    - Find `spawnPoint` in the provided session `currentMap.eroi_start` where `id` == `heroState.heroId`.
+    - Find `spawnPoint` in `gameSession.currentMap.eroi_start` where `id` == `heroState.heroId`.
     - IF `spawnPoint` exists:
       - Set `heroState.x` to `spawnPoint.x`.
       - Set `heroState.y` to `spawnPoint.y`.
       - Set `heroState.isEscaped` to false.
-  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `placedHeroes`, and setting `treasureDeck` to `treasureDeck`.
+  - Build an initialized @GameSession preserving all unrelated properties, setting `heroes` to `placedHeroes`, and setting `treasureDeck` to `treasureDeck`.
+  - Execute mission start scripts (`eventType = 6`) against that initialized snapshot.
+  - Persist the resulting full-session snapshot through `commitSessionUpdate`.
+  - Forward every script notification through `onNotify`.
+  - Reveal every requested point through `fogOfWarLogic.revealFromPoint`.
 
 #### confirmHeroOrder
 
@@ -366,21 +369,33 @@
   - IF `didChange` is false RETURN the current session unchanged.
   - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
 
+#### executeMissionScripts
+
+- **Contract**: Executes recovered HeroQuest mission scripts against a provided session snapshot, persists handled script effects, forwards their notifications, and reveals rooms requested by script commands such as `possta`.
+- **Signature**: `({ baseSession?: @GameSession, eventType: Integer, context?: Object, visibilityMap?: @VisibilityMap, random?: () -> Number }) -> @DungeonScriptResult`
+- **Flow**:
+  - Let `baseSession` = `options.baseSession` when provided, otherwise `gameSession`.
+  - IF `baseSession.currentMap.scripts` is empty RETURN a result with `handled` false.
+  - Evaluate `@DungeonScriptRuntime.executeDungeonScripts(...)` using `baseSession`, `eventType`, `context`, and `visibilityMap`.
+  - IF the runtime result is `handled` true:
+    - Persist the returned full-session snapshot through `commitSessionUpdate`.
+  - FOR EACH runtime notification:
+    - Trigger `onNotify(notification)`.
+  - FOR EACH runtime reveal point:
+    - Trigger `fogOfWarLogic.revealFromPoint(x, y)`.
+  - RETURN the full runtime result to the caller.
+
 #### moveCurrentHeroTo
 
 - **Contract**: Persists the active hero position update without mutating unrelated session branches.
 - **Contract**: Persists the active hero position update against the latest available session snapshot without mutating unrelated session branches.
-- **Signature**: `(nextX: Integer, nextY: Integer) -> Boolean`
+- **Signature**: `(nextX: Integer, nextY: Integer, baseSession?: @GameSession) -> Boolean`
 - **Flow**:
-  - Call `commitSessionUpdate` with an updater.
-  - Inside the updater, find `hero` in the current session `heroes` matching `turnOrder` = `currentTurn`.
-  - IF `hero` is null RETURN the current session unchanged.
-  - Create `updatedHero` as a copy of `hero`.
-  - Set `updatedHero.x` to `nextX`.
-  - Set `updatedHero.y` to `nextY`.
-  - Create `updatedHeroes` as a copy of the current session `heroes`.
-  - Replace the matching hero with `updatedHero`.
-  - RETURN a new @GameSession preserving all unrelated properties and setting `heroes` to `updatedHeroes`.
+  - Let `sourceSession` = `baseSession` when provided, otherwise `gameSession`.
+  - IF `sourceSession` is null RETURN false.
+  - Build a full-session snapshot where only the active hero coordinates become `nextX`, `nextY`.
+  - Persist that snapshot through `commitSessionUpdate`.
+  - RETURN true.
 
 #### clearCurrentHeroStatus
 
@@ -441,28 +456,18 @@
 
 - **Contract**: Applies hero attack results to a target monster, updates `lastAttack`, and removes any consumed thrown weapon.
 - **Contract**: Applies hero attack results to a target monster, updates `lastAttack`, and removes any consumed thrown weapon against the latest available session snapshot.
-- **Signature**: `(monsterId: Integer, combatResult: @CombatResult, statusesToRemove: List<String>, consumedWeaponId: Integer | null) -> Boolean`
+- **Signature**: `(monsterId: Integer, combatResult: @CombatResult, statusesToRemove: List<String>, consumedWeaponId: Integer | null, baseSession?: @GameSession) -> Boolean`
 - **Flow**:
-  - Call `commitSessionUpdate` with an updater.
-  - Inside the updater, find `hero` in the current session `heroes` matching `turnOrder` = `currentTurn`.
-  - Find `monster` in the current session `monsters` matching `id` = `monsterId`.
-  - IF `hero` is null OR `monster` is null RETURN the current session unchanged.
-  - Create `updatedHero` as a copy of `hero`.
-  - IF `consumedWeaponId` is NOT null:
-    - Remove `consumedWeaponId` from `updatedHero.equipped`.
-    - Remove `consumedWeaponId` from `updatedHero.equipment`.
-  - Create `updatedMonster` as a copy of `monster`.
-  - Subtract `combatResult.damageDealt` from `updatedMonster.currentBody`.
-  - IF `statusesToRemove` is not empty:
-    - Remove all entries in `statusesToRemove` from `updatedMonster.activeStatus`.
-  - Create `updatedHeroes` as a copy of the current session `heroes`.
-  - Replace the matching hero with `updatedHero`.
-  - Create `updatedMonsters` as a copy of the current session `monsters`.
-  - IF `updatedMonster.currentBody` <= 0:
-    - Remove the matching monster from `updatedMonsters`.
-  - ELSE:
-    - Replace the matching monster with `updatedMonster`.
-  - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `updatedHeroes`, setting `monsters` to `updatedMonsters`, and setting `lastAttack` to {hero: `updatedHero`, monster: `updatedMonster`, combatResult: `combatResult`}.
+  - Let `sourceSession` = `baseSession` when provided, otherwise `gameSession`.
+  - IF `sourceSession` is null RETURN false.
+  - Build a full-session snapshot that:
+    - removes `consumedWeaponId` from the active hero when required,
+    - subtracts `combatResult.damageDealt` from the targeted monster,
+    - removes any `statusesToRemove`,
+    - removes the monster entirely when its body points reach 0,
+    - refreshes `lastAttack`.
+  - Persist that snapshot through `commitSessionUpdate`.
+  - RETURN true.
 
 #### advanceTurn
 

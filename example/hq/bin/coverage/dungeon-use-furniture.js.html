@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.22% </span>
+                <span class="strong">96.29% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>51/53</span>
+                <span class='fraction'>52/54</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/10</span>
+                <span class='fraction'>7/8</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.22% </span>
+                <span class="strong">96.29% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>51/53</span>
+                <span class='fraction'>52/54</span>
             </div>
         
             
@@ -115,7 +115,8 @@
 <a name='L50'></a><a href='#L50'>50</a>
 <a name='L51'></a><a href='#L51'>51</a>
 <a name='L52'></a><a href='#L52'>52</a>
-<a name='L53'></a><a href='#L53'>53</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -135,13 +136,14 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -175,58 +177,59 @@
  * Edit the ISL file instead.
  */
 &nbsp;
-import { useMemo } from 'react';
+import { useMemo } from "react";
 &nbsp;
-export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) =&gt; {
-    const visibleFurniture = useMemo(() =&gt; {
-        if (!gameSession?.currentMap || !boardVisibilityMap) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
-<span class="cstat-no" title="statement not covered" >            return [];</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
+export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
+  const visibleFurniture = useMemo(() =&gt; {
+    if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      return [];</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
 &nbsp;
-        const grid = gameSession.currentMap.grid <span class="branch-0 cbranch-no" title="branch not covered" >|| [];</span>
-        const visibilityData = boardVisibilityMap.data <span class="branch-0 cbranch-no" title="branch not covered" >|| [];</span>
-        const visibleItems = [];
+    const visibleItems = [];
+    const visibilityLookup = new Map();
 &nbsp;
-        // Create a lookup map for faster visibility cell retrieval
-        const visibilityLookup = new Map();
-        for (const vCell of visibilityData) {
-            visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
+    for (let i = 0; i &lt; boardVisibilityMap.data.length; i++) {
+      const cell = boardVisibilityMap.data[i];
+      visibilityLookup.set(`${cell.x},${cell.y}`, cell);
+    }
+&nbsp;
+    const grid = gameSession.currentMap.grid;
+    
+    for (let i = 0; i &lt; grid.length; i++) {
+      const mapCell = grid[i];
+      const visCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+&nbsp;
+      if (visCell &amp;&amp; visCell.fog === false) {
+        if (mapCell.arnt?.antroc === true &amp;&amp; mapCell.arnt?.inv === false) {
+          visibleItems.push({
+            x: mapCell.x,
+            y: mapCell.y,
+            img: "../cell/pietra.jpg"
+          });
+        } else if (mapCell.mobili?.num != null) {
+          visibleItems.push({
+            x: mapCell.x,
+            y: mapCell.y,
+            img: mapCell.mobili.img
+          });
         }
+      }
+    }
 &nbsp;
-        for (const mapCell of grid) {
-            const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+    return visibleItems;
+  }, [gameSession?.currentMap, boardVisibilityMap]);
 &nbsp;
-            if (vCell &amp;&amp; vCell.fog === false) {
-                if (mapCell.arnt?.antroc === true &amp;&amp; mapCell.arnt?.inv === false) {
-                    visibleItems.push({
-                        x: mapCell.x,
-                        y: mapCell.y,
-                        img: "../cell/pietra.jpg"
-                    });
-                } else if (mapCell.mobili?.num != null) {
-                    visibleItems.push({
-                        x: mapCell.x,
-                        y: mapCell.y,
-                        img: mapCell.mobili.img
-                    });
-                }
-            }
-        }
-&nbsp;
-        return visibleItems;
-    }, [gameSession?.currentMap, boardVisibilityMap]);
-&nbsp;
-    return {
-        visibleFurniture
-    };
-};</pre></td></tr></table></pre>
+  return {
+    visibleFurniture
+  };
+}</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

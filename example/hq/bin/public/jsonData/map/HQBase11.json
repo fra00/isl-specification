@@ -15,7 +15,7 @@
     "npr": 0,
     "val_text14": "e",
     "combo2_index": "dei",
-    "nscript": 0
+    "nscript": 6
   },
   "grid": [
     {
@@ -19490,13 +19490,67 @@
   ],
   "scripts": [
     {
-      "x": false,
-      "y": 0,
-      "text": 0,
-      "evento": false,
+      "x": 7,
+      "y": 13,
+      "text": "posmostro 7,6,13;\nmsg Mentre tenti di aprire lo scrigno una gargola ti attacca;\nfineturno;\n",
+      "evento": 3,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 0
+    },
+    {
+      "x": 2,
+      "y": 18,
+      "text": "aggarma 18;\nmsg Il gueriero del caos custodiva un'arma la rovina degli orchi , ora � tua;",
+      "evento": 2,
       "unavolta": false,
-      "morto": 0,
-      "idmosc": ""
+      "morto": true,
+      "idmosc": 10
+    },
+    {
+      "x": 1,
+      "y": 19,
+      "text": "aggoro 10;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 0
+    },
+    {
+      "x": 2,
+      "y": 19,
+      "text": "aggoro 20;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 1
+    },
+    {
+      "x": 3,
+      "y": 19,
+      "text": "aggoro 30;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 2
+    },
+    {
+      "x": 4,
+      "y": 19,
+      "text": "aggoro 30;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 3
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

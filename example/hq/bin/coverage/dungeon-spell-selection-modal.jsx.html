@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/154</span>
+                <span class='fraction'>0/134</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/154</span>
+                <span class='fraction'>0/134</span>
             </div>
         
             
@@ -196,47 +196,7 @@
 <a name='L131'></a><a href='#L131'>131</a>
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
-<a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a>
-<a name='L136'></a><a href='#L136'>136</a>
-<a name='L137'></a><a href='#L137'>137</a>
-<a name='L138'></a><a href='#L138'>138</a>
-<a name='L139'></a><a href='#L139'>139</a>
-<a name='L140'></a><a href='#L140'>140</a>
-<a name='L141'></a><a href='#L141'>141</a>
-<a name='L142'></a><a href='#L142'>142</a>
-<a name='L143'></a><a href='#L143'>143</a>
-<a name='L144'></a><a href='#L144'>144</a>
-<a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a>
-<a name='L147'></a><a href='#L147'>147</a>
-<a name='L148'></a><a href='#L148'>148</a>
-<a name='L149'></a><a href='#L149'>149</a>
-<a name='L150'></a><a href='#L150'>150</a>
-<a name='L151'></a><a href='#L151'>151</a>
-<a name='L152'></a><a href='#L152'>152</a>
-<a name='L153'></a><a href='#L153'>153</a>
-<a name='L154'></a><a href='#L154'>154</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L134'></a><a href='#L134'>134</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -379,149 +339,129 @@
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >import React, { useState, useEffect, useCallback } from 'react';</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default function DungeonSpellSelectionModal({ </span>
-<span class="cstat-no" title="statement not covered" >    heroes = [], </span>
-<span class="cstat-no" title="statement not covered" >    allSpells = [], </span>
-<span class="cstat-no" title="statement not covered" >    onConfirmSelection = () =&gt; {} </span>
+<span class="cstat-no" title="statement not covered" >export default function DungeonSpellSelectionModal({</span>
+<span class="cstat-no" title="statement not covered" >  heroes = [],</span>
+<span class="cstat-no" title="statement not covered" >  allSpells = [],</span>
+<span class="cstat-no" title="statement not covered" >  onConfirmSelection</span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >    const [pickedElements, setPickedElements] = useState([]);</span>
-<span class="cstat-no" title="statement not covered" >    const [currentHeroPicking, setCurrentHeroPicking] = useState(null);</span>
+<span class="cstat-no" title="statement not covered" >  const [pickedElements, setPickedElements] = useState([]);</span>
+<span class="cstat-no" title="statement not covered" >  const [currentHeroPicking, setCurrentHeroPicking] = useState(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const allElements = ["Fuoco", "Acqua", "Terra", "Aria"];</span>
+<span class="cstat-no" title="statement not covered" >  const allElements = ["Fuoco", "Acqua", "Terra", "Aria"];</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        const wizard = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === "mago");</span>
-<span class="cstat-no" title="statement not covered" >        if (wizard) {</span>
-<span class="cstat-no" title="statement not covered" >            setCurrentHeroPicking(wizard);</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >            const elf = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === "elfo");</span>
-<span class="cstat-no" title="statement not covered" >            if (elf) {</span>
-<span class="cstat-no" title="statement not covered" >                setCurrentHeroPicking(elf);</span>
-<span class="cstat-no" title="statement not covered" >            } else {</span>
-<span class="cstat-no" title="statement not covered" >                setCurrentHeroPicking(null);</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const wizard = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === 'mago');</span>
+<span class="cstat-no" title="statement not covered" >    if (wizard) {</span>
+<span class="cstat-no" title="statement not covered" >      setCurrentHeroPicking(wizard);</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      const elf = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === 'elfo');</span>
+<span class="cstat-no" title="statement not covered" >      if (elf) {</span>
+<span class="cstat-no" title="statement not covered" >        setCurrentHeroPicking(elf);</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        setCurrentHeroPicking(null);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >    setPickedElements([]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [heroes]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const selectElement = useCallback((elemento) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!currentHeroPicking) return;</span>
+<span class="cstat-no" title="statement not covered" >    if (pickedElements.includes(elemento)) return;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const newPicked = [...pickedElements, elemento];</span>
+<span class="cstat-no" title="statement not covered" >    setPickedElements(newPicked);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (heroClass === 'mago' &amp;&amp; newPicked.length === 3) {</span>
+<span class="cstat-no" title="statement not covered" >      const elf = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === 'elfo');</span>
+<span class="cstat-no" title="statement not covered" >      let finalPicked = [...newPicked];</span>
+<span class="cstat-no" title="statement not covered" >      const selectionMap = new Map();</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const wizardSpells = allSpells</span>
+<span class="cstat-no" title="statement not covered" >        .filter(spell =&gt; finalPicked.slice(0, 3).includes(spell?.elemento))</span>
+<span class="cstat-no" title="statement not covered" >        .map(spell =&gt; spell?.id);</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      selectionMap.set(currentHeroPicking.heroId, wizardSpells);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (elf) {</span>
+<span class="cstat-no" title="statement not covered" >        const remaining = allElements.find(el =&gt; !finalPicked.includes(el));</span>
+<span class="cstat-no" title="statement not covered" >        if (remaining) {</span>
+<span class="cstat-no" title="statement not covered" >          finalPicked.push(remaining);</span>
+<span class="cstat-no" title="statement not covered" >          const elfSpells = allSpells</span>
+<span class="cstat-no" title="statement not covered" >            .filter(spell =&gt; spell?.elemento === remaining)</span>
+<span class="cstat-no" title="statement not covered" >            .map(spell =&gt; spell?.id);</span>
+<span class="cstat-no" title="statement not covered" >          selectionMap.set(elf.heroId, elfSpells);</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        setPickedElements([]);</span>
-<span class="cstat-no" title="statement not covered" >    }, [heroes]);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const selectElement = useCallback((elemento) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!currentHeroPicking) return;</span>
-<span class="cstat-no" title="statement not covered" >        if (pickedElements.includes(elemento)) return;</span>
+<span class="cstat-no" title="statement not covered" >      if (typeof onConfirmSelection === 'function') {</span>
+<span class="cstat-no" title="statement not covered" >        onConfirmSelection(selectionMap);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    } else if (heroClass === 'elfo' &amp;&amp; newPicked.length === 1) {</span>
+<span class="cstat-no" title="statement not covered" >      const selectionMap = new Map();</span>
+<span class="cstat-no" title="statement not covered" >      const elfSpells = allSpells</span>
+<span class="cstat-no" title="statement not covered" >        .filter(spell =&gt; spell?.elemento === elemento)</span>
+<span class="cstat-no" title="statement not covered" >        .map(spell =&gt; spell?.id);</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      selectionMap.set(currentHeroPicking.heroId, elfSpells);</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      if (typeof onConfirmSelection === 'function') {</span>
+<span class="cstat-no" title="statement not covered" >        onConfirmSelection(selectionMap);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const newPicked = [...pickedElements, elemento];</span>
-<span class="cstat-no" title="statement not covered" >        setPickedElements(newPicked);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const heroClass = currentHeroPicking?.hero?.classe?.toLowerCase();</span>
-<span class="cstat-no" title="statement not covered" >        const isWizard = heroClass === "mago";</span>
-<span class="cstat-no" title="statement not covered" >        const isElf = heroClass === "elfo";</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (isWizard &amp;&amp; newPicked.length === 3) {</span>
-<span class="cstat-no" title="statement not covered" >            const elf = heroes.find(h =&gt; h?.hero?.classe?.toLowerCase() === "elfo");</span>
-<span class="cstat-no" title="statement not covered" >            let remainingElement = null;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (elf) {</span>
-<span class="cstat-no" title="statement not covered" >                remainingElement = allElements.find(el =&gt; !newPicked.includes(el));</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            const selectionMap = new Map();</span>
-<span class="cstat-no" title="statement not covered" >            const wizardId = currentHeroPicking.heroId;</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            const wizardSpells = allSpells</span>
-<span class="cstat-no" title="statement not covered" >                .filter(spell =&gt; newPicked.includes(spell?.elemento))</span>
-<span class="cstat-no" title="statement not covered" >                .map(spell =&gt; spell?.id);</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            selectionMap.set(wizardId, wizardSpells);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (elf &amp;&amp; remainingElement) {</span>
-<span class="cstat-no" title="statement not covered" >                const elfSpells = allSpells</span>
-<span class="cstat-no" title="statement not covered" >                    .filter(spell =&gt; spell?.elemento === remainingElement)</span>
-<span class="cstat-no" title="statement not covered" >                    .map(spell =&gt; spell?.id);</span>
-<span class="cstat-no" title="statement not covered" >                selectionMap.set(elf.heroId, elfSpells);</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            onConfirmSelection(selectionMap);</span>
-<span class="cstat-no" title="statement not covered" >        } else if (isElf &amp;&amp; newPicked.length === 1) {</span>
-<span class="cstat-no" title="statement not covered" >            const elfId = currentHeroPicking.heroId;</span>
-<span class="cstat-no" title="statement not covered" >            const elfSpells = allSpells</span>
-<span class="cstat-no" title="statement not covered" >                .filter(spell =&gt; spell?.elemento === elemento)</span>
-<span class="cstat-no" title="statement not covered" >                .map(spell =&gt; spell?.id);</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            const selectionMap = new Map();</span>
-<span class="cstat-no" title="statement not covered" >            selectionMap.set(elfId, elfSpells);</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            onConfirmSelection(selectionMap);</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >    }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="max-w-4xl w-full flex flex-col items-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;h1 className="text-4xl md:text-5xl text-white font-bold mb-6 text-center drop-shadow-lg"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    Selezione Incantesimi</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >                </span>
-<span class="cstat-no" title="statement not covered" >                {currentHeroPicking ? (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="flex flex-col items-center mb-8"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;p className="text-xl md:text-2xl text-amber-400 text-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            Tocca a: &lt;span className="font-bold uppercase"&gt;{currentHeroPicking?.hero?.classe}&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        {currentHeroPicking?.hero?.classe?.toLowerCase() === "mago" &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;span className="block text-md text-gray-300 mt-2"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                Scegli ancora {3 - pickedElements.length} elementi</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        )}</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                ) : (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;p className="text-xl text-gray-400 mb-8 text-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        Nessun eroe idoneo alla selezione.</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                )}</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full justify-items-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {allElements.map((elemento) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                        const isPicked = pickedElements.includes(elemento);</span>
-<span class="cstat-no" title="statement not covered" >                        return (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div </span>
-<span class="cstat-no" title="statement not covered" >                                key={elemento}</span>
-<span class="cstat-no" title="statement not covered" >                                onClick={() =&gt; selectElement(elemento)}</span>
-<span class="cstat-no" title="statement not covered" >                                className={`</span>
-<span class="cstat-no" title="statement not covered" >                                    relative transition-all duration-300 transform</span>
-<span class="cstat-no" title="statement not covered" >                                    ${isPicked </span>
-<span class="cstat-no" title="statement not covered" >                                        ? 'opacity-30 grayscale scale-95 cursor-not-allowed' </span>
-<span class="cstat-no" title="statement not covered" >                                        : 'cursor-pointer hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/50 hover:-translate-y-2'</span>
-<span class="cstat-no" title="statement not covered" >                                    }</span>
-<span class="cstat-no" title="statement not covered" >                                `}</span>
-<span class="cstat-no" title="statement not covered" >                            &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;img </span>
-<span class="cstat-no" title="statement not covered" >                                    src={`/img/cinc/${elemento}00_Dorso.jpg`} </span>
-<span class="cstat-no" title="statement not covered" >                                    alt={`Dorso ${elemento}`}</span>
-<span class="cstat-no" title="statement not covered" >                                    className="w-48 h-auto rounded-xl shadow-lg border-2 border-transparent hover:border-amber-400 object-cover"</span>
-<span class="cstat-no" title="statement not covered" >                                    onError={(e) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                                        e.target.style.display = 'none';</span>
-<span class="cstat-no" title="statement not covered" >                                        e.target.nextSibling.style.display = 'flex';</span>
-<span class="cstat-no" title="statement not covered" >                                    }}</span>
-<span class="cstat-no" title="statement not covered" >                                /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;div </span>
-<span class="cstat-no" title="statement not covered" >                                    className="hidden w-48 h-72 bg-gray-800 rounded-xl border-2 border-gray-600 flex-col items-center justify-center text-white shadow-lg"</span>
-<span class="cstat-no" title="statement not covered" >                                &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;span className="text-xl font-bold mb-2"&gt;{elemento}&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;span className="text-xs text-gray-400 text-center px-2"&gt;Immagine non trovata&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                </span>
-<span class="cstat-no" title="statement not covered" >                                {isPicked &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;div className="absolute inset-0 flex items-center justify-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        &lt;span className="bg-black/80 text-white px-4 py-2 rounded-full font-bold border border-white/20 shadow-md"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                            Selezionato</span>
-<span class="cstat-no" title="statement not covered" >                                        &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                )}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        );</span>
-<span class="cstat-no" title="statement not covered" >                    })}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="flex flex-col items-center max-w-4xl w-full bg-stone-900 border-2 border-amber-600 rounded-xl p-6 shadow-2xl"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;h2 className="text-3xl font-bold text-amber-500 mb-2 uppercase tracking-wider text-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          Selezione Incantesimi</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >        </span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="text-xl text-stone-300 mb-8 h-8 text-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {currentHeroPicking ? (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span&gt;</span>
+<span class="cstat-no" title="statement not covered" >              Turno di selezione: &lt;strong className="text-amber-400"&gt;{currentHeroPicking.hero?.classe}&lt;/strong&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {currentHeroPicking.hero?.classe?.toLowerCase() === 'mago' &amp;&amp; ` (${3 - pickedElements.length} rimanenti)`}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >          ) : (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span&gt;Nessun eroe magico presente&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >          )}</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {allElements.map((elemento) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            const isPicked = pickedElements.includes(elemento);</span>
+<span class="cstat-no" title="statement not covered" >            return (</span>
+<span class="cstat-no" title="statement not covered" >              &lt;button</span>
+<span class="cstat-no" title="statement not covered" >                key={elemento}</span>
+<span class="cstat-no" title="statement not covered" >                onClick={() =&gt; selectElement(elemento)}</span>
+<span class="cstat-no" title="statement not covered" >                disabled={isPicked || !currentHeroPicking}</span>
+<span class="cstat-no" title="statement not covered" >                className={`relative flex flex-col items-center transition-all duration-300 ${</span>
+<span class="cstat-no" title="statement not covered" >                  isPicked </span>
+<span class="cstat-no" title="statement not covered" >                    ? 'opacity-30 cursor-not-allowed grayscale' </span>
+<span class="cstat-no" title="statement not covered" >                    : 'hover:scale-105 hover:shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer'</span>
+<span class="cstat-no" title="statement not covered" >                }`}</span>
+<span class="cstat-no" title="statement not covered" >              &gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;img </span>
+<span class="cstat-no" title="statement not covered" >                  src={`/img/cinc/${elemento}00_Dorso.jpg`} </span>
+<span class="cstat-no" title="statement not covered" >                  alt={`Dorso incantesimi di ${elemento}`}</span>
+<span class="cstat-no" title="statement not covered" >                  className="w-full max-w-[200px] rounded-lg border-2 border-stone-700 object-cover aspect-[2/3]"</span>
+<span class="cstat-no" title="statement not covered" >                  onError={(e) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                    e.target.src = 'data:image/svg+xml;utf8,&lt;svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" fill="%23292524"&gt;&lt;rect width="100%" height="100%"/&gt;&lt;text x="50%" y="50%" fill="%23a8a29e" text-anchor="middle" font-family="sans-serif"&gt;Immagine Mancante&lt;/text&gt;&lt;/svg&gt;';</span>
+<span class="cstat-no" title="statement not covered" >                  }}</span>
+<span class="cstat-no" title="statement not covered" >                /&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="mt-3 text-lg font-semibold text-amber-100 bg-stone-800 px-4 py-1 rounded-full border border-stone-600"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {elemento}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >            );</span>
+<span class="cstat-no" title="statement not covered" >          })}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -529,7 +469,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

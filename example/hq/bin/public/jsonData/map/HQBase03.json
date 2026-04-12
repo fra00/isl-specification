@@ -19540,7 +19540,7 @@
       "text": "aggoro 100;",
       "evento": 2,
       "unavolta": false,
-      "morto": "#TRUE#",
+      "morto": true,
       "idmosc": 9
     },
     {

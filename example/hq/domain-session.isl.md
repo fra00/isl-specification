@@ -49,6 +49,14 @@ Represents the dynamic state of a monster (@Monster) during a session.
 - `currentMind`: Current Mind Points (Integer).
 - `activeStatus`: List of active effects (e.g., "Sleep", "Tempest", "Entangled") (List of String).
 
+#### `ScriptImage`
+
+Represents a temporary image placed on the board by a mission script.
+
+- `x`: Current X position on the map grid (Integer).
+- `y`: Current Y position on the map grid (Integer).
+- `src`: Public image path rendered on the board (String).
+
 #### `GameSession`
 
 Represents the current active session state.
@@ -64,6 +72,8 @@ Represents the current active session state.
 - `isHeroOrderConfirmed`: Flag indicating if the turn order has been selected (Boolean) default: false.
 - `lastAttack`: Object containing details of the last attack for potential UI display (Object with hero, monster, combatResult) default:null.
 - `treasureDeck`: List of treasure cards available in the session (List of @TreasureCard).
+- `triggeredScripts`: List of stable keys for one-time mission scripts already executed (List of String) default: [].
+- `scriptImages`: List of board overlays created by mission scripts (List of @ScriptImage) default: [].
 
 #### `TurnPhase`
 

@@ -408,4 +408,44 @@ describe("useDungeonSessionManager", () => {
     });
     expect(api.getSession().lastAttack).toBeNull();
   });
+
+  it("executes mission scripts through the session boundary and applies side effects", () => {
+    const api = setup();
+    const scriptSession = api.getSession();
+    scriptSession.currentMap.scripts = [
+      { x: 1, y: 1, text: 'possta 6,6;\nmsg allarme;\naggoro 25;', evento: 1, unavolta: true, morto: false, idmosc: 0 },
+    ];
+
+    let result;
+    act(() => {
+      result = api.result.current.executeMissionScripts({
+        baseSession: scriptSession,
+        eventType: 1,
+        context: { previousPosition: { x: 1, y: 1 } },
+        visibilityMap: { data: [] },
+      });
+    });
+
+    expect(result.handled).toBe(true);
+    expect(api.fogOfWarLogic.revealFromPoint).toHaveBeenCalledWith(6, 6);
+    expect(api.onNotify).toHaveBeenCalledWith('allarme');
+    expect(api.getSession().heroes[0].gold).toBe(35);
+    expect(api.getSession().triggeredScripts).toHaveLength(1);
+  });
+
+  it("runs mission start scripts during initializeMission before gameplay begins", () => {
+    const api = setup();
+    api.getSession().currentMap.scripts = [
+      { x: 0, y: 0, text: 'msg inizio missione;\naggoro 40;\npossta 6,6;', evento: 6, unavolta: true, morto: false, idmosc: 0 },
+    ];
+
+    act(() => {
+      api.result.current.initializeMission([{ id: 3 }]);
+    });
+
+    expect(api.getSession().heroes[0]).toMatchObject({ x: 1, y: 1, gold: 50 });
+    expect(api.fogOfWarLogic.revealFromPoint).toHaveBeenCalledWith(6, 6);
+    expect(api.onNotify).toHaveBeenCalledWith('inizio missione');
+    expect(api.getSession().triggeredScripts).toHaveLength(1);
+  });
 });

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/241</span>
+                <span class='fraction'>0/258</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/241</span>
+                <span class='fraction'>0/258</span>
             </div>
         
             
@@ -303,7 +303,41 @@
 <a name='L238'></a><a href='#L238'>238</a>
 <a name='L239'></a><a href='#L239'>239</a>
 <a name='L240'></a><a href='#L240'>240</a>
-<a name='L241'></a><a href='#L241'>241</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -551,238 +585,255 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import React, { useState, useEffect, useCallback } from 'react';</span>
-<span class="cstat-no" title="statement not covered" >import { PageNavigationEnum } from './domain-core';</span>
-<span class="cstat-no" title="statement not covered" >import { GameSession, HeroState } from './domain-session';</span>
-<span class="cstat-no" title="statement not covered" >import { useCampaignManager } from './dungeon-use-campaign-manager';</span>
+<span class="cstat-no" title="statement not covered" >import React, { useState, useEffect, useCallback } from "react";</span>
+<span class="cstat-no" title="statement not covered" >import { PageNavigationEnum } from "./domain-core";</span>
+<span class="cstat-no" title="statement not covered" >import { useCampaignManager } from "./dungeon-use-campaign-manager";</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export default function PlayGame({</span>
-<span class="cstat-no" title="statement not covered" >    gameSession,</span>
-<span class="cstat-no" title="statement not covered" >    onChangePageView,</span>
-<span class="cstat-no" title="statement not covered" >    onUpdateSession,</span>
-<span class="cstat-no" title="statement not covered" >    campaign,</span>
-<span class="cstat-no" title="statement not covered" >    staticHeroes,</span>
-<span class="cstat-no" title="statement not covered" >    staticEquipment</span>
+<span class="cstat-no" title="statement not covered" >  gameSession,</span>
+<span class="cstat-no" title="statement not covered" >  onChangePageView,</span>
+<span class="cstat-no" title="statement not covered" >  onUpdateSession,</span>
+<span class="cstat-no" title="statement not covered" >  campaign,</span>
+<span class="cstat-no" title="statement not covered" >  staticHeroes,</span>
+<span class="cstat-no" title="statement not covered" >  staticEquipment</span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >    const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);</span>
-<span class="cstat-no" title="statement not covered" >    const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);</span>
-<span class="cstat-no" title="statement not covered" >    const [isInitialized, setIsInitialized] = useState(false);</span>
-<span class="cstat-no" title="statement not covered" >    </span>
-<span class="cstat-no" title="statement not covered" >    const { loadCampaign, saveCampaign } = useCampaignManager();</span>
+<span class="cstat-no" title="statement not covered" >  const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);</span>
+<span class="cstat-no" title="statement not covered" >  const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);</span>
+<span class="cstat-no" title="statement not covered" >  const [isStarting, setIsStarting] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: initSession</span>
-<span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (isInitialized || !staticHeroes || !staticEquipment) return;</span>
+<span class="cstat-no" title="statement not covered" >  const { loadCampaign, saveCampaign } = useCampaignManager();</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const savedData = loadCampaign();</span>
-<span class="cstat-no" title="statement not covered" >        if (savedData != null) {</span>
-<span class="cstat-no" title="statement not covered" >            setMaxUnlockedMissionIndex(savedData.nextMissionIndex);</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >            const defaultHeroes = staticHeroes.map(hero =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                let targetId = null;</span>
-<span class="cstat-no" title="statement not covered" >                if (hero.classe === "Barbaro") targetId = 13;</span>
-<span class="cstat-no" title="statement not covered" >                else if (hero.classe === "Nano") targetId = 2;</span>
-<span class="cstat-no" title="statement not covered" >                else if (hero.classe === "Elfo") targetId = 12;</span>
-<span class="cstat-no" title="statement not covered" >                else if (hero.classe === "Mago") targetId = 4;</span>
+<span class="cstat-no" title="statement not covered" >  // initSession</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!staticHeroes || !staticEquipment) return;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                const initialEquipment = (targetId !== null &amp;&amp; staticEquipment.some(e =&gt; e.id === targetId))</span>
-<span class="cstat-no" title="statement not covered" >                    ? [targetId]</span>
-<span class="cstat-no" title="statement not covered" >                    : [];</span>
+<span class="cstat-no" title="statement not covered" >    const savedData = loadCampaign();</span>
+<span class="cstat-no" title="statement not covered" >    if (savedData) {</span>
+<span class="cstat-no" title="statement not covered" >      setMaxUnlockedMissionIndex(savedData.nextMissionIndex);</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      const defaultHeroes = staticHeroes.map((hero) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        let initialEquipmentIds = [];</span>
+<span class="cstat-no" title="statement not covered" >        if (hero.classe === "Barbaro") initialEquipmentIds = [13];</span>
+<span class="cstat-no" title="statement not covered" >        else if (hero.classe === "Nano") initialEquipmentIds = [2];</span>
+<span class="cstat-no" title="statement not covered" >        else if (hero.classe === "Elfo") initialEquipmentIds = [12];</span>
+<span class="cstat-no" title="statement not covered" >        else if (hero.classe === "Mago") initialEquipmentIds = [4];</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                return HeroState({</span>
-<span class="cstat-no" title="statement not covered" >                    heroId: hero.id,</span>
-<span class="cstat-no" title="statement not covered" >                    hero: hero,</span>
-<span class="cstat-no" title="statement not covered" >                    currentBody: hero.corpo,</span>
-<span class="cstat-no" title="statement not covered" >                    currentMind: hero.mente,</span>
-<span class="cstat-no" title="statement not covered" >                    gold: 0,</span>
-<span class="cstat-no" title="statement not covered" >                    inventory: [],</span>
-<span class="cstat-no" title="statement not covered" >                    equipment: initialEquipment,</span>
-<span class="cstat-no" title="statement not covered" >                    equipped: initialEquipment,</span>
-<span class="cstat-no" title="statement not covered" >                    availableSpells: [],</span>
-<span class="cstat-no" title="statement not covered" >                    activeStatus: [],</span>
-<span class="cstat-no" title="statement not covered" >                    turnOrder: 0,</span>
-<span class="cstat-no" title="statement not covered" >                    x: 0,</span>
-<span class="cstat-no" title="statement not covered" >                    y: 0,</span>
-<span class="cstat-no" title="statement not covered" >                    isEscaped: false</span>
-<span class="cstat-no" title="statement not covered" >                });</span>
-<span class="cstat-no" title="statement not covered" >            });</span>
-<span class="cstat-no" title="statement not covered" >            saveCampaign(defaultHeroes, 0);</span>
-<span class="cstat-no" title="statement not covered" >            setMaxUnlockedMissionIndex(0);</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        setIsInitialized(true);</span>
-<span class="cstat-no" title="statement not covered" >    }, [isInitialized, staticHeroes, staticEquipment, loadCampaign, saveCampaign]);</span>
+<span class="cstat-no" title="statement not covered" >        const validEquipment = staticEquipment</span>
+<span class="cstat-no" title="statement not covered" >          .filter((eq) =&gt; initialEquipmentIds.includes(eq.id))</span>
+<span class="cstat-no" title="statement not covered" >          .map((eq) =&gt; eq.id);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: syncFocusedMission</span>
-<span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!campaign?.missioni?.length) return;</span>
-<span class="cstat-no" title="statement not covered" >        if (focusedMissionIndex &gt;= campaign.missioni.length) {</span>
-<span class="cstat-no" title="statement not covered" >            setFocusedMissionIndex(Math.max(0, Math.min(maxUnlockedMissionIndex, campaign.missioni.length - 1)));</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >    }, [campaign, maxUnlockedMissionIndex, focusedMissionIndex]);</span>
+<span class="cstat-no" title="statement not covered" >        return {</span>
+<span class="cstat-no" title="statement not covered" >          heroId: hero.id,</span>
+<span class="cstat-no" title="statement not covered" >          turnOrder: 0,</span>
+<span class="cstat-no" title="statement not covered" >          currentBody: hero.corpo,</span>
+<span class="cstat-no" title="statement not covered" >          currentMind: hero.mente,</span>
+<span class="cstat-no" title="statement not covered" >          gold: 0,</span>
+<span class="cstat-no" title="statement not covered" >          inventory: [],</span>
+<span class="cstat-no" title="statement not covered" >          equipment: validEquipment,</span>
+<span class="cstat-no" title="statement not covered" >          equipped: validEquipment,</span>
+<span class="cstat-no" title="statement not covered" >          availableSpells: [],</span>
+<span class="cstat-no" title="statement not covered" >          activeStatus: [],</span>
+<span class="cstat-no" title="statement not covered" >          isEscaped: false,</span>
+<span class="cstat-no" title="statement not covered" >          x: 0,</span>
+<span class="cstat-no" title="statement not covered" >          y: 0,</span>
+<span class="cstat-no" title="statement not covered" >          hero: hero</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >      });</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: selectMission</span>
-<span class="cstat-no" title="statement not covered" >    const selectMission = useCallback(async (index) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        const savedData = loadCampaign();</span>
-<span class="cstat-no" title="statement not covered" >        const maxAccessibleIndex = maxUnlockedMissionIndex;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (index &lt;= maxAccessibleIndex &amp;&amp; savedData != null &amp;&amp; campaign?.missioni) {</span>
-<span class="cstat-no" title="statement not covered" >            const mission = campaign.missioni[index];</span>
-<span class="cstat-no" title="statement not covered" >            if (!mission) return;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            try {</span>
-<span class="cstat-no" title="statement not covered" >                const response = await fetch(`/jsonData/map/${mission.file}`);</span>
-<span class="cstat-no" title="statement not covered" >                if (!response.ok) throw new Error("Network response was not ok");</span>
-<span class="cstat-no" title="statement not covered" >                const mapData = await response.json();</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                const updatedSession = GameSession({</span>
-<span class="cstat-no" title="statement not covered" >                    campaignName: campaign.nome_campagna || "Campaign",</span>
-<span class="cstat-no" title="statement not covered" >                    currentMap: mapData,</span>
-<span class="cstat-no" title="statement not covered" >                    currentMissionIndex: index,</span>
-<span class="cstat-no" title="statement not covered" >                    heroes: savedData.heroes,</span>
-<span class="cstat-no" title="statement not covered" >                    monsters: [],</span>
-<span class="cstat-no" title="statement not covered" >                    openedDoors: [],</span>
-<span class="cstat-no" title="statement not covered" >                    spawnedLocations: [],</span>
-<span class="cstat-no" title="statement not covered" >                    currentTurn: 1,</span>
-<span class="cstat-no" title="statement not covered" >                    isHeroOrderConfirmed: false,</span>
-<span class="cstat-no" title="statement not covered" >                    lastAttack: null,</span>
-<span class="cstat-no" title="statement not covered" >                    treasureDeck: []</span>
-<span class="cstat-no" title="statement not covered" >                });</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                onUpdateSession(updatedSession);</span>
-<span class="cstat-no" title="statement not covered" >                onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);</span>
-<span class="cstat-no" title="statement not covered" >            } catch (error) {</span>
-<span class="cstat-no" title="statement not covered" >                console.error("Failed to load map data", error);</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >    }, [loadCampaign, maxUnlockedMissionIndex, campaign, onUpdateSession, onChangePageView]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: focusMission</span>
-<span class="cstat-no" title="statement not covered" >    const focusMission = useCallback((index) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        setFocusedMissionIndex(index);</span>
-<span class="cstat-no" title="statement not covered" >    }, []);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: goBack</span>
-<span class="cstat-no" title="statement not covered" >    const goBack = useCallback(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        onChangePageView(PageNavigationEnum.MAIN_MENU);</span>
-<span class="cstat-no" title="statement not covered" >    }, [onChangePageView]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    if (!campaign || !staticHeroes || !isInitialized) {</span>
-<span class="cstat-no" title="statement not covered" >        return (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="w-full h-full flex items-center justify-center bg-stone-900 text-amber-500 font-serif text-2xl"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                Caricamento Archivio...</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        );</span>
+<span class="cstat-no" title="statement not covered" >      saveCampaign(defaultHeroes, 0);</span>
+<span class="cstat-no" title="statement not covered" >      setMaxUnlockedMissionIndex(0);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [staticHeroes, staticEquipment, loadCampaign, saveCampaign]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const focusedMission = campaign.missioni?.[focusedMissionIndex];</span>
-<span class="cstat-no" title="statement not covered" >    const isFocusedLocked = focusedMissionIndex &gt; maxUnlockedMissionIndex;</span>
-<span class="cstat-no" title="statement not covered" >    const isFocusedCompleted = focusedMissionIndex &lt; maxUnlockedMissionIndex;</span>
+<span class="cstat-no" title="statement not covered" >  // syncFocusedMission</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!campaign?.missioni?.length) return;</span>
+<span class="cstat-no" title="statement not covered" >    const maxValid = campaign.missioni.length - 1;</span>
+<span class="cstat-no" title="statement not covered" >    if (focusedMissionIndex &gt; maxValid) {</span>
+<span class="cstat-no" title="statement not covered" >      setFocusedMissionIndex(Math.min(maxUnlockedMissionIndex, maxValid));</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [campaign, maxUnlockedMissionIndex, focusedMissionIndex]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // selectMission</span>
+<span class="cstat-no" title="statement not covered" >  const selectMission = useCallback(async (index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const savedData = loadCampaign();</span>
+<span class="cstat-no" title="statement not covered" >    if (index &lt;= maxUnlockedMissionIndex &amp;&amp; savedData &amp;&amp; campaign?.missioni) {</span>
+<span class="cstat-no" title="statement not covered" >      setIsStarting(true);</span>
+<span class="cstat-no" title="statement not covered" >      const missionFile = campaign.missioni[index].file;</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        const response = await fetch(`/jsonData/map/${missionFile}`);</span>
+<span class="cstat-no" title="statement not covered" >        if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >          throw new Error(`Failed to load map: ${missionFile}`);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        const mapData = await response.json();</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        const updatedSession = {</span>
+<span class="cstat-no" title="statement not covered" >          ...(gameSession || {}),</span>
+<span class="cstat-no" title="statement not covered" >          campaignName: campaign.nome_campagna,</span>
+<span class="cstat-no" title="statement not covered" >          currentMap: mapData,</span>
+<span class="cstat-no" title="statement not covered" >          currentMissionIndex: index,</span>
+<span class="cstat-no" title="statement not covered" >          heroes: savedData.heroes,</span>
+<span class="cstat-no" title="statement not covered" >          monsters: [],</span>
+<span class="cstat-no" title="statement not covered" >          openedDoors: [],</span>
+<span class="cstat-no" title="statement not covered" >          spawnedLocations: [],</span>
+<span class="cstat-no" title="statement not covered" >          currentTurn: 1,</span>
+<span class="cstat-no" title="statement not covered" >          isHeroOrderConfirmed: false,</span>
+<span class="cstat-no" title="statement not covered" >          lastAttack: null,</span>
+<span class="cstat-no" title="statement not covered" >          treasureDeck: []</span>
+<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        onUpdateSession?.((previousSession) =&gt; ({</span>
+<span class="cstat-no" title="statement not covered" >          ...(previousSession || gameSession || {}),</span>
+<span class="cstat-no" title="statement not covered" >          ...updatedSession,</span>
+<span class="cstat-no" title="statement not covered" >        }));</span>
+<span class="cstat-no" title="statement not covered" >        onChangePageView?.(PageNavigationEnum.DUNGEON_DESCRIPTION);</span>
+<span class="cstat-no" title="statement not covered" >      } catch (error) {</span>
+<span class="cstat-no" title="statement not covered" >        console.error("Error loading mission:", error);</span>
+<span class="cstat-no" title="statement not covered" >        setIsStarting(false);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [campaign, maxUnlockedMissionIndex, loadCampaign, gameSession, onUpdateSession, onChangePageView]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // focusMission</span>
+<span class="cstat-no" title="statement not covered" >  const focusMission = useCallback((index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setFocusedMissionIndex(index);</span>
+<span class="cstat-no" title="statement not covered" >  }, []);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // goBack</span>
+<span class="cstat-no" title="statement not covered" >  const goBack = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    onChangePageView?.(PageNavigationEnum.MAIN_MENU);</span>
+<span class="cstat-no" title="statement not covered" >  }, [onChangePageView]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const getMissionStatus = useCallback((index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (index &lt; maxUnlockedMissionIndex) return "COMPLETED";</span>
+<span class="cstat-no" title="statement not covered" >    if (index === maxUnlockedMissionIndex) return "AVAILABLE";</span>
+<span class="cstat-no" title="statement not covered" >    return "LOCKED";</span>
+<span class="cstat-no" title="statement not covered" >  }, [maxUnlockedMissionIndex]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  if (!campaign || !staticHeroes) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="w-full h-full flex flex-col bg-gradient-to-b from-stone-900 via-stone-800 to-black text-stone-200 overflow-hidden font-serif"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            {/* Header */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex-shrink-0 p-4 text-center border-b border-amber-700/50 bg-stone-900/80 shadow-md"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;h1 className="text-3xl text-amber-500 tracking-wider uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {campaign.nome_campagna || "Archivio Missioni"}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            {/* Content */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="flex flex-1 overflow-hidden"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                {/* Left Column: Mission List */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="w-1/3 overflow-y-auto border-r border-amber-700/50 p-4 space-y-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {campaign.missioni?.map((mission, index) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                        const isLocked = index &gt; maxUnlockedMissionIndex;</span>
-<span class="cstat-no" title="statement not covered" >                        const isCompleted = index &lt; maxUnlockedMissionIndex;</span>
-<span class="cstat-no" title="statement not covered" >                        const isFocused = index === focusedMissionIndex;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                        let statusText = "Disponibile";</span>
-<span class="cstat-no" title="statement not covered" >                        let statusColor = "text-amber-400 border-amber-400";</span>
-<span class="cstat-no" title="statement not covered" >                        if (isLocked) {</span>
-<span class="cstat-no" title="statement not covered" >                            statusText = "Sigillata";</span>
-<span class="cstat-no" title="statement not covered" >                            statusColor = "text-stone-500 border-stone-500";</span>
-<span class="cstat-no" title="statement not covered" >                        } else if (isCompleted) {</span>
-<span class="cstat-no" title="statement not covered" >                            statusText = "Completata";</span>
-<span class="cstat-no" title="statement not covered" >                            statusColor = "text-green-600 border-green-600";</span>
-<span class="cstat-no" title="statement not covered" >                        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                        return (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div</span>
-<span class="cstat-no" title="statement not covered" >                                key={index}</span>
-<span class="cstat-no" title="statement not covered" >                                onClick={() =&gt; focusMission(index)}</span>
-<span class="cstat-no" title="statement not covered" >                                className={`relative p-4 rounded border transition-all duration-300 cursor-pointer overflow-hidden</span>
-<span class="cstat-no" title="statement not covered" >                                    ${isFocused ? 'bg-stone-700 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-stone-800/80 border-amber-900/50 hover:bg-stone-700/80 hover:border-amber-700/80'}</span>
-<span class="cstat-no" title="statement not covered" >                                    ${isLocked ? 'opacity-70' : 'opacity-100'}</span>
-<span class="cstat-no" title="statement not covered" >                                `}</span>
-<span class="cstat-no" title="statement not covered" >                            &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;div className="flex flex-col space-y-2 relative z-10"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;h3 className={`text-lg font-bold ${isLocked ? 'text-stone-400' : 'text-amber-100'}`}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        {mission.titolo}</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/h3&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;div className="flex justify-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        &lt;span className={`text-xs px-2 py-1 border rounded uppercase tracking-widest ${statusColor}`}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                            {statusText}</span>
-<span class="cstat-no" title="statement not covered" >                                        &lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        );</span>
-<span class="cstat-no" title="statement not covered" >                    })}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                {/* Right Column: Mission Details */}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="w-2/3 overflow-y-auto p-8 flex flex-col items-center justify-center relative"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {/* Decorative background element */}</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="w-96 h-96 rounded-full bg-amber-900 blur-[100px]"&gt;&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                    {focusedMission ? (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="relative z-10 flex flex-col items-center max-w-lg w-full bg-stone-900/90 p-8 rounded-lg border border-amber-700/40 shadow-2xl text-center space-y-8"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div className="space-y-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;h2 className="text-4xl text-amber-500 font-bold drop-shadow-md"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    {focusedMission.titolo}</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;p className="text-stone-400 text-sm font-mono"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    Rif: {focusedMission.file}</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div className="text-stone-300 italic text-lg leading-relaxed"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                {isFocusedLocked &amp;&amp; "Questa missione è sigillata. Completa le sfide precedenti per svelarne i segreti."}</span>
-<span class="cstat-no" title="statement not covered" >                                {isFocusedCompleted &amp;&amp; "Hai già trionfato in questo luogo oscuro. Puoi farvi ritorno se lo desideri."}</span>
-<span class="cstat-no" title="statement not covered" >                                {!isFocusedLocked &amp;&amp; !isFocusedCompleted &amp;&amp; "L'oscurità attende. Prepara i tuoi eroi per questa nuova sfida."}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                            &lt;div className="flex flex-col w-full space-y-4 pt-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;button</span>
-<span class="cstat-no" title="statement not covered" >                                    onClick={() =&gt; selectMission(focusedMissionIndex)}</span>
-<span class="cstat-no" title="statement not covered" >                                    disabled={isFocusedLocked}</span>
-<span class="cstat-no" title="statement not covered" >                                    className={`w-full py-3 px-6 rounded font-bold text-lg tracking-wider transition-all duration-300</span>
-<span class="cstat-no" title="statement not covered" >                                        ${isFocusedLocked </span>
-<span class="cstat-no" title="statement not covered" >                                            ? 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed' </span>
-<span class="cstat-no" title="statement not covered" >                                            : 'bg-amber-900 hover:bg-amber-800 text-amber-100 border border-amber-600 shadow-[0_0_10px_rgba(180,83,9,0.5)] hover:shadow-[0_0_20px_rgba(180,83,9,0.8)]'</span>
-<span class="cstat-no" title="statement not covered" >                                        }</span>
-<span class="cstat-no" title="statement not covered" >                                    `}</span>
-<span class="cstat-no" title="statement not covered" >                                &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    {isFocusedLocked ? 'Sigillata' : 'Inizia Missione'}</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                </span>
-<span class="cstat-no" title="statement not covered" >                                &lt;button</span>
-<span class="cstat-no" title="statement not covered" >                                    onClick={goBack}</span>
-<span class="cstat-no" title="statement not covered" >                                    className="w-full py-3 px-6 rounded font-bold text-sm tracking-wider bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-600 transition-colors duration-300"</span>
-<span class="cstat-no" title="statement not covered" >                                &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                    Torna al Menu</span>
-<span class="cstat-no" title="statement not covered" >                                &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    ) : (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div className="text-stone-500 italic"&gt;Nessuna missione selezionata&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    )}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-600 font-serif text-2xl tracking-widest"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        Caricamento Archivi...</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const focusedMission = campaign.missioni?.[focusedMissionIndex];</span>
+<span class="cstat-no" title="statement not covered" >  const focusedStatus = focusedMission ? getMissionStatus(focusedMissionIndex) : null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="h-screen w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 via-stone-900 to-black text-stone-300 font-serif flex flex-col overflow-hidden select-none"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      {/* Header */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;header className="flex-none py-6 border-b border-stone-700/50 bg-stone-950/50 shadow-lg shadow-black/50 z-10"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;h1 className="text-center text-3xl md:text-4xl text-amber-600 tracking-[0.2em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {campaign.nome_campagna || "Archivio Missioni"}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/h1&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/header&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      {/* Main Content */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;main className="flex-1 flex overflow-hidden"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        </span>
+<span class="cstat-no" title="statement not covered" >        {/* Left Column: Mission List */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;aside className="w-1/3 max-w-md border-r border-stone-700/50 bg-stone-900/40 overflow-y-auto overflow-x-hidden p-6 space-y-4 [&amp;::-webkit-scrollbar]:w-2 [&amp;::-webkit-scrollbar-track]:bg-stone-950 [&amp;::-webkit-scrollbar-thumb]:bg-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {campaign.missioni?.map((mission, index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            const status = getMissionStatus(index);</span>
+<span class="cstat-no" title="statement not covered" >            const isFocused = index === focusedMissionIndex;</span>
+<span class="cstat-no" title="statement not covered" >            </span>
+<span class="cstat-no" title="statement not covered" >            let cardStyle = "border-stone-700 bg-stone-900/60 text-stone-400";</span>
+<span class="cstat-no" title="statement not covered" >            let statusText = "Sigillata";</span>
+<span class="cstat-no" title="statement not covered" >            let statusColor = "text-stone-600";</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >            if (status === "COMPLETED") {</span>
+<span class="cstat-no" title="statement not covered" >              cardStyle = "border-stone-500 bg-stone-800/80 text-stone-300 hover:border-stone-400";</span>
+<span class="cstat-no" title="statement not covered" >              statusText = "Completata";</span>
+<span class="cstat-no" title="statement not covered" >              statusColor = "text-stone-400";</span>
+<span class="cstat-no" title="statement not covered" >            } else if (status === "AVAILABLE") {</span>
+<span class="cstat-no" title="statement not covered" >              cardStyle = "border-amber-700 bg-stone-800 text-amber-100 shadow-[0_0_15px_rgba(180,83,9,0.2)] hover:border-amber-500";</span>
+<span class="cstat-no" title="statement not covered" >              statusText = "Disponibile";</span>
+<span class="cstat-no" title="statement not covered" >              statusColor = "text-amber-500";</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >            if (isFocused) {</span>
+<span class="cstat-no" title="statement not covered" >              cardStyle += " ring-2 ring-amber-600/50 scale-[1.02]";</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >            return (</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div</span>
+<span class="cstat-no" title="statement not covered" >                key={index}</span>
+<span class="cstat-no" title="statement not covered" >                onClick={() =&gt; focusMission(index)}</span>
+<span class="cstat-no" title="statement not covered" >                className={`p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center ${cardStyle}`}</span>
+<span class="cstat-no" title="statement not covered" >              &gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="text-sm tracking-widest mb-2 opacity-80"&gt;Capitolo {index + 1}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;h3 className="text-xl font-bold mb-3"&gt;{mission.titolo}&lt;/h3&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;div className={`text-xs uppercase tracking-widest px-3 py-1 border border-current rounded-sm ${statusColor}`}&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {statusText}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            );</span>
+<span class="cstat-no" title="statement not covered" >          })}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/aside&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        {/* Right Column: Focused Mission Details */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;section className="flex-1 p-8 md:p-12 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center relative [&amp;::-webkit-scrollbar]:w-2 [&amp;::-webkit-scrollbar-track]:bg-stone-950 [&amp;::-webkit-scrollbar-thumb]:bg-stone-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          {focusedMission ? (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="max-w-2xl w-full bg-stone-900/80 border border-stone-700 p-10 shadow-2xl flex flex-col items-center text-center space-y-8 relative"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              </span>
+<span class="cstat-no" title="statement not covered" >              {/* Decorative corners */}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-700/50 m-2"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-700/50 m-2"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-700/50 m-2"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-700/50 m-2"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="space-y-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;span className="text-amber-700 tracking-[0.3em] text-sm uppercase"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  Dossier: {focusedMission.file}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;h2 className="text-4xl md:text-5xl text-amber-500 drop-shadow-md"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  {focusedMission.titolo}</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-700 to-transparent"&gt;&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="text-lg text-stone-400 leading-relaxed max-w-lg min-h-[4rem]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {focusedStatus === "LOCKED" &amp;&amp; "Questa missione è sigillata. Devi completare le sfide precedenti per svelarne i segreti."}</span>
+<span class="cstat-no" title="statement not covered" >                {focusedStatus === "AVAILABLE" &amp;&amp; "L'oscurità attende. Prepara i tuoi eroi per questa nuova discesa nell'abisso."}</span>
+<span class="cstat-no" title="statement not covered" >                {focusedStatus === "COMPLETED" &amp;&amp; "Hai già trionfato in queste sale, ma il male potrebbe essersi risvegliato. Puoi esplorarle nuovamente."}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >              &lt;div className="pt-8 flex flex-col sm:flex-row gap-6 w-full justify-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;button</span>
+<span class="cstat-no" title="statement not covered" >                  onClick={goBack}</span>
+<span class="cstat-no" title="statement not covered" >                  className="px-8 py-3 bg-stone-950 border border-stone-600 text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition-colors uppercase tracking-widest text-sm"</span>
+<span class="cstat-no" title="statement not covered" >                &gt;</span>
+<span class="cstat-no" title="statement not covered" >                  Indietro</span>
+<span class="cstat-no" title="statement not covered" >                &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >                </span>
+<span class="cstat-no" title="statement not covered" >                {focusedStatus !== "LOCKED" &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;button</span>
+<span class="cstat-no" title="statement not covered" >                    onClick={() =&gt; selectMission(focusedMissionIndex)}</span>
+<span class="cstat-no" title="statement not covered" >                    disabled={isStarting}</span>
+<span class="cstat-no" title="statement not covered" >                    className="px-8 py-3 bg-stone-800 border border-amber-700 text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors uppercase tracking-widest text-sm shadow-[0_0_10px_rgba(180,83,9,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"</span>
+<span class="cstat-no" title="statement not covered" >                  &gt;</span>
+<span class="cstat-no" title="statement not covered" >                    {isStarting ? "Preparazione..." : "Esamina Missione"}</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >                )}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >          ) : (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="text-stone-500 text-xl tracking-widest"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              Nessuna missione selezionata</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >          )}</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        &lt;/section&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/main&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -790,7 +841,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

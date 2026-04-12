@@ -30,6 +30,7 @@
 - `visibilityMap`: @VisibilityMap
 - `onNotify`: (message: String) -> void
 - `onActionDone`: () -> void
+- `onForceTurnEnd`: () -> void
 - `sessionManager`: @useDungeonSessionManager
 - `onTreasureCardDrawn`: (card: @TreasureCard) -> void
 - `onWanderingMonster`: (x: Integer, y: Integer) -> void
@@ -51,6 +52,11 @@
     - Trigger `onNotify("Non puoi cercare tesori con mostri vicini!")`
     - RETURN.
   - Find current hero in `gameSession.heroes` (turnOrder == currentTurn).
+  - Call `sessionManager.executeMissionScripts({ baseSession: gameSession, eventType: 3, visibilityMap })` before scanning static visible treasures.
+  - IF the runtime reports `handled` true:
+    - IF the runtime reports `forceFinishTurn` true call `onForceTurnEnd()`.
+    - ELSE call `onActionDone()`.
+    - RETURN.
   - Call `visibilityCalc.calculateVisibleCells(hero.x, hero.y)` to get `visibleCells`.
   - Initialize `treasureFound` as false.
   - Initialize `treasureCollectionFailed` as false.

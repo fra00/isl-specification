@@ -116,6 +116,10 @@
 - **Treasures**: Visual elements for discovered treasures.
   - **Data Source**: `treasures` prop.
   - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
+- **Script Images**: Temporary overlays created by mission scripts.
+  - **Data Source**: `gameSession.scriptImages`.
+  - **Render**: Image at x,y coordinates (start from 1) using `src` exactly as stored in session state.
+  - **Visibility Rule**: Render only when the related board cell is currently visible (`fog == false`).
 - **Activated Traps**: Visual elements for triggered traps.
   - **Data Source**: `triggeredTraps` prop.
   - **Render**:

@@ -197,4 +197,48 @@ describe("useTraps", () => {
       "Non puoi cercare trappole con mostri vicini!",
     );
   });
+
+  it("prioritizes mission scripts for event 4 over normal trap discovery", () => {
+    useVisibilityCalc.mockReturnValue({
+      calculateVisibleCells: vi.fn(() => [{ x: 2, y: 2 }]),
+    });
+    const onActionDone = vi.fn();
+    const onForceTurnEnd = vi.fn();
+    const sessionManager = {
+      executeMissionScripts: vi.fn(() => ({
+        handled: true,
+        session: null,
+        notifications: [],
+        revealPoints: [],
+        effects: { forceFinishTurn: true },
+      })),
+    };
+
+    const { result } = renderHook(() =>
+      useTraps({
+        gameSession: {
+          currentTurn: 1,
+          heroes: [{ turnOrder: 1, x: 1, y: 1 }],
+          currentMap: {
+            grid: [{ x: 2, y: 2, trpl: { tipo: 2 } }],
+          },
+        },
+        visibilityMap: {},
+        areMonstersVisible: false,
+        onNotify: vi.fn(),
+        onActionDone,
+        onForceTurnEnd,
+        sessionManager,
+      }),
+    );
+
+    act(() => {
+      result.current.searchTraps();
+    });
+
+    expect(sessionManager.executeMissionScripts).toHaveBeenCalledWith(expect.objectContaining({ eventType: 4 }));
+    expect(result.current.getTriggeredTraps()).toEqual([]);
+    expect(onForceTurnEnd).toHaveBeenCalledTimes(1);
+    expect(onActionDone).not.toHaveBeenCalled();
+  });
 });

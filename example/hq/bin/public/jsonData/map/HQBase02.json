@@ -19542,20 +19542,20 @@
     {
       "x": 7,
       "y": 12,
-      "text": "possta",
-      "evento": 3,
-      "unavolta": "10;",
-      "morto": "possta",
-      "idmosc": 15
+      "text": "possta 3,10;\npossta 15,2;\npossta 18,2\npossta 18,6;\npossta 23,6;\npossta 14,7;\npossta 23,10;\nmsg hai tovato sir Manfred ma entrando hai fatto suonare l'allarme;\naggogg 9;\naggoro 200;\n",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 0
     },
     {
-      "x": "2;",
-      "y": "possta",
-      "text": 18,
-      "evento": 2,
-      "unavolta": "possta",
-      "morto": 18,
-      "idmosc": "6;"
+      "x": 0,
+      "y": 0,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

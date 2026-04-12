@@ -1,6 +1,6 @@
-import { renderHook, act } from '../bin/node_modules/@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTurnLogic } from '../bin/dungeon-use-turn-logic';
+import { renderHook, act } from "../bin/node_modules/@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useTurnLogic } from "../bin/dungeon-use-turn-logic";
 
 function createSession(overrides = {}) {
   const baseSession = {
@@ -19,7 +19,7 @@ function createSession(overrides = {}) {
         equipped: [],
         activeStatus: [],
         isEscaped: false,
-        hero: { classe: 'Barbaro' },
+        hero: { classe: "Barbaro" },
       },
     ],
     monsters: [],
@@ -37,7 +37,7 @@ function createSession(overrides = {}) {
         {
           x: 0,
           y: 0,
-          fine: '',
+          fine: "",
           tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
           mostab: { mos: false, mosid: 0, corpo: 0 },
           trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
@@ -62,7 +62,8 @@ function createSession(overrides = {}) {
     ...overrides,
     heroes: overrides.heroes ?? baseSession.heroes,
     monsters: overrides.monsters ?? baseSession.monsters,
-    spawnedLocations: overrides.spawnedLocations ?? baseSession.spawnedLocations,
+    spawnedLocations:
+      overrides.spawnedLocations ?? baseSession.spawnedLocations,
     currentMap: {
       ...baseSession.currentMap,
       ...(overrides.currentMap || {}),
@@ -85,7 +86,11 @@ function setup(configOverrides = {}) {
     registerTriggeredTrap: vi.fn(),
   };
   const heroStatsLogic = {
-    calculateStats: vi.fn(() => ({ movimento: 1, canAttackDiagonal: false, canAttackRanged: false })),
+    calculateStats: vi.fn(() => ({
+      movimento: 1,
+      canAttackDiagonal: false,
+      canAttackRanged: false,
+    })),
     calculateAttackDice: vi.fn(() => 2),
     canAttackTwice: vi.fn(() => false),
     getConsumableWeaponId: vi.fn(() => null),
@@ -109,6 +114,13 @@ function setup(configOverrides = {}) {
     hasLineOfSight: vi.fn(() => false),
   };
   const sessionManager = {
+    executeMissionScripts: vi.fn(() => ({
+      handled: false,
+      session: gameSession,
+      notifications: [],
+      revealPoints: [],
+      effects: {},
+    })),
     clearHeroStatusEverywhere: vi.fn(),
     clearCurrentHeroStatus: vi.fn(),
     resolveMovementTrap: vi.fn(),
@@ -125,8 +137,8 @@ function setup(configOverrides = {}) {
   };
   const visibilityMap = configOverrides.visibilityMap ?? {
     data: [
-      { x: 0, y: 0, valo: 'A', fog: false },
-      { x: 1, y: 0, valo: 'A', fog: false },
+      { x: 0, y: 0, valo: "A", fog: false },
+      { x: 1, y: 0, valo: "A", fog: false },
     ],
   };
 
@@ -145,18 +157,19 @@ function setup(configOverrides = {}) {
     },
   });
 
-  const rerender = () => hook.rerender({
-    gameSession,
-    visibilityMap,
-    onNotify,
-    trapsLogic,
-    heroStatsLogic,
-    hooksPathfinding,
-    combatLogic,
-    mapInteractionLogic,
-    visibilityCalc,
-    sessionManager,
-  });
+  const rerender = () =>
+    hook.rerender({
+      gameSession,
+      visibilityMap,
+      onNotify,
+      trapsLogic,
+      heroStatsLogic,
+      hooksPathfinding,
+      combatLogic,
+      mapInteractionLogic,
+      visibilityCalc,
+      sessionManager,
+    });
 
   return {
     ...hook,
@@ -167,7 +180,7 @@ function setup(configOverrides = {}) {
   };
 }
 
-describe('useTurnLogic mission end rules', () => {
+describe("useTurnLogic mission end rules", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -178,7 +191,7 @@ describe('useTurnLogic mission end rules', () => {
     vi.unstubAllGlobals();
   });
 
-  it('requires all active header objectives before reporting mission completion', () => {
+  it("requires all active header objectives before reporting mission completion", () => {
     const api = setup({
       gameSession: {
         currentMap: {
@@ -189,11 +202,51 @@ describe('useTurnLogic mission end rules', () => {
             arma_f: 22,
           },
           grid: [
-            { x: 0, y: 0, fine: '', tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 5, y: 5, fine: '', tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: true, mosid: 7, corpo: 3 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 2, y: 2, fine: '', tes: { mon: 100, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 3, y: 3, fine: '', tes: { mon: 0, ogg: 9, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 4, y: 4, fine: '', tes: { mon: 0, ogg: 0, arma: 22, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
+            {
+              x: 0,
+              y: 0,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 5,
+              y: 5,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: true, mosid: 7, corpo: 3 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 2,
+              y: 2,
+              fine: "",
+              tes: { mon: 100, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 3,
+              y: 3,
+              fine: "",
+              tes: { mon: 0, ogg: 9, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 4,
+              y: 4,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 22, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
           ],
         },
       },
@@ -201,10 +254,16 @@ describe('useTurnLogic mission end rules', () => {
 
     expect(api.result.current.isMissionObjectiveCompleted).toBe(false);
 
-    api.gameSession.spawnedLocations.push('5,5');
-    api.gameSession.currentMap.grid.find((cell) => cell.x === 2 && cell.y === 2).tes = { mon: 0, ogg: 0, arma: 0, trp: 0 };
-    api.gameSession.currentMap.grid.find((cell) => cell.x === 3 && cell.y === 3).tes.ogg = 0;
-    api.gameSession.currentMap.grid.find((cell) => cell.x === 4 && cell.y === 4).tes.arma = 0;
+    api.gameSession.spawnedLocations.push("5,5");
+    api.gameSession.currentMap.grid.find(
+      (cell) => cell.x === 2 && cell.y === 2,
+    ).tes = { mon: 0, ogg: 0, arma: 0, trp: 0 };
+    api.gameSession.currentMap.grid.find(
+      (cell) => cell.x === 3 && cell.y === 3,
+    ).tes.ogg = 0;
+    api.gameSession.currentMap.grid.find(
+      (cell) => cell.x === 4 && cell.y === 4,
+    ).tes.arma = 0;
     api.gameSession.heroes[0].inventory = [9];
     api.gameSession.heroes[0].equipment = [22];
 
@@ -213,8 +272,11 @@ describe('useTurnLogic mission end rules', () => {
     expect(api.result.current.isMissionObjectiveCompleted).toBe(true);
   });
 
-  it('asks confirmation before retreating from the stairs when the mission is incomplete', () => {
-    vi.stubGlobal('confirm', vi.fn(() => false));
+  it("asks confirmation before retreating from the stairs when the mission is incomplete", () => {
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => false),
+    );
 
     const api = setup({
       gameSession: {
@@ -232,7 +294,7 @@ describe('useTurnLogic mission end rules', () => {
             equipped: [],
             activeStatus: [],
             isEscaped: false,
-            hero: { classe: 'Barbaro' },
+            hero: { classe: "Barbaro" },
           },
           {
             heroId: 2,
@@ -247,7 +309,7 @@ describe('useTurnLogic mission end rules', () => {
             equipped: [],
             activeStatus: [],
             isEscaped: false,
-            hero: { classe: 'Nano' },
+            hero: { classe: "Nano" },
           },
         ],
         currentMap: {
@@ -255,9 +317,33 @@ describe('useTurnLogic mission end rules', () => {
             oggetto_f: 9,
           },
           grid: [
-            { x: 0, y: 0, fine: '', tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 1, y: 0, fine: 1, tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 3, y: 3, fine: '', tes: { mon: 0, ogg: 9, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
+            {
+              x: 0,
+              y: 0,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 1,
+              y: 0,
+              fine: 1,
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 3,
+              y: 3,
+              fine: "",
+              tes: { mon: 0, ogg: 9, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
           ],
         },
       },
@@ -271,15 +357,22 @@ describe('useTurnLogic mission end rules', () => {
       expect(api.result.current.attemptExitFromCurrentCell()).toBe(false);
     });
 
-    expect(globalThis.confirm).toHaveBeenCalledWith('La missione non è ancora completata. Vuoi uscire comunque dalle scale?');
+    expect(globalThis.confirm).toHaveBeenCalledWith(
+      "La missione non è ancora completata. Vuoi uscire comunque dalle scale?",
+    );
     expect(api.sessionManager.markCurrentHeroEscaped).not.toHaveBeenCalled();
     expect(api.sessionManager.advanceTurn).not.toHaveBeenCalled();
     expect(api.gameSession.heroes[0].isEscaped).toBe(false);
-    expect(api.onNotify).toHaveBeenCalledWith('Uscita annullata. Completa la missione o conferma la ritirata dalle scale.');
+    expect(api.onNotify).toHaveBeenCalledWith(
+      "Uscita annullata. Completa la missione o conferma la ritirata dalle scale.",
+    );
   });
 
-  it('allows a confirmed retreat from the stairs even when the mission is incomplete', () => {
-    vi.stubGlobal('confirm', vi.fn(() => true));
+  it("allows a confirmed retreat from the stairs even when the mission is incomplete", () => {
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
 
     const api = setup({
       gameSession: {
@@ -297,7 +390,7 @@ describe('useTurnLogic mission end rules', () => {
             equipped: [],
             activeStatus: [],
             isEscaped: false,
-            hero: { classe: 'Barbaro' },
+            hero: { classe: "Barbaro" },
           },
           {
             heroId: 2,
@@ -312,7 +405,7 @@ describe('useTurnLogic mission end rules', () => {
             equipped: [],
             activeStatus: [],
             isEscaped: false,
-            hero: { classe: 'Nano' },
+            hero: { classe: "Nano" },
           },
         ],
         currentMap: {
@@ -320,9 +413,33 @@ describe('useTurnLogic mission end rules', () => {
             arma_f: 22,
           },
           grid: [
-            { x: 0, y: 0, fine: '', tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 1, y: 0, fine: 1, tes: { mon: 0, ogg: 0, arma: 0, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
-            { x: 4, y: 4, fine: '', tes: { mon: 0, ogg: 0, arma: 22, trp: 0 }, mostab: { mos: false, mosid: 0, corpo: 0 }, trpl: { tipo: 0, rccadex: 0, rccadey: 0 }, arnt: { antroc: false, inv: false } },
+            {
+              x: 0,
+              y: 0,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 1,
+              y: 0,
+              fine: 1,
+              tes: { mon: 0, ogg: 0, arma: 0, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
+            {
+              x: 4,
+              y: 4,
+              fine: "",
+              tes: { mon: 0, ogg: 0, arma: 22, trp: 0 },
+              mostab: { mos: false, mosid: 0, corpo: 0 },
+              trpl: { tipo: 0, rccadex: 0, rccadey: 0 },
+              arnt: { antroc: false, inv: false },
+            },
           ],
         },
       },
@@ -336,10 +453,51 @@ describe('useTurnLogic mission end rules', () => {
       expect(api.result.current.attemptExitFromCurrentCell()).toBe(true);
     });
 
-    expect(globalThis.confirm).toHaveBeenCalledWith('La missione non è ancora completata. Vuoi uscire comunque dalle scale?');
+    expect(globalThis.confirm).toHaveBeenCalledWith(
+      "La missione non è ancora completata. Vuoi uscire comunque dalle scale?",
+    );
     expect(api.sessionManager.markCurrentHeroEscaped).toHaveBeenCalled();
     expect(api.sessionManager.advanceTurn).toHaveBeenCalledWith(2, null);
     expect(api.gameSession.heroes[0].isEscaped).toBe(true);
-    expect(api.onNotify).toHaveBeenCalledWith('Barbaro si ritira dalle scale.');
+    expect(api.onNotify).toHaveBeenCalledWith("Barbaro si ritira dalle scale.");
+  });
+
+  it("stops combat immediately when a monster attack script blocks the attack", () => {
+    const api = setup({
+      gameSession: {
+        monsters: [
+          {
+            id: 91,
+            x: 1,
+            y: 0,
+            currentBody: 2,
+            currentMind: 1,
+            activeStatus: [],
+            monster: { id: 13, nome: "Mummia", difesa: 3 },
+          },
+        ],
+      },
+    });
+
+    api.sessionManager.executeMissionScripts.mockReturnValue({
+      handled: true,
+      session: api.gameSession,
+      notifications: [],
+      revealPoints: [],
+      effects: { attackBlocked: true },
+    });
+
+    act(() => {
+      api.result.current.handleMonsterClick(91);
+    });
+
+    expect(api.sessionManager.executeMissionScripts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 2,
+        context: expect.objectContaining({ monsterTypeId: 13, onDeath: false }),
+      }),
+    );
+    expect(api.sessionManager.resolveHeroAttack).not.toHaveBeenCalled();
+    expect(api.result.current.turnPhase.HasPerformedAction).toBe(false);
   });
 });

@@ -106,7 +106,17 @@ describe("domain-map", () => {
       ],
       eroi_start: [{ id: 1, x: 4, y: 5 }],
       porte: [{ x: 6, y: 7, oriz: true }],
-      scripts: [{ x: 8, y: 9, text: "hello", evento: 3 }],
+      scripts: [
+        {
+          x: 8,
+          y: 9,
+          text: "hello",
+          evento: 3,
+          unavolta: true,
+          morto: false,
+          idmosc: 4,
+        },
+      ],
     });
 
     expect(map.header).toEqual({
@@ -131,7 +141,15 @@ describe("domain-map", () => {
     });
     expect(map.eroi_start[0]).toEqual({ id: 1, x: 4, y: 5 });
     expect(map.porte[0]).toEqual({ x: 6, y: 7, oriz: true });
-    expect(map.scripts[0]).toEqual({ x: 8, y: 9, text: "hello", evento: 3 });
+    expect(map.scripts[0]).toEqual({
+      x: 8,
+      y: 9,
+      text: "hello",
+      evento: 3,
+      unavolta: true,
+      morto: false,
+      idmosc: 4,
+    });
   });
 
   it("builds campaign, mission, visibility and game script records", () => {
@@ -173,7 +191,15 @@ describe("domain-map", () => {
   it("keeps hero start, door and map script defaults stable", () => {
     expect(MapHeroStart()).toEqual({ id: 0, x: 0, y: 0 });
     expect(MapDoor()).toEqual({ x: 0, y: 0, oriz: false });
-    expect(MapScript()).toEqual({ x: 0, y: 0, text: "", evento: 0 });
+    expect(MapScript()).toEqual({
+      x: 0,
+      y: 0,
+      text: "",
+      evento: 0,
+      unavolta: false,
+      morto: false,
+      idmosc: 0,
+    });
     expect(MapCell()).toEqual({
       x: 0,
       y: 0,

@@ -6,17 +6,18 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useCallback } from 'react';
-import { useVisibilityCalc } from './dungeon-use-visibility-calc';
+import { useState, useCallback } from "react";
+import { useVisibilityCalc } from "./dungeon-use-visibility-calc";
 
 export function useTreasureSearch({
   gameSession,
   visibilityMap,
   onNotify,
   onActionDone,
+  onForceTurnEnd,
   sessionManager,
   onTreasureCardDrawn,
-  onWanderingMonster
+  onWanderingMonster,
 }) {
   const [foundTreasures, setFoundTreasures] = useState([]);
 
@@ -29,49 +30,67 @@ export function useTreasureSearch({
     }
 
     const currentHero = gameSession?.heroes?.find(
-      (h) => h.turnOrder === gameSession?.currentTurn
+      (h) => h.turnOrder === gameSession?.currentTurn,
     );
 
     if (!currentHero) {
       return;
     }
 
-    const visibleCells = visibilityCalc.calculateVisibleCells(currentHero.x, currentHero.y);
+    const scriptResult = sessionManager.executeMissionScripts?.({
+      baseSession: gameSession,
+      eventType: 3,
+      visibilityMap,
+    });
+
+    if (scriptResult?.handled) {
+      if (scriptResult.effects?.forceFinishTurn) {
+        onForceTurnEnd?.();
+      } else {
+        onActionDone();
+      }
+      return;
+    }
+
+    const visibleCells = visibilityCalc.calculateVisibleCells(
+      currentHero.x,
+      currentHero.y,
+    );
 
     let treasureFound = false;
     let treasureCollectionFailed = false;
 
     for (const cell of visibleCells) {
       const mapCell = gameSession?.currentMap?.grid?.find(
-        (c) => c.x === cell.x && c.y === cell.y
+        (c) => c.x === cell.x && c.y === cell.y,
       );
 
       if (mapCell && mapCell.tes) {
         const { mon, ogg, arma, trp } = mapCell.tes;
-        
+
         if (mon !== 0 || ogg !== 0 || arma !== 0 || trp !== 0) {
           const alreadyFound = foundTreasures.some(
-            (t) => t.x === mapCell.x && t.y === mapCell.y
+            (t) => t.x === mapCell.x && t.y === mapCell.y,
           );
 
           if (!alreadyFound) {
             const didCollectTreasure = sessionManager.collectTreasureAtCell(
               currentHero.heroId,
               mapCell.x,
-              mapCell.y
+              mapCell.y,
             );
 
             if (didCollectTreasure) {
               treasureFound = true;
               setFoundTreasures((prev) => [
                 ...prev,
-                { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }
+                { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" },
               ]);
             } else {
               treasureCollectionFailed = true;
               onNotify("Errore durante la raccolta del tesoro.");
             }
-            
+
             break; // Only one treasure per search action
           }
         }
@@ -101,32 +120,37 @@ export function useTreasureSearch({
     sessionManager,
     onNotify,
     onTreasureCardDrawn,
-    onActionDone
+    onActionDone,
+    onForceTurnEnd,
+    visibilityMap,
   ]);
 
   const getFoundTreasures = useCallback(() => {
     return foundTreasures;
   }, [foundTreasures]);
 
-  const applyTreasureEffect = useCallback((card) => {
-    if (!card) return;
+  const applyTreasureEffect = useCallback(
+    (card) => {
+      if (!card) return;
 
-    const currentHero = gameSession?.heroes?.find(
-      (h) => h.turnOrder === gameSession?.currentTurn
-    );
-
-    if (currentHero) {
-      sessionManager.applyTreasureCardEffect(
-        currentHero.heroId,
-        card,
-        onWanderingMonster
+      const currentHero = gameSession?.heroes?.find(
+        (h) => h.turnOrder === gameSession?.currentTurn,
       );
-    }
-  }, [gameSession, sessionManager, onWanderingMonster]);
+
+      if (currentHero) {
+        sessionManager.applyTreasureCardEffect(
+          currentHero.heroId,
+          card,
+          onWanderingMonster,
+        );
+      }
+    },
+    [gameSession, sessionManager, onWanderingMonster],
+  );
 
   return {
     searchTreasure,
     getFoundTreasures,
-    applyTreasureEffect
+    applyTreasureEffect,
   };
 }

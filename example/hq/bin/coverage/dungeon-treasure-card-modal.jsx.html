@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/60</span>
+                <span class='fraction'>0/62</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/60</span>
+                <span class='fraction'>0/62</span>
             </div>
         
             
@@ -122,7 +122,11 @@
 <a name='L57'></a><a href='#L57'>57</a>
 <a name='L58'></a><a href='#L58'>58</a>
 <a name='L59'></a><a href='#L59'>59</a>
-<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -196,15 +200,20 @@
 <span class="cstat-no" title="statement not covered" >    card = null, </span>
 <span class="cstat-no" title="statement not covered" >    onClose = () =&gt; {} </span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >    const [modalState, setModalState] = useState('open');</span>
+<span class="cstat-no" title="statement not covered" >    const [modalState, setModalState] = useState('closed');</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        if (isOpen) {</span>
 <span class="cstat-no" title="statement not covered" >            setModalState('open');</span>
+<span class="cstat-no" title="statement not covered" >        } else {</span>
+<span class="cstat-no" title="statement not covered" >            setModalState('closed');</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >    }, [isOpen]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const handleClose = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const handleClose = useCallback((e) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        if (e) {</span>
+<span class="cstat-no" title="statement not covered" >            e.stopPropagation();</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >        if (modalState !== 'closing') {</span>
 <span class="cstat-no" title="statement not covered" >            setModalState('closing');</span>
 <span class="cstat-no" title="statement not covered" >            onClose();</span>
@@ -212,10 +221,10 @@
 <span class="cstat-no" title="statement not covered" >    }, [modalState, onClose]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    const handleImageError = useCallback((e) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        e.target.src = '/img/placeholder.png';</span>
+<span class="cstat-no" title="statement not covered" >        e.currentTarget.src = '/img/placeholder.png';</span>
 <span class="cstat-no" title="statement not covered" >    }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    if (!isOpen || card == null) {</span>
+<span class="cstat-no" title="statement not covered" >    if (!isOpen || !card) {</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" ></span>
@@ -226,16 +235,13 @@
 <span class="cstat-no" title="statement not covered" >            role="dialog"</span>
 <span class="cstat-no" title="statement not covered" >            aria-modal="true"</span>
 <span class="cstat-no" title="statement not covered" >        &gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div </span>
-<span class="cstat-no" title="statement not covered" >                className="relative flex items-center justify-center p-4"</span>
-<span class="cstat-no" title="statement not covered" >                onClick={(e) =&gt; e.stopPropagation()}</span>
-<span class="cstat-no" title="statement not covered" >            &gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;img</span>
-<span class="cstat-no" title="statement not covered" >                    src={`/img/cartetesoro/${card.immagine}`}</span>
-<span class="cstat-no" title="statement not covered" >                    alt={card.effetto || 'Treasure Card'}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div className="relative flex items-center justify-center max-w-full max-h-full p-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                &lt;img </span>
+<span class="cstat-no" title="statement not covered" >                    src={`/img/cartetesoro/${card?.immagine || ''}`} </span>
+<span class="cstat-no" title="statement not covered" >                    alt={card?.effetto || 'Treasure Card'} </span>
 <span class="cstat-no" title="statement not covered" >                    onError={handleImageError}</span>
+<span class="cstat-no" title="statement not covered" >                    className="max-w-full max-h-[90vh] object-contain cursor-pointer"</span>
 <span class="cstat-no" title="statement not covered" >                    onClick={handleClose}</span>
-<span class="cstat-no" title="statement not covered" >                    className="max-w-full max-h-[90vh] object-contain cursor-pointer rounded-xl shadow-2xl"</span>
 <span class="cstat-no" title="statement not covered" >                /&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
@@ -247,7 +253,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

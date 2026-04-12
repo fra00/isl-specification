@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/198</span>
+                <span class='fraction'>0/202</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/198</span>
+                <span class='fraction'>0/202</span>
             </div>
         
             
@@ -261,7 +261,15 @@
 <a name='L196'></a><a href='#L196'>196</a>
 <a name='L197'></a><a href='#L197'>197</a>
 <a name='L198'></a><a href='#L198'>198</a>
-<a name='L199'></a><a href='#L199'>199</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -470,83 +478,93 @@
 <span class="cstat-no" title="statement not covered" >import React, { useState, useCallback, useMemo } from "react";</span>
 <span class="cstat-no" title="statement not covered" >import { PageNavigationEnum } from "./domain-core";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default function MainMenu({ onChangePageView = () =&gt; {} }) {</span>
+<span class="cstat-no" title="statement not covered" >export default function MainMenu({ onChangePageView }) {</span>
 <span class="cstat-no" title="statement not covered" >  const [isProcessing, setIsProcessing] = useState(false);</span>
 <span class="cstat-no" title="statement not covered" >  const [hoverImage, setHoverImage] = useState(null);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  // Generate static dust particles on mount</span>
-<span class="cstat-no" title="statement not covered" >  const dustParticles = useMemo(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  // Lazy initialization of dust particles to ensure referential stability and avoid re-calculation</span>
+<span class="cstat-no" title="statement not covered" >  const [dustParticles] = useState(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    const particles = [];</span>
 <span class="cstat-no" title="statement not covered" >    for (let i = 0; i &lt; 80; i++) {</span>
 <span class="cstat-no" title="statement not covered" >      particles.push({</span>
 <span class="cstat-no" title="statement not covered" >        id: i,</span>
 <span class="cstat-no" title="statement not covered" >        size: Math.random() * 2 + 1, // 1px to 3px</span>
 <span class="cstat-no" title="statement not covered" >        left: Math.random() * 100, // 0% to 100%</span>
-<span class="cstat-no" title="statement not covered" >        duration: Math.random() * 10 + 15, // 15s to 25s</span>
-<span class="cstat-no" title="statement not covered" >        delay: -(Math.random() * 25), // Negative delay to start already on screen</span>
-<span class="cstat-no" title="statement not covered" >        drift: (Math.random() &gt; 0.5 ? 1 : -1) * (Math.random() * 10 + 10), // +/- 10 to 20px</span>
+<span class="cstat-no" title="statement not covered" >        durationY: Math.random() * 10 + 15, // 15s to 25s</span>
+<span class="cstat-no" title="statement not covered" >        delayY: -(Math.random() * 25), // Negative delay to start already on screen</span>
+<span class="cstat-no" title="statement not covered" >        durationX: Math.random() * 3 + 2, // 2s to 5s for the sine wave drift</span>
+<span class="cstat-no" title="statement not covered" >        delayX: -(Math.random() * 5),</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" >    return particles;</span>
-<span class="cstat-no" title="statement not covered" >  }, []);</span>
+<span class="cstat-no" title="statement not covered" >  });</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const handleClick = useCallback(</span>
+<span class="cstat-no" title="statement not covered" >  const menuItems = useMemo(</span>
+<span class="cstat-no" title="statement not covered" >    () =&gt; [</span>
+<span class="cstat-no" title="statement not covered" >      {</span>
+<span class="cstat-no" title="statement not covered" >        id: "play",</span>
+<span class="cstat-no" title="statement not covered" >        label: "GIOCA",</span>
+<span class="cstat-no" title="statement not covered" >        destination: PageNavigationEnum.PLAY_GAME,</span>
+<span class="cstat-no" title="statement not covered" >        hoverImg: "/img/main-menu/nuova.jpg",</span>
+<span class="cstat-no" title="statement not covered" >      },</span>
+<span class="cstat-no" title="statement not covered" >      {</span>
+<span class="cstat-no" title="statement not covered" >        id: "editor",</span>
+<span class="cstat-no" title="statement not covered" >        label: "EDITOR",</span>
+<span class="cstat-no" title="statement not covered" >        destination: PageNavigationEnum.EDITOR_GAME,</span>
+<span class="cstat-no" title="statement not covered" >        hoverImg: "/img/main-menu/editor.jpg",</span>
+<span class="cstat-no" title="statement not covered" >      },</span>
+<span class="cstat-no" title="statement not covered" >    ],</span>
+<span class="cstat-no" title="statement not covered" >    [],</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const handleItemClick = useCallback(</span>
 <span class="cstat-no" title="statement not covered" >    (destination) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      if (isProcessing) return;</span>
-<span class="cstat-no" title="statement not covered" >      setIsProcessing(true);</span>
-<span class="cstat-no" title="statement not covered" >      onChangePageView(destination);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      // Reset processing after a short delay to prevent immediate double clicks</span>
-<span class="cstat-no" title="statement not covered" >      // if the component doesn't unmount immediately</span>
-<span class="cstat-no" title="statement not covered" >      setTimeout(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        setIsProcessing(false);</span>
-<span class="cstat-no" title="statement not covered" >      }, 500);</span>
+<span class="cstat-no" title="statement not covered" >      setIsProcessing(true);</span>
+<span class="cstat-no" title="statement not covered" >      if (onChangePageView) {</span>
+<span class="cstat-no" title="statement not covered" >        onChangePageView(destination);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >      setIsProcessing(false);</span>
 <span class="cstat-no" title="statement not covered" >    },</span>
 <span class="cstat-no" title="statement not covered" >    [isProcessing, onChangePageView],</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const handleMouseOver = useCallback((imgUrl) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    setHoverImage(imgUrl);</span>
+<span class="cstat-no" title="statement not covered" >  const handleMouseEnter = useCallback((img) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setHoverImage(img);</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const handleMouseOut = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const handleMouseLeave = useCallback(() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setHoverImage(null);</span>
 <span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
 <span class="cstat-no" title="statement not covered" >    &lt;div className="relative w-full h-screen overflow-hidden bg-black"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      {/* Injected Styles for complex animations and text effects */}</span>
+<span class="cstat-no" title="statement not covered" >      {/* Injected Styles for Custom Keyframes and Typography */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;style&gt;{`</span>
 <span class="cstat-no" title="statement not covered" >        @keyframes respiro {</span>
-<span class="cstat-no" title="statement not covered" >          0% { transform: scale(1); }</span>
+<span class="cstat-no" title="statement not covered" >          0% { transform: scale(1.0); }</span>
 <span class="cstat-no" title="statement not covered" >          100% { transform: scale(1.08); }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        @keyframes deriva-nebbia {</span>
+<span class="cstat-no" title="statement not covered" >        @keyframes derivaNebbia {</span>
 <span class="cstat-no" title="statement not covered" >          0% { background-position-x: 0%; }</span>
 <span class="cstat-no" title="statement not covered" >          100% { background-position-x: 100%; }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        @keyframes fluttuazione-pulviscolo {</span>
-<span class="cstat-no" title="statement not covered" >          0% { </span>
-<span class="cstat-no" title="statement not covered" >            transform: translate3d(0, 110vh, 0); </span>
-<span class="cstat-no" title="statement not covered" >            opacity: 0; </span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >          10% { opacity: 1; }</span>
-<span class="cstat-no" title="statement not covered" >          50% { transform: translate3d(var(--drift), 50vh, 0); }</span>
-<span class="cstat-no" title="statement not covered" >          90% { opacity: 1; }</span>
-<span class="cstat-no" title="statement not covered" >          100% { </span>
-<span class="cstat-no" title="statement not covered" >            transform: translate3d(calc(var(--drift) * -1), -10vh, 0); </span>
-<span class="cstat-no" title="statement not covered" >            opacity: 0; </span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        @keyframes bagliore-vivo {</span>
+<span class="cstat-no" title="statement not covered" >        @keyframes baglioreVivo {</span>
 <span class="cstat-no" title="statement not covered" >          0%, 100% { opacity: 0.4; transform: scale(1); }</span>
 <span class="cstat-no" title="statement not covered" >          50% { opacity: 0.8; transform: scale(1.02); }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        .menu-item-text {</span>
+<span class="cstat-no" title="statement not covered" >        @keyframes dustY {</span>
+<span class="cstat-no" title="statement not covered" >          0% { top: 110%; opacity: 0; }</span>
+<span class="cstat-no" title="statement not covered" >          10% { opacity: 1; }</span>
+<span class="cstat-no" title="statement not covered" >          90% { opacity: 1; }</span>
+<span class="cstat-no" title="statement not covered" >          100% { top: -10%; opacity: 0; }</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        @keyframes dustX {</span>
+<span class="cstat-no" title="statement not covered" >          0%, 100% { transform: translateX(-20px); }</span>
+<span class="cstat-no" title="statement not covered" >          50% { transform: translateX(20px); }</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        .menu-text {</span>
 <span class="cstat-no" title="statement not covered" >          font-family: fantasy;</span>
 <span class="cstat-no" title="statement not covered" >          font-weight: bold;</span>
 <span class="cstat-no" title="statement not covered" >          font-size: 4rem;</span>
@@ -555,43 +573,41 @@
 <span class="cstat-no" title="statement not covered" >          -webkit-text-fill-color: transparent;</span>
 <span class="cstat-no" title="statement not covered" >          -webkit-text-stroke: 2px #2a2a2a;</span>
 <span class="cstat-no" title="statement not covered" >          filter: drop-shadow(4px 4px 2px rgba(0,0,0,1));</span>
-<span class="cstat-no" title="statement not covered" >          cursor: pointer;</span>
 <span class="cstat-no" title="statement not covered" >          transition: all 0.3s ease;</span>
-<span class="cstat-no" title="statement not covered" >          text-transform: uppercase;</span>
-<span class="cstat-no" title="statement not covered" >          letter-spacing: 0.1em;</span>
+<span class="cstat-no" title="statement not covered" >          cursor: pointer;</span>
+<span class="cstat-no" title="statement not covered" >          margin: 1rem 0;</span>
+<span class="cstat-no" title="statement not covered" >          text-align: center;</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        .menu-item-text:hover {</span>
-<span class="cstat-no" title="statement not covered" >          transform: scale(1.05) translateX(10px);</span>
-<span class="cstat-no" title="statement not covered" >          -webkit-text-stroke: 1px #e8c988;</span>
-<span class="cstat-no" title="statement not covered" >          filter: drop-shadow(4px 4px 8px rgba(214, 179, 106, 0.6));</span>
+<span class="cstat-no" title="statement not covered" >        .menu-text:hover {</span>
+<span class="cstat-no" title="statement not covered" >          transform: scale(1.1) translateX(10px);</span>
+<span class="cstat-no" title="statement not covered" >          -webkit-text-stroke: 1px #5a5a5a;</span>
+<span class="cstat-no" title="statement not covered" >          filter: drop-shadow(4px 4px 2px rgba(0,0,0,1)) drop-shadow(0 0 15px rgba(214, 179, 106, 0.6));</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" >      `}&lt;/style&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 0: BackgroundLayer */}</span>
+<span class="cstat-no" title="statement not covered" >      {/* BackgroundLayer (z-index 0) */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;div</span>
-<span class="cstat-no" title="statement not covered" >        className="absolute inset-0 z-0 w-full h-full bg-center bg-cover"</span>
+<span class="cstat-no" title="statement not covered" >        className="absolute inset-0 z-[0]"</span>
 <span class="cstat-no" title="statement not covered" >        style={{</span>
 <span class="cstat-no" title="statement not covered" >          backgroundImage: "url(/img/menusfondo.jpg)",</span>
+<span class="cstat-no" title="statement not covered" >          backgroundSize: "cover",</span>
+<span class="cstat-no" title="statement not covered" >          backgroundPosition: "center",</span>
 <span class="cstat-no" title="statement not covered" >          animation: "respiro 30s ease-in-out infinite alternate",</span>
 <span class="cstat-no" title="statement not covered" >        }}</span>
 <span class="cstat-no" title="statement not covered" >      /&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 2: MouseOverImageLayer */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div</span>
-<span class="cstat-no" title="statement not covered" >        className="absolute top-0 right-0 h-[30%] w-auto z-[2] transition-opacity duration-500 ease-in-out"</span>
-<span class="cstat-no" title="statement not covered" >        style={{ opacity: hoverImage ? 0.8 : 0 }}</span>
-<span class="cstat-no" title="statement not covered" >      &gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* MouseOverImageLayer (z-index 2) */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="absolute top-0 right-0 h-[30%] w-auto z-[2] opacity-80 pointer-events-none"&gt;</span>
 <span class="cstat-no" title="statement not covered" >        {hoverImage &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;img</span>
 <span class="cstat-no" title="statement not covered" >            src={hoverImage}</span>
-<span class="cstat-no" title="statement not covered" >            alt="Preview"</span>
-<span class="cstat-no" title="statement not covered" >            className="h-full w-auto object-contain mix-blend-screen"</span>
+<span class="cstat-no" title="statement not covered" >            alt="Menu Preview"</span>
+<span class="cstat-no" title="statement not covered" >            className="h-full w-auto object-contain"</span>
 <span class="cstat-no" title="statement not covered" >          /&gt;</span>
 <span class="cstat-no" title="statement not covered" >        )}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 5: MistOverlay */}</span>
+<span class="cstat-no" title="statement not covered" >      {/* MistOverlay (z-index 5) */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;div</span>
 <span class="cstat-no" title="statement not covered" >        className="absolute inset-0 z-[5] pointer-events-none opacity-30 mix-blend-screen"</span>
 <span class="cstat-no" title="statement not covered" >        style={{</span>
@@ -599,60 +615,56 @@
 <span class="cstat-no" title="statement not covered" >          backgroundRepeat: "repeat-x",</span>
 <span class="cstat-no" title="statement not covered" >          backgroundSize: "200% 100%",</span>
 <span class="cstat-no" title="statement not covered" >          filter: "blur(5px)",</span>
-<span class="cstat-no" title="statement not covered" >          animation: "deriva-nebbia 60s linear infinite",</span>
+<span class="cstat-no" title="statement not covered" >          animation: "derivaNebbia 60s linear infinite",</span>
 <span class="cstat-no" title="statement not covered" >        }}</span>
 <span class="cstat-no" title="statement not covered" >      /&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 8: DustOverlay */}</span>
+<span class="cstat-no" title="statement not covered" >      {/* DustOverlay (z-index 8) */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;div className="absolute inset-0 z-[8] pointer-events-none overflow-hidden mix-blend-screen"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        {dustParticles.map((particle) =&gt; (</span>
+<span class="cstat-no" title="statement not covered" >        {dustParticles.map((p) =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;div</span>
-<span class="cstat-no" title="statement not covered" >            key={particle.id}</span>
-<span class="cstat-no" title="statement not covered" >            className="absolute rounded-full bg-[#FFD700]"</span>
+<span class="cstat-no" title="statement not covered" >            key={p.id}</span>
+<span class="cstat-no" title="statement not covered" >            className="absolute"</span>
 <span class="cstat-no" title="statement not covered" >            style={{</span>
-<span class="cstat-no" title="statement not covered" >              width: `${particle.size}px`,</span>
-<span class="cstat-no" title="statement not covered" >              height: `${particle.size}px`,</span>
-<span class="cstat-no" title="statement not covered" >              left: `${particle.left}%`,</span>
-<span class="cstat-no" title="statement not covered" >              top: 0, // Starting position is handled by transform in keyframes</span>
-<span class="cstat-no" title="statement not covered" >              "--drift": `${particle.drift}px`,</span>
-<span class="cstat-no" title="statement not covered" >              animation: `fluttuazione-pulviscolo ${particle.duration}s linear infinite`,</span>
-<span class="cstat-no" title="statement not covered" >              animationDelay: `${particle.delay}s`,</span>
+<span class="cstat-no" title="statement not covered" >              left: `${p.left}%`,</span>
+<span class="cstat-no" title="statement not covered" >              width: `${p.size}px`,</span>
+<span class="cstat-no" title="statement not covered" >              height: `${p.size}px`,</span>
+<span class="cstat-no" title="statement not covered" >              animation: `dustY ${p.durationY}s linear ${p.delayY}s infinite`,</span>
 <span class="cstat-no" title="statement not covered" >            }}</span>
-<span class="cstat-no" title="statement not covered" >          /&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div</span>
+<span class="cstat-no" title="statement not covered" >              className="w-full h-full rounded-full bg-[#FFD700]"</span>
+<span class="cstat-no" title="statement not covered" >              style={{</span>
+<span class="cstat-no" title="statement not covered" >                animation: `dustX ${p.durationX}s ease-in-out ${p.delayX}s infinite alternate`,</span>
+<span class="cstat-no" title="statement not covered" >              }}</span>
+<span class="cstat-no" title="statement not covered" >            /&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >        ))}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 10: CandleLightOverlay */}</span>
+<span class="cstat-no" title="statement not covered" >      {/* CandleLightOverlay (z-index 10) */}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;div</span>
 <span class="cstat-no" title="statement not covered" >        className="absolute inset-0 z-[10] pointer-events-none mix-blend-screen"</span>
 <span class="cstat-no" title="statement not covered" >        style={{</span>
 <span class="cstat-no" title="statement not covered" >          background:</span>
 <span class="cstat-no" title="statement not covered" >            "radial-gradient(circle at 50% 60%, rgba(255, 160, 20, 0.4) 0%, transparent 70%)",</span>
-<span class="cstat-no" title="statement not covered" >          animation: "bagliore-vivo 4s ease-in-out infinite",</span>
+<span class="cstat-no" title="statement not covered" >          animation: "baglioreVivo 4s ease-in-out infinite",</span>
 <span class="cstat-no" title="statement not covered" >        }}</span>
 <span class="cstat-no" title="statement not covered" >      /&gt;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >      {/* Z-Index 20: UIContent */}</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="absolute inset-0 z-[20] flex flex-col items-center justify-center pt-[30vh]"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;nav className="flex flex-col gap-8 items-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* UIContent (z-index 20) */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="absolute inset-0 z-[20] flex flex-col items-center justify-end pb-[15vh]"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {menuItems.map((item) =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;div</span>
-<span class="cstat-no" title="statement not covered" >            className="menu-item-text"</span>
-<span class="cstat-no" title="statement not covered" >            onClick={() =&gt; handleClick(PageNavigationEnum.PLAY_GAME)}</span>
-<span class="cstat-no" title="statement not covered" >            onMouseEnter={() =&gt; handleMouseOver("/img/main-menu/nuova.jpg")}</span>
-<span class="cstat-no" title="statement not covered" >            onMouseLeave={handleMouseOut}</span>
+<span class="cstat-no" title="statement not covered" >            key={item.id}</span>
+<span class="cstat-no" title="statement not covered" >            className="menu-text"</span>
+<span class="cstat-no" title="statement not covered" >            onClick={() =&gt; handleItemClick(item.destination)}</span>
+<span class="cstat-no" title="statement not covered" >            onMouseEnter={() =&gt; handleMouseEnter(item.hoverImg)}</span>
+<span class="cstat-no" title="statement not covered" >            onMouseLeave={handleMouseLeave}</span>
 <span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            Gioca</span>
+<span class="cstat-no" title="statement not covered" >            {item.label}</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >          &lt;div</span>
-<span class="cstat-no" title="statement not covered" >            className="menu-item-text"</span>
-<span class="cstat-no" title="statement not covered" >            onClick={() =&gt; handleClick(PageNavigationEnum.EDITOR_GAME)}</span>
-<span class="cstat-no" title="statement not covered" >            onMouseEnter={() =&gt; handleMouseOver("/img/main-menu/editor.jpg")}</span>
-<span class="cstat-no" title="statement not covered" >            onMouseLeave={handleMouseOut}</span>
-<span class="cstat-no" title="statement not covered" >          &gt;</span>
-<span class="cstat-no" title="statement not covered" >            Editor</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/nav&gt;</span>
+<span class="cstat-no" title="statement not covered" >        ))}</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
@@ -664,7 +676,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

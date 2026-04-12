@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">93.67% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>61/61</span>
+                <span class='fraction'>74/79</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">77.77% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>10/12</span>
+                <span class='fraction'>14/18</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">93.67% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>61/61</span>
+                <span class='fraction'>74/79</span>
             </div>
         
             
@@ -123,7 +123,25 @@
 <a name='L58'></a><a href='#L58'>58</a>
 <a name='L59'></a><a href='#L59'>59</a>
 <a name='L60'></a><a href='#L60'>60</a>
-<a name='L61'></a><a href='#L61'>61</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -134,6 +152,19 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -163,6 +194,11 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -192,49 +228,67 @@
  */
 &nbsp;
 import { useCallback } from 'react';
+import { HeroState } from './domain-session';
 &nbsp;
-export function useCampaignManager(config = {}) {
-  const STORAGE_KEY = "hq_campaign_data";
+export const useCampaignManager = (config = {}) =&gt; {
+  const notifySaveError = useCallback((message) =&gt; {
+    if (typeof config?.onError === 'function') <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >      config.onError(message);</span>
+<span class="cstat-no" title="statement not covered" >      return;</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
 &nbsp;
+    if (typeof globalThis.alert === 'function') {
+      globalThis.alert(message);
+      return;
+<span class="branch-0 cbranch-no" title="branch not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    console.warn(message);</span>
+  }, [config]);
+  
   const saveCampaign = useCallback((heroes, nextMissionIndex) =&gt; {
     const campaignData = {
-      heroes: heroes != null ? heroes <span class="branch-0 cbranch-no" title="branch not covered" >: [],</span>
+      heroes: heroes <span class="branch-0 cbranch-no" title="branch not covered" >|| [],</span>
       nextMissionIndex: nextMissionIndex != null ? nextMissionIndex <span class="branch-0 cbranch-no" title="branch not covered" >: 0,</span>
       timestamp: Date.now()
     };
 &nbsp;
     try {
       const jsonString = JSON.stringify(campaignData);
-      localStorage.setItem(STORAGE_KEY, jsonString);
+      localStorage.setItem("hq_campaign_data", jsonString);
     } catch (error) {
       console.error("Error saving campaign:", error);
-      alert("Could not save progress");
+      notifySaveError("Could not save progress");
     }
-  }, []);
+  }, [notifySaveError]);
 &nbsp;
   const loadCampaign = useCallback(() =&gt; {
-    const item = localStorage.getItem(STORAGE_KEY);
+    const item = localStorage.getItem("hq_campaign_data");
     
-    if (!item) {
+    if (!item || item.trim() === "") {
       return null;
     }
 &nbsp;
     try {
       const campaignData = JSON.parse(item);
+      
+      if (campaignData &amp;&amp; Array.isArray(campaignData.heroes)) {
+        campaignData.heroes = campaignData.heroes.map(heroData =&gt; HeroState(heroData));
+      }
+      
       return campaignData;
     } catch (error) {
-      console.error("Error parsing campaign data:", error);
+      console.error("Error loading campaign:", error);
       return null;
     }
   }, []);
 &nbsp;
   const hasSavedCampaign = useCallback(() =&gt; {
-    const item = localStorage.getItem(STORAGE_KEY);
-    return item != null &amp;&amp; item !== "";
+    const item = localStorage.getItem("hq_campaign_data");
+    return item != null &amp;&amp; item.trim() !== "";
   }, []);
 &nbsp;
   const resetCampaign = useCallback(() =&gt; {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("hq_campaign_data");
   }, []);
 &nbsp;
   return {
@@ -243,14 +297,14 @@ export function useCampaignManager(config = {}) {
     hasSavedCampaign,
     resetCampaign
   };
-}</pre></td></tr></table></pre>
+};</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

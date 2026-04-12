@@ -118,6 +118,9 @@ Event script location and data.
 - `y`: Y coordinate (Integer).
 - `text`: Text of the script (String).
 - `evento`: Event ID (Integer).
+- `unavolta`: Indicates if the script can run only once (Boolean).
+- `morto`: Indicates if an attack script must trigger on monster death (Boolean).
+- `idmosc`: Monster ID bound to attack events (Integer).
 
 #### `Campaign`
 

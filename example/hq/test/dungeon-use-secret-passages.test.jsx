@@ -71,4 +71,52 @@ describe('useSecretPassages', () => {
     });
     expect(onNotify).toHaveBeenCalledTimes(1);
   });
+
+  it('prioritizes mission scripts for event 5 and merges scripted passages into local discovery state', () => {
+    useVisibilityCalc.mockReturnValue({
+      calculateVisibleCells: vi.fn(() => [{ x: 2, y: 1 }, { x: 2, y: 3 }]),
+    });
+
+    const onActionDone = vi.fn();
+    const onForceTurnEnd = vi.fn();
+    const sessionManager = {
+      executeMissionScripts: vi.fn(() => ({
+        handled: true,
+        session: {
+          currentTurn: 1,
+          heroes: [{ turnOrder: 1, x: 2, y: 2 }],
+          currentMap: {
+            grid: [{ x: 2, y: 2, psgg: { ps: 1, oriz: true } }],
+          },
+        },
+        notifications: [],
+        revealPoints: [],
+        effects: { forceFinishTurn: false },
+      })),
+    };
+
+    const { result } = renderHook(() => useSecretPassages({
+      gameSession: {
+        currentTurn: 1,
+        heroes: [{ turnOrder: 1, x: 2, y: 2 }],
+        currentMap: { grid: [] },
+      },
+      visibilityMap: { data: [{ x: 2, y: 2, fog: false }, { x: 2, y: 1, fog: false }] },
+      onNotify: vi.fn(),
+      onActionDone,
+      onForceTurnEnd,
+      sessionManager,
+    }));
+
+    act(() => {
+      result.current.searchPassages();
+    });
+
+    expect(sessionManager.executeMissionScripts).toHaveBeenCalledWith(expect.objectContaining({ eventType: 5 }));
+    expect(result.current.getFoundPassages()).toEqual({
+      visiblePassages: [{ x: 2, y: 2, img: 'pso.jpg', oriz: true }],
+    });
+    expect(onActionDone).toHaveBeenCalledTimes(1);
+    expect(onForceTurnEnd).not.toHaveBeenCalled();
+  });
 });

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/109</span>
+                <span class='fraction'>0/105</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/109</span>
+                <span class='fraction'>0/105</span>
             </div>
         
             
@@ -167,15 +167,7 @@
 <a name='L102'></a><a href='#L102'>102</a>
 <a name='L103'></a><a href='#L103'>103</a>
 <a name='L104'></a><a href='#L104'>104</a>
-<a name='L105'></a><a href='#L105'>105</a>
-<a name='L106'></a><a href='#L106'>106</a>
-<a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a>
-<a name='L109'></a><a href='#L109'>109</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L105'></a><a href='#L105'>105</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -287,106 +279,102 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import { useCallback } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import { useCallback } from "react";</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export function useMapInteraction({ gameSession = null, foundPassages = [], sessionManager = null } = {}) {</span>
+<span class="cstat-no" title="statement not covered" >export function useMapInteraction({ gameSession, foundPassages = [], sessionManager }) {</span>
+<span class="cstat-no" title="statement not covered" >  const isFrontOfDoor = useCallback((x, y) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!gameSession?.currentMap?.grid) return null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const neighbors = [</span>
+<span class="cstat-no" title="statement not covered" >      { nx: x, ny: y },</span>
+<span class="cstat-no" title="statement not covered" >      { nx: x, ny: y - 1 },</span>
+<span class="cstat-no" title="statement not covered" >      { nx: x, ny: y + 1 },</span>
+<span class="cstat-no" title="statement not covered" >      { nx: x - 1, ny: y },</span>
+<span class="cstat-no" title="statement not covered" >      { nx: x + 1, ny: y }</span>
+<span class="cstat-no" title="statement not covered" >    ];</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    let foundPassage = null;</span>
+<span class="cstat-no" title="statement not covered" >    let isHorizontal = false;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    for (const { nx, ny } of neighbors) {</span>
+<span class="cstat-no" title="statement not covered" >      const door = gameSession.currentMap.porte?.find(p =&gt; p.x === nx &amp;&amp; p.y === ny);</span>
+<span class="cstat-no" title="statement not covered" >      const secretPassage = foundPassages?.find(p =&gt; p.x === nx &amp;&amp; p.y === ny);</span>
+<span class="cstat-no" title="statement not covered" >      const isOpened = gameSession.openedDoors?.includes(`${nx},${ny}`);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if ((door || secretPassage) &amp;&amp; !isOpened) {</span>
+<span class="cstat-no" title="statement not covered" >        foundPassage = { x: nx, y: ny };</span>
+<span class="cstat-no" title="statement not covered" >        if (door) {</span>
+<span class="cstat-no" title="statement not covered" >          isHorizontal = door.oriz;</span>
+<span class="cstat-no" title="statement not covered" >        } else {</span>
+<span class="cstat-no" title="statement not covered" >          const gridCell = gameSession.currentMap.grid.find(c =&gt; c.x === nx &amp;&amp; c.y === ny);</span>
+<span class="cstat-no" title="statement not covered" >          isHorizontal = gridCell?.psgg?.oriz ?? false;</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        break;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (!foundPassage) return null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const { x: px, y: py } = foundPassage;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (isHorizontal) {</span>
+<span class="cstat-no" title="statement not covered" >      if (!(x === px &amp;&amp; (y === py || y === py - 1 || y === py + 1))) {</span>
+<span class="cstat-no" title="statement not covered" >        return null;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      if (!(y === py &amp;&amp; (x === px || x === px - 1 || x === px + 1))) {</span>
+<span class="cstat-no" title="statement not covered" >        return null;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const currentHero = gameSession.heroes?.find(h =&gt; h.turnOrder === gameSession.currentTurn);</span>
+<span class="cstat-no" title="statement not covered" >    if (!currentHero) return null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const heroCell = gameSession.currentMap.grid.find(c =&gt; c.x === currentHero.x &amp;&amp; c.y === currentHero.y);</span>
+<span class="cstat-no" title="statement not covered" >    const heroArea = heroCell?.valo;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    let sideACoords, sideBCoords;</span>
+<span class="cstat-no" title="statement not covered" >    if (isHorizontal) {</span>
+<span class="cstat-no" title="statement not covered" >      sideACoords = { x: px, y: py - 1 };</span>
+<span class="cstat-no" title="statement not covered" >      sideBCoords = { x: px, y: py };</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      sideACoords = { x: px - 1, y: py };</span>
+<span class="cstat-no" title="statement not covered" >      sideBCoords = { x: px, y: py };</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const sideACell = gameSession.currentMap.grid.find(c =&gt; c.x === sideACoords.x &amp;&amp; c.y === sideACoords.y);</span>
 <span class="cstat-no" title="statement not covered" >    </span>
-<span class="cstat-no" title="statement not covered" >    const isFrontOfDoor = useCallback((x, y) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!gameSession?.currentMap?.grid) return null;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const neighbors = [</span>
-<span class="cstat-no" title="statement not covered" >            { nx: x, ny: y },</span>
-<span class="cstat-no" title="statement not covered" >            { nx: x, ny: y - 1 },</span>
-<span class="cstat-no" title="statement not covered" >            { nx: x, ny: y + 1 },</span>
-<span class="cstat-no" title="statement not covered" >            { nx: x - 1, ny: y },</span>
-<span class="cstat-no" title="statement not covered" >            { nx: x + 1, ny: y }</span>
-<span class="cstat-no" title="statement not covered" >        ];</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        let foundPassage = null;</span>
-<span class="cstat-no" title="statement not covered" >        let isHorizontal = false;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const openedDoors = gameSession.openedDoors || [];</span>
-<span class="cstat-no" title="statement not covered" >        const porte = gameSession.currentMap.porte || [];</span>
-<span class="cstat-no" title="statement not covered" >        const grid = gameSession.currentMap.grid || [];</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        for (const { nx, ny } of neighbors) {</span>
-<span class="cstat-no" title="statement not covered" >            const coordKey = `${nx},${ny}`;</span>
-<span class="cstat-no" title="statement not covered" >            if (openedDoors.includes(coordKey)) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            const door = porte.find(p =&gt; p.x === nx &amp;&amp; p.y === ny);</span>
-<span class="cstat-no" title="statement not covered" >            const isSecret = foundPassages.some(p =&gt; p.x === nx &amp;&amp; p.y === ny);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (door) {</span>
-<span class="cstat-no" title="statement not covered" >                foundPassage = { x: nx, y: ny };</span>
-<span class="cstat-no" title="statement not covered" >                isHorizontal = door.oriz;</span>
-<span class="cstat-no" title="statement not covered" >                break;</span>
-<span class="cstat-no" title="statement not covered" >            } else if (isSecret) {</span>
-<span class="cstat-no" title="statement not covered" >                foundPassage = { x: nx, y: ny };</span>
-<span class="cstat-no" title="statement not covered" >                const cell = grid.find(c =&gt; c.x === nx &amp;&amp; c.y === ny);</span>
-<span class="cstat-no" title="statement not covered" >                isHorizontal = cell?.psgg?.oriz === true;</span>
-<span class="cstat-no" title="statement not covered" >                break;</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (!foundPassage) return null;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Orientation Validation</span>
-<span class="cstat-no" title="statement not covered" >        if (isHorizontal) {</span>
-<span class="cstat-no" title="statement not covered" >            if (!(x === foundPassage.x &amp;&amp; Math.abs(y - foundPassage.y) &lt;= 1)) return null;</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >            if (!(y === foundPassage.y &amp;&amp; Math.abs(x - foundPassage.x) &lt;= 1)) return null;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Determine Logical Destination</span>
-<span class="cstat-no" title="statement not covered" >        const currentTurn = gameSession.currentTurn;</span>
-<span class="cstat-no" title="statement not covered" >        const hero = gameSession.heroes?.find(h =&gt; h.turnOrder === currentTurn);</span>
-<span class="cstat-no" title="statement not covered" >        if (!hero) return null;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const heroCell = grid.find(c =&gt; c.x === hero.x &amp;&amp; c.y === hero.y);</span>
-<span class="cstat-no" title="statement not covered" >        const heroArea = heroCell?.valo;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        let sideA, sideB;</span>
-<span class="cstat-no" title="statement not covered" >        if (isHorizontal) {</span>
-<span class="cstat-no" title="statement not covered" >            sideA = { x: foundPassage.x, y: foundPassage.y - 1 };</span>
-<span class="cstat-no" title="statement not covered" >            sideB = { x: foundPassage.x, y: foundPassage.y };</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >            sideA = { x: foundPassage.x - 1, y: foundPassage.y };</span>
-<span class="cstat-no" title="statement not covered" >            sideB = { x: foundPassage.x, y: foundPassage.y };</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const sideACell = grid.find(c =&gt; c.x === sideA.x &amp;&amp; c.y === sideA.y);</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        let destination;</span>
-<span class="cstat-no" title="statement not covered" >        if (sideACell &amp;&amp; sideACell.valo === heroArea) {</span>
-<span class="cstat-no" title="statement not covered" >            destination = sideB;</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >            destination = sideA;</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        return {</span>
-<span class="cstat-no" title="statement not covered" >            found: true,</span>
-<span class="cstat-no" title="statement not covered" >            destination,</span>
-<span class="cstat-no" title="statement not covered" >            passageCell: foundPassage</span>
-<span class="cstat-no" title="statement not covered" >        };</span>
-<span class="cstat-no" title="statement not covered" >    }, [gameSession, foundPassages]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const openPassage = useCallback((passageX, passageY, destinationX, destinationY) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!gameSession?.currentMap) return false;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const porte = gameSession.currentMap.porte || [];</span>
-<span class="cstat-no" title="statement not covered" >        const isKnownDoor = porte.some(p =&gt; p.x === passageX &amp;&amp; p.y === passageY);</span>
-<span class="cstat-no" title="statement not covered" >        const isKnownPassage = foundPassages.some(p =&gt; p.x === passageX &amp;&amp; p.y === passageY);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (!isKnownDoor &amp;&amp; !isKnownPassage) return false;</span>
-<span class="cstat-no" title="statement not covered" >        if (!sessionManager?.openPassage) return false;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        return sessionManager.openPassage(passageX, passageY, destinationX, destinationY, foundPassages);</span>
-<span class="cstat-no" title="statement not covered" >    }, [gameSession, foundPassages, sessionManager]);</span>
+<span class="cstat-no" title="statement not covered" >    let destination;</span>
+<span class="cstat-no" title="statement not covered" >    if (sideACell?.valo === heroArea) {</span>
+<span class="cstat-no" title="statement not covered" >      destination = sideBCoords;</span>
+<span class="cstat-no" title="statement not covered" >    } else {</span>
+<span class="cstat-no" title="statement not covered" >      destination = sideACoords;</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
-<span class="cstat-no" title="statement not covered" >        isFrontOfDoor,</span>
-<span class="cstat-no" title="statement not covered" >        openPassage</span>
+<span class="cstat-no" title="statement not covered" >      found: true,</span>
+<span class="cstat-no" title="statement not covered" >      destination,</span>
+<span class="cstat-no" title="statement not covered" >      passageCell: foundPassage</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >  }, [gameSession, foundPassages]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const openPassage = useCallback((passageX, passageY, destinationX, destinationY) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (!gameSession?.currentMap) return false;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const isKnownDoor = gameSession.currentMap.porte?.some(p =&gt; p.x === passageX &amp;&amp; p.y === passageY);</span>
+<span class="cstat-no" title="statement not covered" >    const isKnownPassage = foundPassages?.some(p =&gt; p.x === passageX &amp;&amp; p.y === passageY);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (!isKnownDoor &amp;&amp; !isKnownPassage) {</span>
+<span class="cstat-no" title="statement not covered" >      return false;</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    return sessionManager?.openPassage(passageX, passageY, destinationX, destinationY, foundPassages) ?? false;</span>
+<span class="cstat-no" title="statement not covered" >  }, [gameSession, foundPassages, sessionManager]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  return {</span>
+<span class="cstat-no" title="statement not covered" >    isFrontOfDoor,</span>
+<span class="cstat-no" title="statement not covered" >    openPassage</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -394,7 +382,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

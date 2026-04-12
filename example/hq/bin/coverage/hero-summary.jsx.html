@@ -294,105 +294,105 @@
 <span class="cstat-no" title="statement not covered" >import React, { useCallback } from 'react';</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export default function HeroSummary({</span>
-<span class="cstat-no" title="statement not covered" >    heroes = [],</span>
-<span class="cstat-no" title="statement not covered" >    staticHeroes = [],</span>
-<span class="cstat-no" title="statement not covered" >    staticEquipment = [],</span>
-<span class="cstat-no" title="statement not covered" >    selectedIndex = 0,</span>
-<span class="cstat-no" title="statement not covered" >    onSelect</span>
+<span class="cstat-no" title="statement not covered" >  heroes = [],</span>
+<span class="cstat-no" title="statement not covered" >  staticHeroes = [],</span>
+<span class="cstat-no" title="statement not covered" >  equipmentList = [],</span>
+<span class="cstat-no" title="statement not covered" >  selectedIndex = 0,</span>
+<span class="cstat-no" title="statement not covered" >  onSelect = () =&gt; {}</span>
 <span class="cstat-no" title="statement not covered" >}) {</span>
-<span class="cstat-no" title="statement not covered" >    // Guard: No heroes available</span>
-<span class="cstat-no" title="statement not covered" >    if (!heroes || heroes.length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >        return (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="p-4 text-gray-400 bg-gray-900 border-2 border-gray-700 rounded-lg font-serif text-center shadow-xl"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                No Heroes Available</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >        );</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Guard: Ensure selectedIndex is within bounds</span>
-<span class="cstat-no" title="statement not covered" >    const safeIndex = selectedIndex &gt;= heroes.length ? 0 : selectedIndex;</span>
-<span class="cstat-no" title="statement not covered" >    const currentHeroState = heroes[safeIndex];</span>
-<span class="cstat-no" title="statement not covered" >    </span>
-<span class="cstat-no" title="statement not covered" >    // Find static hero definition either from staticHeroes list or embedded in state</span>
-<span class="cstat-no" title="statement not covered" >    const staticHero = staticHeroes.find(h =&gt; h?.id === currentHeroState?.heroId) || currentHeroState?.hero;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    // Capability: handleSelect</span>
-<span class="cstat-no" title="statement not covered" >    const handleSelect = useCallback((e) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (onSelect) {</span>
-<span class="cstat-no" title="statement not covered" >            onSelect(Number(e.target.value));</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >    }, [onSelect]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Guard: If no heroes are available</span>
+<span class="cstat-no" title="statement not covered" >  if (!heroes || heroes.length === 0) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="bg-gray-900 border-2 border-gray-700 text-gray-200 p-4 rounded-lg shadow-2xl font-serif w-full max-w-sm flex flex-col"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >            {/* SELECTOR */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="mb-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;select</span>
-<span class="cstat-no" title="statement not covered" >                    className="w-full bg-yellow-900 text-yellow-100 border border-yellow-700 p-2 rounded shadow-inner focus:outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer appearance-none"</span>
-<span class="cstat-no" title="statement not covered" >                    value={safeIndex}</span>
-<span class="cstat-no" title="statement not covered" >                    onChange={handleSelect}</span>
-<span class="cstat-no" title="statement not covered" >                &gt;</span>
-<span class="cstat-no" title="statement not covered" >                    {heroes.map((h, idx) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                        const sHero = staticHeroes.find(sh =&gt; sh?.id === h?.heroId) || h?.hero;</span>
-<span class="cstat-no" title="statement not covered" >                        return (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;option key={idx} value={idx}&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                {sHero?.classe || `Hero ${h?.heroId}`}</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/option&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        );</span>
-<span class="cstat-no" title="statement not covered" >                    })}</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/select&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            {/* PORTRAIT */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="border-4 border-gray-800 rounded overflow-hidden mb-4 bg-black flex justify-center items-center h-56 shadow-inner relative"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                {staticHero?.portrait ? (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;img </span>
-<span class="cstat-no" title="statement not covered" >                        src={`/img/eroi/${staticHero.portrait}`} </span>
-<span class="cstat-no" title="statement not covered" >                        alt={staticHero.classe || 'Hero Portrait'} </span>
-<span class="cstat-no" title="statement not covered" >                        className="max-w-full max-h-full object-contain"</span>
-<span class="cstat-no" title="statement not covered" >                    /&gt;</span>
-<span class="cstat-no" title="statement not covered" >                ) : (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;span className="text-gray-600 italic"&gt;No Portrait&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                )}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            {/* GOLD */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="bg-gray-800 p-3 rounded border border-gray-700 mb-4 flex justify-between items-center shadow"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;span className="text-yellow-600 font-bold tracking-widest uppercase text-sm"&gt;Gold&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;span className="text-yellow-400 font-mono text-lg"&gt;{currentHeroState?.gold ?? 0}&lt;/span&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            {/* EQUIPMENT */}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="bg-gray-800 p-3 rounded border border-gray-700 h-48 flex flex-col shadow"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;h3 className="text-gray-500 border-b border-gray-700 mb-2 pb-1 text-xs uppercase tracking-widest font-bold"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    Equipment</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/h3&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;div className="overflow-y-auto flex-1 pr-1"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;ul className="space-y-2"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        {currentHeroState?.equipment?.length &gt; 0 ? (</span>
-<span class="cstat-no" title="statement not covered" >                            currentHeroState.equipment.map((eqId, idx) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                                const eq = staticEquipment.find(e =&gt; e?.id === eqId);</span>
-<span class="cstat-no" title="statement not covered" >                                return (</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;li </span>
-<span class="cstat-no" title="statement not covered" >                                        key={`${eqId}-${idx}`} </span>
-<span class="cstat-no" title="statement not covered" >                                        className="text-sm text-gray-300 bg-gray-700 px-2 py-1.5 rounded border border-gray-600 shadow-sm"</span>
-<span class="cstat-no" title="statement not covered" >                                    &gt;</span>
-<span class="cstat-no" title="statement not covered" >                                        {eq?.nome || `Unknown Item (${eqId})`}</span>
-<span class="cstat-no" title="statement not covered" >                                    &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                );</span>
-<span class="cstat-no" title="statement not covered" >                            })</span>
-<span class="cstat-no" title="statement not covered" >                        ) : (</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;li className="text-sm text-gray-600 italic text-center mt-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                                No equipment</span>
-<span class="cstat-no" title="statement not covered" >                            &lt;/li&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        )}</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/ul&gt;</span>
-<span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            </span>
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="p-4 bg-gray-900 text-gray-300 border border-gray-700 rounded text-center font-serif"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        No Heroes Available</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >    );</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Guard: Ensure selectedIndex is within bounds</span>
+<span class="cstat-no" title="statement not covered" >  const safeIndex = selectedIndex &gt;= heroes.length ? 0 : selectedIndex;</span>
+<span class="cstat-no" title="statement not covered" >  const currentHeroState = heroes[safeIndex];</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Find static hero definition (fallback to the one embedded in state if not found in static list)</span>
+<span class="cstat-no" title="statement not covered" >  const staticHero = staticHeroes.find(h =&gt; h?.id === currentHeroState?.heroId) || currentHeroState?.hero;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  // Capability: handleSelect</span>
+<span class="cstat-no" title="statement not covered" >  const handleSelect = useCallback((e) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const index = parseInt(e.target.value, 10);</span>
+<span class="cstat-no" title="statement not covered" >    if (!isNaN(index)) {</span>
+<span class="cstat-no" title="statement not covered" >      onSelect(index);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [onSelect]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  return (</span>
+<span class="cstat-no" title="statement not covered" >    &lt;div className="flex flex-col w-full max-w-md bg-gray-900 border-2 border-yellow-800 rounded-lg shadow-2xl font-serif text-gray-200 overflow-hidden"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      {/* SELECTOR */}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="p-3 bg-gray-800 border-b border-yellow-800"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;label htmlFor="hero-selector" className="sr-only"&gt;Select Hero&lt;/label&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;select</span>
+<span class="cstat-no" title="statement not covered" >          id="hero-selector"</span>
+<span class="cstat-no" title="statement not covered" >          value={safeIndex}</span>
+<span class="cstat-no" title="statement not covered" >          onChange={handleSelect}</span>
+<span class="cstat-no" title="statement not covered" >          className="w-full p-2 bg-gray-900 text-yellow-500 border border-yellow-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-600 cursor-pointer"</span>
+<span class="cstat-no" title="statement not covered" >        &gt;</span>
+<span class="cstat-no" title="statement not covered" >          {heroes.map((heroState, idx) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >            const hDef = staticHeroes.find(h =&gt; h?.id === heroState?.heroId) || heroState?.hero;</span>
+<span class="cstat-no" title="statement not covered" >            return (</span>
+<span class="cstat-no" title="statement not covered" >              &lt;option key={`hero-${heroState?.heroId || idx}`} value={idx}&gt;</span>
+<span class="cstat-no" title="statement not covered" >                {hDef?.classe || `Hero ${heroState?.heroId}`}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/option&gt;</span>
+<span class="cstat-no" title="statement not covered" >            );</span>
+<span class="cstat-no" title="statement not covered" >          })}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/select&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="flex flex-row p-4 gap-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {/* PORTRAIT */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex-shrink-0 w-32 h-32 border-2 border-gray-700 rounded overflow-hidden bg-black flex items-center justify-center shadow-inner"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {staticHero?.portrait ? (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;img</span>
+<span class="cstat-no" title="statement not covered" >              src={`/img/eroi/${staticHero.portrait}`}</span>
+<span class="cstat-no" title="statement not covered" >              alt={staticHero.classe || 'Hero Portrait'}</span>
+<span class="cstat-no" title="statement not covered" >              className="w-full h-full object-cover"</span>
+<span class="cstat-no" title="statement not covered" >            /&gt;</span>
+<span class="cstat-no" title="statement not covered" >          ) : (</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span className="text-gray-500 text-sm"&gt;No Portrait&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >          )}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        {/* STATS &amp; INVENTORY */}</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex flex-col flex-grow gap-3"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          {/* GOLD */}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;div className="bg-gray-800 p-2 rounded border border-gray-700 flex items-center justify-between shadow-sm"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span className="text-xs text-gray-400 uppercase tracking-wider font-bold"&gt;Gold&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span className="text-yellow-400 font-bold text-lg"&gt;{currentHeroState?.gold ?? 0}&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >          {/* EQUIPMENT */}</span>
+<span class="cstat-no" title="statement not covered" >          &lt;div className="flex flex-col flex-grow bg-gray-800 p-2 rounded border border-gray-700 shadow-sm"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;span className="text-xs text-gray-400 uppercase tracking-wider mb-1 border-b border-gray-700 pb-1 font-bold"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              Equipment</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;ul className="overflow-y-auto max-h-20 text-sm space-y-1 pr-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              {currentHeroState?.equipment &amp;&amp; currentHeroState.equipment.length &gt; 0 ? (</span>
+<span class="cstat-no" title="statement not covered" >                currentHeroState.equipment.map((eqId, idx) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                  const eqDef = equipmentList.find(e =&gt; e?.id === eqId);</span>
+<span class="cstat-no" title="statement not covered" >                  return (</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;li key={`eq-${eqId}-${idx}`} className="text-gray-300 truncate flex items-center gap-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;span className="text-yellow-700 text-xs"&gt;♦&lt;/span&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      {eqDef?.nome || `Unknown Item (${eqId})`}</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  );</span>
+<span class="cstat-no" title="statement not covered" >                })</span>
+<span class="cstat-no" title="statement not covered" >              ) : (</span>
+<span class="cstat-no" title="statement not covered" >                &lt;li className="text-gray-500 italic text-xs mt-1"&gt;No equipment&lt;/li&gt;</span>
+<span class="cstat-no" title="statement not covered" >              )}</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/ul&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -400,7 +400,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

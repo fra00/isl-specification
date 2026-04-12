@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/270</span>
+                <span class='fraction'>0/280</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/270</span>
+                <span class='fraction'>0/280</span>
             </div>
         
             
@@ -332,7 +332,27 @@
 <a name='L267'></a><a href='#L267'>267</a>
 <a name='L268'></a><a href='#L268'>268</a>
 <a name='L269'></a><a href='#L269'>269</a>
-<a name='L270'></a><a href='#L270'>270</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -609,267 +629,277 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import { useState, useCallback, useRef, useEffect } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import { useState, useRef, useEffect, useCallback } from 'react';</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >const sleep = (ms) =&gt; new Promise(resolve =&gt; setTimeout(resolve, ms));</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >export function useMonsterAI(config) {</span>
-<span class="cstat-no" title="statement not covered" >    const {</span>
-<span class="cstat-no" title="statement not covered" >        gameSession,</span>
-<span class="cstat-no" title="statement not covered" >        visibilityMap,</span>
-<span class="cstat-no" title="statement not covered" >        onNotify,</span>
-<span class="cstat-no" title="statement not covered" >        pathfinding,</span>
-<span class="cstat-no" title="statement not covered" >        combatLogic,</span>
-<span class="cstat-no" title="statement not covered" >        heroStatsLogic,</span>
-<span class="cstat-no" title="statement not covered" >        sessionManager</span>
-<span class="cstat-no" title="statement not covered" >    } = config;</span>
+<span class="cstat-no" title="statement not covered" >  const {</span>
+<span class="cstat-no" title="statement not covered" >    gameSession,</span>
+<span class="cstat-no" title="statement not covered" >    visibilityMap,</span>
+<span class="cstat-no" title="statement not covered" >    onNotify,</span>
+<span class="cstat-no" title="statement not covered" >    pathfinding,</span>
+<span class="cstat-no" title="statement not covered" >    combatLogic,</span>
+<span class="cstat-no" title="statement not covered" >    heroStatsLogic,</span>
+<span class="cstat-no" title="statement not covered" >    sessionManager</span>
+<span class="cstat-no" title="statement not covered" >  } = config;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const [isMonsterTurnInProgress, setIsMonsterTurnInProgress] = useState(false);</span>
-<span class="cstat-no" title="statement not covered" >    const isMonsterTurnInProgressRef = useRef(isMonsterTurnInProgress);</span>
+<span class="cstat-no" title="statement not covered" >  const [isMonsterTurnInProgress, setIsMonsterTurnInProgress] = useState(false);</span>
+<span class="cstat-no" title="statement not covered" >  const isMonsterTurnInProgressRef = useRef(false);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        isMonsterTurnInProgressRef.current = isMonsterTurnInProgress;</span>
-<span class="cstat-no" title="statement not covered" >    }, [isMonsterTurnInProgress]);</span>
+<span class="cstat-no" title="statement not covered" >  const gameSessionRef = useRef(gameSession);</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    gameSessionRef.current = gameSession;</span>
+<span class="cstat-no" title="statement not covered" >  }, [gameSession]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const findNearestHero = useCallback((monster) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!gameSession?.heroes || !visibilityMap?.data) return null;</span>
+<span class="cstat-no" title="statement not covered" >  const visibilityMapRef = useRef(visibilityMap);</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    visibilityMapRef.current = visibilityMap;</span>
+<span class="cstat-no" title="statement not covered" >  }, [visibilityMap]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const visibleHeroes = gameSession.heroes.filter(h =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >            const cell = visibilityMap.data.find(c =&gt; c.x === h.x &amp;&amp; c.y === h.y);</span>
-<span class="cstat-no" title="statement not covered" >            return cell &amp;&amp; cell.fog === false;</span>
-<span class="cstat-no" title="statement not covered" >        });</span>
+<span class="cstat-no" title="statement not covered" >  const isCellVisible = useCallback((x, y) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const cell = visibilityMapRef.current?.data?.find(c =&gt; c.x === x &amp;&amp; c.y === y);</span>
+<span class="cstat-no" title="statement not covered" >    return cell ? !cell.fog : false;</span>
+<span class="cstat-no" title="statement not covered" >  }, []);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (visibleHeroes.length === 0) return null;</span>
+<span class="cstat-no" title="statement not covered" >  const isTopologicallyAdjacent = useCallback((x1, y1, x2, y2, currentSession) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const manhattan = Math.abs((x1 || 0) - (x2 || 0)) + Math.abs((y1 || 0) - (y2 || 0));</span>
+<span class="cstat-no" title="statement not covered" >    if (manhattan !== 1) return false;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        let bestHero = null;</span>
-<span class="cstat-no" title="statement not covered" >        let minApproachLength = Infinity;</span>
+<span class="cstat-no" title="statement not covered" >    const cell1 = visibilityMapRef.current?.data?.find(c =&gt; c.x === x1 &amp;&amp; c.y === y1);</span>
+<span class="cstat-no" title="statement not covered" >    const cell2 = visibilityMapRef.current?.data?.find(c =&gt; c.x === x2 &amp;&amp; c.y === y2);</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        for (const hero of visibleHeroes) {</span>
-<span class="cstat-no" title="statement not covered" >            // Check if already topologically adjacent (approach cost 0)</span>
-<span class="cstat-no" title="statement not covered" >            const path = pathfinding?.calculatePath(monster.x, monster.y, hero.x, hero.y, 1, hero.heroId);</span>
-<span class="cstat-no" title="statement not covered" >            if (path &amp;&amp; path.length === 1) {</span>
-<span class="cstat-no" title="statement not covered" >                return hero; </span>
+<span class="cstat-no" title="statement not covered" >    if (!cell1 || !cell2) return false;</span>
+<span class="cstat-no" title="statement not covered" >    if (cell1.valo === cell2.valo) return true;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const isDoor1 = currentSession.currentMap?.porte?.some(p =&gt; p.x === x1 &amp;&amp; p.y === y1);</span>
+<span class="cstat-no" title="statement not covered" >    const isDoor2 = currentSession.currentMap?.porte?.some(p =&gt; p.x === x2 &amp;&amp; p.y === y2);</span>
+<span class="cstat-no" title="statement not covered" >    </span>
+<span class="cstat-no" title="statement not covered" >    const isPassage1 = currentSession.currentMap?.grid?.some(c =&gt; c.x === x1 &amp;&amp; c.y === y1 &amp;&amp; c.psgg?.ps != null);</span>
+<span class="cstat-no" title="statement not covered" >    const isPassage2 = currentSession.currentMap?.grid?.some(c =&gt; c.x === x2 &amp;&amp; c.y === y2 &amp;&amp; c.psgg?.ps != null);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    return isDoor1 || isDoor2 || isPassage1 || isPassage2;</span>
+<span class="cstat-no" title="statement not covered" >  }, []);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const isOccupied = useCallback((x, y, excludeMonsterId, currentSession) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const heroOccupies = currentSession.heroes?.some(h =&gt; h.x === x &amp;&amp; h.y === y);</span>
+<span class="cstat-no" title="statement not covered" >    const monsterOccupies = currentSession.monsters?.some(m =&gt; m.id !== excludeMonsterId &amp;&amp; m.x === x &amp;&amp; m.y === y);</span>
+<span class="cstat-no" title="statement not covered" >    return heroOccupies || monsterOccupies;</span>
+<span class="cstat-no" title="statement not covered" >  }, []);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const findNearestHero = useCallback((monster, currentSession) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const visibleHeroes = currentSession.heroes?.filter(h =&gt; isCellVisible(h.x, h.y)) || [];</span>
+<span class="cstat-no" title="statement not covered" >    if (visibleHeroes.length === 0) return null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    let bestHero = null;</span>
+<span class="cstat-no" title="statement not covered" >    let minApproachLength = Infinity;</span>
+<span class="cstat-no" title="statement not covered" >    let minManhattan = Infinity;</span>
+<span class="cstat-no" title="statement not covered" >    let fallbackHero = null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    for (const hero of visibleHeroes) {</span>
+<span class="cstat-no" title="statement not covered" >      const manhattan = Math.abs((monster.x || 0) - (hero.x || 0)) + Math.abs((monster.y || 0) - (hero.y || 0));</span>
+<span class="cstat-no" title="statement not covered" >      if (manhattan &lt; minManhattan) {</span>
+<span class="cstat-no" title="statement not covered" >        minManhattan = manhattan;</span>
+<span class="cstat-no" title="statement not covered" >        fallbackHero = hero;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (isTopologicallyAdjacent(monster.x, monster.y, hero.x, hero.y, currentSession)) {</span>
+<span class="cstat-no" title="statement not covered" >        return hero; </span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const adjacentCells = [</span>
+<span class="cstat-no" title="statement not covered" >        { x: hero.x, y: hero.y - 1 },</span>
+<span class="cstat-no" title="statement not covered" >        { x: hero.x, y: hero.y + 1 },</span>
+<span class="cstat-no" title="statement not covered" >        { x: hero.x - 1, y: hero.y },</span>
+<span class="cstat-no" title="statement not covered" >        { x: hero.x + 1, y: hero.y }</span>
+<span class="cstat-no" title="statement not covered" >      ];</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      let bestHeroApproach = Infinity;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      for (const cell of adjacentCells) {</span>
+<span class="cstat-no" title="statement not covered" >        if (isOccupied(cell.x, cell.y, monster.id, currentSession)) continue;</span>
+<span class="cstat-no" title="statement not covered" >        if (!isTopologicallyAdjacent(cell.x, cell.y, hero.x, hero.y, currentSession)) continue;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        const path = pathfinding.calculatePath(monster.x, monster.y, cell.x, cell.y, 100, monster.id);</span>
+<span class="cstat-no" title="statement not covered" >        if (path.length &gt; 0 &amp;&amp; path[path.length - 1].x === cell.x &amp;&amp; path[path.length - 1].y === cell.y) {</span>
+<span class="cstat-no" title="statement not covered" >          if (path.length &lt; bestHeroApproach) {</span>
+<span class="cstat-no" title="statement not covered" >            bestHeroApproach = path.length;</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (bestHeroApproach &lt; minApproachLength) {</span>
+<span class="cstat-no" title="statement not covered" >        minApproachLength = bestHeroApproach;</span>
+<span class="cstat-no" title="statement not covered" >        bestHero = hero;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    return bestHero || fallbackHero;</span>
+<span class="cstat-no" title="statement not covered" >  }, [isCellVisible, isTopologicallyAdjacent, isOccupied, pathfinding]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const runMonsterTurn = useCallback(async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (isMonsterTurnInProgressRef.current) return;</span>
+<span class="cstat-no" title="statement not covered" >    </span>
+<span class="cstat-no" title="statement not covered" >    setIsMonsterTurnInProgress(true);</span>
+<span class="cstat-no" title="statement not covered" >    isMonsterTurnInProgressRef.current = true;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (onNotify) {</span>
+<span class="cstat-no" title="statement not covered" >      onNotify("Turno del Master: i mostri si muovono...");</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    const initialMonsters = gameSessionRef.current?.monsters || [];</span>
+<span class="cstat-no" title="statement not covered" >    const monsterIds = initialMonsters.map(m =&gt; m.id);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    for (const monsterId of monsterIds) {</span>
+<span class="cstat-no" title="statement not covered" >      await sleep(800);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const currentSession = gameSessionRef.current;</span>
+<span class="cstat-no" title="statement not covered" >      if (!currentSession) continue;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const monster = currentSession.monsters?.find(m =&gt; m.id === monsterId);</span>
+<span class="cstat-no" title="statement not covered" >      if (!monster) continue;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (monster.activeStatus?.includes("Sleep")) {</span>
+<span class="cstat-no" title="statement not covered" >        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} sta dormendo e salta il turno.`);</span>
+<span class="cstat-no" title="statement not covered" >        continue;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (monster.activeStatus?.includes("Tempest")) {</span>
+<span class="cstat-no" title="statement not covered" >        sessionManager.updateMonsterState(monster.id, null, null, ["Tempest"]);</span>
+<span class="cstat-no" title="statement not covered" >        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} è bloccato dalla tempesta e salta il turno!`);</span>
+<span class="cstat-no" title="statement not covered" >        continue;</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      const hero = findNearestHero(monster, currentSession);</span>
+<span class="cstat-no" title="statement not covered" >      if (!hero) continue;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      let navigationTarget = null;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >      if (isTopologicallyAdjacent(monster.x, monster.y, hero.x, hero.y, currentSession)) {</span>
+<span class="cstat-no" title="statement not covered" >        navigationTarget = { x: monster.x, y: monster.y };</span>
+<span class="cstat-no" title="statement not covered" >      } else {</span>
+<span class="cstat-no" title="statement not covered" >        const adjacentCells = [</span>
+<span class="cstat-no" title="statement not covered" >          { x: hero.x, y: hero.y - 1 },</span>
+<span class="cstat-no" title="statement not covered" >          { x: hero.x, y: hero.y + 1 },</span>
+<span class="cstat-no" title="statement not covered" >          { x: hero.x - 1, y: hero.y },</span>
+<span class="cstat-no" title="statement not covered" >          { x: hero.x + 1, y: hero.y }</span>
+<span class="cstat-no" title="statement not covered" >        ];</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        let bestCell = null;</span>
+<span class="cstat-no" title="statement not covered" >        let shortestPathLen = Infinity;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        for (const cell of adjacentCells) {</span>
+<span class="cstat-no" title="statement not covered" >          if (isOccupied(cell.x, cell.y, monster.id, currentSession)) continue;</span>
+<span class="cstat-no" title="statement not covered" >          if (!isTopologicallyAdjacent(cell.x, cell.y, hero.x, hero.y, currentSession)) continue;</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >          const path = pathfinding.calculatePath(monster.x, monster.y, cell.x, cell.y, 100, monster.id);</span>
+<span class="cstat-no" title="statement not covered" >          if (path.length &gt; 0 &amp;&amp; path[path.length - 1].x === cell.x &amp;&amp; path[path.length - 1].y === cell.y) {</span>
+<span class="cstat-no" title="statement not covered" >            if (path.length &lt; shortestPathLen) {</span>
+<span class="cstat-no" title="statement not covered" >              shortestPathLen = path.length;</span>
+<span class="cstat-no" title="statement not covered" >              bestCell = cell;</span>
 <span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            const adjacents = [</span>
-<span class="cstat-no" title="statement not covered" >                { x: hero.x, y: hero.y - 1 },</span>
-<span class="cstat-no" title="statement not covered" >                { x: hero.x, y: hero.y + 1 },</span>
-<span class="cstat-no" title="statement not covered" >                { x: hero.x - 1, y: hero.y },</span>
-<span class="cstat-no" title="statement not covered" >                { x: hero.x + 1, y: hero.y }</span>
-<span class="cstat-no" title="statement not covered" >            ];</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            let heroBestApproach = Infinity;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            for (const adj of adjacents) {</span>
-<span class="cstat-no" title="statement not covered" >                // Check if adj is topologically adjacent to hero (no walls between them)</span>
-<span class="cstat-no" title="statement not covered" >                const adjToHero = pathfinding?.calculatePath(adj.x, adj.y, hero.x, hero.y, 1, hero.heroId);</span>
-<span class="cstat-no" title="statement not covered" >                if (!adjToHero || adjToHero.length === 0) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                // Check if unoccupied</span>
-<span class="cstat-no" title="statement not covered" >                const isOccupied = gameSession.heroes.some(h =&gt; h.x === adj.x &amp;&amp; h.y === adj.y) ||</span>
-<span class="cstat-no" title="statement not covered" >                                   gameSession.monsters.some(m =&gt; m.x === adj.x &amp;&amp; m.y === adj.y);</span>
-<span class="cstat-no" title="statement not covered" >                if (isOccupied) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                // Calculate approach from monster to adj</span>
-<span class="cstat-no" title="statement not covered" >                const approach = pathfinding?.calculatePath(monster.x, monster.y, adj.x, adj.y, 100, monster.id);</span>
-<span class="cstat-no" title="statement not covered" >                if (approach &amp;&amp; approach.length &gt; 0 &amp;&amp; approach.length &lt; heroBestApproach) {</span>
-<span class="cstat-no" title="statement not covered" >                    heroBestApproach = approach.length;</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (heroBestApproach &lt; minApproachLength) {</span>
-<span class="cstat-no" title="statement not covered" >                minApproachLength = heroBestApproach;</span>
-<span class="cstat-no" title="statement not covered" >                bestHero = hero;</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (bestHero) return bestHero;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Fallback to Manhattan distance</span>
-<span class="cstat-no" title="statement not covered" >        let fallbackHero = null;</span>
-<span class="cstat-no" title="statement not covered" >        let bestManhattan = Infinity;</span>
-<span class="cstat-no" title="statement not covered" >        for (const hero of visibleHeroes) {</span>
-<span class="cstat-no" title="statement not covered" >            const manhattan = Math.abs(monster.x - hero.x) + Math.abs(monster.y - hero.y);</span>
-<span class="cstat-no" title="statement not covered" >            if (manhattan &lt; bestManhattan) {</span>
-<span class="cstat-no" title="statement not covered" >                bestManhattan = manhattan;</span>
-<span class="cstat-no" title="statement not covered" >                fallbackHero = hero;</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >        if (bestCell) {</span>
+<span class="cstat-no" title="statement not covered" >          navigationTarget = bestCell;</span>
+<span class="cstat-no" title="statement not covered" >        } else {</span>
+<span class="cstat-no" title="statement not covered" >          navigationTarget = { x: hero.x, y: hero.y };</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" >        return fallbackHero;</span>
-<span class="cstat-no" title="statement not covered" >    }, [gameSession, visibilityMap, pathfinding]);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const runMonsterTurn = useCallback(async () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (isMonsterTurnInProgressRef.current) return;</span>
-<span class="cstat-no" title="statement not covered" >        setIsMonsterTurnInProgress(true);</span>
-<span class="cstat-no" title="statement not covered" >        onNotify?.("Turno del Master: i mostri si muovono...");</span>
+<span class="cstat-no" title="statement not covered" >      let path = [];</span>
+<span class="cstat-no" title="statement not covered" >      if (navigationTarget.x !== monster.x || navigationTarget.y !== monster.y) {</span>
+<span class="cstat-no" title="statement not covered" >        path = pathfinding.calculatePath(monster.x, monster.y, navigationTarget.x, navigationTarget.y, 100, monster.id);</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Maintain local occupancy map to prevent monsters from moving into each other's new positions during the async loop</span>
-<span class="cstat-no" title="statement not covered" >        const currentOccupancy = {</span>
-<span class="cstat-no" title="statement not covered" >            heroes: gameSession?.heroes?.map(h =&gt; ({ id: h.heroId, x: h.x, y: h.y })) || [],</span>
-<span class="cstat-no" title="statement not covered" >            monsters: gameSession?.monsters?.map(m =&gt; ({ id: m.id, x: m.x, y: m.y })) || []</span>
-<span class="cstat-no" title="statement not covered" >        };</span>
+<span class="cstat-no" title="statement not covered" >      let finalMonsterX = monster.x;</span>
+<span class="cstat-no" title="statement not covered" >      let finalMonsterY = monster.y;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        for (const monster of (gameSession?.monsters || [])) {</span>
-<span class="cstat-no" title="statement not covered" >            await new Promise(r =&gt; setTimeout(r, 800));</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (monster.activeStatus?.includes("Sleep")) {</span>
-<span class="cstat-no" title="statement not covered" >                onNotify?.(`${monster.monster?.nome} sta dormendo e salta il turno.`);</span>
-<span class="cstat-no" title="statement not covered" >                continue;</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" >            if (monster.activeStatus?.includes("Tempest")) {</span>
-<span class="cstat-no" title="statement not covered" >                sessionManager?.updateMonsterState(monster.id, null, null, ["Tempest"]);</span>
-<span class="cstat-no" title="statement not covered" >                onNotify?.(`${monster.monster?.nome} è bloccato dalla tempesta e salta il turno!`);</span>
-<span class="cstat-no" title="statement not covered" >                continue;</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            const hero = findNearestHero(monster);</span>
-<span class="cstat-no" title="statement not covered" >            if (!hero) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            let navigationTarget = null;</span>
-<span class="cstat-no" title="statement not covered" >            const isAdjacent = pathfinding?.calculatePath(monster.x, monster.y, hero.x, hero.y, 1, hero.heroId)?.length === 1;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (isAdjacent) {</span>
-<span class="cstat-no" title="statement not covered" >                navigationTarget = { x: monster.x, y: monster.y };</span>
-<span class="cstat-no" title="statement not covered" >            } else {</span>
-<span class="cstat-no" title="statement not covered" >                const adjacents = [</span>
-<span class="cstat-no" title="statement not covered" >                    { x: hero.x, y: hero.y - 1 },</span>
-<span class="cstat-no" title="statement not covered" >                    { x: hero.x, y: hero.y + 1 },</span>
-<span class="cstat-no" title="statement not covered" >                    { x: hero.x - 1, y: hero.y },</span>
-<span class="cstat-no" title="statement not covered" >                    { x: hero.x + 1, y: hero.y }</span>
-<span class="cstat-no" title="statement not covered" >                ];</span>
-<span class="cstat-no" title="statement not covered" >                let bestAdj = null;</span>
-<span class="cstat-no" title="statement not covered" >                let shortestPath = Infinity;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                for (const adj of adjacents) {</span>
-<span class="cstat-no" title="statement not covered" >                    const adjToHero = pathfinding?.calculatePath(adj.x, adj.y, hero.x, hero.y, 1, hero.heroId);</span>
-<span class="cstat-no" title="statement not covered" >                    if (!adjToHero || adjToHero.length === 0) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                    const isOccupied = currentOccupancy.heroes.some(h =&gt; h.x === adj.x &amp;&amp; h.y === adj.y) ||</span>
-<span class="cstat-no" title="statement not covered" >                                       currentOccupancy.monsters.some(m =&gt; m.id !== monster.id &amp;&amp; m.x === adj.x &amp;&amp; m.y === adj.y);</span>
-<span class="cstat-no" title="statement not covered" >                    if (isOccupied) continue;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                    const approach = pathfinding?.calculatePath(monster.x, monster.y, adj.x, adj.y, 100, monster.id);</span>
-<span class="cstat-no" title="statement not covered" >                    if (approach &amp;&amp; approach.length &gt; 0 &amp;&amp; approach.length &lt; shortestPath) {</span>
-<span class="cstat-no" title="statement not covered" >                        shortestPath = approach.length;</span>
-<span class="cstat-no" title="statement not covered" >                        bestAdj = adj;</span>
-<span class="cstat-no" title="statement not covered" >                    }</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                if (bestAdj) {</span>
-<span class="cstat-no" title="statement not covered" >                    navigationTarget = bestAdj;</span>
-<span class="cstat-no" title="statement not covered" >                } else {</span>
-<span class="cstat-no" title="statement not covered" >                    navigationTarget = { x: hero.x, y: hero.y };</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            let path = [];</span>
-<span class="cstat-no" title="statement not covered" >            if (navigationTarget.x !== monster.x || navigationTarget.y !== monster.y) {</span>
-<span class="cstat-no" title="statement not covered" >                path = pathfinding?.calculatePath(monster.x, monster.y, navigationTarget.x, navigationTarget.y, 100, monster.id) || [];</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            let finalX = monster.x;</span>
-<span class="cstat-no" title="statement not covered" >            let finalY = monster.y;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            if (path.length &gt; 0) {</span>
-<span class="cstat-no" title="statement not covered" >                let movPoints = monster.monster?.movimento || 0;</span>
-<span class="cstat-no" title="statement not covered" >                let isEntangled = monster.activeStatus?.includes("Entangled");</span>
-<span class="cstat-no" title="statement not covered" >                if (isEntangled) {</span>
-<span class="cstat-no" title="statement not covered" >                    movPoints = 1;</span>
-<span class="cstat-no" title="statement not covered" >                    onNotify?.(`${monster.monster?.nome} è intralciato e si muove a fatica.`);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                let reachablePath = [];</span>
-<span class="cstat-no" title="statement not covered" >                for (const step of path) {</span>
-<span class="cstat-no" title="statement not covered" >                    const cellVis = visibilityMap?.data?.find(c =&gt; c.x === step.x &amp;&amp; c.y === step.y);</span>
-<span class="cstat-no" title="statement not covered" >                    if (cellVis?.fog) break;</span>
-<span class="cstat-no" title="statement not covered" >                    reachablePath.push(step);</span>
-<span class="cstat-no" title="statement not covered" >                    if (reachablePath.length &gt;= movPoints) break;</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                let statusesToRemove = [];</span>
-<span class="cstat-no" title="statement not covered" >                if (isEntangled) statusesToRemove.push("Entangled");</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                let targetCell = null;</span>
-<span class="cstat-no" title="statement not covered" >                for (let i = reachablePath.length - 1; i &gt;= 0; i--) {</span>
-<span class="cstat-no" title="statement not covered" >                    const step = reachablePath[i];</span>
-<span class="cstat-no" title="statement not covered" >                    const isOccupied = currentOccupancy.heroes.some(h =&gt; h.x === step.x &amp;&amp; h.y === step.y) ||</span>
-<span class="cstat-no" title="statement not covered" >                                       currentOccupancy.monsters.some(m =&gt; m.id !== monster.id &amp;&amp; m.x === step.x &amp;&amp; m.y === step.y);</span>
-<span class="cstat-no" title="statement not covered" >                    if (!isOccupied) {</span>
-<span class="cstat-no" title="statement not covered" >                        targetCell = step;</span>
-<span class="cstat-no" title="statement not covered" >                        break;</span>
-<span class="cstat-no" title="statement not covered" >                    }</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                if (targetCell &amp;&amp; (targetCell.x !== monster.x || targetCell.y !== monster.y)) {</span>
-<span class="cstat-no" title="statement not covered" >                    sessionManager?.updateMonsterState(monster.id, targetCell.x, targetCell.y, statusesToRemove);</span>
-<span class="cstat-no" title="statement not covered" >                    finalX = targetCell.x;</span>
-<span class="cstat-no" title="statement not covered" >                    finalY = targetCell.y;</span>
-<span class="cstat-no" title="statement not covered" >                    </span>
-<span class="cstat-no" title="statement not covered" >                    const mIndex = currentOccupancy.monsters.findIndex(m =&gt; m.id === monster.id);</span>
-<span class="cstat-no" title="statement not covered" >                    if (mIndex !== -1) {</span>
-<span class="cstat-no" title="statement not covered" >                        currentOccupancy.monsters[mIndex].x = finalX;</span>
-<span class="cstat-no" title="statement not covered" >                        currentOccupancy.monsters[mIndex].y = finalY;</span>
-<span class="cstat-no" title="statement not covered" >                    }</span>
-<span class="cstat-no" title="statement not covered" >                } else if (isEntangled) {</span>
-<span class="cstat-no" title="statement not covered" >                    sessionManager?.updateMonsterState(monster.id, null, null, ["Entangled"]);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                await new Promise(r =&gt; setTimeout(r, 400));</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >            const isNowAdjacent = pathfinding?.calculatePath(finalX, finalY, hero.x, hero.y, 1, hero.heroId)?.length === 1;</span>
-<span class="cstat-no" title="statement not covered" >            if (isNowAdjacent) {</span>
-<span class="cstat-no" title="statement not covered" >                const heroStats = heroStatsLogic?.calculateStats(hero);</span>
-<span class="cstat-no" title="statement not covered" >                const attackDice = monster.monster?.attacco || 0;</span>
-<span class="cstat-no" title="statement not covered" >                const defenseDice = heroStats?.difesa || 0;</span>
-<span class="cstat-no" title="statement not covered" >                const combatResult = combatLogic?.resolveCombat(attackDice, defenseDice, true);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                if (combatResult?.damageDealt &gt; 0 &amp;&amp; hero.activeStatus?.includes("RockSkin")) {</span>
-<span class="cstat-no" title="statement not covered" >                    onNotify?.(`La pelle di pietra di ${hero.hero?.classe} si frantuma!`);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >                onNotify?.(`${monster.monster?.nome} attacca ${hero.hero?.classe}!`);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                sessionManager?.resolveMonsterAttack(monster.id, hero.heroId, combatResult);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >                if ((hero.currentBody - (combatResult?.damageDealt || 0)) &lt;= 0) {</span>
-<span class="cstat-no" title="statement not covered" >                    onNotify?.(`${hero.hero?.classe} è caduto in battaglia!`);</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >      if (path.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        let movPoints = monster.monster?.movimento || 0;</span>
+<span class="cstat-no" title="statement not covered" >        let isEntangled = monster.activeStatus?.includes("Entangled");</span>
+<span class="cstat-no" title="statement not covered" >        if (isEntangled) {</span>
+<span class="cstat-no" title="statement not covered" >          movPoints = 1;</span>
+<span class="cstat-no" title="statement not covered" >          if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} è intralciato e si muove a fatica.`);</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        setIsMonsterTurnInProgress(false);</span>
-<span class="cstat-no" title="statement not covered" >        sessionManager?.startNextHeroRound();</span>
-<span class="cstat-no" title="statement not covered" >        onNotify?.("Nuovo Turno! Tocca agli eroi.");</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    }, [gameSession, visibilityMap, onNotify, pathfinding, combatLogic, heroStatsLogic, sessionManager, findNearestHero]);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const performInstantAttack = useCallback(async (monster, hero) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!monster || !hero) return;</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        onNotify?.(`Il Mostro Errante (${monster.monster?.nome}) attacca immediatamente!`);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        const heroStats = heroStatsLogic?.calculateStats(hero);</span>
-<span class="cstat-no" title="statement not covered" >        const attackDice = monster.monster?.attacco || 0;</span>
-<span class="cstat-no" title="statement not covered" >        const defenseDice = heroStats?.difesa || 0;</span>
-<span class="cstat-no" title="statement not covered" >        const combatResult = combatLogic?.resolveCombat(attackDice, defenseDice, true);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (combatResult?.damageDealt &gt; 0 &amp;&amp; hero.activeStatus?.includes("RockSkin")) {</span>
-<span class="cstat-no" title="statement not covered" >            onNotify?.(`La pelle di pietra di ${hero.hero?.classe} si frantuma!`);</span>
+<span class="cstat-no" title="statement not covered" >        const visiblePath = [];</span>
+<span class="cstat-no" title="statement not covered" >        for (const step of path) {</span>
+<span class="cstat-no" title="statement not covered" >          if (!isCellVisible(step.x, step.y)) break;</span>
+<span class="cstat-no" title="statement not covered" >          visiblePath.push(step);</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        sessionManager?.resolveMonsterAttack(monster.id, hero.heroId, combatResult);</span>
+<span class="cstat-no" title="statement not covered" >        const reachablePath = visiblePath.slice(0, movPoints);</span>
+<span class="cstat-no" title="statement not covered" >        const statusesToRemove = isEntangled ? ["Entangled"] : [];</span>
+<span class="cstat-no" title="statement not covered" >        let targetCell = null;</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if ((hero.currentBody - (combatResult?.damageDealt || 0)) &lt;= 0) {</span>
-<span class="cstat-no" title="statement not covered" >            onNotify?.(`${hero.hero?.classe} è caduto sotto i colpi del Mostro Errante!`);</span>
+<span class="cstat-no" title="statement not covered" >        for (let i = reachablePath.length - 1; i &gt;= 0; i--) {</span>
+<span class="cstat-no" title="statement not covered" >          const cell = reachablePath[i];</span>
+<span class="cstat-no" title="statement not covered" >          if (!isOccupied(cell.x, cell.y, monster.id, currentSession)) {</span>
+<span class="cstat-no" title="statement not covered" >            targetCell = cell;</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        await new Promise(r =&gt; setTimeout(r, 1000));</span>
-<span class="cstat-no" title="statement not covered" >    }, [onNotify, heroStatsLogic, combatLogic, sessionManager]);</span>
+<span class="cstat-no" title="statement not covered" >        if (targetCell &amp;&amp; (targetCell.x !== monster.x || targetCell.y !== monster.y)) {</span>
+<span class="cstat-no" title="statement not covered" >          sessionManager.updateMonsterState(monster.id, targetCell.x, targetCell.y, statusesToRemove);</span>
+<span class="cstat-no" title="statement not covered" >          finalMonsterX = targetCell.x;</span>
+<span class="cstat-no" title="statement not covered" >          finalMonsterY = targetCell.y;</span>
+<span class="cstat-no" title="statement not covered" >          await sleep(400);</span>
+<span class="cstat-no" title="statement not covered" >        } else if (isEntangled) {</span>
+<span class="cstat-no" title="statement not covered" >          sessionManager.updateMonsterState(monster.id, null, null, ["Entangled"]);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    return {</span>
-<span class="cstat-no" title="statement not covered" >        isMonsterTurnInProgress,</span>
-<span class="cstat-no" title="statement not covered" >        runMonsterTurn,</span>
-<span class="cstat-no" title="statement not covered" >        performInstantAttack,</span>
-<span class="cstat-no" title="statement not covered" >        findNearestHero</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
+<span class="cstat-no" title="statement not covered" >      if (isTopologicallyAdjacent(finalMonsterX, finalMonsterY, hero.x, hero.y, currentSession)) {</span>
+<span class="cstat-no" title="statement not covered" >        const heroStats = heroStatsLogic.calculateStats(hero);</span>
+<span class="cstat-no" title="statement not covered" >        const combatResult = combatLogic.resolveCombat(monster.monster?.attacco || 0, heroStats?.difesa || 0, true);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        if (combatResult.damageDealt &gt; 0 &amp;&amp; hero.activeStatus?.includes("RockSkin")) {</span>
+<span class="cstat-no" title="statement not covered" >          if (onNotify) onNotify(`La pelle di pietra di ${hero.hero?.classe || 'Eroe'} si frantuma!`);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >        if (onNotify) onNotify(`${monster.monster?.nome || 'Mostro'} attacca ${hero.hero?.classe || 'Eroe'}!`);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >        if ((hero.currentBody || 0) - combatResult.damageDealt &lt;= 0) {</span>
+<span class="cstat-no" title="statement not covered" >          if (onNotify) onNotify(`${hero.hero?.classe || 'Eroe'} è caduto in battaglia!`);</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+<span class="cstat-no" title="statement not covered" >      }</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    setIsMonsterTurnInProgress(false);</span>
+<span class="cstat-no" title="statement not covered" >    isMonsterTurnInProgressRef.current = false;</span>
+<span class="cstat-no" title="statement not covered" >    sessionManager.startNextHeroRound();</span>
+<span class="cstat-no" title="statement not covered" >    if (onNotify) onNotify("Nuovo Turno! Tocca agli eroi.");</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  }, [onNotify, findNearestHero, isTopologicallyAdjacent, isOccupied, pathfinding, isCellVisible, sessionManager, heroStatsLogic, combatLogic]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  const performInstantAttack = useCallback(async (monster, hero) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (onNotify) onNotify(`Il Mostro Errante (${monster.monster?.nome || 'Mostro'}) attacca immediatamente!`);</span>
+<span class="cstat-no" title="statement not covered" >    </span>
+<span class="cstat-no" title="statement not covered" >    const heroStats = heroStatsLogic.calculateStats(hero);</span>
+<span class="cstat-no" title="statement not covered" >    const combatResult = combatLogic.resolveCombat(monster.monster?.attacco || 0, heroStats?.difesa || 0, true);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if (combatResult.damageDealt &gt; 0 &amp;&amp; hero.activeStatus?.includes("RockSkin")) {</span>
+<span class="cstat-no" title="statement not covered" >      if (onNotify) onNotify(`La pelle di pietra di ${hero.hero?.classe || 'Eroe'} si frantuma!`);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    sessionManager.resolveMonsterAttack(monster.id, hero.heroId, combatResult);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    if ((hero.currentBody || 0) - combatResult.damageDealt &lt;= 0) {</span>
+<span class="cstat-no" title="statement not covered" >      if (onNotify) onNotify(`${hero.hero?.classe || 'Eroe'} è caduto sotto i colpi del Mostro Errante!`);</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >    await sleep(1000);</span>
+<span class="cstat-no" title="statement not covered" >  }, [onNotify, heroStatsLogic, combatLogic, sessionManager]);</span>
+<span class="cstat-no" title="statement not covered" ></span>
+<span class="cstat-no" title="statement not covered" >  return {</span>
+<span class="cstat-no" title="statement not covered" >    isMonsterTurnInProgress,</span>
+<span class="cstat-no" title="statement not covered" >    runMonsterTurn,</span>
+<span class="cstat-no" title="statement not covered" >    performInstantAttack</span>
+<span class="cstat-no" title="statement not covered" >  };</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -877,7 +907,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

@@ -19562,29 +19562,29 @@
     {
       "x": 13,
       "y": 19,
-      "text": "noattarma",
-      "evento": "17;",
-      "unavolta": "",
-      "morto": 2,
-      "idmosc": false
-    },
-    {
-      "x": false,
-      "y": 14,
-      "text": 23,
+      "text": "noattarma 17;\n",
       "evento": 2,
-      "unavolta": "Hai trovato il signore degli stregoni nessuna arma e nessun incantesimo lo ferisce tranne che la lama dello spirito;",
-      "morto": 1,
-      "idmosc": true
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 14
     },
     {
-      "x": false,
-      "y": 14,
-      "text": 0,
+      "x": 23,
+      "y": 2,
+      "text": "Hai trovato il signore degli stregoni nessuna arma e nessun incantesimo lo ferisce tranne che la lama dello spirito;",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 14
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "text": "",
       "evento": 0,
-      "unavolta": "",
-      "morto": 0,
-      "idmosc": false
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

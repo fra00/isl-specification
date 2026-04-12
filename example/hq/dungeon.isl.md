@@ -180,7 +180,7 @@
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
 - `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `staticVisibilityMap`.
-- `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
+- `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, and `hooksSessionManager`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
 - `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.getFoundPassages().visiblePassages`, and `hooksSessionManager`.
 - `hooksHeroStats`: @useHeroStats passing `staticEquipment`.
@@ -190,8 +190,8 @@
 - `missionObjectiveCompleted`: Boolean derived from `hooksTurnLogic.isMissionObjectiveCompleted`.
 - `hooksMonsters`: @useDungeonMonsters passing `gameSession`, `boardVisibilityMap`, `onUpdateSession`, `setNotificationMessage`, and `staticMonsters`.
 - `hooksMonsterAI`: @useMonsterAI passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksPathfinding`, `hooksCombatLogic`, `hooksHeroStats`, and `hooksSessionManager`.
-- `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, and `hooksTurnLogic.markActionDone`.
-- `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksSessionManager`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
+- `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, and `hooksSessionManager`.
+- `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, `hooksSessionManager`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
 - `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
 
 #### initializeMission
@@ -201,6 +201,7 @@
 - **Trigger**: On Mount (after `gameSession` is available).
 - **Flow**:
   - Call `hooksSessionManager.initializeMission(treasureDeck)`.
+    - The boundary MUST also execute mission start scripts (`eventType = 6`) against the initialized snapshot before gameplay begins.
     - SET `isMissionInitialized` to true.
 
 #### confirmHeroOrder
@@ -273,18 +274,22 @@
 
 - **Contract**: Persists hero progress after a voluntary retreat without advancing the campaign unlock index.
 - **Flow**:
+  - Execute mission end scripts (`eventType = 7`) against the current session using retreat context.
+  - Let `missionEndSession` = the returned script session when handled, otherwise `gameSession`.
   - Load the existing campaign save, when available.
   - Preserve the highest unlocked mission index already saved.
-  - Trigger `hooksCampaignManager.saveCampaign(gameSession.heroes, preservedMissionIndex)`.
+  - Trigger `hooksCampaignManager.saveCampaign(missionEndSession.heroes, preservedMissionIndex)`.
   - Navigate back to @PageNavigationEnum.PLAY_GAME.
 
 #### completeMission
 
 - **Contract**: Saves progress and returns to mission selection.
 - **Flow**:
+  - Execute mission end scripts (`eventType = 7`) against the current session using victory context.
+  - Let `missionEndSession` = the returned script session when handled, otherwise `gameSession`.
   - Load the existing campaign save, when available.
-  - Let `nextMissionIndex` = the greater of the already unlocked mission index and `gameSession.currentMissionIndex + 1`.
-  - Call `hooksCampaignManager.saveCampaign(gameSession.heroes, nextMissionIndex)`.
+  - Let `nextMissionIndex` = the greater of the already unlocked mission index and `missionEndSession.currentMissionIndex + 1`.
+  - Call `hooksCampaignManager.saveCampaign(missionEndSession.heroes, nextMissionIndex)`.
   - Set `isMissionSummaryOpen` to false.
   - onChangePageView to @PageNavigationEnum.PLAY_GAME.
 

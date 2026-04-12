@@ -19562,47 +19562,47 @@
     {
       "x": 2,
       "y": 19,
-      "text": "aggogg",
-      "evento": "10;",
-      "unavolta": "msg",
-      "morto": "La",
-      "idmosc": "stella"
+      "text": "aggogg 10;\nmsg La stella dell'ovest � in mano allo zombie;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 12
     },
     {
-      "x": "dell'ovest",
-      "y": "�",
-      "text": "in",
-      "evento": "mano",
-      "unavolta": "allo",
-      "morto": "zombie;",
-      "idmosc": 2
+      "x": 5,
+      "y": 12,
+      "text": "Avete infranto il magico sigillo che teneva prigioniero il Signore degli Stregoni.Egli � ora desto e voi dovete fuggire.Solo la Lama degli spiriti potr� sconfiggerlo;",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 12
     },
     {
-      "x": false,
-      "y": true,
-      "text": 12,
-      "evento": 5,
-      "unavolta": 12,
-      "morto": "Avete infranto il magico sigillo che teneva prigioniero il Signore degli Stregoni.Egli � ora desto e voi dovete fuggire.Solo la Lama degli spiriti potr� sconfiggerlo;",
-      "idmosc": 1
+      "x": 15,
+      "y": 14,
+      "text": "noatt;",
+      "evento": 2,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 13
     },
     {
-      "x": true,
-      "y": false,
-      "text": 12,
-      "evento": 15,
-      "unavolta": 14,
-      "morto": "noatt;",
-      "idmosc": 2
+      "x": 10,
+      "y": 4,
+      "text": "posroc 1,1;\nmsg Con uno schianto il corridoio crolla bloccandovi ogni via di uscita;",
+      "evento": 1,
+      "unavolta": true,
+      "morto": false,
+      "idmosc": 12
     },
     {
-      "x": false,
-      "y": false,
-      "text": 13,
-      "evento": 10,
-      "unavolta": 4,
-      "morto": "posroc",
-      "idmosc": 1
+      "x": 12,
+      "y": 17,
+      "text": "",
+      "evento": 0,
+      "unavolta": false,
+      "morto": false,
+      "idmosc": 0
     }
   ]
 }

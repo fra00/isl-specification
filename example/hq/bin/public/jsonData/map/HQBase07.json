@@ -19571,11 +19571,11 @@
     {
       "x": 0,
       "y": 0,
-      "text": "msg",
-      "evento": "Lo",
-      "unavolta": "zombie",
-      "morto": "che",
-      "idmosc": "si"
+      "text": "msg Lo zombie che si trova in questa stanza � Karlen. La sua stessa magia lo ha tramutato in un non morto;\n",
+      "evento": 2,
+      "unavolta": false,
+      "morto": true,
+      "idmosc": 5
     }
   ]
 }

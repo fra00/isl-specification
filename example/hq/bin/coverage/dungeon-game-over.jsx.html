@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/63</span>
+                <span class='fraction'>0/70</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/63</span>
+                <span class='fraction'>0/70</span>
             </div>
         
             
@@ -125,7 +125,21 @@
 <a name='L60'></a><a href='#L60'>60</a>
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
-<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -195,59 +209,66 @@
 <span class="cstat-no" title="statement not covered" > * Edit the ISL file instead.</span>
 <span class="cstat-no" title="statement not covered" > */</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >import React, { useState, useEffect } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import React, { useCallback } from 'react';</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >export default function DungeonGameOver({ isOpen = false, onExit = () =&gt; {} }) {</span>
-<span class="cstat-no" title="statement not covered" >  const [isMounted, setIsMounted] = useState(false);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (isOpen) {</span>
-<span class="cstat-no" title="statement not covered" >      // Breve ritardo per permettere al browser di renderizzare lo stato iniziale</span>
-<span class="cstat-no" title="statement not covered" >      // prima di applicare le classi di transizione per l'animazione</span>
-<span class="cstat-no" title="statement not covered" >      const timer = setTimeout(() =&gt; setIsMounted(true), 50);</span>
-<span class="cstat-no" title="statement not covered" >      return () =&gt; clearTimeout(timer);</span>
-<span class="cstat-no" title="statement not covered" >    } else {</span>
-<span class="cstat-no" title="statement not covered" >      setIsMounted(false);</span>
+<span class="cstat-no" title="statement not covered" >export default function DungeonGameOver({ isOpen = false, onExit }) {</span>
+<span class="cstat-no" title="statement not covered" >  const handleExit = useCallback(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (typeof onExit === 'function') {</span>
+<span class="cstat-no" title="statement not covered" >      onExit();</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  }, [isOpen]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [onExit]);</span>
 <span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  if (!isOpen) {</span>
 <span class="cstat-no" title="statement not covered" >    return null;</span>
 <span class="cstat-no" title="statement not covered" >  }</span>
 <span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >  const handleExit = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (typeof onExit === 'function') {</span>
-<span class="cstat-no" title="statement not covered" >      onExit();</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" >  };</span>
-<span class="cstat-no" title="statement not covered" ></span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;div className="fixed inset-0 z-[90] bg-black flex flex-col items-center justify-center p-4"&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div </span>
-<span class="cstat-no" title="statement not covered" >        className={`flex flex-col items-center justify-center text-center transition-all duration-1000 ease-out transform ${</span>
-<span class="cstat-no" title="statement not covered" >          isMounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'</span>
-<span class="cstat-no" title="statement not covered" >        }`}</span>
-<span class="cstat-no" title="statement not covered" >      &gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;h1 className="text-6xl md:text-9xl font-serif font-bold text-red-700 mb-6 tracking-widest uppercase drop-shadow-[0_0_25px_rgba(185,28,28,0.8)]"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          GAME OVER</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/h1&gt;</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        &lt;h2 className="text-2xl md:text-4xl text-gray-200 mb-4 font-serif"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          Tutti gli eroi sono caduti...</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        &lt;p className="text-lg md:text-xl text-gray-400 mb-12 italic"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          Zargon ha trionfato. Il mondo precipita nell'oscurità.</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >        </span>
-<span class="cstat-no" title="statement not covered" >        &lt;button</span>
-<span class="cstat-no" title="statement not covered" >          onClick={handleExit}</span>
-<span class="cstat-no" title="statement not covered" >          className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-900 shadow-[0_0_15px_rgba(153,27,27,0.4)] transition-all duration-300 hover:scale-105"</span>
-<span class="cstat-no" title="statement not covered" >        &gt;</span>
-<span class="cstat-no" title="statement not covered" >          Torna al Menu</span>
-<span class="cstat-no" title="statement not covered" >        &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;style&gt;</span>
+<span class="cstat-no" title="statement not covered" >        {`</span>
+<span class="cstat-no" title="statement not covered" >          @keyframes dramaticFadeInScale {</span>
+<span class="cstat-no" title="statement not covered" >            0% {</span>
+<span class="cstat-no" title="statement not covered" >              opacity: 0;</span>
+<span class="cstat-no" title="statement not covered" >              transform: scale(0.3);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >            50% {</span>
+<span class="cstat-no" title="statement not covered" >              opacity: 0.8;</span>
+<span class="cstat-no" title="statement not covered" >              transform: scale(1.05);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >            100% {</span>
+<span class="cstat-no" title="statement not covered" >              opacity: 1;</span>
+<span class="cstat-no" title="statement not covered" >              transform: scale(1);</span>
+<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >          .animate-dramatic {</span>
+<span class="cstat-no" title="statement not covered" >            animation: dramaticFadeInScale 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;</span>
+<span class="cstat-no" title="statement not covered" >          }</span>
+<span class="cstat-no" title="statement not covered" >        `}</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/style&gt;</span>
+<span class="cstat-no" title="statement not covered" >      </span>
+<span class="cstat-no" title="statement not covered" >      &lt;div className="fixed inset-0 z-[90] bg-black flex items-center justify-center p-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;div className="flex flex-col items-center text-center animate-dramatic"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;h1 className="text-6xl md:text-8xl font-serif font-black text-red-700 mb-6 tracking-widest drop-shadow-[0_5px_15px_rgba(185,28,28,0.6)] uppercase"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            Game Over</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/h1&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;h2 className="text-2xl md:text-4xl text-gray-300 mb-4 font-serif"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            Tutti gli eroi sono caduti...</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/h2&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;p className="text-lg md:text-xl text-gray-500 mb-12 italic max-w-2xl"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            Zargon ha trionfato. Il mondo precipita nell'oscurità.</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/p&gt;</span>
+<span class="cstat-no" title="statement not covered" >          </span>
+<span class="cstat-no" title="statement not covered" >          &lt;button</span>
+<span class="cstat-no" title="statement not covered" >            onClick={handleExit}</span>
+<span class="cstat-no" title="statement not covered" >            className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold text-xl rounded border border-red-900 hover:border-red-500 transition-all duration-300 shadow-[0_0_20px_rgba(0,0,0,0.8)] hover:shadow-[0_0_15px_rgba(220,38,38,0.5)] uppercase tracking-wider"</span>
+<span class="cstat-no" title="statement not covered" >          &gt;</span>
+<span class="cstat-no" title="statement not covered" >            Torna al Menu</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/button&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >    &lt;/&gt;</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 <span class="cstat-no" title="statement not covered" >}</span></pre></td></tr></table></pre>
 
@@ -256,7 +277,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T08:42:12.561Z
+                at 2026-04-12T01:25:31.319Z
             </div>
         <script src="prettify.js"></script>
         <script>

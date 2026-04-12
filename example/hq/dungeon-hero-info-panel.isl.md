@@ -28,7 +28,7 @@
 
 - **Type**: Fixed floating status panel.
 - **Position**: Initially on the right side of the viewport, occupying the space previously used by the obsolete debug panel, but user-draggable afterward.
-- **Styling**: Stone-and-bronze gothic panel visually matched to `DungeonTurnControls`.
+- **Styling**: Stone-and-bronze gothic panel visually matched to `DungeonTurnControls`, with ornamental corners, decorative dividers, plaque-like stat cards, and a more ceremonial hero portrait frame.
 - **Width**: Around 290-310px.
 - **Cursor**: `grab` on header, `grabbing` while dragging.
 
@@ -37,18 +37,21 @@
 - **Header**:
   - Text: "Scheda Eroe".
   - Behavior: Acts as the drag handle.
+  - Decoration: Includes a narrow ornamental divider and a compact subtitle line.
 - **Hero Summary**:
   - Display `currentHero.hero.classe` (or "Sconosciuto" if null).
   - Display the hero portrait when available using `img/eroi/` + `currentHero.hero.portrait`.
-  - Display `movementPoints`.
+  - Display `movementPoints` inside a small highlighted movement chip.
 - **Stats Section**:
   - Display Gold.
   - Display Health.
   - Display Intelligence.
   - Display Attack using `currentHeroStats.attacco` when available; otherwise fall back to the base hero value.
   - Display Defense using `currentHeroStats.difesa` when available; otherwise fall back to the base hero value.
+  - Each stat SHOULD render inside a dedicated plaque card rather than as plain text rows.
 - **Active Effects**:
   - Display the active temporary effects from `currentHero.activeStatus`, if any.
+  - Effects SHOULD render as distinct status chips; when there are no effects, show a neutral `Nessuno` chip instead of a plain text sentence.
 
 ### ⚡ Capabilities
 
@@ -73,6 +76,7 @@
 - **Flow**:
   - Read `localStorage['dungeonHeroInfoPanelPosition']`.
   - IF the stored value is valid JSON with numeric `x` and `y`, restore it.
+  - Clamp the restored coordinates so the panel remains inside the current viewport.
   - ELSE compute a default position near the right side with a safe top offset.
 
 #### beginDrag
@@ -89,4 +93,12 @@
 - **Trigger**: Global mouse move and mouse up while dragging.
 - **Flow**:
   - On mouse move, update `left` and `top` using the stored offset.
+  - Clamp the coordinates so the panel cannot be dragged fully off-screen.
   - On mouse up, stop dragging and persist the final coordinates into `localStorage['dungeonHeroInfoPanelPosition']`.
+
+#### handleViewportResize
+
+- **Contract**: Keeps the hero info panel visible when the viewport changes after a saved drag position has been restored.
+- **Trigger**: Window resize.
+- **Flow**:
+  - Clamp the current position against the updated viewport bounds.

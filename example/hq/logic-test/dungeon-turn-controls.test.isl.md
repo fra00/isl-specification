@@ -115,3 +115,11 @@ This document outlines the logical test scenarios for the `DungeonTurnControls` 
 - **Assert (Expected Outcomes)**:
   - All global event listeners are removed.
   - The system state is not left in a "dragging" state, ensuring no interference with subsequent UI components.
+
+## Scenario: Out-Of-Viewport Saved Position Is Clamped Back On Screen
+
+- **Given**: LocalStorage contains coordinates that would place the panel outside the visible viewport.
+- **When**: The component mounts or the window is resized smaller.
+- **Assert (Expected Outcomes)**:
+  - The panel position is clamped back inside the viewport bounds.
+  - The panel remains visibly reachable by the player.

@@ -67,6 +67,9 @@
 ### 🔍 Appearance
 
 - **Layout**: 100% of the screen container.
+- **Environment Frame**: The dungeon scene SHOULD sit inside a larger chamber-like screen treatment, with a dark stone backdrop, subtle rune/torch glows at the sides, and an ornate frame around the board so the play area feels embedded in the page instead of floating on a flat background.
+- **Board Shell**: `DungeonBoard` SHOULD be wrapped by a decorative outer frame with bronze corners and a small centered plaque label, while preserving the exact board interaction area.
+- **Turn Marker**: When hero order is confirmed, the framed board shell SHOULD show a small ornamental turn marker near the bottom center using `gameSession.currentTurn`.
 
 ### 📦 Content
 

@@ -535,7 +535,82 @@ export default function Dungeon(props) {
   );
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative bg-stone-950 text-stone-200">
+      <style>{`
+        @keyframes dungeonTorchBreath {
+          0%, 100% { opacity: 0.32; transform: translateY(-50%) scale(0.96); }
+          50% { opacity: 0.5; transform: translateY(-50%) scale(1.04); }
+        }
+        @keyframes runeDrift {
+          0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0.18; }
+          50% { transform: translate3d(0, -10px, 0) rotate(6deg); opacity: 0.3; }
+        }
+      `}</style>
+
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(41,37,36,0.2)_0%,_rgba(12,10,9,0.92)_72%),linear-gradient(180deg,_rgba(28,25,23,0.96)_0%,_rgba(12,10,9,1)_100%)]" />
+        <div
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(120,113,108,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,0.14) 1px, transparent 1px)",
+            backgroundSize: "42px 42px",
+          }}
+        />
+        <div
+          className="absolute left-[-140px] top-1/2 h-[460px] w-[460px] rounded-full bg-amber-700/20 blur-[130px]"
+          style={{ animation: "dungeonTorchBreath 5.2s ease-in-out infinite" }}
+        />
+        <div
+          className="absolute right-[-140px] top-1/2 h-[460px] w-[460px] rounded-full bg-orange-700/18 blur-[130px]"
+          style={{ animation: "dungeonTorchBreath 6.1s ease-in-out infinite" }}
+        />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+        <div
+          className="absolute left-10 top-10 h-40 w-40 rounded-full border border-amber-700/15"
+          style={{ animation: "runeDrift 8s ease-in-out infinite" }}
+        />
+        <div
+          className="absolute right-12 bottom-12 h-48 w-48 rounded-full border border-amber-700/15"
+          style={{ animation: "runeDrift 9s ease-in-out infinite" }}
+        />
+      </div>
+
+      <div className="relative z-10 flex h-full items-center justify-center px-6 py-8 md:px-16 md:py-10">
+        <div className="relative rounded-[30px] border border-amber-900/55 bg-stone-950/35 p-4 md:p-5 shadow-[0_34px_90px_rgba(0,0,0,0.6)] backdrop-blur-[2px]">
+          <div className="absolute top-3 left-3 h-4 w-4 border-l-2 border-t-2 border-amber-700/45" />
+          <div className="absolute top-3 right-3 h-4 w-4 border-r-2 border-t-2 border-amber-700/45" />
+          <div className="absolute bottom-3 left-3 h-4 w-4 border-l-2 border-b-2 border-amber-700/45" />
+          <div className="absolute bottom-3 right-3 h-4 w-4 border-r-2 border-b-2 border-amber-700/45" />
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-700/60 bg-stone-950/95 px-5 py-1 text-[10px] uppercase tracking-[0.34em] text-amber-400 shadow-[0_8px_18px_rgba(0,0,0,0.35)]">
+            Sala del Dungeon
+          </div>
+          {gameSession?.isHeroOrderConfirmed && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rounded-full border border-stone-700/80 bg-stone-950/95 px-4 py-1 text-[10px] uppercase tracking-[0.28em] text-stone-300 shadow-[0_8px_18px_rgba(0,0,0,0.35)]">
+              Turno {gameSession?.currentTurn ?? "-"}
+            </div>
+          )}
+
+          <DungeonBoard
+            gameSession={gameSession}
+            boardVisibilityMap={boardVisibilityMap}
+            onCellClick={handleBoardClick}
+            onCellHover={hooksTurnLogic.handleBoardHover}
+            onMonsterClick={handleMonsterClick}
+            hoveredPath={hooksTurnLogic.hoveredPath}
+            hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
+            secretPassages={hooksSecretPassages.getFoundPassages().visiblePassages}
+            treasures={hooksTreasure.getFoundTreasures()}
+            triggeredTraps={hooksTraps
+              .getTriggeredTraps()
+              .filter((trap) => trap.status !== "DISARMED")}
+            targetingSpell={targetingSpell}
+            visibilityCalc={null}
+          />
+        </div>
+      </div>
+
       {isMissionInitialized && !gameSession?.isHeroOrderConfirmed && (
         <DungeonHeroOrder
           heroes={gameSession?.heroes}
@@ -550,23 +625,6 @@ export default function Dungeon(props) {
           onConfirmSelection={confirmSpellSelection}
         />
       )}
-
-      <DungeonBoard
-        gameSession={gameSession}
-        boardVisibilityMap={boardVisibilityMap}
-        onCellClick={handleBoardClick}
-        onCellHover={hooksTurnLogic.handleBoardHover}
-        onMonsterClick={handleMonsterClick}
-        hoveredPath={hooksTurnLogic.hoveredPath}
-        hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
-        secretPassages={hooksSecretPassages.getFoundPassages().visiblePassages}
-        treasures={hooksTreasure.getFoundTreasures()}
-        triggeredTraps={hooksTraps
-          .getTriggeredTraps()
-          .filter((trap) => trap.status !== "DISARMED")}
-        targetingSpell={targetingSpell}
-        visibilityCalc={null}
-      />
 
       {gameSession?.isHeroOrderConfirmed && currentHero && (
         <>

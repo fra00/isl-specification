@@ -79,3 +79,11 @@
   - The panel position updates continuously during the drag.
   - The final position is saved into `localStorage['dungeonHeroInfoPanelPosition']`.
   - Global `mousemove` and `mouseup` listeners are removed after drag completion.
+
+## Scenario: Out-Of-Viewport Saved Position Is Clamped Back On Screen
+
+- **Given**: LocalStorage contains coordinates that would place the hero info panel outside the visible viewport.
+- **When**: The component mounts or the window is resized smaller.
+- **Assert (Expected Outcomes)**:
+  - The hero info panel position is clamped back inside the viewport bounds.
+  - The panel remains visibly reachable by the player.

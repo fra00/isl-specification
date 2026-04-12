@@ -28,16 +28,42 @@ export default function DungeonTurnControls({
   onCancelTargeting = () => {},
   onOpenDoor = () => {},
 }) {
+  const panelRef = useRef(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
 
   const positionRef = useRef({ x: 20, y: 20 });
   const offsetRef = useRef({ x: 0, y: 0 });
 
-  const updatePosition = useCallback((newPos) => {
-    positionRef.current = newPos;
-    setPosition(newPos);
+  const clampPosition = useCallback((rawPosition) => {
+    if (typeof window === "undefined") {
+      return rawPosition;
+    }
+
+    const panelWidth = panelRef.current?.offsetWidth || 250;
+    const panelHeight = panelRef.current?.offsetHeight || 460;
+    const viewportPadding = 12;
+
+    const maxX = Math.max(
+      viewportPadding,
+      window.innerWidth - panelWidth - viewportPadding,
+    );
+    const maxY = Math.max(
+      viewportPadding,
+      window.innerHeight - panelHeight - viewportPadding,
+    );
+
+    return {
+      x: Math.min(Math.max(rawPosition.x, viewportPadding), maxX),
+      y: Math.min(Math.max(rawPosition.y, viewportPadding), maxY),
+    };
   }, []);
+
+  const updatePosition = useCallback((newPos) => {
+    const nextPosition = clampPosition(newPos);
+    positionRef.current = nextPosition;
+    setPosition(nextPosition);
+  }, [clampPosition]);
 
   useEffect(() => {
     try {
@@ -58,6 +84,17 @@ export default function DungeonTurnControls({
         e,
       );
     }
+  }, [updatePosition]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      updatePosition(positionRef.current);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, [updatePosition]);
 
   const handleMouseDown = useCallback((e) => {
@@ -98,15 +135,23 @@ export default function DungeonTurnControls({
   const heroClass = (currentHero?.hero?.classe || "").toLowerCase();
   const canUseMagic = heroClass === "mago" || heroClass === "elfo";
   const showOpenDoor = canOpenDoor === true || canOpenDoor?.found === true;
+  const utilityButtonClass =
+    "group relative overflow-hidden w-full rounded-xl border border-stone-700/80 bg-gradient-to-b from-stone-700 to-stone-800 px-3 py-2.5 font-semibold text-stone-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_22px_rgba(0,0,0,0.22)] transition-all hover:from-stone-600 hover:to-stone-700";
 
   return (
     <div
-      className="fixed w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
+      ref={panelRef}
+      className="fixed relative w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
+      <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/45 pointer-events-none" />
+      <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/45 pointer-events-none" />
+      <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/45 pointer-events-none" />
+      <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/45 pointer-events-none" />
+
       {/* Header / Drag Handle */}
       <div
-        className={`bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+        className={`relative bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
         onMouseDown={handleMouseDown}
       >
         <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">
@@ -115,33 +160,64 @@ export default function DungeonTurnControls({
         <div className="text-center text-lg font-bold uppercase tracking-[0.14em] text-amber-500 drop-shadow-sm">
           Controlli Turno
         </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent" />
+          <div className="text-[9px] uppercase tracking-[0.28em] text-stone-500">
+            Azioni del Round
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent" />
+        </div>
       </div>
 
       {/* Body */}
-      <div className="p-3 md:p-4 flex flex-col gap-3">
+      <div className="relative p-3 md:p-4 flex flex-col gap-4 bg-[linear-gradient(180deg,_rgba(28,25,23,0.18),_rgba(12,10,9,0.05))]">
         {/* Inventory Section */}
         <div>
+          <div className="mb-2 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-600/60 to-stone-800/20" />
+            <div className="text-[9px] uppercase tracking-[0.28em] text-stone-500">
+              Utilita
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-r from-stone-800/20 via-stone-600/60 to-transparent" />
+          </div>
           <button
             onClick={onOpenInventory}
-            className="w-full py-2 px-3 rounded-lg font-semibold border border-stone-700 bg-stone-800 hover:bg-stone-700 text-stone-100 transition-colors"
+            className={utilityButtonClass}
           >
-            Inventario
+            <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
+            <span className="relative flex items-center justify-between gap-3">
+              <span>Inventario</span>
+              <span className="text-[10px] uppercase tracking-[0.24em] text-stone-400 group-hover:text-amber-300 transition-colors">
+                Apri
+              </span>
+            </span>
           </button>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
+          <div className="mb-1 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-800/45 to-stone-900/0" />
+            <div className="text-[9px] uppercase tracking-[0.28em] text-amber-700">
+              Azioni
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-r from-stone-900/0 via-amber-800/45 to-transparent" />
+          </div>
           <button
             onClick={onEndTurn}
-            className="w-full py-2 px-3 rounded-lg font-bold uppercase tracking-[0.12em] bg-red-800 hover:bg-red-700 text-white shadow-[0_0_14px_rgba(127,29,29,0.28)] transition-colors"
+            className="group relative overflow-hidden w-full rounded-xl border border-red-900/70 bg-gradient-to-b from-red-800 to-red-950 px-3 py-2.5 font-bold uppercase tracking-[0.12em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_14px_rgba(127,29,29,0.28)] transition-all hover:from-red-700 hover:to-red-900"
           >
-            Fine Turno
+            <span className="absolute inset-x-0 top-0 h-px bg-white/12" />
+            <span className="relative flex items-center justify-between gap-3">
+              <span>Fine Turno</span>
+              <span className="text-[9px] uppercase tracking-[0.22em] text-red-100/70">Chiudi</span>
+            </span>
           </button>
 
           <button
             onClick={onRollMovement}
             disabled={!!turnPhase?.HasMoved || movementPoints != null}
-            className="w-full py-2 px-3 rounded-lg font-semibold bg-amber-700 hover:bg-amber-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl border border-amber-800/75 bg-gradient-to-b from-amber-700 to-amber-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.18)] transition-all hover:from-amber-600 hover:to-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Tira Movimento
           </button>
@@ -149,7 +225,7 @@ export default function DungeonTurnControls({
           <button
             onClick={onSearchPassages}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cerca Passaggi
           </button>
@@ -157,7 +233,7 @@ export default function DungeonTurnControls({
           <button
             onClick={onSearchTreasure}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cerca Tesori
           </button>
@@ -165,7 +241,7 @@ export default function DungeonTurnControls({
           <button
             onClick={onSearchTraps}
             disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 rounded-lg font-semibold bg-yellow-700 hover:bg-yellow-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cerca Trappole
           </button>
@@ -176,7 +252,7 @@ export default function DungeonTurnControls({
               disabled={
                 !!turnPhase?.HasPerformedAction || isMoving || isTargeting
               }
-              className="w-full py-2 px-3 rounded-lg font-semibold bg-orange-700 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-xl border border-orange-800/75 bg-gradient-to-b from-orange-700 to-orange-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-orange-600 hover:to-orange-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Disinnesca Trappola
             </button>
@@ -188,7 +264,7 @@ export default function DungeonTurnControls({
               disabled={
                 !!turnPhase?.HasPerformedAction || isMoving || isTargeting
               }
-              className="w-full py-2 px-3 rounded-lg font-semibold bg-indigo-700 hover:bg-indigo-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-xl border border-indigo-800/75 bg-gradient-to-b from-indigo-700 to-indigo-950 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-indigo-600 hover:to-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Magia
             </button>
@@ -197,16 +273,22 @@ export default function DungeonTurnControls({
           {isTargeting && (
             <button
               onClick={onCancelTargeting}
-              className="w-full py-2 px-3 rounded-lg font-semibold bg-stone-700 hover:bg-stone-600 text-white transition-colors"
+              className={utilityButtonClass}
             >
-              Annulla Bersaglio
+              <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
+              <span className="relative flex items-center justify-between gap-3">
+                <span>Annulla Bersaglio</span>
+                <span className="text-[10px] uppercase tracking-[0.24em] text-stone-400 group-hover:text-red-300 transition-colors">
+                  Stop
+                </span>
+              </span>
             </button>
           )}
 
           {showOpenDoor && (
             <button
               onClick={onOpenDoor}
-              className="w-full py-2 px-3 rounded-lg font-semibold bg-green-700 hover:bg-green-600 text-white transition-colors"
+              className="w-full rounded-xl border border-green-800/75 bg-gradient-to-b from-green-700 to-green-950 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-green-600 hover:to-green-900"
             >
               Apri Porta
             </button>

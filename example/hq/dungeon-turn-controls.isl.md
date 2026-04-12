@@ -41,7 +41,7 @@
 
 - **Type**: Draggable Floating Dialog.
 - **Position**: Fixed.
-- **Styling**: Stone-and-bronze gothic panel aligned with the Armory and mission pages, with serif typography, amber dividers, and a dark translucent body.
+- **Styling**: Stone-and-bronze gothic panel aligned with the Armory and mission pages, with serif typography, amber dividers, a dark translucent body, small ornamental corner marks, and embossed plaque-like sections.
 - **Width**: Compact floating panel around 235-250px.
 - **Cursor**: `grab` on header, `grabbing` while dragging.
 - **Action Layout**: The primary danger action `Fine Turno` must appear first in the action stack and remain visually anchored before all expandable feature buttons, so adding future actions does not move it downward.
@@ -51,48 +51,51 @@
 - **Header**:
   - Text: "Controlli Turno".
   - Behavior: Acts as the drag handle.
+  - Decoration: Includes a narrow ornamental divider and a compact subtitle line for the round actions.
 - **Inventory Section**
+  - Includes a small section divider label.
   - **Inventory button**
-    - Style: Neutral stone utility button.
+    - Style: Neutral stone utility plaque with bevel and subtle inset highlight.
     - OnClick: Trigger `onOpenInventory`.
 - **Action Buttons**:
+  - The actions block SHOULD begin with a small decorative section label.
   - **End Turn**:
     - Position: First action in the stack.
-    - Style: Red danger button with stronger visual emphasis than the other actions.
+    - Style: Red danger plaque with stronger visual emphasis than the other actions.
     - OnClick: Trigger `onEndTurn`.
   - **Roll Movement**:
     - Disabled IF `turnPhase.HasMoved` is true OR `movementPoints` is NOT null.
-    - Style: Bronze primary button.
+    - Style: Bronze primary plaque.
     - OnClick: Trigger `onRollMovement`.
   - **Search Passages**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Amber exploration button.
+    - Style: Amber exploration plaque.
     - OnClick: Trigger `onSearchPassages`.
   - **Search Treasure**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Amber exploration button.
+    - Style: Amber exploration plaque.
     - OnClick: Trigger `onSearchTreasure`.
   - **Search Trap**:
     - Disabled IF `turnPhase.HasPerformedAction` is true.
-    - Style: Amber exploration button.
+    - Style: Amber exploration plaque.
     - OnClick: Trigger `onSearchTraps`.
   - **Disarm Trap**:
     - Visible IF `canDisarmTrap` is true.
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
-    - Style: Amber utility button.
+    - Style: Orange utility plaque.
     - OnClick: Trigger `onDisarmTrap`.
   - **Magic**:
     - Visible IF `currentHero.hero.classe.toLowerCase()` IN ["mago", "elfo"].
     - Disabled IF `turnPhase.HasPerformedAction` is true OR `isMoving` is true OR `isTargeting` is true.
-    - Style: Indigo accent button.
+    - Style: Indigo accent plaque.
     - OnClick: Trigger `onOpenMagic`.
   - **Cancel Targeting**:
     - Visible IF `isTargeting` is true.
-    - Style: Neutral secondary button.
+    - Style: Neutral secondary plaque.
     - OnClick: Trigger `onCancelTargeting`.
   - **Open Door**:
     - Visible IF `canOpenDoor` is NOT null AND `canOpenDoor.found` is true.
-    - Style: Green success button.
+    - Style: Green success plaque.
     - OnClick: Trigger `onOpenDoor`.
 
 ### ⚡ Capabilities
@@ -108,6 +111,7 @@
 - **Flow**:
   - Read string from LocalStorage key "dungeonTurnControlsPosition".
   - IF valid JSON, parse into `position`.
+  - Clamp the restored coordinates so the panel remains inside the current viewport.
   - ELSE set `position` to default `{ x: 20, y: 20 }`.
 
 #### handleDragInteraction
@@ -121,6 +125,7 @@
   - **On Mouse Move** (Window):
     - IF dragging:
       - Calculate new `position` = mouse coordinates - offset.
+      - Clamp the position so the panel cannot be dragged fully off-screen.
       - Update `position` state.
   - **On Mouse Up** (Window):
     - Set internal dragging flag to false.
@@ -128,3 +133,9 @@
     - Save current `position` to LocalStorage key "dungeonTurnControlsPosition".
 
 - **On Unmount**: Remove all global event listeners for `mousemove` and `mouseup`.
+
+#### handleViewportResize
+
+- **Contract**: Keeps the panel visible when the viewport becomes smaller than the stored panel position.
+- **Flow**:
+  - On window resize, clamp the current `position` against the updated viewport bounds.

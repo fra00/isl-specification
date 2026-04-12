@@ -78,7 +78,7 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                 return (
                   <div 
                     key={`slot-${index}`} 
-                    className={`h-24 md:h-32 rounded-lg border-2 flex items-center overflow-hidden transition-all ${
+                    className={`h-24 md:h-28 rounded-lg border-2 flex items-center overflow-hidden transition-all ${
                       heroState 
                         ? 'border-amber-700 bg-stone-800 cursor-pointer hover:border-red-500/80 group' 
                         : 'border-dashed border-stone-700 bg-stone-950/50 justify-center'
@@ -87,11 +87,11 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                   >
                     {heroState ? (
                       <>
-                        <div className="w-24 md:w-32 h-full shrink-0 relative">
+                        <div className="w-20 md:w-24 h-full shrink-0 relative flex items-end justify-center bg-gradient-to-br from-stone-950/90 to-stone-800/70 p-2 md:p-3">
                           <img 
                             src={`img/eroi/${heroState.hero?.portrait}`} 
                             alt={heroState.hero?.classe || 'Hero'} 
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                            className="w-full h-full object-contain object-bottom opacity-85 group-hover:opacity-100 transition-all duration-300"
                           />
                           <div className="absolute inset-0 bg-red-900/0 group-hover:bg-red-900/30 transition-colors" />
                         </div>
@@ -127,14 +127,16 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                     <div 
                       key={h.heroId} 
                       onClick={() => selectHero(h.heroId)}
-                      className="relative h-32 md:h-40 rounded-lg border-2 border-stone-700 bg-stone-800 cursor-pointer overflow-hidden group hover:border-amber-500 transition-colors"
+                      className="relative h-32 md:h-36 rounded-lg border-2 border-stone-700 bg-stone-800 cursor-pointer overflow-hidden group hover:border-amber-500 transition-colors"
                     >
-                      <img 
-                        src={`img/eroi/${h.hero?.portrait}`} 
-                        alt={h.hero?.classe || 'Hero'} 
-                        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-6 pb-2 px-2 text-center">
+                      <div className="absolute inset-x-0 top-0 bottom-0 flex items-end justify-center bg-gradient-to-b from-stone-950/80 via-stone-900/35 to-black px-2 pt-2 md:px-3 md:pt-3">
+                        <img 
+                          src={`img/eroi/${h.hero?.portrait}`} 
+                          alt={h.hero?.classe || 'Hero'} 
+                          className="w-full h-full object-contain object-bottom opacity-75 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-300"
+                        />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/85 to-transparent pt-8 pb-2 px-2 text-center">
                         <span className="text-stone-300 font-bold text-sm md:text-base group-hover:text-amber-400 transition-colors">
                           {h.hero?.classe}
                         </span>

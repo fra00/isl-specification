@@ -39,7 +39,8 @@
 - **Sections**: Two internal panels side by side on large screens.
   - `Current Order`
   - `Available Heroes`
-- **Cards**: Portrait cards with bronze/dark borders and hover overlays.
+- **Cards**: Hero cards with bronze/dark borders and hover overlays.
+- Full-body hero artwork must remain fully contained inside each card with internal padding; it must never visually overflow or be cropped outside the card bounds.
 - Scrollbars must stay inside the internal grids if the hero lists exceed available space.
 
 ### 📦 Content
@@ -50,9 +51,11 @@
   - Displays slots for the selected order (1 to 4).
   - Shows selected heroes (`HeroState`) with their portrait (`hero.portrait`) and class (`hero.classe`).
     path of image is `img/eroi/` + `portrait
+  - Selected hero artwork must be scaled down to fit comfortably inside the slot while keeping the full figure visible.
   - Clicking a selected hero removes them from the order.
 - **Available Heroes Section**:
   - Displays heroes not yet selected.
+  - Hero artwork must stay fully visible inside each available card and align toward the bottom of the frame.
   - Clicking an available hero adds them to the next available slot in the order.
 - **Confirm Button**:
   - Enabled only when all heroes are assigned an order.

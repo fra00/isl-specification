@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
-import { executeDungeonScripts } from '../bin/dungeon-script-runtime';
+import { describe, expect, it } from "vitest";
+import { executeDungeonScripts } from "../bin/dungeon-script-runtime";
 
 function makeCell(x, y, overrides = {}) {
   return {
     x,
     y,
     arnt: { antroc: false, inv: false, ...(overrides.arnt || {}) },
-    mobili: { num: null, img: '', ...(overrides.mobili || {}) },
+    mobili: { num: null, img: "", ...(overrides.mobili || {}) },
     mostab: { mosid: 0, mos: false, corpo: 0, ...(overrides.mostab || {}) },
     tes: { mon: 0, ogg: 0, arma: 0, trp: 0, ...(overrides.tes || {}) },
     psgg: { ps: 0, oriz: false, ...(overrides.psgg || {}) },
     trpl: { tipo: 0, rccadex: 0, rccadey: 0, ...(overrides.trpl || {}) },
-    fine: '',
+    fine: "",
     ...overrides,
   };
 }
@@ -55,7 +55,7 @@ function createSession(overrides = {}) {
         currentBody: 2,
         currentMind: 1,
         activeStatus: [],
-        monster: { id: 14, nome: 'Spirito', difesa: 2 },
+        monster: { id: 14, nome: "Spirito", difesa: 2 },
       },
     ],
     triggeredScripts: [],
@@ -91,13 +91,21 @@ function createSession(overrides = {}) {
   };
 }
 
-describe('dungeon-script-runtime exhaustive coverage', () => {
-  it('treats bare text as an implicit message and separates newline-delimited commands without semicolons', () => {
+describe("dungeon-script-runtime exhaustive coverage", () => {
+  it("treats bare text as an implicit message and separates newline-delimited commands without semicolons", () => {
     const bareText = executeDungeonScripts({
       session: createSession({
         currentMap: {
           scripts: [
-            { x: 0, y: 0, text: 'Hai trovato il sigillo perduto;', evento: 6, unavolta: true, morto: false, idmosc: 0 },
+            {
+              x: 0,
+              y: 0,
+              text: "Hai trovato il sigillo perduto;",
+              evento: 6,
+              unavolta: true,
+              morto: false,
+              idmosc: 0,
+            },
           ],
         },
       }),
@@ -106,13 +114,21 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
     });
 
     expect(bareText.handled).toBe(true);
-    expect(bareText.notifications).toEqual(['Hai trovato il sigillo perduto']);
+    expect(bareText.notifications).toEqual(["Hai trovato il sigillo perduto"]);
 
     const missingSemicolon = executeDungeonScripts({
       session: createSession({
         currentMap: {
           scripts: [
-            { x: 1, y: 1, text: 'possta 3,10\npossta 18,6;', evento: 1, unavolta: false, morto: false, idmosc: 0 },
+            {
+              x: 1,
+              y: 1,
+              text: "possta 3,10\npossta 18,6;",
+              evento: 1,
+              unavolta: false,
+              morto: false,
+              idmosc: 0,
+            },
           ],
         },
       }),
@@ -127,7 +143,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
     ]);
   });
 
-  it('covers support-only commands not currently used by HQBase maps', () => {
+  it("covers support-only commands not currently used by HQBase maps", () => {
     const result = executeDungeonScripts({
       session: createSession({
         currentMap: {
@@ -143,7 +159,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
             {
               x: 0,
               y: 0,
-              text: 'posrocinv 4,5;\nposporta 1,6,7;\naggoroid 1,25;\nrimogg 9;\nrrndogg;\nagghppsg 1,2;',
+              text: "posrocinv 4,5;\nposporta 1,6,7;\naggoroid 1,25;\nrimogg 9;\nrrndogg;\nagghppsg 1,2;",
               evento: 7,
               unavolta: false,
               morto: false,
@@ -158,13 +174,22 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
     });
 
     expect(result.handled).toBe(true);
-    expect(result.session.currentMap.grid.find((cell) => cell.x === 4 && cell.y === 5).arnt.inv).toBe(true);
-    expect(result.session.currentMap.porte).toEqual([{ x: 6, y: 7, oriz: true }]);
-    expect(result.session.heroes[1]).toMatchObject({ gold: 30, currentBody: 5 });
+    expect(
+      result.session.currentMap.grid.find(
+        (cell) => cell.x === 4 && cell.y === 5,
+      ).arnt.inv,
+    ).toBe(true);
+    expect(result.session.currentMap.porte).toEqual([
+      { x: 6, y: 7, oriz: true },
+    ]);
+    expect(result.session.heroes[1]).toMatchObject({
+      gold: 30,
+      currentBody: 5,
+    });
     expect(result.session.heroes[0].inventory).toEqual([]);
   });
 
-  it('covers conditional inventory and equipment checks and the att override', () => {
+  it("covers conditional inventory and equipment checks and the att override", () => {
     const conditional = executeDungeonScripts({
       session: createSession({
         currentMap: {
@@ -172,7 +197,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
             {
               x: 0,
               y: 0,
-              text: 'seogg 9;\naggoro 10;\nend;\nsearma 17;\naggoro 20;\nend;',
+              text: "seogg 9;\naggoro 10;\nend;\nsearma 17;\naggoro 20;\nend;",
               evento: 7,
               unavolta: false,
               morto: false,
@@ -194,7 +219,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
             {
               x: 0,
               y: 0,
-              text: 'noatt;\natt;',
+              text: "noatt;\natt;",
               evento: 2,
               unavolta: false,
               morto: false,
@@ -211,7 +236,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
     expect(attackOverride.effects.attackBlocked).toBe(false);
   });
 
-  it('covers event 4 and 5 area matching and room-1 rock obstruction semantics', () => {
+  it("covers event 4 and 5 area matching and room-1 rock obstruction semantics", () => {
     const event4 = executeDungeonScripts({
       session: createSession({
         heroes: [
@@ -231,7 +256,15 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
         ],
         currentMap: {
           scripts: [
-            { x: 2, y: 2, text: 'msg trappola stanza;', evento: 4, unavolta: false, morto: false, idmosc: 0 },
+            {
+              x: 2,
+              y: 2,
+              text: "msg trappola stanza;",
+              evento: 4,
+              unavolta: false,
+              morto: false,
+              idmosc: 0,
+            },
           ],
         },
       }),
@@ -240,7 +273,7 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
     });
 
     expect(event4.handled).toBe(true);
-    expect(event4.notifications).toEqual(['trappola stanza']);
+    expect(event4.notifications).toEqual(["trappola stanza"]);
 
     const blockedRoom1 = executeDungeonScripts({
       session: createSession({
@@ -260,18 +293,30 @@ describe('dungeon-script-runtime exhaustive coverage', () => {
           },
         ],
         currentMap: {
-          grid: [makeCell(5, 1, { arnt: { antroc: true } }), makeCell(10, 1), makeCell(1, 1)],
+          grid: [
+            makeCell(5, 1, { arnt: { antroc: true } }),
+            makeCell(10, 1),
+            makeCell(1, 1),
+          ],
           scripts: [
-            { x: 1, y: 1, text: 'msg corridoio ostruito;', evento: 5, unavolta: false, morto: false, idmosc: 0 },
+            {
+              x: 1,
+              y: 1,
+              text: "msg corridoio ostruito;",
+              evento: 5,
+              unavolta: false,
+              morto: false,
+              idmosc: 0,
+            },
           ],
         },
       }),
       eventType: 5,
       visibilityMap: {
         data: [
-          { x: 1, y: 1, valo: '1', fog: false },
-          { x: 10, y: 1, valo: '1', fog: false },
-          { x: 5, y: 1, valo: '1', fog: false },
+          { x: 1, y: 1, valo: "1", fog: false },
+          { x: 10, y: 1, valo: "1", fog: false },
+          { x: 5, y: 1, valo: "1", fog: false },
         ],
       },
     });

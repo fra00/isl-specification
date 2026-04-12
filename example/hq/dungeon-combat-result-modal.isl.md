@@ -11,6 +11,10 @@
 > **Reference**: @HeroState, @MonsterState in `./domain-session.isl.md`
 > **Reference**: @Hero, @Monster in `./domain-ruleset.isl.md`
 
+## Domain Concepts
+
+- `combat presentation state`: UI-only animation and severity cues derived from an existing combat result without mutating gameplay state.
+
 ## Component: CombatResultModal
 
 ### Role: Presentation
@@ -25,32 +29,28 @@
 
 ### 🔍 Appearance
 
-- **Overlay**: Fixed full-screen container with semi-transparent backdrop (bg-black/80), z-index 50.
-- **Dialog**: Centered container, width 800px, height 500px, relative, overflow hidden, rounded-xl, shadow-2xl.
+- **Overlay**: Fixed full-screen container with dark semi-transparent backdrop and a slight blur, z-index 50.
+- **Dialog**: Centered container around 820x520px, relative, overflow hidden, rounded-2xl, shadow-2xl, with a bronze border.
 - **Background Layout**:
-  - **Left Panel (Attacker)**:
-    - Background Color: Red gradient (e.g., `bg-gradient-to-br from-red-900 to-red-700`).
-    - Shape: Clip-path polygon creating a diagonal split (e.g., `polygon(0 0, 60% 0, 40% 100%, 0% 100%)`).
-    - Z-Index: 1.
-  - **Right Panel (Defender)**:
-    - Background Color: Blue gradient (e.g., `bg-gradient-to-bl from-blue-900 to-blue-700`).
-    - Shape: Fills the container (visible part is what's not covered by Left Panel).
-    - Z-Index: 0.
+  - **Backdrop**:
+    - Stone-dark base with a warm red flare on the attacker side and a cold blue flare on the defender side.
+    - Decorative bronze corner marks.
 - **Attacker Portrait (Left)**
   - z-index: 2
-  - pnly gor barbarian use margin negative to move the image more to the center of the screen because of the diagonal split
+  - only for barbarian use margin negative to move the image more to the center of the screen.
 - **Defender Portrait (Right)**
 - **Center Info**:
-  - **VS Text**:
-    - Centered horizontally and vertically (top 20%), Font size 4rem, Bold, Italic, Color White/Gold, Text Shadow.
+  - **Title Block**:
+    - Result headline centered in the middle panel using localized text such as `Colpo a Segno`, `Impatto Devastante`, or `Attacco Respinto`.
+    - Subtitle line naming attacker and defender.
   - **Dice Container**:
-    - Position: Centered horizontally, below "VS" text.
+    - Position: Centered inside a stone/bronze plaque.
     - Layout: Flex column or grid.
   - **Result Text**:
-    - Positioned bottom center, large font, appears after dice animation.
+    - Rendered as a dedicated damage medallion showing the localized label `Danni Inflitti` and the value.
   - **Close Button**:
     - Bottom center (below Result Text),
-    - Button style (e.g., bg-yellow-600 text-black px-6 py-2 rounded hover:bg-yellow-500),
+    - Button style uses amber/bronze fantasy UI and localized text `Chiudi`.
   - z-index: 3
 
 ### 📦 Content
@@ -66,40 +66,44 @@
     - IF `defender` has `monster`: `/img/mostri/` + `@Monster.immalarge`.
   - **Style**: Large image, positioned right-center, object-contain/cover, fade into background.
 - **Center Info**:
-  - **VS Text**:
-    - Text: "VS".
+  - **Title Block**:
+    - Text derived from combat outcome severity.
   - **Dice Container**:
     - **Attacker Dice Row**:
-      - Label: "Attacker".
+      - Label: "Attaccante".
       - Content: List of dice images based on `combatResult.attackerDice`.
         - IF `SKULL`: `/img/altro/teschio.jpg`.
         - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
         - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Left** towards the center with a staggered delay (e.g., 0.1s per die).
     - **Defender Dice Row**:
-      - Label: "Defender".
+      - Label: "Difensore".
       - Content: List of dice images based on `combatResult.defenderDice`.
         - IF `SKULL`: `/img/altro/teschio.jpg`.
         - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
         - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Right** towards the center with a staggered delay (e.g., 0.1s per die).
   - **Result Text**:
-    - Content: "Damage Dealt: " + `combatResult.damageDealt`.
+    - Content: localized damage summary using `combatResult.damageDealt`.
   - **Close Button**:
-    - Text: "OK".
+    - Text: "Chiudi".
     - Action: onClick triggers `onClose`.
 
 ### ⚡ Capabilities
 
 #### internalState
 
+- **Contract**: Tracks the local animation gate that starts the staggered combat reveal after the modal opens.
+
 - `animationActive`: Boolean (True when modal opens to trigger CSS animations).
 
 #### useEffect
 
+- **Contract**: Synchronizes the animation gate with modal open state and preserves the empty-state guard when combat data is missing.
+
 - **Guard Clause**:
   - IF `combatResult` is null OR undefined:
-    - Render "No combat data available".
+    - Render a localized empty-state combat report.
     - Ensure `Close Button` remains functional to trigger `onClose`.
     - RETURN.
 

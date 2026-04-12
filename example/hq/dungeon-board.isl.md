@@ -46,6 +46,7 @@
 - **Layout**: Relative container width 884px and height 646px of the board dimensions center content vertically and horizzontaly (no padding, no border, no margin). The board container MUST use hidden overflow so any mist content extending beyond the board edges stays clipped.
 - **Board**: The board image `/img/tabellone/default.bmp` (884x646px) as the bottom background layer.
 - **Fog of war**: no border. Fogged cells stay black, while two slow mist image layers drift over the entire board, with the second image rotated by 180 degrees. The mist layers MUST extend beyond the board bounds so the moving image borders never become visible.
+- **Atmosphere Pass**: The board SHOULD add a subtle vignette and inner grading so the edges feel deeper and the center remains slightly warmer, without reducing tactical readability.
 
 ### 📦 Content
 
@@ -78,6 +79,7 @@
       - The second mist layer MUST animate with keyframes `rotate(180deg) translate3d(-32px, 18px, 0)` to `rotate(180deg) translate3d(14px, -12px, 0)` to `rotate(180deg) translate3d(30px, 22px, 0)` over `18s` with `ease-in-out`, `infinite`, and `alternate`.
     - **Unfogging Logic**: The black overlay MUST disappear ONLY IF the corresponding cell in `boardVisibilityMap.data` (matching x+1, y+1) has `fog` set to `false`. The mist layers remain global and visible across both revealed and fogged areas.
     - **Layer Order**: The visual stack MUST be, from back to front: board background, per-cell black fog overlays, global mist overlay, board entities, targeting tracer.
+    - **Ambient Grading**: The board SHOULD add a faint global amber-to-shadow grading above the board image and below gameplay entities, creating a stronger dungeon atmosphere while leaving cells readable.
     - **Path Highlight**:
       - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "valid", add a semi-transparent green overlay.
       - IF cell {x+1, y+1} is in `hoveredPath` AND `hoveredPathVariant` == "blocked-by-second-wall", add a semi-transparent red overlay.
@@ -92,10 +94,10 @@
           - ELSE: add a red warning highlight (bg-red-500/40).
 - **Furniture**: Visual elements for map furniture.
   - **Data Source**: Derive `visibleFurniture` using `useDungeonFurniture(@GameSession, @VisibilityMap)`.
-  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/mobili/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
+  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/mobili/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling. Static board entities SHOULD cast a soft drop shadow so they feel grounded on the board.
 - **Doors**: Visual elements for map doors.
   - **Data Source**: Derive `visibleDoors` using `useDungeonDoors(@GameSession, @VisibilityMap)`.
-  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
+  - **Render**: Image at x,y coordinates(start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling. Static board entities SHOULD cast a soft drop shadow so they feel grounded on the board.
 - **Monsters**: Visual tokens for `@GameSession.monsters` (@MonsterState) at their x,y coordinates (start from 1).
   - **Data Source**: Derive `visibleMonsters` using `useDungeonVisibleMonsters(@GameSession, @VisibilityMap)`.
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
@@ -112,10 +114,10 @@
       - Apply a green web overlay icon.
 - **Secret Passages**: Visual elements for discovered secret passages.
   - **Data Source**: `secretPassages` prop.
-  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling. Static board entities SHOULD cast a soft drop shadow so they feel grounded on the board.
 - **Treasures**: Visual elements for discovered treasures.
   - **Data Source**: `treasures` prop.
-  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling.
+  - **Render**: Image at x,y coordinates (start from 1). Src: `/img/cell/` + `img`. Use intrinsic asset dimensions; do not force 34x34 scaling. Static board entities SHOULD cast a soft drop shadow so they feel grounded on the board.
 - **Script Images**: Temporary overlays created by mission scripts.
   - **Data Source**: `gameSession.scriptImages`.
   - **Render**: Image at x,y coordinates (start from 1) using `src` exactly as stored in session state.
@@ -126,13 +128,16 @@
     - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/abisso.jpg`, using intrinsic asset dimensions.
     - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`, using intrinsic asset dimensions.
     - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`, using intrinsic asset dimensions.
+  - Triggered trap markers SHOULD cast a soft drop shadow so they remain legible over the board texture.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
+  - **Depth**: Hero tokens SHOULD use a soft shadow to separate them from the board artwork.
   - **Body Points Indicator**:
     - Render the current hero body points as a compact badge on the hero token using `@HeroState.currentBody` and `@Hero.corpo`.
     - The badge MUST update when `currentBody` changes so healing and damage are visible immediately on the board.
     - The hero token tooltip/title SHOULD expose the same `currentBody` / max body information.
   - **square selection**: square selection on the current hero who has the turn where (`@GameSession.currentTurn` == `@HeroState.turnOrder`)
+  - **Turn Aura**: The active hero SHOULD also receive a soft amber ground glow so the current turn reads immediately even before the square border is noticed.
   - **Targeting Interaction**:
     - IF `targetingSpell.targetType` == "Hero", hovering a hero token MUST update the same targeting preview used for the underlying board cell.
     - IF `targetingSpell.targetType` == "Hero", clicking a hero token MUST forward selection using that hero's board coordinates exactly as if the underlying cell had been clicked.
@@ -160,7 +165,12 @@
     - ELSE IF `visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1)` is false THEN red.
     - ELSE magic-blue.
   - Render an SVG line overlay connecting the center of `activeHero` to the center of the `hoveredCell`.
-  - Style: Thin dashed line with a pulsing glow.
+  - Style: Thin dashed line with a pulsing glow, a brighter outer bloom, and a circular reticle on the hovered target cell.
+- **Immediate Attack Feedback**:
+  - IF `gameSession.lastAttack` is available:
+    - Render a short-lived warm pulse near the attacker position.
+    - Render a pulsing impact ring on the defender position.
+    - Display a small floating badge over the defender showing either `-N HP` or `Parata` when damage is zero.
 
 ### ⚡ Capabilities
 

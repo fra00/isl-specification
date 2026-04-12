@@ -1,3 +1,24 @@
+# Project: Heroquest React Logic Tests
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.1
+**Created**: 2026-04-12
+**Implementation**: ./logic-test/dungeon-combat-result-modal.test
+
+---
+
+> **Reference**: `./dungeon-combat-result-modal.isl.md`
+
+## Domain Concepts
+
+- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced HeroQuest component behavior.
+
+## Component: DungeonCombatResultModalLogicTests
+
+### Role: Test
+
+### ⚡ Scenarios
+
 <!-- LOGIC TEST SCENARIOS FOR: dungeon-combat-result-modal.isl.md -->
 
 ## Scenario: Modal Rendering with Valid Combat Data
@@ -8,15 +29,16 @@
     - Attacker portrait displays the correct Hero image path.
     - Defender portrait displays the correct Monster image path.
     - Dice container renders the correct number of dice images based on `attackerDice` and `defenderDice` lists.
-    - Result text displays "Damage Dealt: 2".
+    - Result text displays the localized damage summary for value `2`.
+    - The modal headline reflects a successful hit state.
 
 ## Scenario: Modal Rendering with Null Combat Data (Edge Case)
 - **Given**: `isOpen` is true, `combatResult` is null.
 - **When**: The component mounts.
 - **Assert (Expected Outcomes)**:
-    - Component renders "No combat data available" message.
+    - Component renders a localized empty-state combat report.
     - `Close Button` is rendered and enabled.
-    - `onClose` callback is triggered upon clicking the "OK" button.
+    - `onClose` callback is triggered upon clicking the close button.
     - No runtime errors occur due to null property access.
 
 ## Scenario: Deterministic Cleanup on Close
@@ -49,6 +71,6 @@
 - **When**: The modal renders.
 - **Assert (Expected Outcomes)**:
     - No dice images are rendered in the container.
-    - Result text displays "Damage Dealt: 0".
+    - Result text displays the localized zero-damage summary.
     - The modal remains stable and functional.
     - `onClose` remains reachable.

@@ -7,6 +7,10 @@
 
 ---
 
+## Domain Concepts
+
+- `notification tone`: A small visual taxonomy derived from message semantics, used to style the toast as arcane, loot-related, warning, or generic narration.
+
 ## Component: DungeonNotification
 
 ### Role: Presentation
@@ -19,21 +23,38 @@
 
 ### 🔍 Appearance
 
-- **Position**: Fixed, centered at the top of the screen (top-20).
+- **Position**: Fixed, centered near the top of the screen.
 - **Style**:
-  - Background: Semi-transparent black (`bg-black/80`).
-  - Border: Gold/Yellow border (`border-yellow-500`).
-  - Text: White, bold, large.
-  - Padding: p-4.
+  - Background: Stone-and-metal plaque with a dark translucent body and decorative fantasy corners.
+  - Border: Contextual accent border based on the notification tone.
+  - Text: White/stone high-contrast headline text with a small uppercase category label.
+  - Leading Badge: A compact icon badge at the left side of the toast.
+  - Width: Responsive plaque, centered, wider than the previous simple toast.
+  - Padding: Comfortable panel padding suitable for multi-word alerts.
   - Rounded corners.
   - Z-Index: 100 (Always on top).
-- **Animation**: Fade in/out (optional).
+- **Animation**: Brief slide/fade entrance.
 
 ### 📦 Content
 
 - Display `message`.
+- Derive a contextual tone from the message semantics:
+  - Arcane/spell targeting messages use an indigo accent.
+  - Treasure/find messages use an amber accent.
+  - Warning/cancel/invalid-target messages use a rose accent.
+  - Generic system narration uses a neutral amber-stone accent.
+- Display a short uppercase tone label (for example `Arcano`, `Bottino`, `Avviso`, `Cronaca`).
 
 ### ⚡ Capabilities
+
+#### deriveTone
+
+- **Contract**: Classifies the visual tone of the notification from the message text so the toast immediately communicates whether the event is arcane, loot-related, cautionary, or generic narration.
+- **Trigger**: During render when `message` is present.
+- **Flow**:
+  - Inspect the lowercase message.
+  - Match it against a small keyword taxonomy.
+  - Return badge, label, border accent, and background treatment consistent with the inferred tone.
 
 #### autoClose
 

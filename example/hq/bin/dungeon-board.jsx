@@ -110,6 +110,19 @@ export default function DungeonBoard({
     return hasLOS === false ? "#ef4444" : "#3b82f6"; // red or magic-blue
   }, [targetingSpell, hoveredCell, activeHero, visibilityCalc]);
 
+  const lastAttackEffect = useMemo(() => {
+    const attack = gameSession?.lastAttack;
+    if (!attack?.hero || !attack?.monster) return null;
+
+    return {
+      attackerX: (attack.hero.x - 1) * 34 + 17,
+      attackerY: (attack.hero.y - 1) * 34 + 17,
+      defenderX: (attack.monster.x - 1) * 34 + 17,
+      defenderY: (attack.monster.y - 1) * 34 + 17,
+      damageDealt: attack.combatResult?.damageDealt ?? 0,
+    };
+  }, [gameSession?.lastAttack]);
+
   const renderGrid = () => {
     const cells = [];
     for (let y = 0; y < 19; y++) {
@@ -208,7 +221,7 @@ export default function DungeonBoard({
   };
 
   return (
-    <div className="relative w-[884px] h-[646px] mx-auto overflow-hidden bg-black flex items-center justify-center">
+    <div className="relative w-[884px] h-[646px] mx-auto overflow-hidden bg-black flex items-center justify-center shadow-[0_28px_48px_rgba(0,0,0,0.55)]">
       <style>{`
         @keyframes mist1 {
           0% { transform: translate3d(-28px, -18px, 0); }
@@ -220,6 +233,19 @@ export default function DungeonBoard({
           50% { transform: rotate(180deg) translate3d(14px, -12px, 0); }
           100% { transform: rotate(180deg) translate3d(30px, 22px, 0); }
         }
+        @keyframes impactRing {
+          0% { transform: scale(0.65); opacity: 0.9; }
+          100% { transform: scale(1.55); opacity: 0; }
+        }
+        @keyframes impactPulse {
+          0%, 100% { transform: scale(0.92); opacity: 0.4; }
+          50% { transform: scale(1.08); opacity: 0.9; }
+        }
+        @keyframes floatDamage {
+          0% { transform: translateY(8px); opacity: 0; }
+          15% { opacity: 1; }
+          100% { transform: translateY(-22px); opacity: 0.15; }
+        }
       `}</style>
 
       {/* Layer 0: Board Background */}
@@ -227,6 +253,17 @@ export default function DungeonBoard({
         src="/img/tabellone/default.bmp"
         alt="Board"
         className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+
+      {/* Layer 5: Atmosphere Grading */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[5]"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 46%, rgba(251,191,36,0.07) 0%, rgba(15,23,42,0) 34%), radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.58) 100%)",
+          boxShadow:
+            "inset 0 0 84px rgba(0,0,0,0.72), inset 0 0 24px rgba(120,53,15,0.25)",
+        }}
       />
 
       {/* Layer 10: Grid Cells (Fog & Highlights) */}
@@ -269,6 +306,21 @@ export default function DungeonBoard({
         }}
       />
 
+      {activeHero && (
+        <div
+          className="absolute pointer-events-none z-[25] rounded-full"
+          style={{
+            left: (activeHero.x - 1) * 34 - 24,
+            top: (activeHero.y - 1) * 34 - 24,
+            width: 82,
+            height: 82,
+            background:
+              "radial-gradient(circle, rgba(251,191,36,0.24) 0%, rgba(245,158,11,0.14) 34%, rgba(0,0,0,0) 74%)",
+            filter: "blur(7px)",
+          }}
+        />
+      )}
+
       {/* Layer 30: Static Entities (Furniture, Doors, Passages, Treasures, Traps) */}
       <div className="absolute inset-0 pointer-events-none z-30">
         {visibleFurniture?.map((f, i) => (
@@ -276,7 +328,7 @@ export default function DungeonBoard({
             key={`furn-${i}`}
             src={`/img/mobili/${f.img}`}
             alt="Furniture"
-            className="absolute max-w-none h-auto"
+            className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
             style={{ left: (f.x - 1) * 34, top: (f.y - 1) * 34 }}
           />
         ))}
@@ -285,7 +337,7 @@ export default function DungeonBoard({
             key={`door-${i}`}
             src={`/img/cell/${d.img}`}
             alt="Door"
-            className="absolute max-w-none h-auto"
+            className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
             style={{ left: (d.x - 1) * 34, top: (d.y - 1) * 34 }}
           />
         ))}
@@ -294,7 +346,7 @@ export default function DungeonBoard({
             key={`sp-${i}`}
             src={`/img/cell/${sp.img}`}
             alt="Secret Passage"
-            className="absolute max-w-none h-auto"
+            className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
             style={{ left: (sp.x - 1) * 34, top: (sp.y - 1) * 34 }}
           />
         ))}
@@ -303,7 +355,7 @@ export default function DungeonBoard({
             key={`tr-${i}`}
             src={`/img/cell/${t.img}`}
             alt="Treasure"
-            className="absolute max-w-none h-auto"
+            className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
             style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }}
           />
         ))}
@@ -318,7 +370,7 @@ export default function DungeonBoard({
               key={`trap-${i}`}
               src={`/img/cell/${imgSrc}`}
               alt="Trap"
-              className="absolute max-w-none h-auto"
+              className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
               style={{ left: (tr.x - 1) * 34, top: (tr.y - 1) * 34 }}
             />
           );
@@ -335,7 +387,7 @@ export default function DungeonBoard({
               key={`script-img-${i}`}
               src={image.src}
               alt="Script"
-              className="absolute max-w-none h-auto"
+              className="absolute max-w-none h-auto drop-shadow-[0_8px_10px_rgba(0,0,0,0.65)]"
               style={{ left: (image.x - 1) * 34, top: (image.y - 1) * 34 }}
             />
           ))}
@@ -383,7 +435,7 @@ export default function DungeonBoard({
               onClick={(e) => handleMonsterClick(e, m.id)}
               title={`HP: ${m.currentBody}/${m.monster?.corpo} | MP: ${m.currentMind}/${m.monster?.mente}`}
             >
-              <div className={`relative w-full h-full ${auraClass}`}>
+              <div className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}>
                 <img
                   src={`/img/mostri/${m.monster?.immagine}`}
                   alt={m.monster?.nome}
@@ -432,14 +484,17 @@ export default function DungeonBoard({
               onClick={(e) => handleHeroTargetClick(e, h)}
               title={`HP: ${h.currentBody}/${h.hero?.corpo}`}
             >
-              <div className={`relative w-full h-full ${auraClass}`}>
+              <div className={`relative w-full h-full ${auraClass} drop-shadow-[0_8px_8px_rgba(0,0,0,0.78)]`}>
+                {isActiveTurn && (
+                  <div className="absolute inset-[-6px] rounded-full bg-amber-300/25 blur-md animate-pulse pointer-events-none" />
+                )}
                 <img
                   src={`/img/eroi/${h.hero?.miniature}`}
                   alt={h.hero?.classe}
                   className="max-w-[34px] max-h-[34px] object-contain"
                 />
                 {isActiveTurn && (
-                  <div className="absolute inset-0 border-2 border-yellow-400 animate-pulse pointer-events-none" />
+                  <div className="absolute inset-0 border-2 border-amber-300/90 shadow-[0_0_12px_rgba(252,211,77,0.5)] animate-pulse pointer-events-none" />
                 )}
                 <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[9px] font-bold px-1 rounded-full border border-white z-50 shadow-sm">
                   {h.currentBody}
@@ -450,6 +505,50 @@ export default function DungeonBoard({
         })}
       </div>
 
+      {/* Layer 45: Immediate Attack Feedback */}
+      {lastAttackEffect && (
+        <div className="absolute inset-0 pointer-events-none z-[45]">
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: lastAttackEffect.attackerX - 28,
+              top: lastAttackEffect.attackerY - 28,
+              width: 56,
+              height: 56,
+              background:
+                "radial-gradient(circle, rgba(251,191,36,0.42) 0%, rgba(249,115,22,0.18) 42%, rgba(0,0,0,0) 74%)",
+              animation: "impactPulse 0.95s ease-out infinite",
+            }}
+          />
+          <div
+            className="absolute rounded-full border-2 border-red-300/70 shadow-[0_0_18px_rgba(248,113,113,0.55)]"
+            style={{
+              left: lastAttackEffect.defenderX - 24,
+              top: lastAttackEffect.defenderY - 24,
+              width: 48,
+              height: 48,
+              animation: "impactRing 1s ease-out infinite",
+            }}
+          />
+          <div
+            className={`absolute px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] border shadow-lg ${
+              lastAttackEffect.damageDealt > 0
+                ? "bg-red-950/85 text-amber-200 border-red-400/70"
+                : "bg-stone-950/85 text-sky-200 border-sky-400/60"
+            }`}
+            style={{
+              left: lastAttackEffect.defenderX - 30,
+              top: lastAttackEffect.defenderY - 40,
+              animation: "floatDamage 1.1s ease-out infinite",
+            }}
+          >
+            {lastAttackEffect.damageDealt > 0
+              ? `-${lastAttackEffect.damageDealt} HP`
+              : "Parata"}
+          </div>
+        </div>
+      )}
+
       {/* Layer 50: Targeting Tracer */}
       {targetingSpell && hoveredCell && activeHero && (
         <svg
@@ -457,19 +556,62 @@ export default function DungeonBoard({
           width="884"
           height="646"
         >
+          <defs>
+            <filter id="target-trace-glow">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <linearGradient id="target-trace-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.85" />
+              <stop offset="55%" stopColor={getTracerColor()} stopOpacity="0.95" />
+              <stop offset="100%" stopColor={getTracerColor()} stopOpacity="0.55" />
+            </linearGradient>
+          </defs>
+          <line
+            x1={(activeHero.x - 1) * 34 + 17}
+            y1={(activeHero.y - 1) * 34 + 17}
+            x2={hoveredCell.x * 34 + 17}
+            y2={hoveredCell.y * 34 + 17}
+            stroke="url(#target-trace-gradient)"
+            strokeWidth="5"
+            strokeLinecap="round"
+            opacity="0.38"
+            filter="url(#target-trace-glow)"
+          />
           <line
             x1={(activeHero.x - 1) * 34 + 17}
             y1={(activeHero.y - 1) * 34 + 17}
             x2={hoveredCell.x * 34 + 17}
             y2={hoveredCell.y * 34 + 17}
             stroke={getTracerColor()}
+            strokeWidth="2.2"
+            strokeDasharray="5 6"
+            strokeLinecap="round"
+            className="animate-pulse"
+          />
+          <circle
+            cx={(activeHero.x - 1) * 34 + 17}
+            cy={(activeHero.y - 1) * 34 + 17}
+            r="7"
+            fill={getTracerColor()}
+            opacity="0.34"
+            filter="url(#target-trace-glow)"
+          />
+          <circle
+            cx={hoveredCell.x * 34 + 17}
+            cy={hoveredCell.y * 34 + 17}
+            r="13"
+            fill="none"
+            stroke={getTracerColor()}
             strokeWidth="2"
-            strokeDasharray="4 4"
+            opacity="0.92"
             className="animate-pulse"
           />
         </svg>
       )}
-
     </div>
   );
 }

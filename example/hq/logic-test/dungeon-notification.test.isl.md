@@ -1,6 +1,25 @@
-<!-- LOGIC TEST SCENARIOS FOR: dungeon-notification.isl.md -->
+# Project: Heroquest React Logic Tests
 
-# DungeonNotification Logic Test Scenarios (.test.isl.md)
+**Version**: 1.0.0
+**ISL Version**: 1.6.1
+**Created**: 2026-04-12
+**Implementation**: ./logic-test/dungeon-notification.test
+
+---
+
+> **Reference**: `./dungeon-notification.isl.md`
+
+## Domain Concepts
+
+- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced HeroQuest component behavior.
+
+## Component: DungeonNotificationLogicTests
+
+### Role: Test
+
+### ⚡ Scenarios
+
+<!-- LOGIC TEST SCENARIOS FOR: dungeon-notification.isl.md -->
 
 ## Scenario: Notification Visibility Toggle
 - **Given**: `message` is null or an empty string.
@@ -54,3 +73,11 @@
 - **Assert (Expected Outcomes)**:
     - The component maintains `fixed` positioning.
     - The component maintains `z-index: 100` to ensure it remains on top of the game board/UI.
+
+## Scenario: Tone Derivation For Arcane And Warning Messages
+- **Given**: `message` changes from an arcane targeting message to a warning/cancel message.
+- **When**: The component re-renders.
+- **Assert (Expected Outcomes)**:
+    - The visible toast updates its tone label and accent styling based on the new message semantics.
+    - Arcane messages render with a dedicated arcane label and color family.
+    - Warning messages render with a cautionary label and color family.

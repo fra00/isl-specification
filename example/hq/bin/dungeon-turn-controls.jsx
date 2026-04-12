@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 export default function DungeonTurnControls({
   currentHero = null,
@@ -26,11 +26,11 @@ export default function DungeonTurnControls({
   onOpenMagic = () => {},
   onOpenInventory = () => {},
   onCancelTargeting = () => {},
-  onOpenDoor = () => {}
+  onOpenDoor = () => {},
 }) {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const positionRef = useRef({ x: 20, y: 20 });
   const offsetRef = useRef({ x: 0, y: 0 });
 
@@ -41,15 +41,22 @@ export default function DungeonTurnControls({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('dungeonTurnControlsPosition');
+      const saved = localStorage.getItem("dungeonTurnControlsPosition");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        if (
+          parsed &&
+          typeof parsed.x === "number" &&
+          typeof parsed.y === "number"
+        ) {
           updatePosition(parsed);
         }
       }
     } catch (e) {
-      console.warn('Failed to parse dungeonTurnControlsPosition from localStorage', e);
+      console.warn(
+        "Failed to parse dungeonTurnControlsPosition from localStorage",
+        e,
+      );
     }
   }, [updatePosition]);
 
@@ -57,7 +64,7 @@ export default function DungeonTurnControls({
     setIsDragging(true);
     offsetRef.current = {
       x: e.clientX - positionRef.current.x,
-      y: e.clientY - positionRef.current.y
+      y: e.clientY - positionRef.current.y,
     };
   }, []);
 
@@ -65,28 +72,31 @@ export default function DungeonTurnControls({
     const handleMouseMove = (e) => {
       updatePosition({
         x: e.clientX - offsetRef.current.x,
-        y: e.clientY - offsetRef.current.y
+        y: e.clientY - offsetRef.current.y,
       });
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(positionRef.current));
+      localStorage.setItem(
+        "dungeonTurnControlsPosition",
+        JSON.stringify(positionRef.current),
+      );
     };
 
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, updatePosition]);
 
-  const heroClass = (currentHero?.hero?.classe || '').toLowerCase();
-  const canUseMagic = heroClass === 'mago' || heroClass === 'elfo';
+  const heroClass = (currentHero?.hero?.classe || "").toLowerCase();
+  const canUseMagic = heroClass === "mago" || heroClass === "elfo";
   const showOpenDoor = canOpenDoor === true || canOpenDoor?.found === true;
 
   return (
@@ -96,10 +106,12 @@ export default function DungeonTurnControls({
     >
       {/* Header / Drag Handle */}
       <div
-        className={`bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
         onMouseDown={handleMouseDown}
       >
-        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">HeroQuest</div>
+        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">
+          HeroQuest
+        </div>
         <div className="text-center text-lg font-bold uppercase tracking-[0.14em] text-amber-500 drop-shadow-sm">
           Controlli Turno
         </div>
@@ -161,7 +173,9 @@ export default function DungeonTurnControls({
           {canDisarmTrap && (
             <button
               onClick={onDisarmTrap}
-              disabled={!!turnPhase?.HasPerformedAction || isMoving || isTargeting}
+              disabled={
+                !!turnPhase?.HasPerformedAction || isMoving || isTargeting
+              }
               className="w-full py-2 px-3 rounded-lg font-semibold bg-orange-700 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Disinnesca Trappola
@@ -171,7 +185,9 @@ export default function DungeonTurnControls({
           {canUseMagic && (
             <button
               onClick={onOpenMagic}
-              disabled={!!turnPhase?.HasPerformedAction || isMoving || isTargeting}
+              disabled={
+                !!turnPhase?.HasPerformedAction || isMoving || isTargeting
+              }
               className="w-full py-2 px-3 rounded-lg font-semibold bg-indigo-700 hover:bg-indigo-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Magia

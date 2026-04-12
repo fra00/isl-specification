@@ -108,8 +108,18 @@
 - **When**: The component renders the hero token.
 - **Assert (Expected Outcomes)**:
   - The hero token MUST have a visual "square selection" indicator applied.
+  - The active hero MUST also have a subtle amber ground glow so the current turn reads immediately.
   - The CSS transition `top 0.3s linear, left 0.3s linear` MUST be active on the hero container to ensure smooth movement when coordinates update.
   - If `activeStatus` contains "FoggyMist", the hero MUST render with 50% opacity and a pulsing white aura.
+
+## Scenario: Immediate Combat Impact Feedback
+
+- **Given**: `gameSession.lastAttack` contains a hero attacker, a monster defender, and `damageDealt: 2`.
+- **When**: The board renders immediately after the combat result is stored.
+- **Assert (Expected Outcomes)**:
+  - The attacker position MUST display a warm pulse.
+  - The defender position MUST display a pulsing impact ring.
+  - A floating badge showing `-2 HP` MUST appear near the defender.
 
 ## Scenario: Hero Token Body Points Indicator Updates Immediately
 

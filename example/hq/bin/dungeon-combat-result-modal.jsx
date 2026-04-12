@@ -26,16 +26,26 @@ export default function CombatResultModal({ isOpen, onClose, combatResult, attac
 
   if (!isOpen) return null;
 
+  const getEntityName = (entity) => {
+    if (entity?.hero?.classe) return entity.hero.classe;
+    if (entity?.monster?.nome) return entity.monster.nome;
+    return 'Sconosciuto';
+  };
+
   if (!combatResult) {
     return (
-      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-        <div className="bg-gray-800 p-8 rounded-xl shadow-2xl text-center relative overflow-hidden w-[800px] h-[500px] flex flex-col items-center justify-center">
-          <p className="text-white text-2xl mb-8 font-bold">No combat data available</p>
+      <div className="fixed inset-0 bg-black/85 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+        <div className="bg-stone-950 border border-amber-800/60 p-8 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.75)] text-center relative overflow-hidden w-[800px] h-[500px] flex flex-col items-center justify-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(120,53,15,0.18),_transparent_55%),linear-gradient(180deg,_rgba(41,37,36,0.96),_rgba(12,10,9,1))]" />
+          <div className="relative z-10 flex flex-col items-center">
+            <p className="text-amber-400 text-sm uppercase tracking-[0.32em] mb-3">Rapporto di Scontro</p>
+            <p className="text-stone-100 text-2xl mb-8 font-bold">Nessun dato di combattimento disponibile</p>
+          </div>
           <button
             onClick={onClose}
-            className="bg-yellow-600 text-black font-bold px-8 py-3 rounded hover:bg-yellow-500 transition-colors"
+            className="relative z-10 bg-amber-700 text-white font-bold px-8 py-3 rounded-lg hover:bg-amber-600 transition-colors shadow-[0_0_10px_rgba(202,138,4,0.35)]"
           >
-            OK
+            Chiudi
           </button>
         </div>
       </div>
@@ -57,33 +67,45 @@ export default function CombatResultModal({ isOpen, onClose, combatResult, attac
 
   const attackerImg = getPortraitUrl(attacker);
   const defenderImg = getPortraitUrl(defender);
+  const attackerName = getEntityName(attacker);
+  const defenderName = getEntityName(defender);
+  const resultTitle = combatResult.damageDealt > 1
+    ? 'Impatto Devastante'
+    : combatResult.damageDealt === 1
+      ? 'Colpo a Segno'
+      : 'Attacco Respinto';
+  const resultSubtitle = combatResult.damageDealt > 0
+    ? 'Il bersaglio vacilla sotto l\'impatto.'
+    : 'La difesa regge e l\'assalto viene assorbito.';
   
   // Check if attacker is Barbarian to apply negative margin as per specs
   const isAttackerBarbarian = attacker?.hero?.classe?.toLowerCase() === 'barbaro';
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-      <div className="w-[800px] h-[500px] relative overflow-hidden rounded-xl shadow-2xl bg-gray-900">
-        
-        {/* Right Panel (Defender) - Background */}
-        <div className="absolute inset-0 bg-gradient-to-bl from-blue-900 to-blue-700 z-0"></div>
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+      <div className="w-[820px] h-[520px] relative overflow-hidden rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.75)] bg-stone-950 border border-amber-800/60">
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            background:
+              'radial-gradient(circle at left center, rgba(127,29,29,0.52), transparent 34%), radial-gradient(circle at right center, rgba(30,64,175,0.46), transparent 36%), linear-gradient(180deg, rgba(41,37,36,0.97) 0%, rgba(12,10,9,1) 100%)',
+          }}
+        />
+        <div className="absolute top-3 left-3 w-4 h-4 border-l-2 border-t-2 border-amber-700/45 z-10" />
+        <div className="absolute top-3 right-3 w-4 h-4 border-r-2 border-t-2 border-amber-700/45 z-10" />
+        <div className="absolute bottom-3 left-3 w-4 h-4 border-l-2 border-b-2 border-amber-700/45 z-10" />
+        <div className="absolute bottom-3 right-3 w-4 h-4 border-r-2 border-b-2 border-amber-700/45 z-10" />
 
         {/* Defender Portrait */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 z-[5] flex items-center justify-end p-4 opacity-70 mix-blend-screen">
+        <div className="absolute right-0 top-0 bottom-0 w-[42%] z-[5] flex items-end justify-end p-4 opacity-55 mix-blend-screen">
           {defenderImg && (
             <img src={defenderImg} alt="Defender" className="max-h-full object-contain" />
           )}
         </div>
 
-        {/* Left Panel (Attacker) - Clipped Background */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-red-900 to-red-700 z-10"
-          style={{ clipPath: 'polygon(0 0, 60% 0, 40% 100%, 0% 100%)' }}
-        ></div>
-
         {/* Attacker Portrait */}
         <div 
-          className={`absolute left-0 top-0 bottom-0 w-1/2 z-20 flex items-center justify-start p-4 opacity-70 mix-blend-screen ${isAttackerBarbarian ? '-ml-16' : ''}`}
+          className={`absolute left-0 top-0 bottom-0 w-[42%] z-10 flex items-end justify-start p-4 opacity-55 mix-blend-screen ${isAttackerBarbarian ? '-ml-16' : ''}`}
         >
           {attackerImg && (
             <img src={attackerImg} alt="Attacker" className="max-h-full object-contain" />
@@ -91,19 +113,26 @@ export default function CombatResultModal({ isOpen, onClose, combatResult, attac
         </div>
 
         {/* Center Info */}
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none">
-          
-          {/* VS Text */}
-          <div className="text-[4rem] font-bold italic text-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-4 mt-[-5%]">
-            VS
-          </div>
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none p-8">
+          <div className="flex flex-col gap-5 items-center bg-stone-950/72 p-7 rounded-[28px] backdrop-blur-sm pointer-events-auto border border-amber-700/45 shadow-[0_18px_45px_rgba(0,0,0,0.45)] min-w-[380px]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-amber-600">
+              Rapporto di Scontro
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold italic text-amber-300 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+                {resultTitle}
+              </div>
+              <div className="mt-2 text-xs uppercase tracking-[0.24em] text-stone-400">
+                {attackerName} VS {defenderName}
+              </div>
+              <div className="mt-2 text-sm text-stone-300">
+                {resultSubtitle}
+              </div>
+            </div>
 
-          {/* Dice Container */}
-          <div className="flex flex-col gap-6 items-center bg-black/50 p-6 rounded-2xl backdrop-blur-sm pointer-events-auto border border-gray-700 shadow-xl min-w-[300px]">
-            
             {/* Attacker Dice Row */}
             <div className="flex flex-col items-center w-full">
-              <span className="text-red-400 font-bold mb-2 uppercase tracking-widest text-sm">Attacker</span>
+              <span className="text-red-300 font-bold mb-2 uppercase tracking-widest text-sm">Attaccante</span>
               <div className="flex gap-2 min-h-[48px]">
                 {combatResult.attackerDice?.map((dice, idx) => (
                   <img
@@ -123,7 +152,7 @@ export default function CombatResultModal({ isOpen, onClose, combatResult, attac
 
             {/* Defender Dice Row */}
             <div className="flex flex-col items-center w-full">
-              <span className="text-blue-400 font-bold mb-2 uppercase tracking-widest text-sm">Defender</span>
+              <span className="text-blue-300 font-bold mb-2 uppercase tracking-widest text-sm">Difensore</span>
               <div className="flex gap-2 min-h-[48px]">
                 {combatResult.defenderDice?.map((dice, idx) => (
                   <img
@@ -143,27 +172,28 @@ export default function CombatResultModal({ isOpen, onClose, combatResult, attac
 
             {/* Result Text */}
             <div 
-              className="text-2xl font-bold text-white mt-2 drop-shadow-md transition-all duration-700 ease-in-out" 
+              className="rounded-2xl border border-amber-700/40 bg-black/30 px-5 py-3 text-center font-bold text-white mt-1 drop-shadow-md transition-all duration-700 ease-in-out" 
               style={{ 
                 opacity: animationActive ? 1 : 0, 
                 transform: animationActive ? 'translateY(0)' : 'translateY(20px)',
                 transitionDelay: '0.6s' 
               }}
             >
-              Damage Dealt: <span className="text-red-500 text-3xl ml-2">{combatResult.damageDealt}</span>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-stone-400">Danni Inflitti</div>
+              <div className="mt-1 text-4xl text-red-400">{combatResult.damageDealt}</div>
             </div>
 
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="mt-4 bg-yellow-600 text-black font-bold px-10 py-2 rounded hover:bg-yellow-500 transition-colors shadow-[0_0_10px_rgba(202,138,4,0.5)]"
+              className="mt-2 bg-amber-700 text-white font-bold px-10 py-2 rounded-lg hover:bg-amber-600 transition-colors shadow-[0_0_10px_rgba(202,138,4,0.4)]"
               style={{
                 opacity: animationActive ? 1 : 0,
                 transition: 'opacity 0.5s ease-in-out',
                 transitionDelay: '0.8s'
               }}
             >
-              OK
+              Chiudi
             </button>
           </div>
         </div>

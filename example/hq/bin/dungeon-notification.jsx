@@ -8,6 +8,52 @@
 
 import { useEffect } from 'react';
 
+function getNotificationTheme(message = '') {
+  const normalized = message.toLowerCase();
+
+  if (/genio|incantes|bersaglio|magia/.test(normalized)) {
+    return {
+      label: 'Arcano',
+      icon: '*',
+      border: 'border-indigo-500/60',
+      badge: 'border-indigo-400/40 bg-indigo-500/15 text-indigo-100',
+      glow: 'shadow-[0_0_24px_rgba(79,70,229,0.24)]',
+      background: 'linear-gradient(135deg, rgba(30,27,75,0.95) 0%, rgba(12,10,9,0.96) 55%, rgba(49,46,129,0.92) 100%)'
+    };
+  }
+
+  if (/trovat|oro|tesoro|bottino|pozion/.test(normalized)) {
+    return {
+      label: 'Bottino',
+      icon: '$',
+      border: 'border-amber-500/60',
+      badge: 'border-amber-400/40 bg-amber-500/15 text-amber-100',
+      glow: 'shadow-[0_0_24px_rgba(245,158,11,0.24)]',
+      background: 'linear-gradient(135deg, rgba(120,53,15,0.95) 0%, rgba(28,25,23,0.96) 52%, rgba(146,64,14,0.92) 100%)'
+    };
+  }
+
+  if (/annullat|non valido|non puo|non può|devi|impossibile|errore/.test(normalized)) {
+    return {
+      label: 'Avviso',
+      icon: '!',
+      border: 'border-rose-500/60',
+      badge: 'border-rose-400/40 bg-rose-500/15 text-rose-100',
+      glow: 'shadow-[0_0_24px_rgba(244,63,94,0.22)]',
+      background: 'linear-gradient(135deg, rgba(127,29,29,0.95) 0%, rgba(28,25,23,0.96) 50%, rgba(136,19,55,0.92) 100%)'
+    };
+  }
+
+  return {
+    label: 'Cronaca',
+    icon: '>',
+    border: 'border-amber-600/55',
+    badge: 'border-stone-400/30 bg-stone-200/10 text-stone-100',
+    glow: 'shadow-[0_0_24px_rgba(120,113,108,0.22)]',
+    background: 'linear-gradient(135deg, rgba(41,37,36,0.97) 0%, rgba(12,10,9,0.98) 58%, rgba(68,64,60,0.94) 100%)'
+  };
+}
+
 export default function DungeonNotification({ message, duration = 3000, onClose }) {
   useEffect(() => {
     if (!message) {
@@ -29,13 +75,48 @@ export default function DungeonNotification({ message, duration = 3000, onClose 
     return null;
   }
 
+  const theme = getNotificationTheme(message);
+
   return (
-    <div 
-      className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-black/80 border-2 border-yellow-500 text-white font-bold text-xl p-4 rounded-lg shadow-2xl animate-[pulse_0.3s_ease-in-out]"
+    <div
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[min(680px,calc(100vw-1.5rem))] pointer-events-none"
       role="alert"
       aria-live="assertive"
     >
-      {message}
+      <style>{`
+        @keyframes dungeonToastEntrance {
+          0% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+      <div
+        className={`relative overflow-hidden rounded-2xl border ${theme.border} ${theme.glow} backdrop-blur-sm animate-[dungeonToastEntrance_0.35s_ease-out]`}
+      >
+        <div
+          className="absolute inset-0 opacity-95"
+          style={{ background: theme.background }}
+        />
+        <div className="absolute inset-[1px] rounded-[15px] border border-white/5" />
+        <div className="absolute top-2 left-2 w-3 h-3 border-l border-t border-amber-500/35" />
+        <div className="absolute top-2 right-2 w-3 h-3 border-r border-t border-amber-500/35" />
+        <div className="absolute bottom-2 left-2 w-3 h-3 border-l border-b border-amber-500/35" />
+        <div className="absolute bottom-2 right-2 w-3 h-3 border-r border-b border-amber-500/35" />
+
+        <div className="relative flex items-start gap-4 px-5 py-4 md:px-6 md:py-5">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-lg font-black ${theme.badge}`}>
+            {theme.icon}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase tracking-[0.34em] text-stone-400">
+              {theme.label}
+            </div>
+            <div className="mt-1 text-base font-semibold leading-snug text-stone-100 md:text-lg">
+              {message}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

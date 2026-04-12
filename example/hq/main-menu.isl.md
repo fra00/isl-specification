@@ -15,7 +15,8 @@ Short description
 
 - `menu action plaque`: primary clickable card for one destination of the home screen.
 - `active backdrop`: full-screen hover/focus image that changes with the selected action and defaults to the `GIOCA` entry.
-- `compact viewport mode`: low-height home variant that reduces spacing and card height so title and both main actions remain inside the fixed runtime stage.
+- `compact viewport mode`: low-height home variant for heights up to about `720px`; it reduces spacing and card height so title and both main actions remain inside the fixed runtime stage.
+- `ultra-compact viewport mode`: very-low-height branch for heights up to about `460px`; it removes non-essential copy, shrinks badges, and forces the two main plaques into one two-column action row.
 
 ## Component: MainMenu
 
@@ -51,17 +52,22 @@ Main Menu Screen
   - two plaques can sit side by side
   - a small optional status plaque may appear to the right
 - Compact viewport layout:
+  - active when the viewport height falls to about `720px` or below
   - padding, title size, and plaque height compress aggressively
-  - secondary copy may be removed when the viewport is very low
-  - the two menu plaques may switch to a two-column action row to reduce total height
   - `GIOCA` and `EDITOR` remain visible in the first frame together with the title block
+- Ultra-compact viewport layout:
+  - active when the viewport height falls to about `460px` or below
+  - the short instructional line under the title is removed
+  - each plaque hides non-essential secondary hint copy and the `Entra` chip
+  - the two menu plaques MUST switch to a two-column action row to reduce total height
+  - the active-state pill remains visible, but its spacing and typography compress further
 
 ### 📦 Content
 
 - `HeaderPlaque`
   - eyebrow: `Portale del Regno`
   - title: `HeroQuest`
-  - short line inviting the user to choose a path
+  - short line inviting the user to choose a path, omitted in ultra-compact mode
 - `ActiveStatePill`
   - shows `Campagna` or `Forgia`
   - shows a short active hint
@@ -123,14 +129,18 @@ Mouse leave or blur on menu item.
 #### compactViewportResolution
 
 **Contract**:
-Switches the menu into compact mode on short viewports.
+Switches the menu into compact or ultra-compact mode on short viewports.
 
 **Trigger**:
 Initial render and viewport resize.
 
 **Side Effects**:
-- Reduce spacing and title scale.
-- Reduce plaque height.
-- Remove non-essential secondary copy on very low heights.
-- Prefer a two-column action row when vertical space is the limiting factor.
+- IF viewport height <= about `720px`:
+  - Reduce spacing and title scale.
+  - Reduce plaque height.
+- IF viewport height <= about `460px`:
+  - Remove the short instructional line below the title.
+  - Remove non-essential secondary hint copy inside plaques.
+  - Remove the `Entra` chip inside plaques.
+  - Switch the action area to a two-column row.
 - Keep title and both main menu plaques visible in the fixed stage without scroll.

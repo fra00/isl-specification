@@ -13,6 +13,7 @@
 
 - `menu action plaque`: compact clickable entry for one destination on the home screen.
 - `active backdrop`: background image and small active-state indicators driven by hover/focus.
+- `ultra-compact viewport mode`: very-low-height branch where secondary copy is removed and the two main plaques share one row.
 
 ## Component: MainMenuLogicTests
 
@@ -78,3 +79,20 @@
     - `HeroQuest`, `GIOCA`, and `EDITOR` are visible inside the initial viewport.
     - The home screen remains contained inside the fixed runtime stage.
     - No document-level scrollbar is needed to reach the primary destinations.
+
+## Scenario: Ultra-Compact Viewport Removes Non-Essential Copy
+- **Given**: `MainMenu` is rendered inside a very low viewport height that triggers ultra-compact mode.
+- **When**: The component resolves its home layout.
+- **Assert (Expected Outcomes)**:
+    - The short line under `HeroQuest` is not rendered.
+    - The per-plaque secondary hint text is not rendered.
+    - The `Entra` chip is not rendered inside the menu plaques.
+    - The active-state pill remains visible.
+
+## Scenario: Ultra-Compact Viewport Uses One Two-Column Action Row
+- **Given**: `MainMenu` is rendered inside a very low viewport height that triggers ultra-compact mode.
+- **When**: The action area is laid out.
+- **Assert (Expected Outcomes)**:
+    - `GIOCA` and `EDITOR` are placed in a two-column row.
+    - Both plaques remain fully visible in the first frame.
+    - The layout does not fall back to a stacked vertical column that pushes one plaque below the viewport.

@@ -600,7 +600,9 @@ export default function Dungeon(props) {
             onMonsterClick={handleMonsterClick}
             hoveredPath={hooksTurnLogic.hoveredPath}
             hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
-            secretPassages={hooksSecretPassages.getFoundPassages().visiblePassages}
+            secretPassages={
+              hooksSecretPassages.getFoundPassages().visiblePassages
+            }
             treasures={hooksTreasure.getFoundTreasures()}
             triggeredTraps={hooksTraps
               .getTriggeredTraps()

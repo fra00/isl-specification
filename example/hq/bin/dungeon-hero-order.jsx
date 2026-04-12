@@ -49,8 +49,9 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
   const isConfirmEnabled = selectedOrder.length === heroes.length && heroes.length > 0;
 
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 font-sans">
-      <div className="bg-stone-900 border-4 border-amber-800/80 p-6 md:p-8 rounded-xl max-w-5xl w-full shadow-[0_0_40px_rgba(0,0,0,1)] flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto font-sans">
+      <div className="min-h-full flex items-start justify-center p-4 md:items-center">
+      <div className="bg-stone-900 border-4 border-amber-800/80 p-6 md:p-8 rounded-xl max-w-5xl w-full shadow-[0_0_40px_rgba(0,0,0,1)] flex flex-col my-4">
         
         {/* Header */}
         <div className="mb-8 text-center shrink-0">
@@ -63,30 +64,26 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 overflow-hidden flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
           
           {/* Current Order Section */}
-          <div className="flex flex-col overflow-hidden">
+          <div className="flex flex-col">
             <h2 className="text-amber-600 uppercase font-bold tracking-widest mb-4 border-b border-amber-900/50 pb-2 shrink-0">
               Ordine Attuale
             </h2>
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            <div className="pr-2 space-y-3 custom-scrollbar">
               {Array.from({ length: Math.max(heroes.length, 1) }).map((_, index) => {
                 const heroId = selectedOrder[index];
                 const heroState = heroId != null ? heroes.find((h) => h.heroId === heroId) : null;
 
                 return (
-                  <div 
-                    key={`slot-${index}`} 
-                    className={`h-24 md:h-28 rounded-lg border-2 flex items-center overflow-hidden transition-all ${
-                      heroState 
-                        ? 'border-amber-700 bg-stone-800 cursor-pointer hover:border-red-500/80 group' 
-                        : 'border-dashed border-stone-700 bg-stone-950/50 justify-center'
-                    }`}
-                    onClick={() => heroState && removeHero(heroId)}
-                  >
-                    {heroState ? (
-                      <>
+                  heroState ? (
+                    <button
+                      type="button"
+                      key={`slot-${index}`}
+                      className="h-24 md:h-28 rounded-lg border-2 flex w-full items-center overflow-hidden border-amber-700 bg-stone-800 cursor-pointer hover:border-red-500/80 group transition-all text-left"
+                      onClick={() => removeHero(heroId)}
+                    >
                         <div className="w-20 md:w-24 h-full shrink-0 relative flex items-end justify-center bg-gradient-to-br from-stone-950/90 to-stone-800/70 p-2 md:p-3">
                           <img 
                             src={`img/eroi/${heroState.hero?.portrait}`} 
@@ -103,28 +100,33 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                             Clicca per rimuovere
                           </span>
                         </div>
-                      </>
-                    ) : (
+                    </button>
+                  ) : (
+                    <div 
+                      key={`slot-${index}`}
+                      className="h-24 md:h-28 rounded-lg border-2 flex items-center overflow-hidden transition-all border-dashed border-stone-700 bg-stone-950/50 justify-center"
+                    >
                       <span className="text-stone-600 font-bold text-2xl">
                         Slot {index + 1}
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )
                 );
               })}
             </div>
           </div>
 
           {/* Available Heroes Section */}
-          <div className="flex flex-col overflow-hidden">
+          <div className="flex flex-col">
             <h2 className="text-amber-600 uppercase font-bold tracking-widest mb-4 border-b border-amber-900/50 pb-2 shrink-0">
               Eroi Disponibili
             </h2>
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="pr-2 custom-scrollbar">
               {availableHeroes.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {availableHeroes.map((h) => (
-                    <div 
+                    <button 
+                      type="button"
                       key={h.heroId} 
                       onClick={() => selectHero(h.heroId)}
                       className="relative h-32 md:h-36 rounded-lg border-2 border-stone-700 bg-stone-800 cursor-pointer overflow-hidden group hover:border-amber-500 transition-colors"
@@ -141,7 +143,7 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
                           {h.hero?.classe}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -169,6 +171,7 @@ export default function DungeonHeroOrder({ heroes = [], onConfirmOrder }) {
           </button>
         </div>
 
+      </div>
       </div>
     </div>
   );

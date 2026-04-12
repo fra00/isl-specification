@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 export default function DungeonHeroInfoPanel({
   currentHero = null,
@@ -7,7 +7,7 @@ export default function DungeonHeroInfoPanel({
 }) {
   const panelRef = useRef(null);
   const getDefaultPosition = useCallback(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return { x: 980, y: 80 };
     }
 
@@ -24,7 +24,7 @@ export default function DungeonHeroInfoPanel({
   const offsetRef = useRef({ x: 0, y: 0 });
 
   const clampPosition = useCallback((rawPosition) => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return rawPosition;
     }
 
@@ -47,24 +47,34 @@ export default function DungeonHeroInfoPanel({
     };
   }, []);
 
-  const updatePosition = useCallback((newPosition) => {
-    const nextPosition = clampPosition(newPosition);
-    positionRef.current = nextPosition;
-    setPosition(nextPosition);
-  }, [clampPosition]);
+  const updatePosition = useCallback(
+    (newPosition) => {
+      const nextPosition = clampPosition(newPosition);
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
+    },
+    [clampPosition],
+  );
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('dungeonHeroInfoPanelPosition');
+      const saved = localStorage.getItem("dungeonHeroInfoPanelPosition");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        if (
+          parsed &&
+          typeof parsed.x === "number" &&
+          typeof parsed.y === "number"
+        ) {
           updatePosition(parsed);
           return;
         }
       }
     } catch (e) {
-      console.warn('Failed to parse dungeonHeroInfoPanelPosition from localStorage', e);
+      console.warn(
+        "Failed to parse dungeonHeroInfoPanelPosition from localStorage",
+        e,
+      );
     }
 
     updatePosition(getDefaultPosition());
@@ -75,9 +85,9 @@ export default function DungeonHeroInfoPanel({
       updatePosition(positionRef.current);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [updatePosition]);
 
@@ -100,19 +110,19 @@ export default function DungeonHeroInfoPanel({
     const handleMouseUp = () => {
       setIsDragging(false);
       localStorage.setItem(
-        'dungeonHeroInfoPanelPosition',
+        "dungeonHeroInfoPanelPosition",
         JSON.stringify(positionRef.current),
       );
     };
 
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, updatePosition]);
 
@@ -123,37 +133,37 @@ export default function DungeonHeroInfoPanel({
   const activeEffects = currentHero?.activeStatus || [];
   const statCards = [
     {
-      label: 'Oro',
+      label: "Oro",
       value: currentHero?.gold ?? 0,
-      valueClassName: 'text-amber-300',
+      valueClassName: "text-amber-300",
     },
     {
-      label: 'Corpo',
+      label: "Corpo",
       value: currentHero?.currentBody ?? 0,
-      valueClassName: 'text-red-300',
+      valueClassName: "text-red-300",
     },
     {
-      label: 'Mente',
+      label: "Mente",
       value: currentHero?.currentMind ?? 0,
-      valueClassName: 'text-sky-300',
+      valueClassName: "text-sky-300",
     },
     {
-      label: 'Attacco',
+      label: "Attacco",
       value: currentHeroStats?.attacco ?? currentHero?.hero?.attacco ?? 0,
-      valueClassName: 'text-stone-100',
+      valueClassName: "text-stone-100",
     },
     {
-      label: 'Difesa',
+      label: "Difesa",
       value: currentHeroStats?.difesa ?? currentHero?.hero?.difesa ?? 0,
-      valueClassName: 'text-stone-100',
-      colSpanClassName: 'col-span-2',
+      valueClassName: "text-stone-100",
+      colSpanClassName: "col-span-2",
     },
   ];
 
   return (
     <div
       ref={panelRef}
-      className="fixed relative w-[290px] md:w-[310px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 overflow-hidden font-serif"
+      className="fixed w-[290px] md:w-[310px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 overflow-hidden font-serif"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
       <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/45 pointer-events-none" />
@@ -162,10 +172,12 @@ export default function DungeonHeroInfoPanel({
       <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/45 pointer-events-none" />
 
       <div
-        className={`relative bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`relative bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
         onMouseDown={handleMouseDown}
       >
-        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">HeroQuest</div>
+        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">
+          HeroQuest
+        </div>
         <div className="text-center text-lg font-bold uppercase tracking-[0.14em] text-amber-500 drop-shadow-sm">
           Scheda Eroe
         </div>
@@ -187,21 +199,25 @@ export default function DungeonHeroInfoPanel({
               {currentHero?.hero?.portrait ? (
                 <img
                   src={`img/eroi/${currentHero.hero.portrait}`}
-                  alt={currentHero?.hero?.classe || 'Hero'}
+                  alt={currentHero?.hero?.classe || "Hero"}
                   className="w-full h-full object-contain object-bottom"
                 />
               ) : (
-                <span className="text-[10px] uppercase tracking-[0.18em] text-stone-600">N/A</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-stone-600">
+                  N/A
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase tracking-[0.24em] text-stone-500">Campione Attivo</div>
+              <div className="text-[10px] uppercase tracking-[0.24em] text-stone-500">
+                Campione Attivo
+              </div>
               <div className="text-lg font-bold text-amber-400 leading-tight break-words">
-                {currentHero?.hero?.classe || 'Sconosciuto'}
+                {currentHero?.hero?.classe || "Sconosciuto"}
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="inline-flex items-center rounded-full border border-amber-700/40 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-                  Movimento {movementPoints ?? '-'}
+                  Movimento {movementPoints ?? "-"}
                 </span>
               </div>
             </div>
@@ -211,10 +227,14 @@ export default function DungeonHeroInfoPanel({
             {statCards.map((statCard) => (
               <div
                 key={statCard.label}
-                className={`rounded-xl border border-stone-800 bg-gradient-to-b from-stone-900/95 to-stone-950/90 px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_18px_rgba(0,0,0,0.14)] ${statCard.colSpanClassName || ''}`}
+                className={`rounded-xl border border-stone-800 bg-gradient-to-b from-stone-900/95 to-stone-950/90 px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_18px_rgba(0,0,0,0.14)] ${statCard.colSpanClassName || ""}`}
               >
-                <div className="text-[10px] uppercase tracking-[0.18em] text-stone-500">{statCard.label}</div>
-                <div className={`mt-1 font-bold ${statCard.valueClassName}`}>{statCard.value}</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-stone-500">
+                  {statCard.label}
+                </div>
+                <div className={`mt-1 font-bold ${statCard.valueClassName}`}>
+                  {statCard.value}
+                </div>
               </div>
             ))}
           </div>
@@ -222,7 +242,9 @@ export default function DungeonHeroInfoPanel({
           <div className="flex flex-col mt-3 pt-2 border-t border-amber-900/25">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-violet-700/35 to-transparent" />
-              <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500">Effetti Attivi</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                Effetti Attivi
+              </span>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-violet-700/35 to-transparent" />
             </div>
             <div className="mt-2 flex flex-wrap gap-2">

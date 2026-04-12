@@ -10,6 +10,11 @@
 > **Reference**: @Spell in `./domain-ruleset.isl.md`
 > **Reference**: @HeroState in `./domain-session.isl.md`
 
+## Domain Concepts
+
+- `spell selection flow`: Pre-turn overlay that assigns three spell schools to the Wizard, or one school to the Elf when no Wizard is present.
+- `short viewport overlay`: A constrained-height viewport where the full spell-selection modal may exceed the visible area and must remain reachable through vertical scrolling.
+
 ## Component: DungeonSpellSelectionModal
 
 ### Role: Presentation
@@ -23,8 +28,10 @@
 ### 🔍 Appearance
 
 - **Overlay**: Fixed full-screen backdrop (bg-black/90), z-index 70.
-- **Layout**: Columnar layout showing the elements available.
+- **Layout**: Centered spell-selection plaque on large screens; on short viewports the full-screen overlay MUST scroll vertically so the entire modal remains reachable.
+- **Grid**: Two columns on narrow layouts, four columns on wider layouts, with centered cards and reduced spacing on compact screens.
 - **Card Backs**: Large images of element backs (`/img/cinc/Fuoco00_Dorso.jpg`, etc.).
+- **Compact Responsiveness**: Spell cards and labels SHOULD scale down on smaller viewports so the player can still see and select the full set without clipping.
 
 ### 📦 Content
 
@@ -33,15 +40,20 @@
 - **Element Grid**:
   - Shows the 4 element backs (Source: `/img/cinc/` + `[Element]00_Dorso.jpg`).
   - Elements already picked are greyed out or hidden.
+  - Each element card SHOULD remain fully clickable across the whole card area.
 
 ### ⚡ Capabilities
 
 #### internalState
 
+- **Contract**: Tracks which elemental schools are already taken and which magical hero is currently allowed to pick.
+
 - `pickedElements`: List of String ("Fuoco", "Acqua", etc.).
 - `currentHeroPicking`: @HeroState (Wizard or Elf).
 
 #### initialize
+
+- **Contract**: Resolves the active magical hero for the current mission setup and resets any previous picks.
 
 - Identify hero in `heroes` where `hero.hero.classe.toLowerCase()` == "mago".
 - IF Wizard is found:
@@ -56,6 +68,7 @@
 
 #### selectElement
 
+- **Contract**: Assigns an elemental school, blocks duplicates, and finalizes the spell map as soon as the active selection rule is satisfied.
 - **Signature**: `(elemento: String)`
 - **Flow**:
   - IF `currentHeroPicking` is null RETURN.
@@ -84,5 +97,13 @@
         - Let `selectionMap` = New Map.
         - Add `elfId -> elfSpells` to `selectionMap`.
         - Trigger `onConfirmSelection(selectionMap)`.
+
+#### maintainScrollableViewportLayout
+
+- **Contract**: Keeps the spell-selection modal usable on short viewports.
+- **Flow**:
+  - Allow the overlay container to scroll vertically when the modal natural height exceeds the viewport.
+  - Reduce the visual footprint of card backs and labels on compact screens.
+  - Preserve full-card click targets for every elemental choice.
 
 **💡 Implementation Hint**: The Wizard picks 3 elements, leaving exactly one for the Elf automatically.

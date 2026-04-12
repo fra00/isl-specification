@@ -47,68 +47,163 @@ export default function DungeonSpellCastModal({
     }
   };
 
+  const getElementAccent = (elemento) => {
+    switch ((elemento || '').toLowerCase()) {
+      case 'fuoco':
+        return {
+          ring: 'border-red-700/70',
+          glow: 'shadow-[0_18px_38px_rgba(127,29,29,0.28)]',
+          badge: 'bg-red-950/80 text-red-200 border-red-700/70',
+          action: 'bg-gradient-to-r from-red-900 via-red-800 to-amber-800 hover:from-red-800 hover:via-red-700 hover:to-amber-700 focus:ring-red-400/50',
+        };
+      case 'acqua':
+        return {
+          ring: 'border-sky-700/70',
+          glow: 'shadow-[0_18px_38px_rgba(12,74,110,0.26)]',
+          badge: 'bg-sky-950/80 text-sky-200 border-sky-700/70',
+          action: 'bg-gradient-to-r from-sky-900 via-sky-800 to-cyan-800 hover:from-sky-800 hover:via-sky-700 hover:to-cyan-700 focus:ring-sky-400/50',
+        };
+      case 'terra':
+        return {
+          ring: 'border-amber-800/70',
+          glow: 'shadow-[0_18px_38px_rgba(120,53,15,0.28)]',
+          badge: 'bg-amber-950/80 text-amber-200 border-amber-700/70',
+          action: 'bg-gradient-to-r from-amber-900 via-amber-800 to-stone-700 hover:from-amber-800 hover:via-amber-700 hover:to-stone-600 focus:ring-amber-400/50',
+        };
+      case 'aria':
+        return {
+          ring: 'border-violet-700/70',
+          glow: 'shadow-[0_18px_38px_rgba(76,29,149,0.24)]',
+          badge: 'bg-violet-950/80 text-violet-200 border-violet-700/70',
+          action: 'bg-gradient-to-r from-violet-900 via-violet-800 to-indigo-800 hover:from-violet-800 hover:via-violet-700 hover:to-indigo-700 focus:ring-violet-400/50',
+        };
+      default:
+        return {
+          ring: 'border-amber-900/60',
+          glow: 'shadow-[0_18px_38px_rgba(0,0,0,0.28)]',
+          badge: 'bg-stone-900/80 text-stone-200 border-stone-700/70',
+          action: 'bg-gradient-to-r from-amber-900 via-amber-800 to-stone-700 hover:from-amber-800 hover:via-amber-700 hover:to-stone-600 focus:ring-amber-400/50',
+        };
+    }
+  };
+
   return (
     <div 
-      className="fixed inset-0 bg-black/85 z-[65] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[65] overflow-y-auto bg-black/85 p-4"
       onClick={handleClose}
     >
       <div 
-        className="w-[90%] max-w-[1000px] bg-gray-900 text-white rounded-lg shadow-2xl flex flex-col max-h-[90vh]"
+        className="mx-auto my-4 flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-amber-900/70 bg-stone-900/95 text-stone-100 shadow-[0_28px_70px_rgba(0,0,0,0.72)] backdrop-blur-sm font-serif"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="absolute pointer-events-none" />
+
         {/* Header */}
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-yellow-500">Lancia Incantesimo</h2>
-            <p className="text-gray-400 capitalize">{hero.hero?.classe || 'Eroe'}</p>
+        <div className="relative shrink-0 overflow-hidden border-b border-amber-900/50 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.12),_transparent_55%),linear-gradient(180deg,_rgba(28,25,23,0.98),_rgba(12,10,9,0.96))] px-5 py-5 md:px-7">
+          <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/40" />
+          <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/40" />
+          <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/40" />
+          <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/40" />
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="hidden h-20 w-20 overflow-hidden rounded-xl border border-amber-900/60 bg-stone-950/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex sm:items-end sm:justify-center">
+                {hero.hero?.portrait ? (
+                  <img
+                    src={`/img/eroi/${hero.hero.portrait}`}
+                    alt={hero.hero?.classe || 'Eroe'}
+                    className="h-full w-full object-contain object-bottom"
+                  />
+                ) : (
+                  <div className="text-center text-xs uppercase tracking-[0.2em] text-stone-600">Eroe</div>
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.32em] text-amber-700">HeroQuest</div>
+                <h2 className="mt-1 text-2xl font-bold uppercase tracking-[0.12em] text-amber-500 md:text-3xl">Lancia Incantesimo</h2>
+                <p className="mt-2 text-sm uppercase tracking-[0.24em] text-stone-400 md:text-base">
+                  {hero.hero?.classe || 'Eroe'}
+                </p>
+                <div className="mt-3 inline-flex items-center rounded-full border border-amber-800/60 bg-stone-950/80 px-3 py-1 text-xs uppercase tracking-[0.2em] text-amber-200">
+                  {spellsToRender.length} incantesimi disponibili
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleClose}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-900/60 bg-stone-950/80 text-2xl leading-none text-stone-400 transition-colors hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400/60"
+              aria-label="Chiudi"
+            >
+              &times;
+            </button>
           </div>
-          <button 
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white text-3xl leading-none focus:outline-none"
-            aria-label="Chiudi"
-          >
-            &times;
-          </button>
+
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-transparent" />
+            <div className="text-[10px] uppercase tracking-[0.28em] text-stone-500">Grimorio da Battaglia</div>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-transparent" />
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto">
+        <div className="p-4 md:p-6">
           {spellsToRender.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">Non hai più incantesimi disponibili per questa missione.</p>
+            <div className="rounded-2xl border border-amber-900/50 bg-[linear-gradient(180deg,_rgba(28,25,23,0.82),_rgba(12,10,9,0.92))] px-6 py-12 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="text-xs uppercase tracking-[0.3em] text-amber-700">Silenzio Arcano</div>
+              <p className="mt-4 text-lg text-stone-300 md:text-xl">Non hai piu incantesimi disponibili per questa missione.</p>
+              <p className="mt-2 text-sm text-stone-500">Il grimorio del tuo eroe e stato gia consumato nelle sale del dungeon.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {spellsToRender.map((spell) => (
-                <div key={spell.id} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden flex flex-col">
-                  <div className="h-48 bg-black/50 p-2 flex items-center justify-center">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {spellsToRender.map((spell) => {
+                const accent = getElementAccent(spell.elemento);
+
+                return (
+                <div key={spell.id} className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,_rgba(41,37,36,0.95),_rgba(17,24,39,0.98))] ${accent.ring} ${accent.glow}`}>
+                  <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/35 pointer-events-none" />
+                  <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/35 pointer-events-none" />
+                  <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/35 pointer-events-none" />
+                  <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/35 pointer-events-none" />
+
+                  <div className="flex min-h-[220px] items-center justify-center border-b border-stone-700/60 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.14),_transparent_55%),linear-gradient(180deg,_rgba(12,10,9,0.94),_rgba(28,25,23,0.86))] p-4 md:min-h-[250px]">
                     {spell.immagine ? (
                       <img 
                         src={`/img/cinc/${spell.immagine}`} 
                         alt={spell.nome} 
-                        className="max-h-full max-w-full object-contain drop-shadow-md"
+                        className="max-h-full max-w-full rounded-lg object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,0.5)]"
                       />
                     ) : (
-                      <div className="text-gray-600 italic">Nessuna immagine</div>
+                      <div className="text-sm italic text-stone-600">Nessuna immagine</div>
                     )}
                   </div>
-                  <div className="p-4 flex flex-col flex-grow">
-                    <h3 className="text-lg font-bold text-yellow-400 mb-2">{spell.nome}</h3>
-                    <p className="text-sm text-gray-300 italic mb-4 flex-grow">{spell.descrizione}</p>
-                    <div className="mb-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-200">
+                  <div className="flex flex-grow flex-col gap-4 p-4 md:p-5">
+                    <div className="flex flex-wrap items-start gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${accent.badge}`}>
+                        {spell.elemento || 'Arcano'}
+                      </span>
+                      <span className="inline-flex items-center rounded-full border border-stone-700/70 bg-stone-950/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-300">
                         Bersaglio: {getTargetText(spell.targetType)}
                       </span>
                     </div>
+
+                    <div>
+                      <h3 className="text-xl font-bold text-amber-300">{spell.nome}</h3>
+                      <p className="mt-3 text-sm leading-6 text-stone-300 md:text-[15px]">{spell.descrizione}</p>
+                    </div>
+
+                    <div className="mt-auto">
                     <button
                       onClick={() => handleCast(spell.id)}
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className={`w-full rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition-all focus:outline-none focus:ring-2 ${accent.action}`}
                     >
                       Lancia
                     </button>
+                    </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

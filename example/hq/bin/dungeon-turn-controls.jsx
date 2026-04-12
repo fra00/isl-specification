@@ -59,11 +59,14 @@ export default function DungeonTurnControls({
     };
   }, []);
 
-  const updatePosition = useCallback((newPos) => {
-    const nextPosition = clampPosition(newPos);
-    positionRef.current = nextPosition;
-    setPosition(nextPosition);
-  }, [clampPosition]);
+  const updatePosition = useCallback(
+    (newPos) => {
+      const nextPosition = clampPosition(newPos);
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
+    },
+    [clampPosition],
+  );
 
   useEffect(() => {
     try {
@@ -141,7 +144,7 @@ export default function DungeonTurnControls({
   return (
     <div
       ref={panelRef}
-      className="fixed relative w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
+      className="fixed w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
     >
       <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/45 pointer-events-none" />
@@ -180,10 +183,7 @@ export default function DungeonTurnControls({
             </div>
             <div className="h-px flex-1 bg-gradient-to-r from-stone-800/20 via-stone-600/60 to-transparent" />
           </div>
-          <button
-            onClick={onOpenInventory}
-            className={utilityButtonClass}
-          >
+          <button onClick={onOpenInventory} className={utilityButtonClass}>
             <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
             <span className="relative flex items-center justify-between gap-3">
               <span>Inventario</span>
@@ -210,7 +210,9 @@ export default function DungeonTurnControls({
             <span className="absolute inset-x-0 top-0 h-px bg-white/12" />
             <span className="relative flex items-center justify-between gap-3">
               <span>Fine Turno</span>
-              <span className="text-[9px] uppercase tracking-[0.22em] text-red-100/70">Chiudi</span>
+              <span className="text-[9px] uppercase tracking-[0.22em] text-red-100/70">
+                Chiudi
+              </span>
             </span>
           </button>
 
@@ -271,10 +273,7 @@ export default function DungeonTurnControls({
           )}
 
           {isTargeting && (
-            <button
-              onClick={onCancelTargeting}
-              className={utilityButtonClass}
-            >
+            <button onClick={onCancelTargeting} className={utilityButtonClass}>
               <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
               <span className="relative flex items-center justify-between gap-3">
                 <span>Annulla Bersaglio</span>

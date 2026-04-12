@@ -82,24 +82,24 @@ export default function DungeonSpellSelectionModal({
   }, [currentHeroPicking, pickedElements, heroes, allSpells, onConfirmSelection]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4">
-      <div className="flex flex-col items-center max-w-4xl w-full bg-stone-900 border-2 border-amber-600 rounded-xl p-6 shadow-2xl">
-        <h2 className="text-3xl font-bold text-amber-500 mb-2 uppercase tracking-wider text-center">
-          Selezione Incantesimi
-        </h2>
-        
-        <div className="text-xl text-stone-300 mb-8 h-8 text-center">
-          {currentHeroPicking ? (
-            <span>
-              Turno di selezione: <strong className="text-amber-400">{currentHeroPicking.hero?.classe}</strong>
-              {currentHeroPicking.hero?.classe?.toLowerCase() === 'mago' && ` (${3 - pickedElements.length} rimanenti)`}
-            </span>
-          ) : (
-            <span>Nessun eroe magico presente</span>
-          )}
-        </div>
+    <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/90 p-4">
+      <div className="mx-auto my-4 flex w-full max-w-4xl flex-col items-center rounded-xl border-2 border-amber-600 bg-stone-900 p-4 shadow-2xl sm:p-5 md:p-6">
+          <h2 className="mb-2 text-center text-2xl font-bold uppercase tracking-wider text-amber-500 md:text-3xl">
+            Selezione Incantesimi
+          </h2>
+          
+          <div className="mb-4 min-h-[2rem] text-center text-base text-stone-300 md:mb-6 md:text-xl">
+            {currentHeroPicking ? (
+              <span>
+                Turno di selezione: <strong className="text-amber-400">{currentHeroPicking.hero?.classe}</strong>
+                {currentHeroPicking.hero?.classe?.toLowerCase() === 'mago' && ` (${3 - pickedElements.length} rimanenti)`}
+              </span>
+            ) : (
+              <span>Nessun eroe magico presente</span>
+            )}
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
+          <div className="grid w-full grid-cols-2 justify-items-center gap-3 md:grid-cols-4 md:gap-5">
           {allElements.map((elemento) => {
             const isPicked = pickedElements.includes(elemento);
             return (
@@ -107,7 +107,7 @@ export default function DungeonSpellSelectionModal({
                 key={elemento}
                 onClick={() => selectElement(elemento)}
                 disabled={isPicked || !currentHeroPicking}
-                className={`relative flex flex-col items-center transition-all duration-300 ${
+                className={`relative flex w-full min-w-0 flex-col items-center rounded-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 ${
                   isPicked 
                     ? 'opacity-30 cursor-not-allowed grayscale' 
                     : 'hover:scale-105 hover:shadow-[0_0_15px_rgba(245,158,11,0.5)] cursor-pointer'
@@ -116,18 +116,18 @@ export default function DungeonSpellSelectionModal({
                 <img 
                   src={`/img/cinc/${elemento}00_Dorso.jpg`} 
                   alt={`Dorso incantesimi di ${elemento}`}
-                  className="w-full max-w-[200px] rounded-lg border-2 border-stone-700 object-cover aspect-[2/3]"
+                  className="aspect-[2/3] w-full max-w-[128px] rounded-lg border-2 border-stone-700 object-cover md:max-w-[150px] xl:max-w-[180px]"
                   onError={(e) => {
                     e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" fill="%23292524"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23a8a29e" text-anchor="middle" font-family="sans-serif">Immagine Mancante</text></svg>';
                   }}
                 />
-                <span className="mt-3 text-lg font-semibold text-amber-100 bg-stone-800 px-4 py-1 rounded-full border border-stone-600">
+                <span className="mt-2 rounded-full border border-stone-600 bg-stone-800 px-3 py-1 text-sm font-semibold text-amber-100 md:mt-3 md:px-4 md:text-base xl:text-lg">
                   {elemento}
                 </span>
               </button>
             );
           })}
-        </div>
+          </div>
       </div>
     </div>
   );

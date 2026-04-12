@@ -35,13 +35,15 @@
 
 - **Overlay**: Fixed full-screen dark gothic overlay.
 - **Modal**: Centered large dark bronze panel aligned with the HeroQuest navigation flow.
+- **Responsive Layout**: On short viewports, the overlay itself MUST remain vertically scrollable so the full hero-order modal stays reachable and all hero cards remain clickable without overlapping the header or confirm area.
 - **Typography**: Bronze fantasy title, warm neutral body text, uppercase section labels.
 - **Sections**: Two internal panels side by side on large screens.
   - `Current Order`
   - `Available Heroes`
 - **Cards**: Hero cards with bronze/dark borders and hover overlays.
 - Full-body hero artwork must remain fully contained inside each card with internal padding; it must never visually overflow or be cropped outside the card bounds.
-- Scrollbars must stay inside the internal grids if the hero lists exceed available space.
+- The user must always be able to reach the full order UI on short viewports, even if that requires scrolling the overlay container.
+- Click targets for available heroes and assigned slots SHOULD use explicit interactive elements so the full card remains reliably clickable.
 
 ### 📦 Content
 
@@ -107,3 +109,11 @@
 - **Flow**:
   - IF `selectedOrder.length` EQUALS `heroes.length`:
     - Call `onConfirmOrder(selectedOrder)`.
+
+#### maintainScrollableViewportLayout
+
+- **Contract**: Prevents hero cards from overlapping the overlay header/footer on short viewport heights so card hitboxes stay clickable.
+- **Flow**:
+  - Let the full-screen overlay scroll vertically when the viewport is too short for the full modal.
+  - Keep the hero-order modal centered on larger screens but reachable from top to bottom on smaller ones.
+  - Preserve full-card click targets for both available heroes and assigned slots.

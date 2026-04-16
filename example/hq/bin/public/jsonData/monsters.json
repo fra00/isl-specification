@@ -19,7 +19,7 @@
     "difesa": 2,
     "corpo": 1,
     "mente": 2,
-    "immagine": "orco.gif",
+    "immagine": "orco.png",
     "immalarge": "orcoimg.png",
     "nonmorto": false
   },
@@ -139,7 +139,7 @@
     "difesa": 4,
     "corpo": 1,
     "mente": 3,
-    "immagine": "orco.gif",
+    "immagine": "orco.png",
     "immalarge": "orcoimg.png",
     "nonmorto": false
   },

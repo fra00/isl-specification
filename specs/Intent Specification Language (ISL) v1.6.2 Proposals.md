@@ -56,8 +56,8 @@ The language SHOULD better expose the distinctions between:
 
 - stable domain contracts
 - transient UI state
-- persistent state mutation boundaries
-- operational semantics required for deterministic generation
+- state ownership and mutation boundaries
+- Logic & Execution Rules required for deterministic generation
 
 ### 5. Keep ISL Human-First
 
@@ -82,9 +82,9 @@ ISL v1.6.2 does NOT aim to:
 ISL v1.6.2 SHOULD introduce or formalize the following areas:
 
 1. Expanded role taxonomy
-2. State modeling sections
+2. Internal state guidance
 3. Mutation boundary pattern
-4. Operational semantics pattern
+4. Logic & Execution Rules pattern
 5. Embedded DSL pattern
 6. Decision rules pattern
 7. Effect lifecycle pattern
@@ -130,49 +130,43 @@ Documents using only `Presentation` and `Backend` remain valid.
 
 ---
 
-## 2. State Model Sections
+## 2. Internal State Section
 
 ### Problem
 
-Complex projects repeatedly need to distinguish among:
+Complex projects sometimes need to clarify:
 
-- persisted state
-- transient UI/process state
-- derived state
+- which values arrive from outside the component
+- which values are owned locally
+- which values must be derived rather than stored
 
-Today this distinction is usually expressed via prose inside `Content/Structure`, `Capabilities`, or ad hoc notes.
+Today this distinction is usually implicit in `Content/Structure`, `Capabilities`, `Flow`, or ad hoc notes. A heavy taxonomy can be redundant for human authors and can create contradictions when the same distinction is already deducible elsewhere in the specification.
 
 ### Proposal
 
-ISL v1.6.2 SHOULD add the following optional standard sections for components that own or interpret state:
+ISL v1.6.2 SHOULD add a lightweight optional section for components where state ownership or derivation is not obvious:
 
-- `### 🗂 State Model`
-- `### 🗂 Persistent State`
-- `### 🗂 Transient State`
-- `### 🗂 Derived State`
+- `### 🗂 Internal State`
+
+Entries in this section MAY use lightweight qualifiers such as:
+
+- `**external**`: value provided by props, context, shared application state, or the hosting engine
+- `**internal**`: value owned locally by the component
+- `**calculated**`: value derived from other values and SHOULD NOT be stored independently unless explicitly required
 
 ### Example
 
 ```markdown
-### 🗂 State Model
+### 🗂 Internal State
 
-#### Persistent State
-
-- `gameSession`: authoritative persisted dungeon snapshot
-
-#### Transient State
-
-- `hoveredPath`: current pointer path preview
-- `isMoving`: movement animation flag
-
-#### Derived State
-
-- `canAttack`: derived from visible enemies and effective stats
+- `stateApplication` **external**: shared application state provided by the engine
+- `isVisible` **internal**: local visibility flag for this component
+- `canAttack` **calculated** from `stateApplication.currentHero`, visible enemies, and active rules
 ```
 
 ### Intended Benefit
 
-This improves generator clarity around what must be persisted, what must remain local, and what must be recalculated.
+This gives generators extra clarity where ownership or derivation is ambiguous, without forcing authors to duplicate information that is already obvious from the rest of the specification.
 
 ---
 
@@ -206,43 +200,81 @@ The spec SHOULD explicitly recognize the **functional updater** pattern as a det
 
 ---
 
-## 4. Operational Semantics Pattern
+## 4. Logic & Execution Rules Pattern
 
 ### Problem
 
-Some behaviors are too complex to be expressed only as high-level intent, yet they are still specification-level and not implementation noise. Current rules can mistakenly classify them as too algorithmic.
+Some behaviors are too complex to be expressed only as high-level intent, and the legacy term "operational semantics" (now `Logic & Execution Rules`) has been interpreted inconsistently. Authors often wonder whether these rules are public capabilities, Flow steps, or private implementation notes.
 
 ### Proposal
 
 ISL v1.6.2 SHOULD distinguish between:
 
 - forbidden low-level pseudocode tied to language syntax
-- acceptable **operational semantics** required for deterministic behavior
+- acceptable **Logic & Execution Rules** required for deterministic behavior and consistent generation
 
 Recommended optional section:
 
-- `### ⚙ Operational Semantics`
+- `### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)`
 
 ### Clarification
 
-Operational Semantics MAY describe:
+`Logic & Execution Rules` captures the normative rules and checks that an implementation must respect to produce the same observable behaviour across different runtimes. These rules typically cover:
 
-- event matching rules
-- evaluation order
-- transition rules
-- normalization rules
-- deterministic execution contracts
+- event matching rules and handlers
+- evaluation/evaluation-order constraints
+- transition and normalization rules
+- idempotency and "one‑time" application semantics
+- rounding and numeric normalization
+- commit/rollback and atomicity rules at mutation boundaries
+- synchronization between UI gating and backend commits
 
-Operational Semantics MUST NOT become framework-specific source code.
+Important constraints:
 
-### Example
+- `Logic & Execution Rules` MUST NOT contain framework-specific source code, concrete API names, or line‑by‑line implementation algorithms.
+- `Logic & Execution Rules` SHOULD specify what is normative (use `MUST`/`SHOULD`) versus what is an `Implementation Note` (non-normative guidance).
+- Implementations and generators MAY translate a `Logic & Execution Rules` rule into a function, module or inline logic; the spec does NOT mandate function names or code structure. If a stable mapping to runtime artifacts is required, record that mapping in a companion protocol document or an `Implementation Notes` section.
+
+### How this relates to `Flow` and `Capabilities`
+
+- `Flow` describes the observable sequence (the "what" a user or system experiences).
+- `Capabilities` describe the public contract (what the component exposes).
+- `Logic & Execution Rules` describes the normative "how" required for deterministic behaviour (order, idempotency, synchronization). Use `Flow` for UX/business sequencing and reference `Logic & Execution Rules` rules from Flow when the ordering or guarantees affect observable results.
+
+Recommendation for referencing: in a `Flow` step add a short reference, e.g. `(ops: DamageCalc, InputGating)`, and define those tags under `### ⚙ Logic & Execution Rules`.
+
+### Example — Damage and Input Gating
 
 ```markdown
-### ⚙ Operational Semantics
+### Flow
 
-- Scripts are evaluated in map order.
-- One-time entries execute at most once per stable script key.
-- Condition blocks are evaluated depth-first.
+1. Player clicks "Attack".
+2. Start attack animation.
+3. UI: set `inputDisabled = true`. (ops: DamageCalc, InputGating)
+4. System: apply damage to target.
+5. Show result (HP change, floating numbers).
+6. Re-enable input when `animationEnd && commitSuccess`.
+
+### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)
+
+#### DamageCalc
+
+- Evaluation order: base -> additive -> multiplicative -> resistances.
+- Rounding: apply `floor` after all multipliers.
+- Clamp: final damage = max(0, floor(result)).
+- Idempotency: operations tagged with a `stableScriptKey` execute at most once.
+- Commit: writes to `@GameSession.hp` are atomic and occur at the declared `@MutationBoundary`.
+
+#### InputGating
+
+- On accept: set `inputDisabled = true` immediately.
+- Re-enable: only when `animationEnd && commitSuccess`.
+- On commit failure: set `inputDisabled = false` and surface an error to the user.
+
+#### Synchronization / Ordering
+
+- The final HP displayed MUST reflect the post-commit state.
+- Re-enable MUST wait for `commitSuccess` unless an explicit fail-flow exists.
 ```
 
 ---
@@ -449,12 +481,9 @@ The language spec itself SHOULD stay tool-agnostic where possible, but the compa
 
 The following sections are proposed as **official optional sections** for v1.6.2:
 
-- `### 🗂 State Model`
-- `### 🗂 Persistent State`
-- `### 🗂 Transient State`
-- `### 🗂 Derived State`
+- `### 🗂 Internal State`
 - `### 🔒 Mutation Boundary`
-- `### ⚙ Operational Semantics`
+- `### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)`
 - `### 🧩 Embedded DSL`
 - `### 🧩 Grammar`
 - `### 🧩 Opcodes`
@@ -479,11 +508,11 @@ The Canonical Rules SHOULD recognize `Domain`, `Business Logic`, and `Test` as o
 
 ### Rule Adjustment B: Behavioral Precision
 
-The Boundary rule SHOULD explicitly allow **operational semantics** when needed to preserve deterministic behavior.
+The Boundary rule SHOULD explicitly allow **Logic & Execution Rules** when needed to preserve deterministic behavior.
 
 ### Rule Adjustment C: State Ownership
 
-When a component declares a Mutation Boundary or State Model, compliant generators SHOULD respect those declarations as normative guidance for state placement and mutation routing.
+When a component declares a Mutation Boundary or Internal State section, compliant generators SHOULD respect those declarations as normative guidance for state ownership, derivation, and mutation routing.
 
 ### Rule Adjustment D: Test Role
 
@@ -503,8 +532,8 @@ Projects MAY adopt v1.6.2 progressively:
 
 1. keep existing roles and sections unchanged
 2. add `Domain`, `Business Logic`, and `Test` where already used in practice
-3. introduce `State Model` only for stateful components
-4. introduce `Operational Semantics` only where deterministic execution requires it
+3. introduce `Internal State` only where ownership or derivation is not obvious
+4. introduce `Logic & Execution Rules` only where deterministic execution requires it
 5. introduce test extensions only in dedicated test specifications
 
 ### Priority Migration Candidates
@@ -526,8 +555,8 @@ The official documentation SHOULD include at least one example for each of the f
 1. A `Domain` role file
 2. A `Business Logic` orchestration file
 3. A `Test` role file
-4. A stateful component using `State Model`
-5. A deterministic embedded DSL interpreter using `Operational Semantics`
+4. A component using `Internal State` to clarify non-obvious state ownership
+5. A deterministic embedded DSL interpreter using `Logic & Execution Rules`
 6. A temporary-effect example using `Effect Lifecycle`
 
 ---
@@ -536,8 +565,8 @@ The official documentation SHOULD include at least one example for each of the f
 
 The following questions should be resolved before finalizing v1.6.2:
 
-1. Should `State Model` be one umbrella section, or should `Persistent/Transient/Derived` always be separate subsections?
-2. Should `Operational Semantics` be normative by default, or only when explicitly marked as such?
+1. Should `Internal State` remain a single lightweight section with inline qualifiers, or should grouped subsections also be allowed?
+2. Should `Logic & Execution Rules` be normative by default, or only when explicitly marked as such?
 3. Should `Role: Test` remain scenario-prose-only in 1.6.2, or should basic assertion markers already be standardized?
 4. Should embedded DSLs remain purely descriptive, or should ISL define a small common grammar schema for them?
 5. Should the code-generation protocol document use abstract signature artifacts, or name current concrete file formats explicitly?

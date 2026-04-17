@@ -7,7 +7,7 @@
     "difesa": 1,
     "corpo": 1,
     "mente": 0,
-    "immagine": "goblin.gif",
+    "immagine": "goblin.png",
     "immalarge": "goblinimg.png",
     "nonmorto": false
   },
@@ -31,7 +31,7 @@
     "difesa": 4,
     "corpo": 1,
     "mente": 3,
-    "immagine": "guerriero.gif",
+    "immagine": "guerriero.png",
     "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
@@ -43,7 +43,7 @@
     "difesa": 3,
     "corpo": 1,
     "mente": 3,
-    "immagine": "fimir.gif",
+    "immagine": "fimir.png",
     "immalarge": "fimirimg.png",
     "nonmorto": false
   },
@@ -55,7 +55,7 @@
     "difesa": 2,
     "corpo": 1,
     "mente": 0,
-    "immagine": "scheletro.gif",
+    "immagine": "scheletro.png",
     "immalarge": "scheletroimg.png",
     "nonmorto": true
   },
@@ -67,7 +67,7 @@
     "difesa": 3,
     "corpo": 1,
     "mente": 0,
-    "immagine": "zombie.gif",
+    "immagine": "zombie.png",
     "immalarge": "zombiimg.png",
     "nonmorto": true
   },
@@ -79,7 +79,7 @@
     "difesa": 4,
     "corpo": 1,
     "mente": 0,
-    "immagine": "mummia.gif",
+    "immagine": "mummia.png",
     "immalarge": "mummiaimg.png",
     "nonmorto": true
   },
@@ -91,7 +91,7 @@
     "difesa": 4,
     "corpo": 1,
     "mente": 4,
-    "immagine": "gargoyle.gif",
+    "immagine": "gargoyle.png",
     "immalarge": "gargolaimg.png",
     "nonmorto": false
   },
@@ -103,7 +103,7 @@
     "difesa": 4,
     "corpo": 1,
     "mente": 0,
-    "immagine": "mummia.gif",
+    "immagine": "mummia.png",
     "immalarge": "mummiaimg.png",
     "nonmorto": true
   },
@@ -115,7 +115,7 @@
     "difesa": 5,
     "corpo": 1,
     "mente": 3,
-    "immagine": "guerriero.gif",
+    "immagine": "guerriero.png",
     "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
@@ -127,7 +127,7 @@
     "difesa": 5,
     "corpo": 1,
     "mente": 3,
-    "immagine": "guerriero.gif",
+    "immagine": "guerriero.png",
     "immalarge": "guerrieroimg.png",
     "nonmorto": false
   },
@@ -151,7 +151,7 @@
     "difesa": 3,
     "corpo": 1,
     "mente": 0,
-    "immagine": "zombie.gif",
+    "immagine": "zombie.png",
     "immalarge": "zombiimg.png",
     "nonmorto": true
   },
@@ -187,7 +187,7 @@
     "difesa": 7,
     "corpo": 5,
     "mente": 0,
-    "immagine": "fimir.gif",
+    "immagine": "fimir.png",
     "immalarge": "fimirimg.png",
     "nonmorto": false
   },
@@ -199,7 +199,7 @@
     "difesa": 1,
     "corpo": 1,
     "mente": 1,
-    "immagine": "goblin.gif",
+    "immagine": "goblin.png",
     "immalarge": "gargolaimg.png",
     "nonmorto": true
   },

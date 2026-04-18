@@ -12,7 +12,7 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 
 # ISL Lint
 
-**ISL Lint** is the official Command Line Interface (CLI) validator for **Intent Specification Language (ISL) v1.6.1**.
+**ISL Lint** is the official Command Line Interface (CLI) validator for **Intent Specification Language (ISL) v1.6.2**.
 
 It parses `.isl.md` files to ensure they comply with the Canonical Rules, structural requirements, and best practices defined in the ISL specification.
 

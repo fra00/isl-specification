@@ -75,7 +75,7 @@ export class StandardRunner {
           ? `${sourceFileName}` // In reverse, tutti i file derivano dalla stessa sorgente
           : `./${baseName}`;
 
-        const header = `# Project: ${projectName}\n\n**Version**: 1.0.0\n**ISL Version**: 1.6.1\n**Implementation**: ${implPath}\n\n`;
+        const header = `# Project: ${projectName}\n\n**Version**: 1.0.0\n**ISL Version**: 1.6.2\n**Implementation**: ${implPath}\n\n`;
 
         fs.writeFileSync(targetPath, header + file.content);
         console.log(`✅ ISL Generated successfully: ${targetPath}`);

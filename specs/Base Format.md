@@ -3,7 +3,7 @@
 [Breve descrizione del progetto]
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: YYYY-MM-DD
 
 ---
@@ -16,8 +16,9 @@
 
 **Identity**: How uniquely identified
 **Properties**:
+
 - property1: description
-**Relationships**:
+  **Relationships**:
 - Relationship to Entity (cardinality)
 
 ---
@@ -53,8 +54,9 @@
 **Trigger**: Evento di attivazione
 
 **Flow**: (REQUIRED if multi-step)
-  1. Step 1
-  2. Step 2
+
+1. Step 1
+2. Step 2
 
 **Side Effect**: Modifiche allo stato
 
@@ -65,10 +67,12 @@
 **🚨 Constraint**: Regole normative (MUST/MUST NOT)
 
 **✅ Acceptance Criteria**:
+
 - [ ] Criterio 1
 - [ ] Criterio 2
 
 **🧪 Test Scenarios**:
+
 1. **Scenario**: Input -> Expected
 
 ---
@@ -89,7 +93,7 @@
 
 1. **Integration Scenario**: Descrizione
 
-# ISL Canonical Rules v1.6.1 (Summary)
+# ISL Canonical Rules v1.6.2 (Summary)
 
 1. **Interpretation**: ⚡ 🚨 ✅ 🧪 are NORMATIVE.
 2. **Precedence**: Capability > Global > Contract > Hint.

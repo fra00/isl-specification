@@ -7,7 +7,7 @@
       "${2:Short description}",
       "",
       "**Version**: ${3:1.0.0}",
-      "**ISL Version**: 1.6.1",
+      "**ISL Version**: 1.6.2",
       "**Created**: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
       "",
       "---",
@@ -24,7 +24,7 @@
       "${2:Breve descrizione del progetto}",
       "",
       "**Version**: ${3:1.0.0}",
-      "**ISL Version**: 1.6.1",
+      "**ISL Version**: 1.6.2",
       "**Created**: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
       "",
       "---",
@@ -110,7 +110,7 @@
       "",
       "1. **Integration Scenario**: ${34:Descrizione}",
       "",
-      "# ISL Canonical Rules v1.6.1 (Summary)",
+      "# ISL Canonical Rules v1.6.2 (Summary)",
       "",
       "1. **Interpretation**: ⚡ 🚨 ✅ 🧪 are NORMATIVE.",
       "2. **Precedence**: Capability > Global > Contract > Hint.",
@@ -278,26 +278,18 @@
   },
   "Security": {
     "prefix": "isl-security",
-    "body": [
-      "### 🔒 Security",
-      "",
-      "- ${1:Requirement}: ${2:Description}"
-    ],
+    "body": ["### 🔒 Security", "", "- ${1:Requirement}: ${2:Description}"],
     "description": "Security considerations section"
   },
   "Warning": {
     "prefix": "isl-warning",
-    "body": [
-      "### ⚠️ Warning",
-      "",
-      "${1:Non-normative warning or note}"
-    ],
+    "body": ["### ⚠️ Warning", "", "${1:Non-normative warning or note}"],
     "description": "Warning or note section"
   },
   "Canonical Rules": {
     "prefix": "isl-rules",
     "body": [
-      "# ISL Canonical Rules v1.6.1 (Summary)",
+      "# ISL Canonical Rules v1.6.2 (Summary)",
       "",
       "1. **Interpretation**: ⚡ 🚨 ✅ 🧪 are NORMATIVE.",
       "2. **Precedence**: Capability > Global > Contract > Hint.",

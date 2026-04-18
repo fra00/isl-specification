@@ -1,4 +1,4 @@
-# Intent Specification Language (ISL) 1.6.1
+# Intent Specification Language (ISL) 1.6.2
 
 **Intent Specification Language (ISL)** is a structured, intent-first specification language designed to describe **what software should do**, not **how it should be implemented**.
 
@@ -87,7 +87,7 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 - A database schema language (unless explicitly modeled)
 - A place for algorithms or step-by-step code logic
 
-### Key Concepts (v1.6.1)
+### Key Concepts (v1.6.2)
 
 - **Source vs Artifact**: ISL files are the source. Generated code (in `bin/`) is a read-only artifact.
 - **Two-Phase Compilation**:
@@ -251,7 +251,7 @@ ISL is governed by **Canonical Rules** that define how specifications are interp
 
 ---
 
-## Modular Specifications (New in v1.6.1)
+## Modular Specifications (New in v1.6.2)
 
 ISL supports splitting specifications across multiple files to promote reuse (e.g., shared domain models).
 

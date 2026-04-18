@@ -1,7 +1,7 @@
 {
   "name": "isl-support",
   "displayName": "ISL - Intent Specification Language",
-  "description": "Support for Intent Specification Language v1.6.1 with syntax highlighting, snippets, and validation",
+  "description": "Support for Intent Specification Language v1.6.2 with syntax highlighting, snippets, and validation",
   "version": "1.0.0",
   "publisher": "your-publisher-name",
   "repository": {

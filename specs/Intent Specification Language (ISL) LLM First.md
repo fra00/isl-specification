@@ -1,4 +1,4 @@
-# Intent Specification Language (ISL) v1.6.1
+# Intent Specification Language (ISL) v1.6.2
 
 **LLM-First Documentation Edition**
 
@@ -8,7 +8,7 @@
 **Why**: Eliminate ambiguity in translating requirements to code
 **How**: Structured Markdown with semantic contracts and canonical interpretation rules
 
-**Version**: 1.6.1 | **Status**: Stable | **Date**: January 2026
+**Version**: 1.6.2 | **Status**: Stable | **Date**: April 2026
 
 ---
 

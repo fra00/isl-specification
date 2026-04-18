@@ -79,18 +79,21 @@ ISL v1.6.2 does NOT aim to:
 
 ## Summary Of Proposed Changes
 
-ISL v1.6.2 SHOULD introduce or formalize the following areas:
+ISL v1.6.2 SHOULD introduce or formalize the following areas. The highest-priority changes for this release are:
 
 1. Expanded role taxonomy
 2. Internal state guidance
+3. Logic & Execution Rules pattern
+4. Effect lifecycle pattern
+5. Clarified Flow semantics
+
+The remaining areas are still valuable and useful, but should be considered complementary improvements:
+
 3. Mutation boundary pattern
-4. Logic & Execution Rules pattern
-5. Embedded DSL pattern
-6. Decision rules pattern
-7. Effect lifecycle pattern
-8. Testing structure improvements
-9. Clarified Flow semantics
-10. Tooling/protocol alignment fixes
+4. Embedded DSL pattern
+5. Decision rules pattern
+6. Testing structure improvements
+7. Tooling/protocol alignment fixes
 
 ---
 
@@ -479,21 +482,26 @@ The language spec itself SHOULD stay tool-agnostic where possible, but the compa
 
 ## Recommended New Standard Sections
 
-The following sections are proposed as **official optional sections** for v1.6.2:
+The following sections are proposed as **official optional sections** for v1.6.2.
+
+### Core optional sections for this release
 
 - `### 🗂 Internal State`
-- `### 🔒 Mutation Boundary`
 - `### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)`
+- `### 🔄 Effect Lifecycle`
+- `### 🧭 Decision Rules`
+- `### 🧪 Fixtures`
+- `### 🧪 Scenario Groups`
+- `### 🧪 Assertions`
+
+### Complementary optional sections
+
+- `### 🔒 Mutation Boundary`
 - `### 🧩 Embedded DSL`
 - `### 🧩 Grammar`
 - `### 🧩 Opcodes`
 - `### 🧩 Conditions`
 - `### 🧩 Execution Rules`
-- `### 🧭 Decision Rules`
-- `### 🔄 Effect Lifecycle`
-- `### 🧪 Fixtures`
-- `### 🧪 Scenario Groups`
-- `### 🧪 Assertions`
 - `### 🧪 Parameter Sets`
 
 These sections SHOULD remain optional and composable.

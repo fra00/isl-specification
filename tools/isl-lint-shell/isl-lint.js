@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * ISL Lint - CLI Validator per Intent Specification Language v1.6.1
+ * ISL Lint - CLI Validator per Intent Specification Language v1.6.2
  *
  * Valida specifiche ISL verificando:
  * - Struttura gerarchica corretta
@@ -16,7 +16,7 @@ exports.Reporter = exports.ISLValidator = exports.ISLParser = void 0;
 const fs = require("fs");
 // ==================== CONFIGURATION ====================
 const ISL_CONFIG = {
-  version: "1.6.1",
+  version: "1.6.2",
   // Emoji semantiche valide
   validEmojis: {
     appearance: "🔍",

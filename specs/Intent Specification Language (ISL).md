@@ -1,4 +1,4 @@
-# Intent Specification Language (ISL) v1.6.1
+# Intent Specification Language (ISL) v1.6.2
 
 **Official Specification Document**
 
@@ -27,15 +27,15 @@
 
 - **Human-Writable**: Natural language in Markdown format
 - **LLM-Executable**: Structured semantics for deterministic interpretation
-- **Universal**: Supports both frontend (Presentation) and backend (Backend) components
+- **Universal**: Supports frontend (Presentation), backend (Backend), domain (Domain), business logic (Business Logic), and test documents (Test)
 - **Contract-Based**: Explicit input/output signatures with behavioral contracts
 - **Test-Integrated**: Built-in acceptance criteria and test scenarios
 - **Deterministic**: Canonical rules enforce consistent code generation
 
 ### Version Information
 
-- **Current Version**: 1.6.1
-- **Release Date**: January 2026
+- **Current Version**: 1.6.2
+- **Release Date**: April 2026
 - **Status**: Stable
 - **License**: [To be determined]
 
@@ -61,7 +61,7 @@ ISL addresses these challenges by providing:
 - **Canonical Interpretation Rules**: Eliminates ambiguity in LLM code generation
 - **Contract-Driven Design**: Explicit input/output signatures with behavioral promises
 - **Integrated Testing**: Acceptance criteria and test scenarios embedded in specifications
-- **Universal Format**: Single specification language for UI components, backend services, and APIs
+- **Universal Format**: Single specification language for UI components, backend services, domain models, and tests
 - **Deterministic Output**: Same specification → contractually equivalent code (contracts satisfied identically)
 
 ## ISL vs Other Formats
@@ -148,13 +148,14 @@ ISL addresses these challenges by providing:
 
 ### 4. Separation of Concerns
 
-**Principle**: Presentation logic and business logic must be clearly separated.
+**Principle**: Presentation logic and business logic must be clearly separated, and role boundaries should reflect the actual responsibilities of the component or document.
 
 **Implementation**:
 
-- Mandatory `Role` field (Presentation | Backend)
+- Mandatory `Role` field (Presentation | Backend | Domain | Business Logic | Test)
 - Role-specific validation rules (Rule 4 in Canonical Rules)
 - Different section semantics based on role
+- Existing Presentation/Backend documents remain valid; new roles are optional and additive
 
 ### 5. Test-Driven by Design
 
@@ -746,15 +747,18 @@ and reduce cognitive load.
 
 [Concise description of component's role (1-2 sentences)]
 
-### Role: Presentation / Backend (REQUIRED)
+### Role: Presentation | Backend | Domain | Business Logic | Test (REQUIRED)
 ```
 
-**Purpose**: Defines a unit of implementation (UI component, service, API endpoint, etc.)
+**Purpose**: Defines a unit of implementation (UI component, service, API endpoint, domain model, or test document)
 
 **Role Values**:
 
 - `Presentation`: UI components, visual elements, user interactions
 - `Backend`: Services, APIs, business logic, data access
+- `Domain`: Entities, shared concepts, value structures, enumerations
+- `Business Logic`: Deterministic use cases, state transitions, orchestration rules, non-visual runtime behavior
+- `Test`: Scenario specifications, fixtures, assertions, behavior validation inputs
 
 **Naming Convention**:
 
@@ -940,6 +944,64 @@ and reduce cognitive load.
 **When to omit**:
 
 - Single atomic operations ("toggle boolean", "return value")
+
+#### Internal State (OPTIONAL)
+
+```markdown
+### 🗂 Internal State
+
+- `isVisible` **internal**: local visibility toggle
+- `currentPage` **external**: provided by parent navigation state
+- `canSubmit` **calculated** from `formValues.isValid` and `isLoading`
+```
+
+**Purpose**: Clarify ownership and derivation of state values within a component or capability.
+
+**Guidelines**:
+
+- Use `**external**` for values provided by props, context, or shared engine state
+- Use `**internal**` for values owned locally by the component
+- Use `**calculated**` for values derived from other values and not stored independently unless required
+
+#### Logic & Execution Rules (OPTIONAL)
+
+```markdown
+### ⚙ Logic & Execution Rules
+
+#### DamageCalc
+
+- Evaluation order: base -> additive -> multiplicative -> resistances.
+- Rounding: apply `floor` after all multipliers.
+- Clamp: final damage = max(0, floor(result)).
+```
+
+**Purpose**: Record normative execution constraints needed for deterministic behavior.
+
+**Guidelines**:
+
+- Specify order, idempotency, commit behavior, and synchronization guarantees
+- Avoid implementation-specific code or API names
+- Use `MUST` / `SHOULD` for normative rules and separate non-normative notes clearly
+
+#### Effect Lifecycle (OPTIONAL)
+
+```markdown
+### 🔄 Effect Lifecycle
+
+- `RockSkin`
+  - Apply: when the spell is cast on a hero
+  - Active While: hero has not yet suffered damage
+  - Expires When: hero receives damage greater than 0
+  - Cleanup: remove status from `activeStatus`
+```
+
+**Purpose**: Describe temporary effect lifecycles explicitly for buffs, debuffs, cooldowns, and transient states.
+
+**Guidelines**:
+
+- Define `Apply`, `Active While`, `Expires When`, and `Cleanup`
+- Keep lifecycle rules tied to observable behavior and state transitions
+- Avoid low-level implementation steps
 
 #### Side Effect (OPTIONAL)
 
@@ -2129,6 +2191,13 @@ Flow:
 3. Return success confirmation
 ```
 
+**Guidelines**:
+
+- `Flow` MAY be procedural when it captures observable sequencing or deterministic branching
+- `Flow` MUST remain semantic, not line-by-line implementation pseudocode
+- Include only behavior that affects outputs, state transitions, or external interactions
+- Avoid framework-specific lifecycle or internal variable mutation details unless they change observable behavior
+
 ---
 
 ### 4. Balancing Hints vs Constraints
@@ -2446,7 +2515,7 @@ Role: Presentation
 
 ## Component: Name
 
-### Role: Presentation | Backend
+### Role: Presentation | Backend | Domain | Business Logic | Test
 
 ### 📐 Appearance / Interface
 
@@ -2524,7 +2593,7 @@ Role: Presentation
 
 [Component description]
 
-### Role: Presentation | Backend
+### Role: Presentation | Backend | Domain | Business Logic | Test
 
 ### 📐 Appearance / Interface (OPTIONAL)
 

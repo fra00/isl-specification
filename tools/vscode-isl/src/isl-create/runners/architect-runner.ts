@@ -82,12 +82,16 @@ export class ArchitectRunner {
             const iface = extractInterface(depContent);
             dependencyContext += `\n--- INTERFACE: ${depFilename} ---\n${iface}\n`;
           } else {
-            console.warn(`   ⚠️ Warning: Dependency ${depFilename} not found in memory.`);
+            console.warn(
+              `   ⚠️ Warning: Dependency ${depFilename} not found in memory.`,
+            );
           }
         }
 
         if (dependencyContext) {
-          console.log(`   🔗 Injected context from ${fileEntry.dependencies.length} dependencies.`);
+          console.log(
+            `   🔗 Injected context from ${fileEntry.dependencies.length} dependencies.`,
+          );
         }
 
         const builderMessages = buildBuilderPrompt(
@@ -96,11 +100,11 @@ export class ArchitectRunner {
           fileEntry,
           dependencyContext,
         );
-        
+
         this.saveDebugPrompt(
-          debugDir, 
-          `${fileEntry.filename}_attempt_${attempts}.txt`, 
-          builderMessages
+          debugDir,
+          `${fileEntry.filename}_attempt_${attempts}.txt`,
+          builderMessages,
         );
 
         const rawContent = await this.llmClient.generateRaw(builderMessages);
@@ -127,11 +131,11 @@ export class ArchitectRunner {
                 originalContent,
                 changeDescription,
               );
-              
+
               this.saveDebugPrompt(
                 debugDir,
                 `${targetFile}_update_request.txt`,
-                updateMessages
+                updateMessages,
               );
 
               const updatedContentRaw =
@@ -195,7 +199,9 @@ export class ArchitectRunner {
               );
             }
           } catch (e: any) {
-            console.error(`   ❌ Failed to parse missing file request: ${e.message}`);
+            console.error(
+              `   ❌ Failed to parse missing file request: ${e.message}`,
+            );
           }
         }
 
@@ -259,7 +265,7 @@ export class ArchitectRunner {
     const headerRegex = /^# Project:[\s\S]*?\*\*Implementation\*\*:.*?\n\n/m;
     const contentWithoutHeader = content.replace(headerRegex, "");
 
-    const header = `# Project: ${projectName}\n\n**Version**: 1.0.0\n**ISL Version**: 1.6.1\n**Implementation**: ${implPath}\n\n`;
+    const header = `# Project: ${projectName}\n\n**Version**: 1.0.0\n**ISL Version**: 1.6.2\n**Implementation**: ${implPath}\n\n`;
 
     fs.writeFileSync(targetPath, header + contentWithoutHeader);
   }

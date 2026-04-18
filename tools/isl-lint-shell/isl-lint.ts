@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * ISL Lint - CLI Validator per Intent Specification Language v1.6.1
+ * ISL Lint - CLI Validator per Intent Specification Language v1.6.2
  *
  * Valida specifiche ISL verificando:
  * - Struttura gerarchica corretta
@@ -51,7 +51,7 @@ interface ISLSection {
 // ==================== CONFIGURATION ====================
 
 const ISL_CONFIG = {
-  version: "1.6.1",
+  version: "1.6.2",
 
   // Emoji semantiche valide
   validEmojis: {

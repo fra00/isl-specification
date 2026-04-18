@@ -1,6 +1,6 @@
 # ISL for VS Code
 
-Official VS Code support for **Intent Specification Language (ISL) v1.6.1**.
+Official VS Code support for **Intent Specification Language (ISL) v1.6.2**.
 
 This extension provides language support, snippets, validation, and tooling to write deterministic, intent-first specifications for LLM code generation.
 
@@ -23,7 +23,7 @@ Scaffolding for common ISL patterns. Type the prefix to trigger:
 
 | Prefix           | Description                                                          |
 | :--------------- | :------------------------------------------------------------------- |
-| `isl-base`       | **Full Template**: Generates a complete ISL file structure (v1.6.1). |
+| `isl-base`       | **Full Template**: Generates a complete ISL file structure (v1.6.2). |
 | `isl-project`    | **Project Header**: Standard header with versioning.                 |
 | `isl-component`  | **Component**: New Component block with Role.                        |
 | `isl-cap`        | **Capability**: Capability block with Contract and Flow.             |

@@ -586,6 +586,38 @@ ISL uses TypeScript-like notation for types (adaptable to target language):
 - **Optional**: `field?: type`
 - **Enums**: `'value1' | 'value2' | 'value3'`
 
+### Symbol Reference Notation
+
+ISL uses two conventions to distinguish between stable domain types and transient local variables:
+
+- **`@TypeName`**: Refers to a domain type, state structure, or reusable entity (e.g., `@GameSession`, `@HeroState`, `@Spell`)
+- **`` `variableName` ``**: Refers to a local variable, parameter, or temporary value (e.g., `currentHero`, `damage`, `targetMonster`)
+
+**Example:**
+
+```markdown
+### Role: Business Logic
+
+**Signature:**
+
+- `gameSession`: @GameSession
+- `currentSpell`: @Spell
+
+### Flow
+
+1. Find `targetMonster` in `gameSession.monsters`.
+2. Calculate `damageAmount` = `currentSpell.baseDamage`.
+3. Apply `damageAmount` to `targetMonster.health`.
+4. Persist via `commitSessionUpdate(@GameSession)`.
+```
+
+**Rationale:**
+
+This distinction helps generators and readers understand:
+
+- Which values are reusable contracts (should be referenced, not duplicated)
+- Which values are local to the current flow (transient, scoped)
+
 ### Flow Notation
 
 Flows use numbered steps with optional branching:

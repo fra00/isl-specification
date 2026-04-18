@@ -480,6 +480,56 @@ The language spec itself SHOULD stay tool-agnostic where possible, but the compa
 
 ---
 
+## 11. Symbol Reference Notation
+
+### Problem
+
+Complex specifications use both type references and variable references, but these are often indistinguishable in prose. This ambiguity can cause generators to treat stable domain types as local variables, leading to duplicated code generation and loss of determinism.
+
+### Proposal
+
+ISL v1.6.2 SHOULD standardize two symbols for distinguishing between stable domain contracts and transient local values:
+
+- `@TypeName`: Refers to a domain type, state structure, or reusable entity (defined in Domain or Business Logic roles)
+- `` `variableName` ``: Refers to a local variable, parameter, field, or temporary value in Flow or signatures
+
+### Example
+
+```markdown
+### Role: Business Logic
+
+- `gameSession`: @GameSession
+- `spell`: @Spell
+
+### Flow
+
+1. Find `targetMonster` in `gameSession.monsters`.
+2. Apply spell damage to `targetMonster`.
+3. Persist changes via `commitSessionUpdate`.
+```
+
+In this example:
+
+- `@GameSession` and `@Spell` are domain types defined elsewhere
+- `targetMonster`, `gameSession`, `spell` are local variables or parameters
+
+### Intended Benefit
+
+This notation helps generators understand the difference between:
+
+- **Contracts** (`@Type`): reusable, stable, should be referenced not duplicated
+- **Values** (`` `var` ``): transient, local scope, should not be assumed as reusable
+
+Deterministic code generation depends on this distinction: a generator that treats `@GameSession` as a local variable might regenerate it instead of reusing the shared instance.
+
+### Backward Compatibility
+
+- Documents using only backticks or plain text remain valid
+- Authors MAY adopt this notation gradually
+- Generators that see `@Type` MUST treat it as a reference to an externally-defined type
+
+---
+
 ## Recommended New Standard Sections
 
 The following sections are proposed as **official optional sections** for v1.6.2.

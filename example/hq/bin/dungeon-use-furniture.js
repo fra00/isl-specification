@@ -6,9 +6,9 @@
  * Edit the ISL file instead.
  */
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 
-export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
+export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
   const visibleFurniture = useMemo(() => {
     if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
       return [];
@@ -17,18 +17,17 @@ export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
     const visibleItems = [];
     const visibilityLookup = new Map();
 
+    // Create a lookup map for O(1) visibility checks
     for (let i = 0; i < boardVisibilityMap.data.length; i++) {
-      const cell = boardVisibilityMap.data[i];
-      visibilityLookup.set(`${cell.x},${cell.y}`, cell);
+      const vCell = boardVisibilityMap.data[i];
+      visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
     }
 
-    const grid = gameSession.currentMap.grid;
-    
-    for (let i = 0; i < grid.length; i++) {
-      const mapCell = grid[i];
-      const visCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+    for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
+      const mapCell = gameSession.currentMap.grid[i];
+      const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
 
-      if (visCell && visCell.fog === false) {
+      if (vCell && vCell.fog === false) {
         if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
           visibleItems.push({
             x: mapCell.x,
@@ -48,7 +47,5 @@ export function useDungeonFurniture({ gameSession, boardVisibilityMap }) {
     return visibleItems;
   }, [gameSession?.currentMap, boardVisibilityMap]);
 
-  return {
-    visibleFurniture
-  };
-}
+  return { visibleFurniture };
+};

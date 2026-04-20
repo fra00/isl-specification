@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -70,4 +70,4 @@
 - The component must adapt to 100% of the available container height.
 - The main component container must not scroll vertically.
 - If the mission description is too long, only the briefing text area must scroll vertically within the panel.
-- The visual treatment must remain coherent with the dark bronze HeroQuest navigation flow.
+- The visual treatment must remain coherent with the dark bronze Dungeon navigation flow.

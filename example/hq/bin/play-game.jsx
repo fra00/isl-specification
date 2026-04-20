@@ -6,9 +6,9 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import { useCampaignManager } from "./dungeon-use-campaign-manager";
+import React, { useState, useEffect, useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import { useCampaignManager } from './dungeon-use-campaign-manager';
 
 export default function PlayGame({
   gameSession,
@@ -20,11 +20,9 @@ export default function PlayGame({
 }) {
   const [maxUnlockedMissionIndex, setMaxUnlockedMissionIndex] = useState(0);
   const [focusedMissionIndex, setFocusedMissionIndex] = useState(0);
-  const [isStarting, setIsStarting] = useState(false);
-
   const { loadCampaign, saveCampaign } = useCampaignManager();
 
-  // initSession
+  // Capability: initSession
   useEffect(() => {
     if (!staticHeroes || !staticEquipment) return;
 
@@ -32,227 +30,259 @@ export default function PlayGame({
     if (savedData) {
       setMaxUnlockedMissionIndex(savedData.nextMissionIndex);
     } else {
-      const defaultHeroes = staticHeroes.map((hero) => {
-        let initialEquipmentIds = [];
-        if (hero.classe === "Barbaro") initialEquipmentIds = [13];
-        else if (hero.classe === "Nano") initialEquipmentIds = [2];
-        else if (hero.classe === "Elfo") initialEquipmentIds = [12];
-        else if (hero.classe === "Mago") initialEquipmentIds = [4];
+      const defaultHeroes = staticHeroes.map(hero => {
+        let eqId = null;
+        if (hero.classe === 'Barbaro') eqId = 13;
+        else if (hero.classe === 'Nano') eqId = 2;
+        else if (hero.classe === 'Elfo') eqId = 12;
+        else if (hero.classe === 'Mago') eqId = 4;
 
-        const validEquipment = staticEquipment
-          .filter((eq) => initialEquipmentIds.includes(eq.id))
-          .map((eq) => eq.id);
+        const initialEquipment = eqId !== null ? [eqId] : [];
 
         return {
           heroId: hero.id,
-          turnOrder: 0,
+          hero: hero,
           currentBody: hero.corpo,
           currentMind: hero.mente,
           gold: 0,
           inventory: [],
-          equipment: validEquipment,
-          equipped: validEquipment,
+          equipment: initialEquipment,
+          equipped: initialEquipment,
           availableSpells: [],
           activeStatus: [],
           isEscaped: false,
           x: 0,
           y: 0,
-          hero: hero
+          turnOrder: 0
         };
       });
-
       saveCampaign(defaultHeroes, 0);
       setMaxUnlockedMissionIndex(0);
     }
   }, [staticHeroes, staticEquipment, loadCampaign, saveCampaign]);
 
-  // syncFocusedMission
+  // Capability: syncFocusedMission
   useEffect(() => {
-    if (!campaign?.missioni?.length) return;
-    const maxValid = campaign.missioni.length - 1;
-    if (focusedMissionIndex > maxValid) {
-      setFocusedMissionIndex(Math.min(maxUnlockedMissionIndex, maxValid));
+    if (campaign?.missioni && campaign.missioni.length > 0) {
+      if (focusedMissionIndex >= campaign.missioni.length || focusedMissionIndex > maxUnlockedMissionIndex) {
+        const nextValidIndex = Math.min(maxUnlockedMissionIndex, campaign.missioni.length - 1);
+        setFocusedMissionIndex(Math.max(0, nextValidIndex));
+      }
     }
   }, [campaign, maxUnlockedMissionIndex, focusedMissionIndex]);
 
-  // selectMission
-  const selectMission = useCallback(async (index) => {
-    const savedData = loadCampaign();
-    if (index <= maxUnlockedMissionIndex && savedData && campaign?.missioni) {
-      setIsStarting(true);
-      const missionFile = campaign.missioni[index].file;
-      
-      try {
-        const response = await fetch(`/jsonData/map/${missionFile}`);
-        if (!response.ok) {
-          throw new Error(`Failed to load map: ${missionFile}`);
-        }
-        const mapData = await response.json();
-
-        const updatedSession = {
-          ...(gameSession || {}),
-          campaignName: campaign.nome_campagna,
-          currentMap: mapData,
-          currentMissionIndex: index,
-          heroes: savedData.heroes,
-          monsters: [],
-          openedDoors: [],
-          spawnedLocations: [],
-          currentTurn: 1,
-          isHeroOrderConfirmed: false,
-          lastAttack: null,
-          treasureDeck: []
-        };
-
-        onUpdateSession?.((previousSession) => ({
-          ...(previousSession || gameSession || {}),
-          ...updatedSession,
-        }));
-        onChangePageView?.(PageNavigationEnum.DUNGEON_DESCRIPTION);
-      } catch (error) {
-        console.error("Error loading mission:", error);
-        setIsStarting(false);
-      }
-    }
-  }, [campaign, maxUnlockedMissionIndex, loadCampaign, gameSession, onUpdateSession, onChangePageView]);
-
-  // focusMission
+  // Capability: focusMission
   const focusMission = useCallback((index) => {
     setFocusedMissionIndex(index);
   }, []);
 
-  // goBack
+  // Capability: selectMission
+  const selectMission = useCallback(async (index) => {
+    const savedData = loadCampaign();
+    if (index <= maxUnlockedMissionIndex && savedData && campaign?.missioni?.[index]) {
+      try {
+        const missionFile = campaign.missioni[index].file;
+        const response = await fetch(`/jsonData/map/${missionFile}`);
+        if (!response.ok) throw new Error('Failed to load map data');
+        const mapData = await response.json();
+
+        onUpdateSession((prevSession) => {
+          const baseSession = prevSession || gameSession || {};
+          return {
+            ...baseSession,
+            campaignName: campaign.nome_campagna,
+            heroes: savedData.heroes,
+            currentMap: mapData,
+            currentMissionIndex: index,
+            monsters: [],
+            openedDoors: [],
+            spawnedLocations: [],
+            currentTurn: 1,
+            isHeroOrderConfirmed: false,
+            lastAttack: null,
+            treasureDeck: [],
+            triggeredScripts: [],
+            scriptImages: []
+          };
+        });
+
+        onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+      } catch (error) {
+        console.error("Failed to start mission:", error);
+      }
+    }
+  }, [maxUnlockedMissionIndex, loadCampaign, campaign, onUpdateSession, gameSession, onChangePageView]);
+
+  // Capability: goBack
   const goBack = useCallback(() => {
-    onChangePageView?.(PageNavigationEnum.MAIN_MENU);
+    onChangePageView(PageNavigationEnum.MAIN_MENU);
   }, [onChangePageView]);
 
+  // Helper: Determine MissionArchiveStatus
   const getMissionStatus = useCallback((index) => {
-    if (index < maxUnlockedMissionIndex) return "COMPLETED";
-    if (index === maxUnlockedMissionIndex) return "AVAILABLE";
-    return "LOCKED";
+    if (index < maxUnlockedMissionIndex) return 'COMPLETED';
+    if (index === maxUnlockedMissionIndex) return 'AVAILABLE';
+    return 'LOCKED';
   }, [maxUnlockedMissionIndex]);
 
-  if (!campaign || !staticHeroes) {
+  if (!campaign || !staticHeroes || !staticEquipment) {
     return (
-      <div className="min-h-screen bg-stone-950 flex items-center justify-center text-amber-600 font-serif text-2xl tracking-widest">
-        Caricamento Archivi...
+      <div className="w-full h-full flex items-center justify-center bg-stone-950 text-amber-600 font-serif">
+        <p className="text-xl animate-pulse">Evocazione in corso...</p>
       </div>
     );
   }
 
-  const focusedMission = campaign.missioni?.[focusedMissionIndex];
-  const focusedStatus = focusedMission ? getMissionStatus(focusedMissionIndex) : null;
+  const focusedMission = campaign.missioni[focusedMissionIndex];
+  const focusedStatus = focusedMission ? getMissionStatus(focusedMissionIndex) : 'LOCKED';
 
   return (
-    <div className="h-screen w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 via-stone-900 to-black text-stone-300 font-serif flex flex-col overflow-hidden select-none">
-      
+    <div className="w-full h-full flex flex-col bg-gradient-to-br from-stone-950 via-stone-900 to-black text-stone-300 font-serif overflow-hidden">
       {/* Header */}
-      <header className="flex-none py-6 border-b border-stone-700/50 bg-stone-950/50 shadow-lg shadow-black/50 z-10">
-        <h1 className="text-center text-3xl md:text-4xl text-amber-600 tracking-[0.2em] uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-          {campaign.nome_campagna || "Archivio Missioni"}
+      <header className="w-full p-6 border-b border-amber-900/30 bg-stone-950/50 shadow-md shrink-0">
+        <h1 className="text-3xl md:text-4xl text-center text-amber-600 tracking-widest uppercase" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+          {campaign.nome_campagna || "Archivio delle Imprese"}
         </h1>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-4 md:p-8 gap-8">
         
         {/* Left Column: Mission List */}
-        <aside className="w-1/3 max-w-md border-r border-stone-700/50 bg-stone-900/40 overflow-y-auto overflow-x-hidden p-6 space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-stone-700">
-          {campaign.missioni?.map((mission, index) => {
-            const status = getMissionStatus(index);
-            const isFocused = index === focusedMissionIndex;
-            
-            let cardStyle = "border-stone-700 bg-stone-900/60 text-stone-400";
-            let statusText = "Sigillata";
-            let statusColor = "text-stone-600";
+        <div className="w-full md:w-1/2 lg:w-2/5 flex flex-col bg-stone-900/80 border border-amber-900/40 rounded-sm shadow-inner overflow-hidden">
+          <div className="p-4 border-b border-amber-900/40 bg-stone-950/80">
+            <h2 className="text-xl text-amber-500 tracking-wider">Imprese</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 custom-scrollbar">
+            {campaign.missioni.map((mission, index) => {
+              const status = getMissionStatus(index);
+              const isFocused = index === focusedMissionIndex;
+              
+              let statusColor = "text-stone-500 border-stone-700";
+              let statusText = "Sigillata";
+              if (status === 'COMPLETED') {
+                statusColor = "text-emerald-600 border-emerald-800/50";
+                statusText = "Completata";
+              } else if (status === 'AVAILABLE') {
+                statusColor = "text-amber-500 border-amber-600/50";
+                statusText = "Disponibile";
+              }
 
-            if (status === "COMPLETED") {
-              cardStyle = "border-stone-500 bg-stone-800/80 text-stone-300 hover:border-stone-400";
-              statusText = "Completata";
-              statusColor = "text-stone-400";
-            } else if (status === "AVAILABLE") {
-              cardStyle = "border-amber-700 bg-stone-800 text-amber-100 shadow-[0_0_15px_rgba(180,83,9,0.2)] hover:border-amber-500";
-              statusText = "Disponibile";
-              statusColor = "text-amber-500";
-            }
-
-            if (isFocused) {
-              cardStyle += " ring-2 ring-amber-600/50 scale-[1.02]";
-            }
-
-            return (
-              <div
-                key={index}
-                onClick={() => focusMission(index)}
-                className={`p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col items-center text-center ${cardStyle}`}
-              >
-                <span className="text-sm tracking-widest mb-2 opacity-80">Capitolo {index + 1}</span>
-                <h3 className="text-xl font-bold mb-3">{mission.titolo}</h3>
-                <div className={`text-xs uppercase tracking-widest px-3 py-1 border border-current rounded-sm ${statusColor}`}>
-                  {statusText}
+              return (
+                <div 
+                  key={index}
+                  onClick={() => focusMission(index)}
+                  className={`relative p-4 cursor-pointer transition-all duration-300 border-l-4 rounded-r-sm bg-stone-950/60 hover:bg-stone-800/80
+                    ${isFocused ? 'border-l-amber-500 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]' : 'border-l-transparent'}
+                    ${status === 'LOCKED' ? 'opacity-60 grayscale-[0.5]' : ''}
+                  `}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <span className="text-xs text-amber-700/80 font-bold tracking-widest uppercase block mb-1">
+                        Impresa {mission.ordine}
+                      </span>
+                      <h3 className={`text-lg leading-tight ${isFocused ? 'text-amber-400' : 'text-stone-300'}`}>
+                        {mission.titolo}
+                      </h3>
+                    </div>
+                    <div className={`px-2 py-1 text-[10px] uppercase tracking-wider border rounded-sm whitespace-nowrap ${statusColor}`}>
+                      {statusText}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </aside>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Right Column: Focused Mission Details */}
-        <section className="flex-1 p-8 md:p-12 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center relative [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-stone-700">
-          
+        <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col bg-stone-900/80 border border-amber-900/40 rounded-sm shadow-inner overflow-hidden relative">
           {focusedMission ? (
-            <div className="max-w-2xl w-full bg-stone-900/80 border border-stone-700 p-10 shadow-2xl flex flex-col items-center text-center space-y-8 relative">
-              
-              {/* Decorative corners */}
-              <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-700/50 m-2"></div>
-              <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-700/50 m-2"></div>
-              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-700/50 m-2"></div>
-              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-700/50 m-2"></div>
+            <>
+              <div className="flex-1 overflow-y-auto p-8 md:p-12 flex flex-col items-center justify-center text-center relative z-10">
+                <div className="mb-6">
+                  <div className="w-16 h-16 mx-auto mb-4 border border-amber-700/50 rounded-full flex items-center justify-center bg-stone-950 shadow-[0_0_15px_rgba(180,83,9,0.2)]">
+                    <span className="text-2xl text-amber-600">{focusedMission.ordine}</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl text-amber-500 mb-2" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                    {focusedMission.titolo}
+                  </h2>
+                  <p className="text-sm text-stone-500 font-mono tracking-widest uppercase">
+                    Ref: {focusedMission.file}
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <span className="text-amber-700 tracking-[0.3em] text-sm uppercase">
-                  Dossier: {focusedMission.file}
-                </span>
-                <h2 className="text-4xl md:text-5xl text-amber-500 drop-shadow-md">
-                  {focusedMission.titolo}
-                </h2>
+                <div className="max-w-md mx-auto mb-12">
+                  {focusedStatus === 'COMPLETED' && (
+                    <p className="text-stone-400 italic leading-relaxed">
+                      "Hai già trionfato in questa impresa, ma le ombre si addensano nuovamente. Puoi affrontarla di nuovo se ne hai il coraggio."
+                    </p>
+                  )}
+                  {focusedStatus === 'AVAILABLE' && (
+                    <p className="text-amber-200/80 italic leading-relaxed">
+                      "La tua prossima sfida ti attende. Prepara le armi e raduna il coraggio, l'oscurità non attende."
+                    </p>
+                  )}
+                  {focusedStatus === 'LOCKED' && (
+                    <p className="text-stone-600 italic leading-relaxed">
+                      "Questa via è ancora preclusa. Devi dimostrare il tuo valore nelle imprese precedenti prima di poter svelare questi segreti."
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-700 to-transparent"></div>
-
-              <div className="text-lg text-stone-400 leading-relaxed max-w-lg min-h-[4rem]">
-                {focusedStatus === "LOCKED" && "Questa missione è sigillata. Devi completare le sfide precedenti per svelarne i segreti."}
-                {focusedStatus === "AVAILABLE" && "L'oscurità attende. Prepara i tuoi eroi per questa nuova discesa nell'abisso."}
-                {focusedStatus === "COMPLETED" && "Hai già trionfato in queste sale, ma il male potrebbe essersi risvegliato. Puoi esplorarle nuovamente."}
-              </div>
-
-              <div className="pt-8 flex flex-col sm:flex-row gap-6 w-full justify-center">
+              {/* Action Bar */}
+              <div className="p-6 bg-stone-950/90 border-t border-amber-900/40 flex flex-col sm:flex-row justify-between items-center gap-4 z-10">
                 <button
                   onClick={goBack}
-                  className="px-8 py-3 bg-stone-950 border border-stone-600 text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition-colors uppercase tracking-widest text-sm"
+                  className="px-6 py-3 bg-stone-800 text-stone-300 border border-stone-600 hover:bg-stone-700 hover:text-white transition-colors uppercase tracking-widest text-sm w-full sm:w-auto"
                 >
                   Indietro
                 </button>
                 
-                {focusedStatus !== "LOCKED" && (
-                  <button
-                    onClick={() => selectMission(focusedMissionIndex)}
-                    disabled={isStarting}
-                    className="px-8 py-3 bg-stone-800 border border-amber-700 text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors uppercase tracking-widest text-sm shadow-[0_0_10px_rgba(180,83,9,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isStarting ? "Preparazione..." : "Esamina Missione"}
-                  </button>
-                )}
+                <button
+                  onClick={() => selectMission(focusedMissionIndex)}
+                  disabled={focusedStatus === 'LOCKED'}
+                  className={`px-8 py-3 uppercase tracking-widest text-sm font-bold transition-all w-full sm:w-auto
+                    ${focusedStatus === 'LOCKED' 
+                      ? 'bg-stone-800 text-stone-600 border border-stone-700 cursor-not-allowed' 
+                      : 'bg-amber-900/80 text-amber-100 border border-amber-500 hover:bg-amber-800 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                    }
+                  `}
+                >
+                  Entra nel Dungeon
+                </button>
               </div>
-
-            </div>
+            </>
           ) : (
-            <div className="text-stone-500 text-xl tracking-widest">
-              Nessuna missione selezionata
+            <div className="flex-1 flex items-center justify-center text-stone-600 italic">
+              Nessuna impresa selezionata
             </div>
           )}
+          
+          {/* Decorative background element for right panel */}
+          <div className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500 via-transparent to-transparent"></div>
+        </div>
 
-        </section>
-      </main>
+      </div>
+      
+      {/* Global styles for custom scrollbar to match theme */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(28, 25, 23, 0.8); 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(120, 53, 15, 0.6); 
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(180, 83, 9, 0.8); 
+        }
+      `}} />
     </div>
   );
 }

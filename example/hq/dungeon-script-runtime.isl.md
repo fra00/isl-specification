@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -21,7 +21,7 @@
 
 #### `MissionScriptEvent`
 
-- **Contract**: Enumerates the recovered HeroQuest event ids interpreted by the runtime.
+- **Contract**: Enumerates the recovered Dungeon event ids interpreted by the runtime.
 
 - `1`: Movement trigger matched against the previous hero position.
 - `2`: Attack trigger matched against monster type and death-state context.
@@ -132,7 +132,7 @@
 
 #### executeDungeonScripts
 
-- **Contract**: Executes recovered HeroQuest mission scripts against a supplied session snapshot and returns a new snapshot plus caller-facing side effects.
+- **Contract**: Executes recovered Dungeon mission scripts against a supplied session snapshot and returns a new snapshot plus caller-facing side effects.
 - **Signature**: `({ session: @GameSession, eventType: Integer, context?: Object, visibilityMap?: @VisibilityMap, random?: () -> Number }) -> @DungeonScriptResult`
 - **Flow**:
   - Deep-clone the provided `session` so caller state is never mutated in place.

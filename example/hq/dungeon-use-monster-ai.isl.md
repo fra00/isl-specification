@@ -1,7 +1,7 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-monster-ai
 
@@ -146,8 +146,75 @@
 ### 🚨 Constraints
 
 - Monsters MUST NOT move through walls or furniture.
-- Monsters MUST NOT end their movement on a cell occupied by another entity.
+- Monsters MUST NOT end their movement on a cell occupied by another entity (hero or monster).
 - Monsters MUST NOT move into cells covered by fog (unrevealed areas).
+- `runMonsterTurn()` MUST increment `currentTurn` when complete so hero round begins next.
+- Monsters MUST skip their turn if affected by "Sleep" or "Tempest" status.
+
+### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)
+
+#### Turn Sequencing
+
+- `runMonsterTurn()` is called ONLY when `gameSession.currentTurn > gameSession.heroes.length`.
+- Upon completion, `runMonsterTurn()` MUST call `sessionManager.startNextHeroRound()`, which increments turn counter.
+- Overlapping turns are prevented by the `isMonsterTurnInProgress` guard.
+
+#### Monument Activation Check
+
+- For each monster, check `activeStatus` BEFORE any movement or attack.
+- "Sleep" status: monster skips entire turn (no movement, no attack).
+- "Tempest" status: monster skips entire turn, status is then removed.
+- "Entangled" status: movement is restricted to 1 cell; status persists until next turn unless explicitly removed.
+
+#### Targeting & Adjacency
+
+- `findNearestHero()` filters by `fog == false`; invisible heroes are never targeted.
+- Topological adjacency requires: orthogonal neighbor + no wall between cells + both in same or connected `valo`.
+- Attack is triggered ONLY if topologically adjacent after movement.
+
+#### Combat Resolution
+
+- If topologically adjacent to target hero after movement:
+  - Calculate hero stats via `heroStatsLogic.calculateStats(hero)`.
+  - Invoke `combatLogic.resolveCombat(monster.attacco, heroStats.difesa, true)`.
+  - Apply damage and check for hero death (currentBody - damageDealt <= 0).
+  - Persist result via `sessionManager.resolveMonsterAttack()`.
+
+### 🧭 Decision Rules
+
+- **Targeting Priority**: (1) Visible + topologically adjacent = attack now, (2) Visible + reachable = pursue, (3) Visible + no path = move toward last known position, (4) Not visible = patrol or wait.
+- **Navigation Strategy**: Prefer shortest valid path to an unoccupied cell adjacent to hero (melee position) over moving directly to hero.
+- **Occupancy Resolution**: Iterate reachable path from end to start; choose first unoccupied cell as final position.
+
+### ✅ Acceptance Criteria
+
+- All monsters act in sequence during monster turn.
+- Sleeping monsters skip turn; Tempest monsters skip and remove status.
+- Monsters with valid paths move toward nearest visible hero.
+- Adjacent monsters trigger combat immediately.
+- Damage is correctly applied via `combatLogic.resolveCombat()`.
+- Hero death is detected and notified.
+- Monster turn completes and hero round begins automatically.
+
+### 🧪 Test Scenarios
+
+#### Normal Movement & Attack
+
+- Given: Monster at (3, 3), hero at (5, 5), visible, pathing available
+- When: Monster turn executes
+- Then: Monster moves closer; if adjacent after move, combat resolves
+
+#### Sleeping Monster
+
+- Given: Monster with "Sleep" status
+- When: Monster turn called
+- Then: Monster takes no action, turn passes to next monster
+
+#### No Valid Path
+
+- Given: Monster at (3, 3), hero at (10, 10), pathfinding returns empty list
+- When: Monster turn executes
+- Then: Monster remains stationary, hero is not engaged
 - Monsters MUST NOT open closed doors.
 - The master phase should provide enough delay between actions so the player can see what is happening.
 

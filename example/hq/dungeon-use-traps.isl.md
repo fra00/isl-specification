@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -90,7 +90,7 @@
     - Trigger `onNotify("Non hai gli strumenti per disarmare questa trappola.")`.
     - Trigger `onActionDone()`.
     - RETURN.
-  - Generate random number `roll` between 1 and 6 to approximate the HeroQuest combat-die disarm check (only the worst result fails).
+  - Generate random number `roll` between 1 and 6 to approximate the Dungeon combat-die disarm check (only the worst result fails).
   - IF `roll` < 6:
     - Set `trap.status` to 'DISARMED'.
     - Trigger `onNotify("Trappola disarmata con successo!")`.

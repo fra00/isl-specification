@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -59,6 +59,7 @@
   - Return the processed `fogVisibilityMap`.
 
 #### revealInitialVisibility
+
 - **Contract**: Clears fog for all positioned heroes at once.
 - **Flow**:
   - IF `fogVisibilityMap` is null OR `fogVisibilityMap.data` is null RETURN.

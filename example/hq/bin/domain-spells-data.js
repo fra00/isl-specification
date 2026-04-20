@@ -8,8 +8,8 @@
 
 import { Spell } from "./domain-ruleset";
 
-export const staticSpells = [
-  // Fuoco
+const staticSpells = [
+  // Fuoco (Set 1)
   Spell({
     id: 1,
     nome: "Palla di Fuoco",
@@ -19,7 +19,7 @@ export const staticSpells = [
     valore: 2,
     immagine: "Fuoco01.png",
     dorso: "Fuoco00_Dorso.png",
-    descrizione: "Infligge 2 danni diretti a un mostro.",
+    descrizione: "Infligge 2 danni diretti a un mostro."
   }),
   Spell({
     id: 2,
@@ -30,7 +30,7 @@ export const staticSpells = [
     valore: 1,
     immagine: "Fuoco02.png",
     dorso: "Fuoco00_Dorso.png",
-    descrizione: "Infligge 1 danno diretto a un mostro.",
+    descrizione: "Infligge 1 danno diretto a un mostro."
   }),
   Spell({
     id: 3,
@@ -41,11 +41,10 @@ export const staticSpells = [
     valore: 2,
     immagine: "Fuoco03.png",
     dorso: "Fuoco00_Dorso.png",
-    descrizione:
-      "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri.",
+    descrizione: "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri."
   }),
 
-  // Acqua
+  // Acqua (Set 2)
   Spell({
     id: 4,
     nome: "Acqua Guaritrice",
@@ -55,7 +54,7 @@ export const staticSpells = [
     valore: 4,
     immagine: "Acqua01.png",
     dorso: "Acqua00_Dorso.png",
-    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio.",
+    descrizione: "Recupera fino a 4 Punti Corpo dell'eroe bersaglio."
   }),
   Spell({
     id: 5,
@@ -66,8 +65,7 @@ export const staticSpells = [
     valore: 0,
     immagine: "Acqua02.png",
     dorso: "Acqua00_Dorso.png",
-    descrizione:
-      "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno.",
+    descrizione: "Avvolge l'eroe bersaglio nella nebbia caliginosa fino alla fine del turno."
   }),
   Spell({
     id: 6,
@@ -78,11 +76,10 @@ export const staticSpells = [
     valore: 0,
     immagine: "Acqua03.png",
     dorso: "Acqua00_Dorso.png",
-    descrizione:
-      "Fa addormentare un mostro (salta il turno) finché non viene attaccato.",
+    descrizione: "Fa addormentare un mostro (salta il turno) finché non viene attaccato."
   }),
 
-  // Terra
+  // Terra (Set 3)
   Spell({
     id: 7,
     nome: "Pelle di Pietra",
@@ -92,7 +89,7 @@ export const staticSpells = [
     valore: 1,
     immagine: "Terra01.png",
     dorso: "Terra00_Dorso.png",
-    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni.",
+    descrizione: "Aumenta la difesa di 1 dado finché l'eroe non subisce danni."
   }),
   Spell({
     id: 8,
@@ -103,8 +100,7 @@ export const staticSpells = [
     valore: 0,
     immagine: "Terra02.png",
     dorso: "Terra00_Dorso.png",
-    descrizione:
-      "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi.",
+    descrizione: "Permette all'eroe bersaglio di attraversare un solo muro durante il movimento. Non assegna cariche o usi extra basati su dadi."
   }),
   Spell({
     id: 9,
@@ -115,11 +111,10 @@ export const staticSpells = [
     valore: 5,
     immagine: "Terra03.png",
     dorso: "Terra00_Dorso.png",
-    descrizione:
-      "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza.",
+    descrizione: "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza."
   }),
 
-  // Aria
+  // Aria (Set 4)
   Spell({
     id: 10,
     nome: "Tempesta",
@@ -129,8 +124,7 @@ export const staticSpells = [
     valore: 0,
     immagine: "Aria01.png",
     dorso: "Aria00_Dorso.png",
-    descrizione:
-      "Il mostro viene avvolto dai venti e salta il suo prossimo turno.",
+    descrizione: "Il mostro viene avvolto dai venti e salta il suo prossimo turno."
   }),
   Spell({
     id: 11,
@@ -141,8 +135,7 @@ export const staticSpells = [
     valore: 0,
     immagine: "Aria02.png",
     dorso: "Aria00_Dorso.png",
-    descrizione:
-      "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento.",
+    descrizione: "Rende l'eroe in grado di attraversare muri e occupanti durante il movimento."
   }),
   Spell({
     id: 12,
@@ -153,8 +146,8 @@ export const staticSpells = [
     valore: 1,
     immagine: "Aria03.png",
     dorso: "Aria00_Dorso.png",
-    descrizione: "Riduce il movimento del mostro a 1 sola casella.",
-  }),
+    descrizione: "Riduce il movimento del mostro a 1 sola casella."
+  })
 ];
 
 export const getAllSpells = () => {
@@ -162,6 +155,5 @@ export const getAllSpells = () => {
 };
 
 export const getSpellsByElement = (elemento) => {
-  if (!elemento) return [];
-  return staticSpells.filter((spell) => spell?.elemento === elemento);
+  return staticSpells.filter(spell => spell?.elemento === elemento);
 };

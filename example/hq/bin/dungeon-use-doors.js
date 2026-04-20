@@ -9,62 +9,62 @@
 import { useMemo } from 'react';
 
 export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
-    const visibleDoors = useMemo(() => {
-        if (!gameSession?.currentMap || !boardVisibilityMap) {
-            return [];
+  const visibleDoors = useMemo(() => {
+    if (!gameSession?.currentMap || !boardVisibilityMap) {
+      return [];
+    }
+
+    const doors = gameSession.currentMap.porte || [];
+    const openedDoors = gameSession.openedDoors || [];
+    const visibilityData = boardVisibilityMap.data || [];
+    const result = [];
+
+    for (let i = 0; i < doors.length; i++) {
+      const door = doors[i];
+      const x = parseInt(door.x, 10);
+      const y = parseInt(door.y, 10);
+      const doorCoordKey = `${x},${y}`;
+      let isVisible = false;
+
+      // Check Persisted Visibility
+      if (openedDoors.includes(doorCoordKey)) {
+        isVisible = true;
+      }
+
+      // Check Dynamic Visibility (Fog of War)
+      if (!isVisible) {
+        const cellsToCheck = [{ x, y }];
+        
+        if (door.oriz) {
+          cellsToCheck.push({ x, y: y - 1 });
+          cellsToCheck.push({ x, y: y + 1 });
+        } else {
+          cellsToCheck.push({ x: x - 1, y });
+          cellsToCheck.push({ x: x + 1, y });
         }
 
-        const porte = gameSession.currentMap.porte || [];
-        const openedDoors = gameSession.openedDoors || [];
-        const visibilityData = boardVisibilityMap.data || [];
-        const result = [];
-
-        for (let i = 0; i < porte.length; i++) {
-            const door = porte[i];
-            const x = parseInt(door.x, 10);
-            const y = parseInt(door.y, 10);
-            const doorCoordKey = `${x},${y}`;
-            let isVisible = false;
-
-            // Check Persisted Visibility
-            if (openedDoors.includes(doorCoordKey)) {
-                isVisible = true;
-            }
-
-            // Check Dynamic Visibility (Fog of War)
-            if (!isVisible) {
-                const cellsToCheck = [{ x, y }];
-                
-                if (door.oriz) {
-                    cellsToCheck.push({ x, y: y - 1 });
-                    cellsToCheck.push({ x, y: y + 1 });
-                } else {
-                    cellsToCheck.push({ x: x - 1, y });
-                    cellsToCheck.push({ x: x + 1, y });
-                }
-
-                for (let j = 0; j < cellsToCheck.length; j++) {
-                    const coord = cellsToCheck[j];
-                    const visCell = visibilityData.find(
-                        (cell) => cell.x === coord.x && cell.y === coord.y
-                    );
-                    
-                    if (visCell && visCell.fog === false) {
-                        isVisible = true;
-                        break;
-                    }
-                }
-            }
-
-            // Add to Render List
-            if (isVisible) {
-                const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
-                result.push({ x, y, img });
-            }
+        for (let j = 0; j < cellsToCheck.length; j++) {
+          const coord = cellsToCheck[j];
+          const visCell = visibilityData.find(
+            (c) => c.x === coord.x && c.y === coord.y
+          );
+          
+          if (visCell && visCell.fog === false) {
+            isVisible = true;
+            break;
+          }
         }
+      }
 
-        return result;
-    }, [gameSession?.currentMap, gameSession?.openedDoors, boardVisibilityMap]);
+      // Add to Render List
+      if (isVisible) {
+        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+        result.push({ x, y, img });
+      }
+    }
 
-    return { visibleDoors };
+    return result;
+  }, [gameSession, boardVisibilityMap]);
+
+  return { visibleDoors };
 }

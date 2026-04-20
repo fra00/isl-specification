@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -371,7 +371,7 @@
 
 #### executeMissionScripts
 
-- **Contract**: Executes recovered HeroQuest mission scripts against a provided session snapshot, persists handled script effects, forwards their notifications, and reveals rooms requested by script commands such as `possta`.
+- **Contract**: Executes recovered Dungeon mission scripts against a provided session snapshot, persists handled script effects, forwards their notifications, and reveals rooms requested by script commands such as `possta`.
 - **Signature**: `({ baseSession?: @GameSession, eventType: Integer, context?: Object, visibilityMap?: @VisibilityMap, random?: () -> Number }) -> @DungeonScriptResult`
 - **Flow**:
   - Let `baseSession` = `options.baseSession` when provided, otherwise `gameSession`.

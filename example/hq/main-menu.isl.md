@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 Short description
 
@@ -40,7 +40,7 @@ Main Menu Screen
 - `AtmosphereLayer`: sparse ember particles and warm glow accents. Decorative only; they must not make the screen visually noisy.
 - `HeaderPlaque`: compact top block with:
   - eyebrow text `Portale del Regno`
-  - main title `HeroQuest`
+  - main title `Dungeon`
   - one short instruction line
 - `ActiveStatePill`: small capsule that shows the currently active area label and short hint.
 - `ActionArea`: only two large menu plaques, no secondary long-form text column.
@@ -66,7 +66,7 @@ Main Menu Screen
 
 - `HeaderPlaque`
   - eyebrow: `Portale del Regno`
-  - title: `HeroQuest`
+  - title: `Dungeon`
   - short line inviting the user to choose a path, omitted in ultra-compact mode
 - `ActiveStatePill`
   - shows `Campagna` or `Forgia`
@@ -93,6 +93,7 @@ Handles navigation when the user activates a menu action plaque.
 Click su voce di menu
 
 **Side Effects**:
+
 - IF `isProcessing` is true: ignore the action.
 - IF `destination` is not a valid `PageNavigationEnum` value: ignore the action.
 - ELSE:
@@ -109,6 +110,7 @@ Updates the active visual state when the user hovers or focuses a menu action pl
 Mouse over or focus voce di menu
 
 **Side Effects**:
+
 - Marks the hovered item as active.
 - Updates the active backdrop treatment.
 - Updates the active state pill and optional status plaque.
@@ -122,6 +124,7 @@ Restores the default active visual state when the user leaves a menu action plaq
 Mouse leave or blur on menu item.
 
 **Side Effects**:
+
 - Clear hovered state.
 - Active backdrop returns to the primary `GIOCA` palette.
 - Active state pill returns to the primary `GIOCA` hint.
@@ -135,6 +138,7 @@ Switches the menu into compact or ultra-compact mode on short viewports.
 Initial render and viewport resize.
 
 **Side Effects**:
+
 - IF viewport height <= about `720px`:
   - Reduce spacing and title scale.
   - Reduce plaque height.

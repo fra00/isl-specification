@@ -1,7 +1,7 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-combat
 
@@ -71,3 +71,62 @@ Structure containing the details of a combat interaction.
     - Create and return `@CombatResult` with `attackerDice`, `defenderDice`, `skulls`, `shields`, `damageDealt`.
 
 - **Return**:`{ resolveCombat }`
+
+### 🚨 Constraints
+
+- Dice counts MUST be non-negative; negative values are clamped to 0.
+- Damage MUST never be negative; result is clamped to max(0, damage).
+- Combat result MUST be immutable after creation; no side effects on input entities.
+- This component is a pure deterministic calculator; it does NOT apply damage to entities or persist state.
+
+### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)
+
+#### Die Roll Mapping
+
+- Roll 1-3 → SKULL (hit)
+- Roll 4-5 → WHITE_SHIELD (hero defense)
+- Roll 6 → BLACK_SHIELD (monster defense)
+
+#### Shield Effectiveness
+
+- If `defenderIsHero` is true: WHITE_SHIELD counts as 1 effective shield; BLACK_SHIELD counts as 0.
+- If `defenderIsHero` is false: BLACK_SHIELD counts as 1 effective shield; WHITE_SHIELD counts as 0.
+
+#### Damage Calculation
+
+- Effective damage = max(0, skulls - shields)
+- Rounding: none (integer arithmetic only)
+- Clamping: final damage >= 0 (if result negative, clamp to 0)
+
+#### Idempotency
+
+- Given identical RNG seed, `resolveCombat` with same parameters produces identical results.
+- No external state is modified; output depends only on input.
+
+### ✅ Acceptance Criteria
+
+- Random die rolls follow 1-6 distribution.
+- SKULL, WHITE_SHIELD, BLACK_SHIELD are counted correctly.
+- Damage = max(0, skulls - appropriateShields) is calculated correctly.
+- Hero fights apply WHITE_SHIELD; monster fights apply BLACK_SHIELD.
+- Result object contains all necessary fields for downstream processing.
+
+### 🧪 Test Scenarios
+
+#### Hero Attack vs Monster
+
+- Given: attackDiceCount = 3, defenseDiceCount = 1, defenderIsHero = false
+- When: `resolveCombat` called
+- Then: attackerDice has 3 rolls, defenderDice has 1 roll, shields counted from BLACK_SHIELD
+
+#### Zero Damage
+
+- Given: 1 skull rolled, 1+ shield rolled
+- When: Damage calculated
+- Then: damageDealt = max(0, 1 - 1) = 0
+
+#### Negative Dice Clamped
+
+- Given: attackDiceCount = -5, defenseDiceCount = -2
+- When: `resolveCombat` called
+- Then: Treated as attackDiceCount = 0, defenseDiceCount = 0

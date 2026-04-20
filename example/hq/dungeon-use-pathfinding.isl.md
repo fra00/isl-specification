@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -25,8 +25,9 @@
 ### ⚡ Capabilities
 
 #### internal State
+
 - hooksDungeonMapQuery: @useDungeonMapQuery passing `gameSession` and `visibilityMap`.
-- hooksDungeonMovementRules: @useDungeonMovementRules passing `hooksDungeonMapQuery`.
+- hooksDungeonMovementRules: @useDungeonMovementRules passing `mapQuery` and `foundPassages`.
 
 #### calculatePath
 
@@ -41,14 +42,10 @@
     - Initialize `visited` set with start coordinates.
     - WHILE `queue` is not empty:
       - Dequeue `current` node.
-      - **Passage Validation**: A cell containing a Passage is walkable if:
-        - It is a standard Door.
-        - It is a Secret Passage present in the `foundPassages` list.
-        - Note: This logic is applied by `movementRules.isWalkable`.
       - IF `current` is target, Return `current.path`.
       - IF `current.path.length` >= `maxDepth`, Continue.
       - FOR EACH neighbor (Up, Down, Left, Right):
-        - IF neighbor not visited AND `movementRules.isWalkable(current.x, current.y, neighbor.x, neighbor.y, excludeEntityId)`:
+        - IF neighbor not visited AND `movementRules.isWalkable(current.x, current.y, neighbor.x, neighbor.y, excludeEntityId, foundPassages)`:
           - Mark neighbor as visited.
           - Enqueue neighbor with updated path.
   - Return empty path if no path found.

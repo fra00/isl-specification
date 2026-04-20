@@ -6,127 +6,139 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
 export function useFogOfWar({ gameSession, staticVisibilityMap }) {
-  const [fogVisibilityMap, setFogVisibilityMap] = useState(null);
+  // Lazy initialization to avoid useEffect for synchronous init
+  const [fogVisibilityMap, setFogVisibilityMap] = useState(() => {
+    if (!staticVisibilityMap) return null;
+    const normalizedData = staticVisibilityMap.data?.map(cell => ({
+      ...cell,
+      fog: cell.fog === false ? false : true
+    })) || [];
+    return {
+      ...staticVisibilityMap,
+      data: normalizedData
+    };
+  });
 
-  const { calculateVisibleCells } = useVisibilityCalc({
+  // Ref to keep track of the latest state synchronously for imperative methods
+  const fogVisibilityMapRef = useRef(fogVisibilityMap);
+
+  const visibilityCalc = useVisibilityCalc({
     gameSession,
     visibilityMap: staticVisibilityMap
   });
 
+  // Re-initialize if staticVisibilityMap changes after mount
   useEffect(() => {
     if (!staticVisibilityMap) {
       setFogVisibilityMap(null);
+      fogVisibilityMapRef.current = null;
       return;
     }
-
-    const deepCopy = JSON.parse(JSON.stringify(staticVisibilityMap));
-    if (deepCopy.data) {
-      deepCopy.data = deepCopy.data.map(cell => ({
-        ...cell,
-        fog: cell.fog === false ? false : true
-      }));
-    }
-    setFogVisibilityMap(deepCopy);
+    const normalizedData = staticVisibilityMap.data?.map(cell => ({
+      ...cell,
+      fog: cell.fog === false ? false : true
+    })) || [];
+    const newMap = {
+      ...staticVisibilityMap,
+      data: normalizedData
+    };
+    setFogVisibilityMap(newMap);
+    fogVisibilityMapRef.current = newMap;
   }, [staticVisibilityMap]);
 
   const calculateFog = useCallback(() => {
-    if (!staticVisibilityMap) {
-      return null;
-    }
+    const currentMap = fogVisibilityMapRef.current;
+    if (!currentMap || !currentMap.data) return currentMap;
+    if (!gameSession?.isHeroOrderConfirmed) return currentMap;
 
-    setFogVisibilityMap(prevMap => {
-      if (!prevMap || !prevMap.data) return prevMap;
-      if (!gameSession?.isHeroOrderConfirmed) return prevMap;
+    const heroInTurn = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!heroInTurn) return currentMap;
 
-      const heroInTurn = gameSession?.heroes?.find(
-        h => h.turnOrder === gameSession.currentTurn
-      );
+    const visibleCells = visibilityCalc.calculateVisibleCells(heroInTurn.x, heroInTurn.y);
+    if (!visibleCells || visibleCells.length === 0) return currentMap;
 
-      if (!heroInTurn) return prevMap;
-
-      const visibleCells = calculateVisibleCells(heroInTurn.x, heroInTurn.y);
-      if (!visibleCells || visibleCells.length === 0) return prevMap;
-
-      let hasChanges = false;
-      const visibleSet = new Set(visibleCells.map(vc => `${vc.x},${vc.y}`));
-
-      const newData = prevMap.data.map(cell => {
-        if (cell.fog && visibleSet.has(`${cell.x},${cell.y}`)) {
-          hasChanges = true;
-          return { ...cell, fog: false };
-        }
-        return cell;
-      });
-
-      return hasChanges ? { ...prevMap, data: newData } : prevMap;
+    let changed = false;
+    const newData = currentMap.data.map(cell => {
+      const isVisible = visibleCells.some(vc => vc.x === cell.x && vc.y === cell.y);
+      if (isVisible && cell.fog !== false) {
+        changed = true;
+        return { ...cell, fog: false };
+      }
+      return cell;
     });
-    return undefined;
-  }, [
-    calculateVisibleCells,
-    staticVisibilityMap,
-    gameSession?.isHeroOrderConfirmed,
-    gameSession?.heroes,
-    gameSession?.currentTurn
-  ]);
 
+    const newMap = changed ? { ...currentMap, data: newData } : currentMap;
+    if (changed) {
+      setFogVisibilityMap(newMap);
+      fogVisibilityMapRef.current = newMap;
+    }
+    return newMap;
+  }, [gameSession?.isHeroOrderConfirmed, gameSession?.heroes, gameSession?.currentTurn, visibilityCalc]);
+
+  // Trigger calculateFog when gameSession.heroes or staticVisibilityMap changes
   useEffect(() => {
     calculateFog();
-  }, [calculateFog, gameSession?.heroes, staticVisibilityMap]);
+  }, [gameSession?.heroes, staticVisibilityMap, calculateFog]);
 
   const revealInitialVisibility = useCallback(() => {
-    setFogVisibilityMap(prevMap => {
-      if (!prevMap || !prevMap.data) return prevMap;
-      if (!gameSession?.heroes || gameSession.heroes.length === 0) return prevMap;
+    const currentMap = fogVisibilityMapRef.current;
+    if (!currentMap || !currentMap.data) return currentMap;
+    if (!gameSession?.heroes || gameSession.heroes.length === 0) return currentMap;
 
-      let hasChanges = false;
-      const visibleSet = new Set();
+    let changed = false;
+    const visibleSet = new Set();
 
-      gameSession.heroes.forEach(hero => {
-        const visibleCells = calculateVisibleCells(hero.x, hero.y);
-        if (visibleCells && visibleCells.length > 0) {
-          visibleCells.forEach(vc => visibleSet.add(`${vc.x},${vc.y}`));
-        }
-      });
-
-      if (visibleSet.size === 0) return prevMap;
-
-      const newData = prevMap.data.map(cell => {
-        if (cell.fog && visibleSet.has(`${cell.x},${cell.y}`)) {
-          hasChanges = true;
-          return { ...cell, fog: false };
-        }
-        return cell;
-      });
-
-      return hasChanges ? { ...prevMap, data: newData } : prevMap;
+    gameSession.heroes.forEach(hero => {
+      const visibleCells = visibilityCalc.calculateVisibleCells(hero.x, hero.y);
+      if (visibleCells) {
+        visibleCells.forEach(vc => visibleSet.add(`${vc.x},${vc.y}`));
+      }
     });
-  }, [calculateVisibleCells, gameSession?.heroes]);
+
+    const newData = currentMap.data.map(cell => {
+      if (visibleSet.has(`${cell.x},${cell.y}`) && cell.fog !== false) {
+        changed = true;
+        return { ...cell, fog: false };
+      }
+      return cell;
+    });
+
+    const newMap = changed ? { ...currentMap, data: newData } : currentMap;
+    if (changed) {
+      setFogVisibilityMap(newMap);
+      fogVisibilityMapRef.current = newMap;
+    }
+    return newMap;
+  }, [gameSession?.heroes, visibilityCalc]);
 
   const revealFromPoint = useCallback((x, y) => {
-    setFogVisibilityMap(prevMap => {
-      if (!prevMap || !prevMap.data) return prevMap;
+    const currentMap = fogVisibilityMapRef.current;
+    if (!currentMap || !currentMap.data) return currentMap;
 
-      const visibleCells = calculateVisibleCells(x, y);
-      if (!visibleCells || visibleCells.length === 0) return prevMap;
+    const visibleCells = visibilityCalc.calculateVisibleCells(x, y);
+    if (!visibleCells || visibleCells.length === 0) return currentMap;
 
-      let hasChanges = false;
-      const visibleSet = new Set(visibleCells.map(vc => `${vc.x},${vc.y}`));
-
-      const newData = prevMap.data.map(cell => {
-        if (cell.fog && visibleSet.has(`${cell.x},${cell.y}`)) {
-          hasChanges = true;
-          return { ...cell, fog: false };
-        }
-        return cell;
-      });
-
-      return hasChanges ? { ...prevMap, data: newData } : prevMap;
+    let changed = false;
+    const newData = currentMap.data.map(cell => {
+      const isVisible = visibleCells.some(vc => vc.x === cell.x && vc.y === cell.y);
+      if (isVisible && cell.fog !== false) {
+        changed = true;
+        return { ...cell, fog: false };
+      }
+      return cell;
     });
-  }, [calculateVisibleCells]);
+
+    const newMap = changed ? { ...currentMap, data: newData } : currentMap;
+    if (changed) {
+      setFogVisibilityMap(newMap);
+      fogVisibilityMapRef.current = newMap;
+    }
+    return newMap;
+  }, [visibilityCalc]);
 
   return {
     fogVisibilityMap,

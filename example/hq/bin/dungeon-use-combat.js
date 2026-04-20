@@ -14,67 +14,57 @@ export const CombatDiceResult = {
   BLACK_SHIELD: 'BLACK_SHIELD'
 };
 
-export const CombatResult = (data = {}) => ({
-  attackerDice: Array.isArray(data.attackerDice) ? [...data.attackerDice] : [],
-  defenderDice: Array.isArray(data.defenderDice) ? [...data.defenderDice] : [],
-  skulls: data.skulls ?? 0,
-  shields: data.shields ?? 0,
-  damageDealt: data.damageDealt ?? 0,
-});
-
 export function useCombatLogic() {
   const resolveCombat = useCallback((attackDiceCount, defenseDiceCount, defenderIsHero) => {
-    const safeAttackDice = Math.max(0, attackDiceCount || 0);
-    const safeDefenseDice = Math.max(0, defenseDiceCount || 0);
-
-    const rollDie = () => {
-      const roll = Math.floor(Math.random() * 6) + 1;
-      if (roll <= 3) {
-        return CombatDiceResult.SKULL;
-      }
-      if (roll === 4 || roll === 5) {
-        return CombatDiceResult.WHITE_SHIELD;
-      }
-      return CombatDiceResult.BLACK_SHIELD;
-    };
+    const validAttackDice = Math.max(0, attackDiceCount || 0);
+    const validDefenseDice = Math.max(0, defenseDiceCount || 0);
+    const isHeroDefending = defenderIsHero === true;
 
     const attackerDice = [];
     let skulls = 0;
 
-    for (let i = 0; i < safeAttackDice; i++) {
-      const result = rollDie();
-      attackerDice.push(result);
-      if (result === CombatDiceResult.SKULL) {
+    for (let i = 0; i < validAttackDice; i++) {
+      const roll = Math.floor(Math.random() * 6) + 1;
+      if (roll <= 3) {
+        attackerDice.push(CombatDiceResult.SKULL);
         skulls++;
+      } else if (roll <= 5) {
+        attackerDice.push(CombatDiceResult.WHITE_SHIELD);
+      } else {
+        attackerDice.push(CombatDiceResult.BLACK_SHIELD);
       }
     }
 
     const defenderDice = [];
     let shields = 0;
 
-    for (let i = 0; i < safeDefenseDice; i++) {
-      const result = rollDie();
-      defenderDice.push(result);
-      
-      if (defenderIsHero && result === CombatDiceResult.WHITE_SHIELD) {
-        shields++;
-      } else if (!defenderIsHero && result === CombatDiceResult.BLACK_SHIELD) {
-        shields++;
+    for (let i = 0; i < validDefenseDice; i++) {
+      const roll = Math.floor(Math.random() * 6) + 1;
+      if (roll <= 3) {
+        defenderDice.push(CombatDiceResult.SKULL);
+      } else if (roll <= 5) {
+        defenderDice.push(CombatDiceResult.WHITE_SHIELD);
+        if (isHeroDefending) {
+          shields++;
+        }
+      } else {
+        defenderDice.push(CombatDiceResult.BLACK_SHIELD);
+        if (!isHeroDefending) {
+          shields++;
+        }
       }
     }
 
     const damageDealt = Math.max(0, skulls - shields);
 
-    return CombatResult({
+    return {
       attackerDice,
       defenderDice,
       skulls,
       shields,
       damageDealt
-    });
+    };
   }, []);
 
-  return {
-    resolveCombat
-  };
+  return { resolveCombat };
 }

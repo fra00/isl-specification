@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -23,6 +23,7 @@
 **Signature**:
 
 - `mapQuery`: Object (Result of @useDungeonMapQuery)
+- `foundPassages`: List of {x: Integer, y: Integer} (Discovered secret passages from useSecretPassages)
 
 ### ⚡ Capabilities
 
@@ -40,8 +41,8 @@
 
 #### isWalkable
 
-- **Contract**: Checks if a unit can move from Source to Target (adjacent).
-- **Signature**: `(sourceX: Integer, sourceY: Integer, targetX: Integer, targetY: Integer, excludeEntityId: Integer) -> Boolean`
+- **Contract**: Checks if a unit can move from Source to Target (adjacent). Secret passages act as transparent cells unless discovered; once discovered they function as doors for cross-room movement.
+- **Signature**: `(sourceX: Integer, sourceY: Integer, targetX: Integer, targetY: Integer, excludeEntityId: Integer, foundPassages: List) -> Boolean`
 - **Flow**:
   - **Bounds Check**: Return FALSE if target coordinates are less than 1 or greater than the map dimensions (using `mapQuery.getMapDimensions`).
   - **Static Obstacles**: Return FALSE if `mapQuery.isBlockedByFurniture(targetX, targetY)`.
@@ -66,8 +67,13 @@
     - Get `targetValo` from `mapQuery.getVisibilityCell(targetX, targetY)` (@VisibilityCell).
     - IF sourceValo IS NULL OR targetValo IS NULL: RETURN TRUE (Assume open space if visibility data missing).
     - **(Crossing Rooms)**: IF `sourceValo` != `targetValo`:
-      - IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)` OR `mapQuery.isSecretPassage(sourceX, sourceY)` OR `mapQuery.isSecretPassage(targetX, targetY)`:
+      - IF `mapQuery.isDoor(sourceX, sourceY)` OR `mapQuery.isDoor(targetX, targetY)`:
         - Return TRUE.
+      - **Secret Passage Check**: Only permit secret passage crossing if passage is discovered:
+        - IF `mapQuery.isSecretPassage(sourceX, sourceY)` AND `{sourceX, sourceY}` is in `foundPassages`:
+          - Return TRUE.
+        - IF `mapQuery.isSecretPassage(targetX, targetY)` AND `{targetX, targetY}` is in `foundPassages`:
+          - Return TRUE.
       - IF `movingHero` exists AND (`movingHero.activeStatus` contains "WallPass" OR `movingHero.activeStatus` contains "InvisiblePassage"):
         - Return TRUE.
       - Return FALSE.

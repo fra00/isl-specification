@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -106,4 +106,3 @@ Carica il componente PageView visualizzare
    CASE `SHOP` Render `@Armory` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
    CASE `DUNGEON` Render `@Dungeon` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`, `staticMonsters` = `monsters`, `staticVisibilityMap` = `boardData`, `staticEquipment` = `equipment`, `staticItems` = `items`, `staticSpells` = `spells`, `treasureDeck` = `treasureDeck`.
    CASE `DUNGEON_DESCRIPTION` Render `@DungeonDescription` with `onChangePageView` = `changePageView`, `gameSession` = `gameSession`, `onUpdateSession` = `updateSession`.
-

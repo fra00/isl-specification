@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function DungeonTurnControls({
   currentHero = null,
@@ -26,272 +26,225 @@ export default function DungeonTurnControls({
   onOpenMagic = () => {},
   onOpenInventory = () => {},
   onCancelTargeting = () => {},
-  onOpenDoor = () => {},
+  onOpenDoor = () => {}
 }) {
   const panelRef = useRef(null);
-  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const dragInfo = useRef({ offsetX: 0, offsetY: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  const positionRef = useRef({ x: 20, y: 20 });
-  const offsetRef = useRef({ x: 0, y: 0 });
-
-  const clampPosition = useCallback((rawPosition) => {
-    if (typeof window === "undefined") {
-      return rawPosition;
-    }
-
-    const panelWidth = panelRef.current?.offsetWidth || 250;
-    const panelHeight = panelRef.current?.offsetHeight || 460;
-    const viewportPadding = 12;
-
-    const maxX = Math.max(
-      viewportPadding,
-      window.innerWidth - panelWidth - viewportPadding,
-    );
-    const maxY = Math.max(
-      viewportPadding,
-      window.innerHeight - panelHeight - viewportPadding,
-    );
-
-    return {
-      x: Math.min(Math.max(rawPosition.x, viewportPadding), maxX),
-      y: Math.min(Math.max(rawPosition.y, viewportPadding), maxY),
-    };
-  }, []);
-
-  const updatePosition = useCallback(
-    (newPos) => {
-      const nextPosition = clampPosition(newPos);
-      positionRef.current = nextPosition;
-      setPosition(nextPosition);
-    },
-    [clampPosition],
-  );
-
-  useEffect(() => {
+  // Lazy initialization of position from LocalStorage
+  const [position, setPosition] = useState(() => {
     try {
-      const saved = localStorage.getItem("dungeonTurnControlsPosition");
+      const saved = localStorage.getItem('dungeonTurnControlsPosition');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (
-          parsed &&
-          typeof parsed.x === "number" &&
-          typeof parsed.y === "number"
-        ) {
-          updatePosition(parsed);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return { x: parsed.x, y: parsed.y };
         }
       }
     } catch (e) {
-      console.warn(
-        "Failed to parse dungeonTurnControlsPosition from localStorage",
-        e,
-      );
+      // Fallback to default on error
     }
-  }, [updatePosition]);
+    return { x: 20, y: 20 };
+  });
 
+  const positionRef = useRef(position);
   useEffect(() => {
-    const handleResize = () => {
-      updatePosition(positionRef.current);
-    };
+    positionRef.current = position;
+  }, [position]);
 
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [updatePosition]);
-
-  const handleMouseDown = useCallback((e) => {
-    setIsDragging(true);
-    offsetRef.current = {
-      x: e.clientX - positionRef.current.x,
-      y: e.clientY - positionRef.current.y,
+  // Clamps the panel position to ensure it stays within the viewport
+  const clampPosition = useCallback((x, y) => {
+    if (!panelRef.current) return { x, y };
+    const rect = panelRef.current.getBoundingClientRect();
+    const maxX = Math.max(0, window.innerWidth - rect.width);
+    const maxY = Math.max(0, window.innerHeight - rect.height);
+    return {
+      x: Math.max(0, Math.min(x, maxX)),
+      y: Math.max(0, Math.min(y, maxY))
     };
   }, []);
 
+  // Initial clamp on mount to ensure restored position is valid in current viewport
   useEffect(() => {
+    setPosition((prev) => clampPosition(prev.x, prev.y));
+  }, [clampPosition]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prev) => clampPosition(prev.x, prev.y));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [clampPosition]);
+
+  // Drag interaction lifecycle
+  const handleMouseDown = useCallback((e) => {
+    if (!panelRef.current) return;
+    const rect = panelRef.current.getBoundingClientRect();
+    dragInfo.current = {
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top
+    };
+    setIsDragging(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) {
+      // Save to local storage when dragging stops
+      localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(positionRef.current));
+      return;
+    }
+
     const handleMouseMove = (e) => {
-      updatePosition({
-        x: e.clientX - offsetRef.current.x,
-        y: e.clientY - offsetRef.current.y,
-      });
+      const newX = e.clientX - dragInfo.current.offsetX;
+      const newY = e.clientY - dragInfo.current.offsetY;
+      setPosition(clampPosition(newX, newY));
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      localStorage.setItem(
-        "dungeonTurnControlsPosition",
-        JSON.stringify(positionRef.current),
-      );
     };
 
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, updatePosition]);
+  }, [isDragging, clampPosition]);
 
-  const heroClass = (currentHero?.hero?.classe || "").toLowerCase();
-  const canUseMagic = heroClass === "mago" || heroClass === "elfo";
-  const showOpenDoor = canOpenDoor === true || canOpenDoor?.found === true;
-  const utilityButtonClass =
-    "group relative overflow-hidden w-full rounded-xl border border-stone-700/80 bg-gradient-to-b from-stone-700 to-stone-800 px-3 py-2.5 font-semibold text-stone-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_22px_rgba(0,0,0,0.22)] transition-all hover:from-stone-600 hover:to-stone-700";
+  // Derived visibility and state flags
+  const heroClass = currentHero?.hero?.classe?.toLowerCase() || '';
+  const showMagic = heroClass === 'mago' || heroClass === 'elfo';
+  const showOpenDoor = canOpenDoor && (canOpenDoor === true || canOpenDoor.found === true);
 
   return (
     <div
       ref={panelRef}
-      className="fixed w-[238px] md:w-[250px] bg-stone-900/95 text-stone-200 border border-amber-900/60 rounded-xl shadow-[0_18px_40px_rgba(0,0,0,0.65)] backdrop-blur-sm z-50 flex flex-col overflow-hidden font-serif"
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      className="fixed z-50 w-[240px] bg-stone-900/95 border-2 border-amber-700/50 rounded-sm shadow-2xl shadow-black/80 text-stone-200 font-serif select-none flex flex-col"
     >
-      <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/45 pointer-events-none" />
-      <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/45 pointer-events-none" />
-      <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/45 pointer-events-none" />
-      <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/45 pointer-events-none" />
+      {/* Ornamental Corners */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-amber-500/70 pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-amber-500/70 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-amber-500/70 pointer-events-none"></div>
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-amber-500/70 pointer-events-none"></div>
 
       {/* Header / Drag Handle */}
       <div
-        className={`relative bg-gradient-to-r from-stone-950 via-stone-900 to-stone-950 px-4 py-3 border-b border-amber-900/50 select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
         onMouseDown={handleMouseDown}
+        className={`bg-stone-800/80 border-b border-amber-700/50 p-2 flex flex-col items-center justify-center ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
       >
-        <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">
-          HeroQuest
-        </div>
-        <div className="text-center text-lg font-bold uppercase tracking-[0.14em] text-amber-500 drop-shadow-sm">
-          Controlli Turno
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent" />
-          <div className="text-[9px] uppercase tracking-[0.28em] text-stone-500">
-            Azioni del Round
-          </div>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent" />
-        </div>
+        <span className="text-amber-500 font-bold tracking-wider text-sm uppercase">Controlli Turno</span>
+        <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-600/50 to-transparent mt-1"></div>
       </div>
 
-      {/* Body */}
-      <div className="relative p-3 md:p-4 flex flex-col gap-4 bg-[linear-gradient(180deg,_rgba(28,25,23,0.18),_rgba(12,10,9,0.05))]">
-        {/* Inventory Section */}
-        <div>
-          <div className="mb-2 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-stone-600/60 to-stone-800/20" />
-            <div className="text-[9px] uppercase tracking-[0.28em] text-stone-500">
-              Utilita
-            </div>
-            <div className="h-px flex-1 bg-gradient-to-r from-stone-800/20 via-stone-600/60 to-transparent" />
-          </div>
-          <button onClick={onOpenInventory} className={utilityButtonClass}>
-            <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
-            <span className="relative flex items-center justify-between gap-3">
-              <span>Inventario</span>
-              <span className="text-[10px] uppercase tracking-[0.24em] text-stone-400 group-hover:text-amber-300 transition-colors">
-                Apri
-              </span>
-            </span>
-          </button>
-        </div>
-
-        {/* Action Buttons */}
+      <div className="p-3 flex flex-col gap-4">
+        {/* Actions Section */}
         <div className="flex flex-col gap-2">
-          <div className="mb-1 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-800/45 to-stone-900/0" />
-            <div className="text-[9px] uppercase tracking-[0.28em] text-amber-700">
-              Azioni
-            </div>
-            <div className="h-px flex-1 bg-gradient-to-r from-stone-900/0 via-amber-800/45 to-transparent" />
-          </div>
+          <div className="text-[10px] text-stone-400 uppercase tracking-widest text-center mb-1">Azioni</div>
+
+          {/* End Turn - MUST BE FIRST */}
           <button
             onClick={onEndTurn}
-            className="group relative overflow-hidden w-full rounded-xl border border-red-900/70 bg-gradient-to-b from-red-800 to-red-950 px-3 py-2.5 font-bold uppercase tracking-[0.12em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_14px_rgba(127,29,29,0.28)] transition-all hover:from-red-700 hover:to-red-900"
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-red-900/80 border-red-700 text-red-100 hover:bg-red-800 shadow-inner shadow-red-500/20"
           >
-            <span className="absolute inset-x-0 top-0 h-px bg-white/12" />
-            <span className="relative flex items-center justify-between gap-3">
-              <span>Fine Turno</span>
-              <span className="text-[9px] uppercase tracking-[0.22em] text-red-100/70">
-                Chiudi
-              </span>
-            </span>
+            Fine Turno
           </button>
 
+          {/* Roll Movement */}
           <button
             onClick={onRollMovement}
-            disabled={!!turnPhase?.HasMoved || movementPoints != null}
-            className="w-full rounded-xl border border-amber-800/75 bg-gradient-to-b from-amber-700 to-amber-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.18)] transition-all hover:from-amber-600 hover:to-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={turnPhase?.HasMoved || movementPoints != null}
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-amber-900/80 border-amber-700 text-amber-100 hover:bg-amber-800 shadow-inner shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
             Tira Movimento
           </button>
 
+          {/* Search Passages */}
           <button
             onClick={onSearchPassages}
-            disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={turnPhase?.HasPerformedAction}
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
             Cerca Passaggi
           </button>
 
+          {/* Search Treasure */}
           <button
             onClick={onSearchTreasure}
-            disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={turnPhase?.HasPerformedAction}
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
-            Cerca Tesori
+            Cerca Tesoro
           </button>
 
+          {/* Search Trap */}
           <button
             onClick={onSearchTraps}
-            disabled={!!turnPhase?.HasPerformedAction}
-            className="w-full rounded-xl border border-yellow-800/75 bg-gradient-to-b from-yellow-700 to-yellow-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-yellow-600 hover:to-yellow-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={turnPhase?.HasPerformedAction}
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
           >
             Cerca Trappole
           </button>
 
+          {/* Disarm Trap */}
           {canDisarmTrap && (
             <button
               onClick={onDisarmTrap}
-              disabled={
-                !!turnPhase?.HasPerformedAction || isMoving || isTargeting
-              }
-              className="w-full rounded-xl border border-orange-800/75 bg-gradient-to-b from-orange-700 to-orange-900 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-orange-600 hover:to-orange-800 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={turnPhase?.HasPerformedAction || isMoving || isTargeting}
+              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-orange-900/70 border-orange-700 text-orange-100 hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
             >
               Disinnesca Trappola
             </button>
           )}
 
-          {canUseMagic && (
+          {/* Magic */}
+          {showMagic && (
             <button
               onClick={onOpenMagic}
-              disabled={
-                !!turnPhase?.HasPerformedAction || isMoving || isTargeting
-              }
-              className="w-full rounded-xl border border-indigo-800/75 bg-gradient-to-b from-indigo-700 to-indigo-950 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-indigo-600 hover:to-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={turnPhase?.HasPerformedAction || isMoving || isTargeting}
+              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-indigo-900/80 border-indigo-700 text-indigo-100 hover:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
             >
               Magia
             </button>
           )}
 
+          {/* Cancel Targeting */}
           {isTargeting && (
-            <button onClick={onCancelTargeting} className={utilityButtonClass}>
-              <span className="absolute inset-x-0 top-0 h-px bg-white/10" />
-              <span className="relative flex items-center justify-between gap-3">
-                <span>Annulla Bersaglio</span>
-                <span className="text-[10px] uppercase tracking-[0.24em] text-stone-400 group-hover:text-red-300 transition-colors">
-                  Stop
-                </span>
-              </span>
+            <button
+              onClick={onCancelTargeting}
+              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-stone-700 border-stone-500 text-stone-200 hover:bg-stone-600"
+            >
+              Annulla Bersaglio
             </button>
           )}
 
+          {/* Open Door */}
           {showOpenDoor && (
             <button
               onClick={onOpenDoor}
-              className="w-full rounded-xl border border-green-800/75 bg-gradient-to-b from-green-700 to-green-950 px-3 py-2.5 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_18px_rgba(0,0,0,0.16)] transition-all hover:from-green-600 hover:to-green-900"
+              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-emerald-900/80 border-emerald-700 text-emerald-100 hover:bg-emerald-800"
             >
               Apri Porta
             </button>
           )}
+        </div>
+
+        {/* Inventory Section */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-amber-900/50">
+          <div className="text-[10px] text-stone-400 uppercase tracking-widest text-center mb-1">Equipaggiamento</div>
+          <button
+            onClick={onOpenInventory}
+            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-stone-800 border-stone-600 text-stone-200 hover:bg-stone-700 shadow-inner shadow-stone-500/10"
+          >
+            Inventario
+          </button>
         </div>
       </div>
     </div>

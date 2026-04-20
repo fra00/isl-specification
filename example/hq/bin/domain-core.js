@@ -6,41 +6,15 @@
  * Edit the ISL file instead.
  */
 
-/**
- * @module domain-core
- * @description This module defines the core domain concepts for the Heroquest application,
- * including navigation states and enums.
- */
-
-/**
- * Defines the possible page views for navigation within the application.
- * It is frozen to ensure immutability, acting as a constant enum.
- * @readonly
- * @enum {string}
- */
 export const PageNavigationEnum = Object.freeze({
   MAIN_MENU: 'MAIN_MENU',
   PLAY_GAME: 'PLAY_GAME',
   EDITOR_GAME: 'EDITOR_GAME',
   SHOP: 'SHOP',
   DUNGEON: 'DUNGEON',
-  DUNGEON_DESCRIPTION: 'DUNGEON_DESCRIPTION',
+  DUNGEON_DESCRIPTION: 'DUNGEON_DESCRIPTION'
 });
 
-/**
- * Factory function to create a NavigationStatus object.
- * This object represents the current state of the application's navigation.
- *
- * @param {object} [data={}] - Initial data for the navigation status.
- * @param {string} [data.currentPageView=PageNavigationEnum.MAIN_MENU] - The current page view.
- * @returns {{currentPageView: string}} A new NavigationStatus object.
- */
-export const NavigationStatus = (data = {}) => {
-  const {
-    currentPageView = PageNavigationEnum.MAIN_MENU,
-  } = data;
-
-  return {
-    currentPageView,
-  };
-};
+export const NavigationStatus = (data = {}) => ({
+  currentPageView: data?.currentPageView || PageNavigationEnum.MAIN_MENU
+});

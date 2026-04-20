@@ -1,5 +1,5 @@
 {
-  "nome_campagna": "Set Base HeroQuest",
+  "nome_campagna": "Set Base Dungeon",
   "missioni": [
     { "ordine": 1, "file": "HQBase01.json", "titolo": "L'Attrazione del Caos" },
     {

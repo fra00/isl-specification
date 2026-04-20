@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 Short description
 

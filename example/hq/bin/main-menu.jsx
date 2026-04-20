@@ -6,304 +6,252 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { PageNavigationEnum } from "./domain-core";
 
-export default function MainMenu({ onChangePageView }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hoveredMenuId, setHoveredMenuId] = useState(null);
-  const [isCompactViewport, setIsCompactViewport] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.innerHeight <= 720;
-  });
-  const [isUltraCompactViewport, setIsUltraCompactViewport] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.innerHeight <= 460;
-  });
+const MENU_ITEMS = {
+  [PageNavigationEnum.PLAY_GAME]: {
+    id: PageNavigationEnum.PLAY_GAME,
+    eyebrow: "Campagna",
+    label: "GIOCA",
+    teaser: "Inizia o continua la tua avventura nel regno",
+    hint: "Esplora i dungeon oscuri",
+    badge: "01",
+    theme: "warm",
+  },
+  [PageNavigationEnum.EDITOR_GAME]: {
+    id: PageNavigationEnum.EDITOR_GAME,
+    eyebrow: "Forgia",
+    label: "EDITOR",
+    teaser: "Plasma nuove sfide e costruisci mappe",
+    hint: "Strumenti di creazione",
+    badge: "02",
+    theme: "cold",
+  },
+};
 
-  const [dustParticles] = useState(() => {
-    const particles = [];
-    for (let index = 0; index < 24; index += 1) {
-      particles.push({
-        id: index,
-        size: Math.random() * 2 + 1,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        duration: Math.random() * 4 + 6,
-        delay: -(Math.random() * 8),
-      });
+export default function MainMenu({ onChangePageView = () => {} }) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [activeItem, setActiveItem] = useState(PageNavigationEnum.PLAY_GAME);
+  const [viewportMode, setViewportMode] = useState("normal");
+
+  const compactViewportResolution = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const height = window.innerHeight;
+    if (height <= 460) {
+      setViewportMode("ultra-compact");
+    } else if (height <= 720) {
+      setViewportMode("compact");
+    } else {
+      setViewportMode("normal");
     }
-    return particles;
-  });
+  }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
+    compactViewportResolution();
+    window.addEventListener("resize", compactViewportResolution);
+    return () => window.removeEventListener("resize", compactViewportResolution);
+  }, [compactViewportResolution]);
 
-    const updateViewportMode = () => {
-      setIsCompactViewport(window.innerHeight <= 720);
-      setIsUltraCompactViewport(window.innerHeight <= 460);
-    };
-
-    updateViewportMode();
-    window.addEventListener("resize", updateViewportMode);
-
-    return () => {
-      window.removeEventListener("resize", updateViewportMode);
-    };
-  }, []);
-
-  const menuItems = useMemo(
-    () => [
-      {
-        id: "play",
-        label: "GIOCA",
-        eyebrow: "Campagna",
-        teaser: "Missioni e dungeon",
-        activeHint: "Ingresso alla campagna",
-        accent: "from-amber-500/24 via-red-900/12 to-transparent",
-        destination: PageNavigationEnum.PLAY_GAME,
-        backdrop:
-          "radial-gradient(circle at 18% 22%, rgba(251,191,36,0.26) 0%, transparent 30%), radial-gradient(circle at 78% 18%, rgba(239,68,68,0.18) 0%, transparent 34%), radial-gradient(circle at 62% 74%, rgba(180,83,9,0.2) 0%, transparent 38%), linear-gradient(135deg, rgba(28,25,23,0.98) 0%, rgba(41,37,36,0.92) 42%, rgba(17,24,39,0.8) 100%)",
-        veil:
-          "linear-gradient(120deg, rgba(251,191,36,0.14) 0%, transparent 42%, rgba(120,53,15,0.28) 100%)",
-      },
-      {
-        id: "editor",
-        label: "EDITOR",
-        eyebrow: "Forgia",
-        teaser: "Mappe e strumenti",
-        activeHint: "Officina di authoring",
-        accent: "from-sky-500/20 via-indigo-900/16 to-transparent",
-        destination: PageNavigationEnum.EDITOR_GAME,
-        backdrop:
-          "radial-gradient(circle at 24% 20%, rgba(56,189,248,0.2) 0%, transparent 28%), radial-gradient(circle at 76% 24%, rgba(99,102,241,0.22) 0%, transparent 34%), radial-gradient(circle at 62% 72%, rgba(14,165,233,0.12) 0%, transparent 38%), linear-gradient(135deg, rgba(15,23,42,0.96) 0%, rgba(30,41,59,0.9) 40%, rgba(23,37,84,0.84) 100%)",
-        veil:
-          "linear-gradient(120deg, rgba(56,189,248,0.16) 0%, transparent 46%, rgba(49,46,129,0.3) 100%)",
-      },
-    ],
-    [],
-  );
-
-  const activePreviewItem = useMemo(() => {
-    return menuItems.find((item) => item.id === hoveredMenuId) || menuItems[0];
-  }, [hoveredMenuId, menuItems]);
-
-  const handleItemClick = useCallback(
+  const clickMenuItems = useCallback(
     (destination) => {
       if (isProcessing) return;
-      if (!Object.values(PageNavigationEnum).includes(destination)) return;
+      
+      const isValidDestination = Object.values(PageNavigationEnum).includes(destination);
+      if (!isValidDestination) return;
 
       setIsProcessing(true);
-      if (onChangePageView) {
+      try {
         onChangePageView(destination);
+      } finally {
+        setIsProcessing(false);
       }
-      setIsProcessing(false);
     },
-    [isProcessing, onChangePageView],
+    [isProcessing, onChangePageView]
   );
 
-  const handleMouseEnter = useCallback((menuId) => {
-    setHoveredMenuId(menuId);
+  const mouseOverMenuItems = useCallback((destination) => {
+    setActiveItem(destination);
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
-    setHoveredMenuId(null);
+  const clearPreviewState = useCallback(() => {
+    setActiveItem(PageNavigationEnum.PLAY_GAME);
   }, []);
 
-  const renderActionCard = (item, index) => {
-    const isActive = activePreviewItem.id === item.id;
-    const cardSizeClass = isUltraCompactViewport
-      ? "min-h-[92px] rounded-[22px] px-3 py-2.5"
-      : isCompactViewport
-        ? "min-h-[112px] rounded-[24px] px-3.5 py-3.5"
-        : "min-h-[148px] rounded-[28px] px-4 py-4 sm:px-5 sm:py-5";
-    const titleClass = isUltraCompactViewport
-      ? "mt-1 text-[1.55rem]"
-      : isCompactViewport
-        ? "mt-1.5 text-[1.9rem]"
-        : "mt-2 text-3xl sm:text-[2.6rem]";
-
-    return (
-      <button
-        key={item.id}
-        type="button"
-        disabled={isProcessing}
-        className={`group relative overflow-hidden border text-left transition-all duration-300 ${cardSizeClass} ${isProcessing ? "cursor-wait opacity-70" : "cursor-pointer"} ${
-          isActive
-            ? "border-amber-500/70 bg-stone-950/82 shadow-[0_0_0_1px_rgba(251,191,36,0.15),0_18px_40px_rgba(0,0,0,0.34)]"
-            : "border-stone-700/70 bg-black/25 hover:border-amber-700/60 hover:bg-stone-950/70"
-        }`}
-        onClick={() => handleItemClick(item.destination)}
-        onMouseEnter={() => handleMouseEnter(item.id)}
-        onMouseLeave={handleMouseLeave}
-        onFocus={() => handleMouseEnter(item.id)}
-        onBlur={handleMouseLeave}
-      >
-        <div className={`absolute inset-0 bg-gradient-to-br ${item.accent} opacity-80 transition-opacity ${isActive ? "" : "group-hover:opacity-95"}`} />
-
-        <div className="relative flex h-full flex-col justify-between gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] uppercase tracking-[0.3em] text-stone-500">{item.eyebrow}</div>
-              <div className={`menu-option-title ${titleClass}`}>
-                {item.label}
-              </div>
-            </div>
-
-            <div className={`inline-flex shrink-0 items-center justify-center rounded-full border text-[11px] font-bold uppercase tracking-[0.24em] ${
-              isUltraCompactViewport ? "h-7 w-7 text-[10px]" : isCompactViewport ? "h-8 w-8" : "h-10 w-10"
-            } ${
-              isActive ? "border-amber-500/60 bg-amber-500/10 text-amber-200" : "border-stone-600 bg-stone-900/70 text-stone-400"
-            }`}>
-              {String(index + 1).padStart(2, "0")}
-            </div>
-          </div>
-
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <div className={`text-stone-200/90 ${isUltraCompactViewport ? "text-[11px] leading-4" : isCompactViewport ? "text-xs leading-5" : "text-sm leading-6"}`}>
-                {item.teaser}
-              </div>
-              {!isUltraCompactViewport && (
-                <div className="mt-1 text-[10px] uppercase tracking-[0.24em] text-stone-500">{item.activeHint}</div>
-              )}
-            </div>
-
-            {!isUltraCompactViewport && (
-              <div className="shrink-0 rounded-full border border-stone-700/70 bg-stone-950/75 px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] text-stone-400">
-                Entra
-              </div>
-            )}
-          </div>
-        </div>
-      </button>
-    );
-  };
+  const isUltraCompact = viewportMode === "ultra-compact";
+  const isCompact = viewportMode === "compact";
+  const activeData = MENU_ITEMS[activeItem] || MENU_ITEMS[PageNavigationEnum.PLAY_GAME];
+  const isEditorActive = activeItem === PageNavigationEnum.EDITOR_GAME;
 
   return (
-    <div className="relative h-screen overflow-hidden bg-black text-stone-100">
-      <style>{`
-        @keyframes backdropFloat {
-          0%, 100% { transform: scale(1.03); }
-          50% { transform: scale(1.08); }
-        }
-        @keyframes emberPulse {
-          0%, 100% { opacity: 0.35; transform: translate3d(0, 0, 0); }
-          50% { opacity: 0.95; transform: translate3d(0, -10px, 0); }
-        }
-        .heroquest-title {
-          font-family: Georgia, "Times New Roman", serif;
-          color: #f3bf69;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          text-shadow: 0 0 28px rgba(251, 191, 36, 0.14), 0 3px 0 rgba(120, 53, 15, 0.95), 0 16px 36px rgba(0, 0, 0, 0.82);
-        }
-        .menu-option-title {
-          font-family: Georgia, "Times New Roman", serif;
-          color: #f6d394;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          text-shadow: 0 2px 0 rgba(69, 26, 3, 0.95), 0 10px 24px rgba(0, 0, 0, 0.55);
-        }
-      `}</style>
+    <div className="relative w-full h-screen overflow-hidden bg-black text-slate-200 font-sans select-none">
+      {/* BackgroundLayer */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-black opacity-90 animate-pulse" 
+        style={{ animationDuration: "6s" }} 
+      />
 
-      <div className="absolute inset-0 z-[0] overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 50% 18%, rgba(120,113,108,0.16) 0%, transparent 30%), linear-gradient(135deg, rgba(12,10,9,0.98) 0%, rgba(24,24,27,0.95) 34%, rgba(9,9,11,1) 100%)",
-            animation: "backdropFloat 26s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.16]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(168,162,158,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,0.18) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
-        <div
-          className="absolute inset-0 transition-opacity duration-500"
-          style={{
-            backgroundImage: activePreviewItem.backdrop,
-            opacity: hoveredMenuId ? 0.92 : 0.78,
-            animation: "backdropFloat 18s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute inset-0 mix-blend-screen transition-opacity duration-500"
-          style={{
-            backgroundImage: activePreviewItem.veil,
-            opacity: hoveredMenuId ? 0.88 : 0.72,
-          }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.16),_transparent_38%),linear-gradient(180deg,_rgba(0,0,0,0.16),_rgba(0,0,0,0.82))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(0,0,0,0.76),_rgba(0,0,0,0.28)_52%,_rgba(0,0,0,0.74))]" />
-      </div>
+      {/* ActiveBackdropLayer */}
+      <div
+        className={`absolute inset-0 transition-colors duration-700 ease-in-out opacity-50 ${
+          isEditorActive
+            ? "bg-gradient-to-tr from-slate-900 via-slate-800 to-cyan-900/40"
+            : "bg-gradient-to-tr from-stone-900 via-stone-800 to-orange-900/40"
+        }`}
+      />
 
-      <div className="absolute inset-0 z-[8] pointer-events-none">
-        {dustParticles.map((particle) => (
-          <div
-            key={particle.id}
-            className="absolute rounded-full bg-amber-300/80"
-            style={{
-              left: `${particle.left}%`,
-              top: `${particle.top}%`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              boxShadow: "0 0 10px rgba(251, 191, 36, 0.6)",
-              animation: `emberPulse ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
-            }}
-          />
-        ))}
-      </div>
+      {/* AtmosphereLayer */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-500/5 via-transparent to-transparent opacity-40 mix-blend-screen pointer-events-none" />
 
-      <div className="absolute -left-12 top-16 z-[9] h-40 w-40 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute right-0 bottom-0 z-[9] h-52 w-52 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
-
-      <div className={`relative z-[20] mx-auto flex h-full w-full max-w-6xl flex-col justify-between ${isCompactViewport ? "px-4 py-4 sm:px-5 sm:py-5" : "px-5 py-5 sm:px-7 sm:py-7 lg:px-10 lg:py-9"}`}>
-        <div className={isCompactViewport ? "max-w-lg" : "max-w-3xl"}>
-          <div className={`inline-flex items-center rounded-full border border-amber-900/60 bg-stone-950/60 text-amber-200 shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-sm ${isCompactViewport ? "px-3 py-1 text-[9px] tracking-[0.28em]" : "px-3.5 py-1.5 text-[10px] tracking-[0.34em]"}`}>
+      {/* Content Container */}
+      <div className="relative z-10 flex flex-col h-full w-full max-w-7xl mx-auto px-6 py-4 md:py-8">
+        
+        {/* HeaderPlaque */}
+        <header className={`flex-shrink-0 ${isUltraCompact ? "mb-3" : isCompact ? "mb-5" : "mb-10"}`}>
+          <div className="text-orange-500/80 text-xs md:text-sm font-bold tracking-[0.2em] uppercase mb-1">
             Portale del Regno
           </div>
-
-          <h1 className={`heroquest-title ${isUltraCompactViewport ? "mt-2.5 text-[2.45rem]" : isCompactViewport ? "mt-3 text-4xl sm:text-5xl" : "mt-4 text-5xl sm:text-6xl lg:text-7xl xl:text-[5.3rem]"}`}>
-            HeroQuest
+          <h1
+            className={`font-serif font-bold text-white tracking-wide ${
+              isUltraCompact ? "text-3xl" : isCompact ? "text-5xl" : "text-6xl md:text-8xl"
+            }`}
+          >
+            Dungeon
           </h1>
-
-          {!isUltraCompactViewport && (
-            <p className={`mt-3 max-w-xl text-stone-200/88 ${isCompactViewport ? "text-sm leading-5" : "text-base leading-6 sm:text-lg"}`}>
-              Scegli il cammino e entra.
+          {!isUltraCompact && (
+            <p className="text-slate-400 mt-2 text-sm md:text-base max-w-md">
+              Scegli il tuo percorso. Affronta le tenebre o plasma il destino del regno.
             </p>
           )}
+        </header>
 
-          <div className={`mt-${isUltraCompactViewport ? "2" : "3"} inline-flex items-center gap-2 rounded-full border border-stone-700/70 bg-black/35 text-stone-300 backdrop-blur-sm ${isUltraCompactViewport ? "px-2.5 py-1 text-[9px] tracking-[0.16em]" : isCompactViewport ? "px-3 py-1.5 text-[10px] tracking-[0.2em]" : "px-3.5 py-2 text-[10px] tracking-[0.24em]"}`}>
-            <span className="uppercase text-amber-300">{activePreviewItem.eyebrow}</span>
-            <span className="h-1 w-1 rounded-full bg-amber-400/70" />
-            <span className="uppercase text-stone-400">{activePreviewItem.activeHint}</span>
-          </div>
+        {/* ActiveStatePill */}
+        <div
+          className={`flex-shrink-0 inline-flex items-center gap-3 bg-black/60 border border-white/10 rounded-full px-4 py-1.5 w-fit backdrop-blur-md transition-all duration-300 ${
+            isUltraCompact ? "mb-4 text-xs" : "mb-8 text-sm"
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+              isEditorActive
+                ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"
+                : "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"
+            }`}
+          />
+          <span className="font-semibold text-white tracking-wide">{activeData.eyebrow}</span>
+          <span className="text-slate-400 border-l border-white/20 pl-3">{activeData.hint}</span>
         </div>
 
-        <div className={isCompactViewport ? "grid gap-2.5" : "flex items-end gap-6 xl:gap-8"}>
-          <div className={isCompactViewport ? "grid grid-cols-2 gap-2.5" : "grid flex-1 gap-4 md:grid-cols-2"}>
-            {menuItems.map((item, index) => renderActionCard(item, index))}
+        {/* Layout Area */}
+        <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
+          
+          {/* ActionArea */}
+          <div
+            className={`flex-1 flex ${
+              isUltraCompact ? "flex-row gap-3" : "flex-col md:flex-row gap-4 md:gap-6"
+            }`}
+          >
+            {Object.values(MENU_ITEMS).map((item) => {
+              const isActive = activeItem === item.id;
+              const isCold = item.theme === "cold";
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => clickMenuItems(item.id)}
+                  onMouseEnter={() => mouseOverMenuItems(item.id)}
+                  onFocus={() => mouseOverMenuItems(item.id)}
+                  onMouseLeave={clearPreviewState}
+                  onBlur={clearPreviewState}
+                  disabled={isProcessing}
+                  className={`
+                    group relative text-left overflow-hidden rounded-xl border transition-all duration-500 ease-out
+                    ${
+                      isActive
+                        ? "border-white/30 bg-white/10 scale-[1.02] shadow-2xl"
+                        : "border-white/5 bg-black/40 hover:bg-white/5"
+                    }
+                    ${isUltraCompact ? "flex-1 p-4" : isCompact ? "flex-1 p-6" : "flex-1 p-8 md:p-10"}
+                  `}
+                >
+                  {/* Plaque Hover Glow */}
+                  <div
+                    className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${
+                      isCold ? "from-cyan-500/10 to-transparent" : "from-orange-500/10 to-transparent"
+                    }`}
+                  />
+
+                  <div className="relative z-10 flex flex-col h-full justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-3">
+                        <span
+                          className={`text-[10px] md:text-xs font-bold tracking-widest uppercase ${
+                            isCold ? "text-cyan-400" : "text-orange-400"
+                          }`}
+                        >
+                          {item.eyebrow}
+                        </span>
+                        <span
+                          className={`font-mono font-bold transition-colors duration-300 ${
+                            isUltraCompact ? "text-xs" : "text-sm md:text-lg"
+                          } ${isActive ? "text-white/40" : "text-white/10"}`}
+                        >
+                          {item.badge}
+                        </span>
+                      </div>
+                      <h2
+                        className={`font-serif font-bold text-white tracking-wide ${
+                          isUltraCompact ? "text-2xl" : isCompact ? "text-3xl" : "text-4xl md:text-5xl"
+                        } mb-2`}
+                      >
+                        {item.label}
+                      </h2>
+                      <p
+                        className={`text-slate-300 leading-relaxed ${
+                          isUltraCompact ? "text-xs line-clamp-2" : "text-sm md:text-base"
+                        }`}
+                      >
+                        {item.teaser}
+                      </p>
+                    </div>
+
+                    {!isUltraCompact && (
+                      <div className="mt-8 flex items-center justify-between">
+                        <span className="text-slate-500 text-xs md:text-sm font-medium">
+                          {item.hint}
+                        </span>
+                        <span
+                          className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-colors duration-300 ${
+                            isCold
+                              ? isActive
+                                ? "border-cyan-400 text-cyan-200 bg-cyan-500/20"
+                                : "border-cyan-500/30 text-cyan-400/70 bg-cyan-500/5"
+                              : isActive
+                              ? "border-orange-400 text-orange-200 bg-orange-500/20"
+                              : "border-orange-500/30 text-orange-400/70 bg-orange-500/5"
+                          }`}
+                        >
+                          Entra
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
-          {!isCompactViewport && (
-            <div className="hidden w-[240px] shrink-0 rounded-[28px] border border-amber-900/50 bg-[linear-gradient(180deg,_rgba(18,18,18,0.76),_rgba(10,10,10,0.72))] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.38)] backdrop-blur-sm md:block">
-              <div className="text-[10px] uppercase tracking-[0.28em] text-amber-700">Scena attiva</div>
-              <div className="menu-option-title mt-2 text-3xl">{activePreviewItem.label}</div>
-              <div className="mt-2 text-sm leading-6 text-stone-300">{activePreviewItem.activeHint}</div>
+          {/* StatusPlaque (Desktop only) */}
+          <div className="hidden lg:flex w-72 flex-col bg-black/60 border border-white/10 rounded-xl p-6 backdrop-blur-md h-fit shadow-xl">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 border-b border-white/10 pb-3">
+              Scena Attiva
+            </h3>
+            <div className="flex flex-col gap-1">
+              <span className="text-white font-serif text-2xl tracking-wide">{activeData.label}</span>
+              <span className="text-slate-400 text-sm leading-relaxed mt-1">{activeData.hint}</span>
             </div>
-          )}
+          </div>
+
         </div>
       </div>
     </div>

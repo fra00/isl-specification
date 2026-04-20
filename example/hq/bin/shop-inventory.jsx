@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 export default function ShopInventory({
   items = [],
@@ -18,12 +18,9 @@ export default function ShopInventory({
   onEnterDungeon = () => {},
   onExit = () => {}
 }) {
-  const selectedItem = useMemo(() => {
-    return items.find(i => i?.id === selectedItemId);
-  }, [items, selectedItemId]);
-
   const handleItemClick = useCallback((id) => {
-    if (!items.find(i => i?.id === id)) return;
+    const item = items.find((i) => i.id === id);
+    if (item == null) return;
     onSelect(id);
   }, [items, onSelect]);
 
@@ -33,104 +30,114 @@ export default function ShopInventory({
     }
   }, [canBuy, onBuy]);
 
-  const handleEnterDungeonClick = useCallback(() => {
-    onEnterDungeon();
-  }, [onEnterDungeon]);
-
-  const handleExitClick = useCallback(() => {
-    onExit();
-  }, [onExit]);
+  const selectedItem = items.find((i) => i.id === selectedItemId);
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 bg-gray-900 text-gray-300 p-6 rounded-xl border-2 border-gray-700 font-serif shadow-2xl">
-      {/* LIST COLUMN */}
+    <div className="flex flex-col md:flex-row gap-6 bg-gray-950 text-gray-200 p-6 rounded-xl border-2 border-gray-800 font-serif shadow-2xl max-w-5xl mx-auto">
+      
+      {/* Left Column: Item List */}
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl font-bold text-yellow-500 mb-4 border-b border-gray-700 pb-2 tracking-wider uppercase">
+        <h2 className="text-2xl font-bold text-gray-400 mb-4 border-b border-gray-800 pb-2 uppercase tracking-widest">
           Armeria
         </h2>
-        <div className="overflow-y-auto max-h-[500px] pr-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+        <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 space-y-2 custom-scrollbar">
           {items.map((item) => {
-            if (!item) return null;
-            const isSelected = item.id === selectedItemId;
-            
+            const isSelected = selectedItemId === item.id;
             return (
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
-                className={`flex justify-between items-center p-3 rounded cursor-pointer transition-all border ${
+                className={`p-4 cursor-pointer rounded-lg flex justify-between items-center border transition-all duration-200 ${
                   isSelected
-                    ? 'bg-gray-800 border-yellow-600 shadow-[0_0_10px_rgba(202,138,4,0.2)]'
-                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-700 hover:border-gray-500'
+                    ? 'border-yellow-600 bg-gray-800 shadow-[0_0_10px_rgba(202,138,4,0.2)]'
+                    : 'border-gray-800 bg-gray-900 hover:bg-gray-800 hover:border-gray-600'
                 }`}
               >
-                <span className="font-medium text-lg">{item.nome}</span>
-                <span className="text-yellow-500 font-bold">
-                  {item.prezzo} <span className="text-sm text-yellow-700">MO</span>
+                <span className={`font-bold text-lg ${isSelected ? 'text-yellow-500' : 'text-gray-300'}`}>
+                  {item.nome}
+                </span>
+                <span className="text-yellow-600 font-mono font-bold bg-gray-950 px-3 py-1 rounded border border-gray-800">
+                  {item.prezzo} MO
                 </span>
               </div>
             );
           })}
           {items.length === 0 && (
-             <div className="text-center text-gray-500 py-8 italic">
-               Nessun oggetto disponibile.
-             </div>
+            <div className="text-center text-gray-600 italic py-8">
+              Nessun oggetto disponibile.
+            </div>
           )}
         </div>
       </div>
 
-      {/* PREVIEW & ACTIONS COLUMN */}
+      {/* Right Column: Preview & Actions */}
       <div className="w-full md:w-80 flex flex-col gap-6">
-        {/* PREVIEW CARD */}
-        <div className="bg-gray-800 border-2 border-gray-700 rounded-lg p-4 flex flex-col items-center min-h-[280px] justify-center relative shadow-inner">
+        
+        {/* Preview Card */}
+        <div className="border-2 border-gray-800 bg-gray-900 p-6 rounded-xl flex flex-col items-center min-h-[300px] justify-center relative overflow-hidden shadow-inner">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-950 opacity-50 pointer-events-none"></div>
+          
           {selectedItem ? (
-            <>
-              <h3 className="text-xl font-bold text-yellow-500 mb-4 text-center">
-                {selectedItem.nome}
-              </h3>
-              {selectedItem.immagine && (
+            <div className="relative z-10 flex flex-col items-center w-full">
+              {selectedItem.immagine ? (
                 <img
                   src={`/img/equip/${selectedItem.immagine}`}
                   alt={selectedItem.nome}
-                  className="w-32 h-32 object-contain mb-4 drop-shadow-lg"
+                  className="w-40 h-40 object-contain mb-6 drop-shadow-lg"
                 />
-              )}
-              <div className="text-yellow-400 font-bold text-2xl mb-2">
-                {selectedItem.prezzo} <span className="text-lg text-yellow-600">MO</span>
-              </div>
-              {!canBuy && buyReason && (
-                <div className="mt-auto w-full bg-red-900/40 border border-red-800 text-red-200 text-sm p-2 rounded text-center">
-                  {buyReason}
+              ) : (
+                <div className="w-40 h-40 mb-6 bg-gray-800 rounded flex items-center justify-center border border-gray-700">
+                  <span className="text-gray-600 text-sm">No Image</span>
                 </div>
               )}
-            </>
+              
+              <h3 className="text-2xl font-bold text-yellow-500 mb-2 text-center">
+                {selectedItem.nome}
+              </h3>
+              
+              {!canBuy && buyReason && (
+                <div className="mt-4 w-full bg-red-950/50 border border-red-900 rounded p-3">
+                  <p className="text-red-400 text-sm text-center font-semibold">
+                    {buyReason}
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="text-gray-500 italic text-center px-4">
-              Seleziona un oggetto dall'inventario per visualizzarne i dettagli.
+            <div className="relative z-10 flex flex-col items-center text-gray-600">
+              <svg className="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v7h-2l-1 2H8l-1-2H5V5z" clipRule="evenodd" />
+              </svg>
+              <p className="italic text-center">Seleziona un oggetto<br/>per visualizzare i dettagli</p>
             </div>
           )}
         </div>
 
-        {/* ACTIONS */}
+        {/* Actions */}
         <div className="flex flex-col gap-3 mt-auto">
           <button
             onClick={handleBuyClick}
             disabled={!canBuy || !selectedItem}
-            title={!canBuy ? buyReason : "Acquista oggetto"}
-            className="w-full py-3 px-4 bg-gradient-to-r from-yellow-800 to-yellow-600 hover:from-yellow-700 hover:to-yellow-500 disabled:from-gray-800 disabled:to-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold rounded border border-yellow-900 disabled:border-gray-600 transition-all shadow-lg uppercase tracking-wider"
+            title={!canBuy ? buyReason : ""}
+            className={`py-3 px-4 rounded-lg font-bold uppercase tracking-widest transition-all duration-200 shadow-lg ${
+              canBuy && selectedItem
+                ? 'bg-red-900 hover:bg-red-800 text-white border-2 border-red-700 hover:border-red-500'
+                : 'bg-gray-900 text-gray-600 cursor-not-allowed border-2 border-gray-800'
+            }`}
           >
             Acquista
           </button>
           
           <button
-            onClick={handleEnterDungeonClick}
-            className="w-full py-3 px-4 bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 text-white font-bold rounded border border-red-950 transition-all shadow-lg uppercase tracking-wider mt-2"
+            onClick={onEnterDungeon}
+            className="py-3 px-4 rounded-lg font-bold uppercase tracking-widest bg-gray-800 hover:bg-gray-700 text-gray-200 border-2 border-gray-600 transition-all duration-200 shadow-lg"
           >
             Entra nel dungeon
           </button>
           
           <button
-            onClick={handleExitClick}
-            className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded border border-gray-600 transition-all uppercase tracking-wider text-sm mt-1"
+            onClick={onExit}
+            className="py-3 px-4 rounded-lg font-bold uppercase tracking-widest bg-gray-950 hover:bg-gray-900 text-gray-400 border-2 border-gray-800 transition-all duration-200"
           >
             Indietro
           </button>

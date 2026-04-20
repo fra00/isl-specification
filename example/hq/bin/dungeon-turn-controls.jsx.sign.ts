@@ -1,6 +1,16 @@
 export default function DungeonTurnControls(props: {
   currentHero?: any;
-  currentHeroStats?: { attacco: number; difesa: number; movimento: number; mente: number; corpo: number; canAttackDiagonal: boolean; canAttackRanged: boolean; canDisarmTraps: boolean; hasDoubleAttack: boolean } | null;
+  currentHeroStats?: {
+    attacco: number;
+    difesa: number;
+    movimento: number;
+    mente: number;
+    corpo: number;
+    canAttackDiagonal: boolean;
+    canAttackRanged: boolean;
+    canDisarmTraps: boolean;
+    hasDoubleAttack: boolean;
+  } | null;
   movementPoints?: number | null;
   turnPhase?: any;
   canOpenDoor?: any;
@@ -11,6 +21,8 @@ export default function DungeonTurnControls(props: {
   onSearchPassages?: () => void;
   onSearchTreasure?: () => void;
   onSearchTraps?: () => void;
+  canDisarmTrap?: boolean;
+  onDisarmTrap?: () => void;
   onOpenMagic?: () => void;
   onOpenInventory?: () => void;
   onCancelTargeting?: () => void;

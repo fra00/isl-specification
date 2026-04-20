@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -245,3 +245,37 @@
 
 - `castSpell` MUST persist damage, status updates, `lastAttack`, and spell consumption in a single session commit.
 - Spell consumption MUST be derived from the latest available hero snapshot, not from a stale closure of `gameSession`.
+- **Monster-targeting spells (Palla di Fuoco, Frecce di Fuoco, Sonno, Tempesta, Genio attack)**: Target monster MUST have `fog = false` in the current `boardVisibilityMap`. If the monster is under fog (not visible), the spell MUST be rejected and `onNotify("Il bersaglio non è visibile!")` MUST be triggered.
+- **Monster-targeting spells**: MUST require BOTH `hasLineOfSight` (geometric LOS check) AND target visibility (`fog = false`). Failure of either check cancels the spell.
+- **Hero-targeting spells**: MUST verify that the target hero and the caster are in the same room/area (`sourceValo === targetValo`), unless the spell is "Self" or "Point" type.
+
+### ⚙ Logic & Execution Rules
+
+#### Spell Target Validation
+
+- **For Monster Targets** (`targetMonsterId` != null):
+  1. Locate the target monster in `gameSession.monsters` by matching `targetMonsterId`.
+  2. Locate the visibility cell for the target monster's coordinates `{x, y}` in `boardVisibilityMap.data`.
+  3. IF the visibility cell found has `fog = true`:
+     - CANCEL the spell.
+     - Trigger `onNotify("Il bersaglio non è visibile!")`.
+     - Call `onActionDone()`.
+     - RETURN without executing the spell effect.
+  4. IF `fog = false`:
+     - PROCEED to LOS check via `hasLineOfSight`.
+  5. IF `hasLineOfSight` is false:
+     - CANCEL the spell.
+     - Trigger appropriate "No LOS" notification.
+     - RETURN.
+  6. IF both `fog = false` AND `hasLineOfSight = true`:
+     - PROCEED to spell effect execution.
+
+- **For Hero Targets** (`targetHeroId` != null):
+  1. Locate the target hero in `gameSession.heroes` by matching `targetHeroId`.
+  2. Locate visibility cell for caster (currentHero) and target hero.
+  3. IF both heroes are in the same `valo` OR spell is "Self" type:
+     - PROCEED to effect execution.
+  4. ELSE:
+     - CANCEL spell.
+     - Trigger `onNotify("Bersaglio fuori portata!")`.
+     - RETURN.

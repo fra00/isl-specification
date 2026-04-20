@@ -7,27 +7,14 @@
  */
 
 import { useCallback } from 'react';
-import { HeroState } from './domain-session';
 
-export const useCampaignManager = (config = {}) => {
-  const notifySaveError = useCallback((message) => {
-    if (typeof config?.onError === 'function') {
-      config.onError(message);
-      return;
-    }
+export function useCampaignManager(config = {}) {
+  const { onNotification = (message) => alert(message) } = config;
 
-    if (typeof globalThis.alert === 'function') {
-      globalThis.alert(message);
-      return;
-    }
-
-    console.warn(message);
-  }, [config]);
-  
   const saveCampaign = useCallback((heroes, nextMissionIndex) => {
     const campaignData = {
-      heroes: heroes || [],
-      nextMissionIndex: nextMissionIndex != null ? nextMissionIndex : 0,
+      heroes: heroes,
+      nextMissionIndex: nextMissionIndex,
       timestamp: Date.now()
     };
 
@@ -35,35 +22,30 @@ export const useCampaignManager = (config = {}) => {
       const jsonString = JSON.stringify(campaignData);
       localStorage.setItem("hq_campaign_data", jsonString);
     } catch (error) {
-      console.error("Error saving campaign:", error);
-      notifySaveError("Could not save progress");
+      console.error("Failed to save campaign:", error);
+      onNotification("Could not save progress");
     }
-  }, [notifySaveError]);
+  }, [onNotification]);
 
   const loadCampaign = useCallback(() => {
     const item = localStorage.getItem("hq_campaign_data");
     
-    if (!item || item.trim() === "") {
+    if (item === null || item === "") {
       return null;
     }
 
     try {
       const campaignData = JSON.parse(item);
-      
-      if (campaignData && Array.isArray(campaignData.heroes)) {
-        campaignData.heroes = campaignData.heroes.map(heroData => HeroState(heroData));
-      }
-      
       return campaignData;
     } catch (error) {
-      console.error("Error loading campaign:", error);
+      console.error("Failed to parse campaign data:", error);
       return null;
     }
   }, []);
 
   const hasSavedCampaign = useCallback(() => {
     const item = localStorage.getItem("hq_campaign_data");
-    return item != null && item.trim() !== "";
+    return item !== null && item !== "";
   }, []);
 
   const resetCampaign = useCallback(() => {
@@ -76,4 +58,4 @@ export const useCampaignManager = (config = {}) => {
     hasSavedCampaign,
     resetCampaign
   };
-};
+}

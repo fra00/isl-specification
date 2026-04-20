@@ -218,6 +218,37 @@ ISL addresses these challenges by providing:
 | **Subsection** | `### Role`, `### 📐 Appearance` | Component properties   |
 | **Capability** | `#### CapabilityName`           | Individual behaviors   |
 
+### Project Metadata Header
+
+Every ISL file that declares `# Project: Name` SHOULD include metadata before the first section:
+
+```markdown
+# Project: ProjectName
+
+**Version**: semantic version (e.g., 1.0.0)
+**ISL Version**: target ISL language version (e.g., 1.6.2)
+**Created**: ISO date (YYYY-MM-DD)
+**Implementation**: path to generated/build output (if applicable)
+```
+
+**Interpretation:**
+
+- **Version**: Semantic version of this specification document (bumped when spec changes)
+- **ISL Version**: The ISL language version this document targets (e.g., 1.6.2)
+- **Created**: ISO 8601 date when the specification was first authored
+- **Implementation**: Optional path to the actual generated code or build output directory
+
+**Example:**
+
+```markdown
+# Project: Dungeon React
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.2
+**Created**: 2026-02-09
+**Implementation**: ./main-content
+```
+
 ---
 
 ## Modular Specifications

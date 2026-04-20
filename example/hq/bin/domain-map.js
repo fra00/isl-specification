@@ -6,127 +6,179 @@
  * Edit the ISL file instead.
  */
 
-export const MapObjectiveCoordinate = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-});
+export const MapObjectiveCoordinate = (data) => {
+  const d = data || {};
+  return {
+    x: d.x ?? 0,
+    y: d.y ?? 0
+  };
+};
 
-export const MapHeader = (data = {}) => ({
-  descrizione: data.descrizione ?? "",
-  mostro_uscita: data.mostro_uscita ?? -1,
-  tesoro_finale: MapObjectiveCoordinate(data.tesoro_finale),
-  oggetto_f: data.oggetto_f ?? -1,
-  arma_f: data.arma_f ?? -1,
-  merr: data.merr ?? 1,
-  nfine: data.nfine ?? 0,
-});
+export const MapHeader = (data) => {
+  const d = data || {};
+  return {
+    descrizione: d.descrizione ?? "",
+    mostro_uscita: d.mostro_uscita ?? -1,
+    tesoro_finale: MapObjectiveCoordinate(d.tesoro_finale),
+    oggetto_f: d.oggetto_f ?? -1,
+    arma_f: d.arma_f ?? -1,
+    merr: d.merr ?? 1,
+    nfine: d.nfine ?? 0
+  };
+};
 
-export const BlockCellArea = (data = {}) => ({
-  antroc: Boolean(data.antroc),
-  inv: Boolean(data.inv),
-});
+export const BlockCellArea = (data) => {
+  const d = data || {};
+  return {
+    antroc: d.antroc ?? false,
+    inv: d.inv ?? false
+  };
+};
 
-export const MapCellFurniture = (data = {}) => ({
-  num: data.num ?? null,
-  img: data.img ?? "",
-});
+export const MapCellFurniture = (data) => {
+  const d = data || {};
+  return {
+    num: d.num ?? null,
+    img: d.img ?? ""
+  };
+};
 
-export const MapCellMonster = (data = {}) => ({
-  mosid: data.mosid ?? 0,
-  mos: Boolean(data.mos),
-  corpo: data.corpo ?? 0,
-});
+export const MapCellMonster = (data) => {
+  const d = data || {};
+  return {
+    mosid: d.mosid ?? 0,
+    mos: d.mos ?? false,
+    corpo: d.corpo ?? 0
+  };
+};
 
-export const MapCellTreasure = (data = {}) => ({
-  mon: data.mon ?? 0,
-  ogg: data.ogg ?? 0,
-  arma: data.arma ?? 0,
-  trp: data.trp ?? 0,
-});
+export const MapCellTreasure = (data) => {
+  const d = data || {};
+  return {
+    mon: d.mon ?? 0,
+    ogg: d.ogg ?? 0,
+    arma: d.arma ?? 0,
+    trp: d.trp ?? 0
+  };
+};
 
-export const MapCellPassage = (data = {}) => ({
-  ps: data.ps ?? null,
-  oriz: Boolean(data.oriz),
-});
+export const MapCellPassage = (data) => {
+  const d = data || {};
+  return {
+    ps: d.ps ?? null,
+    oriz: d.oriz ?? false
+  };
+};
 
-export const MapCellTrap = (data = {}) => ({
-  tipo: data.tipo ?? 0,
-  rccadex: data.rccadex ?? 0,
-  rccadey: data.rccadey ?? 0,
-});
+export const MapCellTrap = (data) => {
+  const d = data || {};
+  return {
+    tipo: d.tipo ?? 0,
+    rccadex: d.rccadex ?? 0,
+    rccadey: d.rccadey ?? 0
+  };
+};
 
-export const MapCell = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  arnt: BlockCellArea(data.arnt),
-  mobili: MapCellFurniture(data.mobili),
-  mostab: MapCellMonster(data.mostab),
-  tes: MapCellTreasure(data.tes),
-  psgg: MapCellPassage(data.psgg),
-  trpl: MapCellTrap(data.trpl),
-  fine: data.fine ?? "",
-});
+export const MapCell = (data) => {
+  const d = data || {};
+  return {
+    x: d.x ?? 0,
+    y: d.y ?? 0,
+    arnt: BlockCellArea(d.arnt),
+    mobili: MapCellFurniture(d.mobili),
+    mostab: MapCellMonster(d.mostab),
+    tes: MapCellTreasure(d.tes),
+    psgg: MapCellPassage(d.psgg),
+    trpl: MapCellTrap(d.trpl),
+    fine: d.fine ?? ""
+  };
+};
 
-export const MapHeroStart = (data = {}) => ({
-  id: data.id ?? 0,
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-});
+export const MapHeroStart = (data) => {
+  const d = data || {};
+  return {
+    id: d.id ?? 0,
+    x: d.x ?? 0,
+    y: d.y ?? 0
+  };
+};
 
-export const MapDoor = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  oriz: Boolean(data.oriz),
-});
+export const MapDoor = (data) => {
+  const d = data || {};
+  return {
+    x: d.x ?? 0,
+    y: d.y ?? 0,
+    oriz: d.oriz ?? false
+  };
+};
 
-export const MapScript = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  text: data.text ?? "",
-  evento: data.evento ?? 0,
-  unavolta: Boolean(data.unavolta),
-  morto: Boolean(data.morto),
-  idmosc: data.idmosc ?? 0,
-});
+export const MapScript = (data) => {
+  const d = data || {};
+  return {
+    x: d.x ?? 0,
+    y: d.y ?? 0,
+    text: d.text ?? "",
+    evento: d.evento ?? 0,
+    unavolta: d.unavolta ?? false,
+    morto: d.morto ?? false,
+    idmosc: d.idmosc ?? 0
+  };
+};
 
-export const MapDefinition = (data = {}) => ({
-  header: MapHeader(data.header),
-  grid: Array.isArray(data.grid) ? data.grid.map(MapCell) : [],
-  eroi_start: Array.isArray(data.eroi_start)
-    ? data.eroi_start.map(MapHeroStart)
-    : [],
-  porte: Array.isArray(data.porte) ? data.porte.map(MapDoor) : [],
-  scripts: Array.isArray(data.scripts) ? data.scripts.map(MapScript) : [],
-});
+export const MapDefinition = (data) => {
+  const d = data || {};
+  return {
+    header: MapHeader(d.header),
+    grid: Array.isArray(d.grid) ? d.grid.map(MapCell) : [],
+    eroi_start: Array.isArray(d.eroi_start) ? d.eroi_start.map(MapHeroStart) : [],
+    porte: Array.isArray(d.porte) ? d.porte.map(MapDoor) : [],
+    scripts: Array.isArray(d.scripts) ? d.scripts.map(MapScript) : []
+  };
+};
 
-export const Mission = (data = {}) => ({
-  ordine: data.ordine ?? 0,
-  file: data.file ?? "",
-  titolo: data.titolo ?? "",
-});
+export const Mission = (data) => {
+  const d = data || {};
+  return {
+    ordine: d.ordine ?? 0,
+    file: d.file ?? "",
+    titolo: d.titolo ?? ""
+  };
+};
 
-export const Campaign = (data = {}) => ({
-  nome_campagna: data.nome_campagna ?? "",
-  missioni: Array.isArray(data.missioni) ? data.missioni.map(Mission) : [],
-});
+export const Campaign = (data) => {
+  const d = data || {};
+  return {
+    nome_campagna: d.nome_campagna ?? "",
+    missioni: Array.isArray(d.missioni) ? d.missioni.map(Mission) : []
+  };
+};
 
-export const VisibilityCell = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  valo: data.valo ?? "",
-  vis1: data.vis1 ?? "",
-  vis2: data.vis2 ?? "",
-  fog: data.fog == null ? true : Boolean(data.fog),
-});
+export const VisibilityCell = (data) => {
+  const d = data || {};
+  return {
+    x: d.x ?? 0,
+    y: d.y ?? 0,
+    valo: d.valo ?? "",
+    vis1: d.vis1 ?? "",
+    vis2: d.vis2 ?? "",
+    fog: d.fog ?? true
+  };
+};
 
-export const VisibilityMap = (data = {}) => ({
-  source: data.source ?? "",
-  image: data.image ?? "",
-  data: Array.isArray(data.data) ? data.data.map(VisibilityCell) : [],
-});
+export const VisibilityMap = (data) => {
+  const d = data || {};
+  return {
+    source: d.source ?? "",
+    image: d.image ?? "",
+    data: Array.isArray(d.data) ? d.data.map(VisibilityCell) : []
+  };
+};
 
-export const GameScript = (data = {}) => ({
-  command: data.command ?? "",
-  params: data.params ?? 0,
-  isOneTime: Boolean(data.isOneTime),
-});
+export const GameScript = (data) => {
+  const d = data || {};
+  return {
+    command: d.command ?? "",
+    params: d.params ?? 0,
+    isOneTime: d.isOneTime ?? false
+  };
+};

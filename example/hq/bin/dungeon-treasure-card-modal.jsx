@@ -6,57 +6,52 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 export default function TreasureCardModal({ 
-    isOpen = false, 
-    card = null, 
-    onClose = () => {} 
+  isOpen = false, 
+  card = null, 
+  onClose = () => {} 
 }) {
-    const [modalState, setModalState] = useState('closed');
+  const [modalState, setModalState] = useState(isOpen ? 'open' : 'closed');
 
-    useEffect(() => {
-        if (isOpen) {
-            setModalState('open');
-        } else {
-            setModalState('closed');
-        }
-    }, [isOpen]);
+  useEffect(() => {
+    setModalState(isOpen ? 'open' : 'closed');
+  }, [isOpen]);
 
-    const handleClose = useCallback((e) => {
-        if (e) {
-            e.stopPropagation();
-        }
-        if (modalState !== 'closing') {
-            setModalState('closing');
-            onClose();
-        }
-    }, [modalState, onClose]);
-
-    const handleImageError = useCallback((e) => {
-        e.currentTarget.src = '/img/placeholder.png';
-    }, []);
-
-    if (!isOpen || !card) {
-        return null;
+  const handleClose = useCallback((e) => {
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
     }
+    
+    if (modalState !== 'closing') {
+      setModalState('closing');
+      onClose();
+    }
+  }, [modalState, onClose]);
 
-    return (
-        <div 
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80"
-            onClick={handleClose}
-            role="dialog"
-            aria-modal="true"
-        >
-            <div className="relative flex items-center justify-center max-w-full max-h-full p-4">
-                <img 
-                    src={`/img/cartetesoro/${card?.immagine || ''}`} 
-                    alt={card?.effetto || 'Treasure Card'} 
-                    onError={handleImageError}
-                    className="max-w-full max-h-[90vh] object-contain cursor-pointer"
-                    onClick={handleClose}
-                />
-            </div>
-        </div>
-    );
+  const handleImageError = useCallback((e) => {
+    e.target.src = '/img/placeholder.png';
+  }, []);
+
+  if (!isOpen || !card) {
+    return null;
+  }
+
+  return (
+    <div 
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80"
+      onClick={handleClose}
+    >
+      <div className="relative flex items-center justify-center p-4">
+        <img
+          src={`/img/cartetesoro/${card?.immagine || ''}`}
+          alt={card?.effetto || 'Treasure Card'}
+          onError={handleImageError}
+          onClick={handleClose}
+          className="max-w-full max-h-[90vh] object-contain cursor-pointer"
+        />
+      </div>
+    </div>
+  );
 }

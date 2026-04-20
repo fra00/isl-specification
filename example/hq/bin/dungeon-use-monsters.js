@@ -6,305 +6,224 @@
  * Edit the ISL file instead.
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { GameSession, MonsterState } from "./domain-session";
+import { useEffect, useCallback, useRef } from 'react';
+import { GameSession, MonsterState } from './domain-session';
 
-export function useDungeonMonsters({
+export const useDungeonMonsters = ({
   gameSession,
   visibilityMap,
   onUpdateSession,
   onNotify,
-  monsterDefinitions,
-}) {
-  const commitSessionUpdate = useCallback((updater) => {
-    if (typeof onUpdateSession !== "function") return false;
+  monsterDefinitions
+}) => {
+  // Use refs for state access to ensure referential stability of returned functions
+  // and to avoid unnecessary re-renders or effect triggers.
+  const sessionRef = useRef(gameSession);
+  const onUpdateSessionRef = useRef(onUpdateSession);
+  const onNotifyRef = useRef(onNotify);
+  const monsterDefsRef = useRef(monsterDefinitions);
+  const visibilityMapRef = useRef(visibilityMap);
 
-    onUpdateSession((previousSession) => {
-      const baseSession = previousSession != null ? previousSession : gameSession;
-      if (baseSession == null) {
-        return previousSession;
-      }
-      return updater(baseSession);
-    });
-
-    return true;
-  }, [gameSession, onUpdateSession]);
-
-  // internalState: Tracks which map cells have had monsters spawned to prevent duplicates
-  const [spawnedLocations, setSpawnedLocations] = useState(
-    () => gameSession?.spawnedLocations || [],
-  );
-
-  // Sync internal state if gameSession changes externally
+  // Sync refs with current props
   useEffect(() => {
-    if (gameSession?.spawnedLocations) {
-      setSpawnedLocations(gameSession.spawnedLocations);
-    }
-  }, [gameSession?.spawnedLocations]);
+    sessionRef.current = gameSession;
+    onUpdateSessionRef.current = onUpdateSession;
+    onNotifyRef.current = onNotify;
+    monsterDefsRef.current = monsterDefinitions;
+    visibilityMapRef.current = visibilityMap;
+  }, [gameSession, onUpdateSession, onNotify, monsterDefinitions, visibilityMap]);
 
   // Capability: spawnMonsters
+  // Triggered specifically when visibilityMap changes
   useEffect(() => {
-    if (!visibilityMap?.data || !gameSession?.currentMap?.grid) return;
+    if (!visibilityMap || !visibilityMap.data) return;
+
+    const currentSession = sessionRef.current;
+    if (!currentSession || !currentSession.currentMap) return;
 
     const newMonsters = [];
     const newSpawnedLocations = [];
+    const spawnedSet = new Set(currentSession.spawnedLocations || []);
 
     visibilityMap.data.forEach((visCell) => {
-      if (!visCell.fog) {
-        const locKey = `${visCell.x},${visCell.y}`;
+      const locKey = `${visCell.x},${visCell.y}`;
+      
+      if (!visCell.fog && !spawnedSet.has(locKey)) {
+        const mapCell = currentSession.currentMap.grid?.find(
+          (c) => c.x === visCell.x && c.y === visCell.y
+        );
 
-        if (!spawnedLocations.includes(locKey)) {
-          const mapCell = gameSession.currentMap.grid.find(
-            (c) => c.x === visCell.x && c.y === visCell.y,
+        if (mapCell?.mostab?.mos === true) {
+          const monsterDef = monsterDefsRef.current?.find(
+            (m) => m.id === mapCell.mostab.mosid
           );
 
-          if (mapCell?.mostab?.mos) {
-            const monsterDef = monsterDefinitions?.find(
-              (m) => m.id === mapCell.mostab.mosid,
-            );
+          if (monsterDef) {
+            const newMonster = MonsterState({
+              id: Date.now() + Math.floor(Math.random() * 100000),
+              monster: monsterDef,
+              x: visCell.x,
+              y: visCell.y,
+              currentBody: monsterDef.corpo,
+              currentMind: monsterDef.mente,
+              activeStatus: []
+            });
 
-            if (monsterDef) {
-              const newMonster = MonsterState({
-                id: Math.floor(Math.random() * 1000000) + Date.now(),
-                monster: monsterDef,
-                x: visCell.x,
-                y: visCell.y,
-                currentBody: monsterDef.corpo,
-                currentMind: monsterDef.mente,
-                activeStatus: [],
-              });
-
-              newMonsters.push(newMonster);
-              newSpawnedLocations.push(locKey);
-            }
+            newMonsters.push(newMonster);
+            newSpawnedLocations.push(locKey);
+            spawnedSet.add(locKey);
           }
         }
       }
     });
 
     if (newMonsters.length > 0) {
-      const updatedSpawnedLocations = [
-        ...spawnedLocations,
-        ...newSpawnedLocations,
-      ];
-      setSpawnedLocations(updatedSpawnedLocations);
-
-      commitSessionUpdate((providedSession) => GameSession({
-        ...providedSession,
-        monsters: [...(providedSession.monsters || []), ...newMonsters],
-        spawnedLocations: updatedSpawnedLocations,
-      }));
+      const updatedSession = GameSession({
+        ...currentSession,
+        monsters: [...(currentSession.monsters || []), ...newMonsters],
+        spawnedLocations: [...(currentSession.spawnedLocations || []), ...newSpawnedLocations]
+      });
+      onUpdateSessionRef.current?.(updatedSession);
     }
-  }, [
-    commitSessionUpdate,
-    visibilityMap,
-    gameSession,
-    monsterDefinitions,
-    spawnedLocations,
-  ]);
-
-  const isSpawnableCell = useCallback(
-    (x, y) => {
-      const mapCell = gameSession?.currentMap?.grid?.find(
-        (c) => c.x === x && c.y === y,
-      );
-
-      if (!mapCell) {
-        return false;
-      }
-
-      const isWalkable = !mapCell.arnt?.antroc && !mapCell.arnt?.inv;
-      const hasHero = gameSession.heroes?.some((h) => h.x === x && h.y === y);
-      const hasMonster = gameSession.monsters?.some(
-        (m) => m.x === x && m.y === y,
-      );
-
-      return isWalkable && !hasHero && !hasMonster;
-    },
-    [gameSession],
-  );
-
-  const findLegacyAdjacentSpawnCell = useCallback(
-    (heroX, heroY) => {
-      const directions = [
-        { x: 0, y: -1 },
-        { x: 0, y: 1 },
-        { x: -1, y: 0 },
-        { x: 1, y: 0 },
-      ];
-
-      for (const dir of directions) {
-        const targetX = heroX + dir.x;
-        const targetY = heroY + dir.y;
-
-        if (isSpawnableCell(targetX, targetY)) {
-          return { x: targetX, y: targetY };
-        }
-      }
-
-      return null;
-    },
-    [isSpawnableCell],
-  );
-
-  const findVisibleSpawnCell = useCallback(
-    (heroX, heroY) => {
-      if (!visibilityMap?.data?.length) {
-        return null;
-      }
-
-      const heroVisibilityCell = visibilityMap.data.find(
-        (cell) => cell.x === heroX && cell.y === heroY,
-      );
-
-      if (heroVisibilityCell) {
-        const directions = [
-          { x: 0, y: -1 },
-          { x: 0, y: 1 },
-          { x: -1, y: 0 },
-          { x: 1, y: 0 },
-        ];
-
-        for (const dir of directions) {
-          const targetX = heroX + dir.x;
-          const targetY = heroY + dir.y;
-          const targetVisibilityCell = visibilityMap.data.find(
-            (cell) => cell.x === targetX && cell.y === targetY,
-          );
-
-          if (
-            targetVisibilityCell &&
-            !targetVisibilityCell.fog &&
-            targetVisibilityCell.valo === heroVisibilityCell.valo &&
-            isSpawnableCell(targetX, targetY)
-          ) {
-            return { x: targetX, y: targetY };
-          }
-        }
-
-        for (const visCell of visibilityMap.data) {
-          if (visCell.fog) {
-            continue;
-          }
-
-          if (visCell.valo !== heroVisibilityCell.valo) {
-            continue;
-          }
-
-          if (visCell.x === heroX && visCell.y === heroY) {
-            continue;
-          }
-
-          if (isSpawnableCell(visCell.x, visCell.y)) {
-            return { x: visCell.x, y: visCell.y };
-          }
-        }
-      }
-
-      for (const visCell of visibilityMap.data) {
-        if (visCell.fog) {
-          continue;
-        }
-
-        if (visCell.x === heroX && visCell.y === heroY) {
-          continue;
-        }
-
-        if (isSpawnableCell(visCell.x, visCell.y)) {
-          return { x: visCell.x, y: visCell.y };
-        }
-      }
-
-      return null;
-    },
-    [visibilityMap, isSpawnableCell],
-  );
+  }, [visibilityMap]); // Strictly bound to visibilityMap changes
 
   // Capability: spawnWanderingMonster
-  const spawnWanderingMonster = useCallback(
-    (heroX, heroY) => {
-      if (!gameSession?.currentMap?.grid) return null;
+  const spawnWanderingMonster = useCallback((heroX, heroY) => {
+    const currentSession = sessionRef.current;
+    const currentVisibility = visibilityMapRef.current;
+    
+    if (!currentSession || !currentSession.currentMap) return null;
 
-      const rawWanderingMonsterId = gameSession?.currentMap?.header?.merr;
-      const parsedWanderingMonsterId =
-        rawWanderingMonsterId === undefined ||
-        rawWanderingMonsterId === null ||
-        rawWanderingMonsterId === ""
-          ? 1
-          : Number(rawWanderingMonsterId);
-      const wanderingMonsterId = Number.isInteger(parsedWanderingMonsterId)
-        ? parsedWanderingMonsterId
-        : 1;
+    let wanderingMonsterId = currentSession.currentMap.header?.merr;
+    if (wanderingMonsterId == null || isNaN(wanderingMonsterId)) {
+      wanderingMonsterId = 1; // Fallback to Orc
+    }
 
-      if (wanderingMonsterId === -1) {
-        if (onNotify) {
-          onNotify(
-            "In questa missione il mostro errante non è un mostro standard.",
+    if (wanderingMonsterId === -1) {
+      onNotifyRef.current?.("In questa missione il mostro errante non è un mostro standard.");
+      return null;
+    }
+
+    const isWalkableAndUnoccupied = (x, y) => {
+      const mapCell = currentSession.currentMap.grid?.find((c) => c.x === x && c.y === y);
+      if (!mapCell) return false;
+      if (mapCell.arnt?.antroc || mapCell.arnt?.inv) return false;
+      if (mapCell.mobili?.num != null) return false;
+
+      const hasHero = currentSession.heroes?.some((h) => h.x === x && h.y === y);
+      if (hasHero) return false;
+
+      const hasMonster = currentSession.monsters?.some((m) => m.x === x && m.y === y && m.currentBody > 0);
+      if (hasMonster) return false;
+
+      return true;
+    };
+
+    let spawnCell = null;
+
+    if (currentVisibility && currentVisibility.data) {
+      const heroVisCell = currentVisibility.data.find((c) => c.x === heroX && c.y === heroY);
+
+      if (heroVisCell) {
+        const adjacentCoords = [
+          { x: heroX, y: heroY - 1 }, // Up
+          { x: heroX, y: heroY + 1 }, // Down
+          { x: heroX - 1, y: heroY }, // Left
+          { x: heroX + 1, y: heroY }  // Right
+        ];
+
+        // 1. Adjacent, same valo, !fog, walkable, unoccupied
+        for (const coord of adjacentCoords) {
+          const adjVis = currentVisibility.data.find((c) => c.x === coord.x && c.y === coord.y);
+          if (adjVis && !adjVis.fog && adjVis.valo === heroVisCell.valo) {
+            if (isWalkableAndUnoccupied(coord.x, coord.y)) {
+              spawnCell = { x: coord.x, y: coord.y };
+              break;
+            }
+          }
+        }
+
+        // 2. Same valo, not hero cell, walkable, unoccupied
+        if (!spawnCell) {
+          const sameValoCells = currentVisibility.data.filter(
+            (c) => !c.fog && c.valo === heroVisCell.valo && (c.x !== heroX || c.y !== heroY)
           );
+          for (const c of sameValoCells) {
+            if (isWalkableAndUnoccupied(c.x, c.y)) {
+              spawnCell = { x: c.x, y: c.y };
+              break;
+            }
+          }
         }
-        return null;
       }
 
-      const hasVisibilityData = Array.isArray(visibilityMap?.data)
-        && visibilityMap.data.length > 0;
-      let spawnCell = findVisibleSpawnCell(heroX, heroY);
-
-      if (!spawnCell && !hasVisibilityData) {
-        spawnCell = findLegacyAdjacentSpawnCell(heroX, heroY);
-      }
-
+      // 3. Any visible cell, not hero cell, walkable, unoccupied
       if (!spawnCell) {
-        if (onNotify) {
-          onNotify("Non c'è spazio per il mostro errante!");
+        const visibleCells = currentVisibility.data.filter(
+          (c) => !c.fog && (c.x !== heroX || c.y !== heroY)
+        );
+        for (const c of visibleCells) {
+          if (isWalkableAndUnoccupied(c.x, c.y)) {
+            spawnCell = { x: c.x, y: c.y };
+            break;
+          }
         }
-        return null;
       }
-
-      let monsterDef = monsterDefinitions?.find(
-        (m) => m.id === wanderingMonsterId,
-      );
-      if (!monsterDef && wanderingMonsterId !== 1) {
-        monsterDef = monsterDefinitions?.find((m) => m.id === 1);
+    } else {
+      // Legacy fallback
+      const adjacentCoords = [
+        { x: heroX, y: heroY - 1 },
+        { x: heroX, y: heroY + 1 },
+        { x: heroX - 1, y: heroY },
+        { x: heroX + 1, y: heroY }
+      ];
+      for (const coord of adjacentCoords) {
+        if (isWalkableAndUnoccupied(coord.x, coord.y)) {
+          spawnCell = { x: coord.x, y: coord.y };
+          break;
+        }
       }
-      if (!monsterDef && monsterDefinitions?.length > 0) {
-        monsterDef =
-          monsterDefinitions[
-            Math.floor(Math.random() * monsterDefinitions.length)
-          ];
-      }
+    }
 
-      if (!monsterDef) return null;
+    if (!spawnCell) {
+      onNotifyRef.current?.("Non c'è spazio per il mostro errante!");
+      return null;
+    }
 
-      const newMonster = MonsterState({
-        id: Math.floor(Math.random() * 1000000) + Date.now(),
-        monster: monsterDef,
-        x: spawnCell.x,
-        y: spawnCell.y,
-        currentBody: monsterDef.corpo,
-        currentMind: monsterDef.mente,
-        activeStatus: [],
-      });
+    let monsterDef = monsterDefsRef.current?.find((m) => m.id === wanderingMonsterId);
+    
+    if (!monsterDef && wanderingMonsterId !== 1) {
+      monsterDef = monsterDefsRef.current?.find((m) => m.id === 1);
+    }
+    
+    if (!monsterDef && monsterDefsRef.current?.length > 0) {
+      const randomIndex = Math.floor(Math.random() * monsterDefsRef.current.length);
+      monsterDef = monsterDefsRef.current[randomIndex];
+    }
 
-      commitSessionUpdate((providedSession) => GameSession({
-        ...providedSession,
-        monsters: [...(providedSession.monsters || []), newMonster],
-      }));
+    if (!monsterDef) return null;
 
-      return newMonster;
-    },
-    [
-      commitSessionUpdate,
-      findLegacyAdjacentSpawnCell,
-      findVisibleSpawnCell,
-      gameSession,
-      monsterDefinitions,
-      onNotify,
-      visibilityMap,
-    ],
-  );
+    const newMonster = MonsterState({
+      id: Date.now() + Math.floor(Math.random() * 100000),
+      monster: monsterDef,
+      x: spawnCell.x,
+      y: spawnCell.y,
+      currentBody: monsterDef.corpo,
+      currentMind: monsterDef.mente,
+      activeStatus: []
+    });
+
+    const updatedSession = GameSession({
+      ...currentSession,
+      monsters: [...(currentSession.monsters || []), newMonster]
+    });
+
+    onUpdateSessionRef.current?.(updatedSession);
+
+    return newMonster;
+  }, []); // Empty dependency array because all state access is via refs
 
   return {
-    spawnedLocations,
-    spawnWanderingMonster,
+    spawnWanderingMonster
   };
-}
+};

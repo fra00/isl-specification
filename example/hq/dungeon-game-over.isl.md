@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -20,7 +20,7 @@
 
 - **Overlay**: Fixed full-screen backdrop (bg-black), z-index 90.
 - **Layout**: Centered flex container.
-- **Typography**: 
+- **Typography**:
   - "GAME OVER" in large, blood-red gothic font.
   - Dramatic animation (fade in and scale).
 

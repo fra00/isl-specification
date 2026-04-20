@@ -1,14 +1,14 @@
-export const HeroState: (data?: any) => {
+export declare const HeroState: (data?: any) => {
   heroId: number;
   turnOrder: number;
   currentBody: number;
   currentMind: number;
   gold: number;
-  inventory: number[];
-  equipment: number[];
-  equipped: number[];
-  availableSpells: number[];
-  activeStatus: string[];
+  inventory: Array<number>;
+  equipment: Array<number>;
+  equipped: Array<number>;
+  availableSpells: Array<number>;
+  activeStatus: Array<string>;
   isEscaped: boolean;
   x: number;
   y: number;
@@ -23,10 +23,10 @@ export const HeroState: (data?: any) => {
     miniature: string;
     miniatureDeath: string;
     portrait: string;
-  };
+  } | null;
 };
 
-export const MonsterState: (data?: any) => {
+export declare const MonsterState: (data?: any) => {
   id: number;
   monster: {
     id: number;
@@ -39,21 +39,21 @@ export const MonsterState: (data?: any) => {
     immagine: string;
     immalarge: string;
     nonmorto: boolean;
-  };
+  } | null;
   x: number;
   y: number;
   currentBody: number;
   currentMind: number;
-  activeStatus: string[];
+  activeStatus: Array<string>;
 };
 
-export const ScriptImage: (data?: any) => {
+export declare const ScriptImage: (data?: any) => {
   x: number;
   y: number;
   src: string;
 };
 
-export const GameSession: (data?: any) => {
+export declare const GameSession: (data?: any) => {
   campaignName: string;
   currentMap: {
     header: {
@@ -62,6 +62,7 @@ export const GameSession: (data?: any) => {
       tesoro_finale: { x: number; y: number };
       oggetto_f: number;
       arma_f: number;
+      merr: number;
       nfine: number;
     };
     grid: Array<{
@@ -77,8 +78,16 @@ export const GameSession: (data?: any) => {
     }>;
     eroi_start: Array<{ id: number; x: number; y: number }>;
     porte: Array<{ x: number; y: number; oriz: boolean }>;
-    scripts: Array<{ x: number; y: number; text: string; evento: number }>;
-  };
+    scripts: Array<{
+      x: number;
+      y: number;
+      text: string;
+      evento: number;
+      unavolta: boolean;
+      morto: boolean;
+      idmosc: number;
+    }>;
+  } | null;
   currentMissionIndex: number;
   heroes: Array<{
     heroId: number;
@@ -86,11 +95,11 @@ export const GameSession: (data?: any) => {
     currentBody: number;
     currentMind: number;
     gold: number;
-    inventory: number[];
-    equipment: number[];
-    equipped: number[];
-    availableSpells: number[];
-    activeStatus: string[];
+    inventory: Array<number>;
+    equipment: Array<number>;
+    equipped: Array<number>;
+    availableSpells: Array<number>;
+    activeStatus: Array<string>;
     isEscaped: boolean;
     x: number;
     y: number;
@@ -105,7 +114,7 @@ export const GameSession: (data?: any) => {
       miniature: string;
       miniatureDeath: string;
       portrait: string;
-    };
+    } | null;
   }>;
   monsters: Array<{
     id: number;
@@ -120,18 +129,22 @@ export const GameSession: (data?: any) => {
       immagine: string;
       immalarge: string;
       nonmorto: boolean;
-    };
+    } | null;
     x: number;
     y: number;
     currentBody: number;
     currentMind: number;
-    activeStatus: string[];
+    activeStatus: Array<string>;
   }>;
-  openedDoors: string[];
-  spawnedLocations: string[];
+  openedDoors: Array<string>;
+  spawnedLocations: Array<string>;
   currentTurn: number;
   isHeroOrderConfirmed: boolean;
-  lastAttack: { hero?: any; monster?: any; combatResult?: any } | null;
+  lastAttack: {
+    hero?: any;
+    monster?: any;
+    combatResult?: any;
+  } | null;
   treasureDeck: Array<{
     id: number;
     effetto: string;
@@ -139,11 +152,15 @@ export const GameSession: (data?: any) => {
     valore: number;
     immagine: string;
   }>;
-  triggeredScripts: string[];
-  scriptImages: Array<{ x: number; y: number; src: string }>;
+  triggeredScripts: Array<string>;
+  scriptImages: Array<{
+    x: number;
+    y: number;
+    src: string;
+  }>;
 };
 
-export const TurnPhase: (data?: any) => {
+export declare const TurnPhase: (data?: any) => {
   HasMoved: boolean;
   HasPerformedAction: boolean;
   IsTurnFinished: boolean;

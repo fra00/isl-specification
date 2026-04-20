@@ -6,85 +6,75 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from "react";
-import { useDungeonMapQuery } from "./dungeon-map-query";
-import { useDungeonMovementRules } from "./dungeon-movement-rules";
+import { useCallback } from 'react';
+import { useDungeonMapQuery } from './dungeon-map-query';
+import { useDungeonMovementRules } from './dungeon-movement-rules';
 
-export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] }) {
-    const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
-    const movementRules = useDungeonMovementRules({ mapQuery });
+export function usePathfinding({ gameSession, visibilityMap, foundPassages = [] } = {}) {
+  const mapQuery = useDungeonMapQuery({ gameSession, visibilityMap });
+  const movementRules = useDungeonMovementRules({ mapQuery, foundPassages });
 
-    const calculatePath = useCallback((startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
-        if (startX == null || startY == null || targetX == null || targetY == null || maxDepth == null) {
-            return [];
-        }
-
-        if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
-            return [];
-        }
-
-        const queue = [{ x: startX, y: startY, path: [] }];
-        const visited = new Set([`${startX},${startY}`]);
-
-        while (queue.length > 0) {
-            const current = queue.shift();
-
-            if (current.x === targetX && current.y === targetY) {
-                return current.path;
-            }
-
-            if (current.path.length >= maxDepth) {
-                continue;
-            }
-
-            const neighbors = [
-                { x: current.x, y: current.y - 1 }, // Up
-                { x: current.x, y: current.y + 1 }, // Down
-                { x: current.x - 1, y: current.y }, // Left
-                { x: current.x + 1, y: current.y }  // Right
-            ];
-
-            for (const neighbor of neighbors) {
-                const neighborKey = `${neighbor.x},${neighbor.y}`;
-                
-                if (!visited.has(neighborKey)) {
-                    let canWalk = movementRules.isWalkable(current.x, current.y, neighbor.x, neighbor.y, excludeEntityId);
-
-                    // Passage Validation: Ensure Secret Passages are only walkable if they have been found
-                    if (canWalk) {
-                        const isSourceSP = typeof mapQuery?.isSecretPassage === 'function'
-                            ? mapQuery.isSecretPassage(current.x, current.y)
-                            : false;
-                        const isTargetSP = typeof mapQuery?.isSecretPassage === 'function'
-                            ? mapQuery.isSecretPassage(neighbor.x, neighbor.y)
-                            : false;
-
-                        if (isSourceSP || isTargetSP) {
-                            const isSourceFound = foundPassages?.some(p => p.x === current.x && p.y === current.y);
-                            const isTargetFound = foundPassages?.some(p => p.x === neighbor.x && p.y === neighbor.y);
-
-                            if ((isSourceSP && !isSourceFound) || (isTargetSP && !isTargetFound)) {
-                                canWalk = false;
-                            }
-                        }
-                    }
-
-                    if (canWalk) {
-                        visited.add(neighborKey);
-                        queue.push({
-                            x: neighbor.x,
-                            y: neighbor.y,
-                            path: [...current.path, { x: neighbor.x, y: neighbor.y }]
-                        });
-                    }
-                }
-            }
-        }
-
+  const calculatePath = useCallback(
+    (startX, startY, targetX, targetY, maxDepth, excludeEntityId) => {
+      if (!movementRules.isValidDestination(targetX, targetY, excludeEntityId)) {
         return [];
-    }, [movementRules, mapQuery, foundPassages]);
+      }
 
-    return {
-        calculatePath
-    };
+      const queue = [{ x: startX, y: startY, path: [] }];
+      const visited = new Set();
+      visited.add(`${startX},${startY}`);
+
+      const directions = [
+        { dx: 0, dy: -1 }, // Up
+        { dx: 0, dy: 1 },  // Down
+        { dx: -1, dy: 0 }, // Left
+        { dx: 1, dy: 0 }   // Right
+      ];
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+
+        if (current.x === targetX && current.y === targetY) {
+          return current.path;
+        }
+
+        if (current.path.length >= maxDepth) {
+          continue;
+        }
+
+        for (const dir of directions) {
+          const nx = current.x + dir.dx;
+          const ny = current.y + dir.dy;
+          const neighborKey = `${nx},${ny}`;
+
+          if (!visited.has(neighborKey)) {
+            if (
+              movementRules.isWalkable(
+                current.x,
+                current.y,
+                nx,
+                ny,
+                excludeEntityId,
+                foundPassages
+              )
+            ) {
+              visited.add(neighborKey);
+              queue.push({
+                x: nx,
+                y: ny,
+                path: [...current.path, { x: nx, y: ny }]
+              });
+            }
+          }
+        }
+      }
+
+      return [];
+    },
+    [movementRules, foundPassages]
+  );
+
+  return {
+    calculatePath
+  };
 }

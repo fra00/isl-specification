@@ -2,7 +2,7 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <title>HeroQuest 2004 - Map & Visibility Viewer</title>
+    <title>Dungeon 2004 - Map & Visibility Viewer</title>
     <style>
       body {
         background: #222;
@@ -112,14 +112,36 @@
     </div>
     <div id="map-container"></div>
 
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
+    <div style="display: flex; gap: 20px; align-items: flex-start">
       <div id="info">
         <h3>Dettagli Casella</h3>
         <div id="details">Seleziona una casella sulla mappa...</div>
       </div>
-      <div id="json-info" style="margin-top: 20px; width: 450px; background: #333; padding: 15px; border-left: 5px solid #00d778;">
+      <div
+        id="json-info"
+        style="
+          margin-top: 20px;
+          width: 450px;
+          background: #333;
+          padding: 15px;
+          border-left: 5px solid #00d778;
+        "
+      >
         <h3>JSON Completo</h3>
-        <pre id="json-details" style="font-size: 11px; color: #0f0; overflow: auto; max-height: 500px; margin: 0; white-space: pre-wrap; word-break: break-all;">{}</pre>
+        <pre
+          id="json-details"
+          style="
+            font-size: 11px;
+            color: #0f0;
+            overflow: auto;
+            max-height: 500px;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+          "
+        >
+{}</pre
+        >
       </div>
     </div>
 
@@ -182,82 +204,84 @@
         reader.readAsText(file);
       }
 
-      document.getElementById("fileInputMap").onchange = (e) => handleFile(e.target, "map");
-      document.getElementById("fileInputBoard").onchange = (e) => handleFile(e.target, "board");
+      document.getElementById("fileInputMap").onchange = (e) =>
+        handleFile(e.target, "map");
+      document.getElementById("fileInputBoard").onchange = (e) =>
+        handleFile(e.target, "board");
 
       function render() {
         container.innerHTML = "";
-        
+
         // Determina dimensioni griglia basandosi sui file caricati (default 26x19)
         let cols = 26;
         let rows = 19;
-        
+
         if (mapData && mapData.grid) {
-            cols = Math.max(cols, ...mapData.grid.map(c => c.x)) + 1;
-            rows = Math.max(rows, ...mapData.grid.map(c => c.y)) + 1;
+          cols = Math.max(cols, ...mapData.grid.map((c) => c.x)) + 1;
+          rows = Math.max(rows, ...mapData.grid.map((c) => c.y)) + 1;
         }
-        
+
         container.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
 
         // Mappe per lookup veloce tramite coordinate
         const boardMap = {};
         if (boardData && boardData.data) {
-            boardData.data.forEach(c => boardMap[`${c.x},${c.y}`] = c);
+          boardData.data.forEach((c) => (boardMap[`${c.x},${c.y}`] = c));
         }
 
         const gridMap = {};
         if (mapData && mapData.grid) {
-            mapData.grid.forEach(c => gridMap[`${c.x},${c.y}`] = c);
+          mapData.grid.forEach((c) => (gridMap[`${c.x},${c.y}`] = c));
         }
 
         for (let y = 0; y < rows; y++) {
           for (let x = 0; x < cols; x++) {
-          const div = document.createElement("div");
-          div.className = "cell";
+            const div = document.createElement("div");
+            div.className = "cell";
             const coord = `${x},${y}`;
             const bCell = boardMap[coord];
             const mCell = gridMap[coord];
 
             // Render Tabellone (Colori e Visibilità)
             if (bCell) {
-                const colorValo = getColor(bCell.valo);
-                const colorVis1 = getColor(bCell.vis1);
-                const colorVis2 = getColor(bCell.vis2);
-                div.style.border = `3px solid ${colorValo}`;
-                if (bCell.vis1 !== "0" || bCell.vis2 !== "0") {
-                    div.style.background = `linear-gradient(135deg, ${colorVis1} 50%, ${colorVis2} 50%)`;
-                }
-                div.innerText = bCell.valo;
-                if (bCell.valo === "1") div.style.color = "white";
+              const colorValo = getColor(bCell.valo);
+              const colorVis1 = getColor(bCell.vis1);
+              const colorVis2 = getColor(bCell.vis2);
+              div.style.border = `3px solid ${colorValo}`;
+              if (bCell.vis1 !== "0" || bCell.vis2 !== "0") {
+                div.style.background = `linear-gradient(135deg, ${colorVis1} 50%, ${colorVis2} 50%)`;
+              }
+              div.innerText = bCell.valo;
+              if (bCell.valo === "1") div.style.color = "white";
             }
 
             // Render Missione (Mostri, Mobili, Muri)
             if (mCell) {
-                if (mCell.arnt.antroc) div.classList.add("wall");
-                if (mCell.mobili.num !== null) {
-                    div.classList.add("furniture");
-                    div.innerText = "MOB";
-                }
-                if (mCell.mostab.mos) {
-                    const m = document.createElement("div");
-                    m.className = "monster";
-                    m.innerText = mCell.mostab.mosid;
-                    div.appendChild(m);
-                }
-                if (mCell.trpl && mCell.trpl.tipo > 0) {
-                    const t = document.createElement("div");
-                    t.className = "trap";
-                    t.innerText = "T" + mCell.trpl.tipo;
-                    div.appendChild(t);
-                }
-                if (mCell.psgg && mCell.psgg.ps !== null) {
-                    div.classList.add("secret");
-                    div.innerText = "SEC";
-                }
-                if (mCell.fine && mCell.fine !== "0") {
-                    div.style.boxShadow = "inset 0 0 10px #4caf50";
-                    div.style.backgroundColor = "#1b5e20";
-                }
+              if (mCell.arnt.antroc) div.classList.add("wall");
+              if (mCell.mobili.num !== null) {
+                div.classList.add("furniture");
+                div.innerText = "MOB";
+              }
+              if (mCell.mostab.mos) {
+                const m = document.createElement("div");
+                m.className = "monster";
+                m.innerText = mCell.mostab.mosid;
+                div.appendChild(m);
+              }
+              if (mCell.trpl && mCell.trpl.tipo > 0) {
+                const t = document.createElement("div");
+                t.className = "trap";
+                t.innerText = "T" + mCell.trpl.tipo;
+                div.appendChild(t);
+              }
+              if (mCell.psgg && mCell.psgg.ps !== null) {
+                div.classList.add("secret");
+                div.innerText = "SEC";
+              }
+              if (mCell.fine && mCell.fine !== "0") {
+                div.style.boxShadow = "inset 0 0 10px #4caf50";
+                div.style.backgroundColor = "#1b5e20";
+              }
             }
 
             div.onclick = () => showDetails(x, y, bCell, mCell);
@@ -267,72 +291,78 @@
 
         // Porte (sempre sopra la griglia)
         if (mapData && mapData.porte) {
-            mapData.porte.forEach((door) => {
-                const index = parseInt(door.y) * cols + parseInt(door.x);
-                const cellDiv = container.children[index];
-                if (cellDiv) {
-                    const d = document.createElement("div");
-                    d.className = door.oriz ? "door-h" : "door-v";
-                    cellDiv.appendChild(d);
-                }
-            });
+          mapData.porte.forEach((door) => {
+            const index = parseInt(door.y) * cols + parseInt(door.x);
+            const cellDiv = container.children[index];
+            if (cellDiv) {
+              const d = document.createElement("div");
+              d.className = door.oriz ? "door-h" : "door-v";
+              cellDiv.appendChild(d);
+            }
+          });
         }
 
         // Eroi
         if (mapData && mapData.eroi_start) {
-            mapData.eroi_start.forEach((eroe) => {
-                const index = parseInt(eroe.y) * cols + parseInt(eroe.x);
-                const cellDiv = container.children[index];
-                if (cellDiv) {
-                    const h = document.createElement("div");
-                    h.className = "hero";
-                    h.innerText = "H" + eroe.id;
-                    cellDiv.appendChild(h);
-                }
-            });
+          mapData.eroi_start.forEach((eroe) => {
+            const index = parseInt(eroe.y) * cols + parseInt(eroe.x);
+            const cellDiv = container.children[index];
+            if (cellDiv) {
+              const h = document.createElement("div");
+              h.className = "hero";
+              h.innerText = "H" + eroe.id;
+              cellDiv.appendChild(h);
+            }
+          });
         }
       }
 
       function showDetails(x, y, bCell, mCell) {
-          let html = `<strong>Posizione:</strong> X:${x}, Y:${y}<br><hr>`;
-          if (bCell) {
-              html += `<strong>Tabellone Visibilità</strong><br>
+        let html = `<strong>Posizione:</strong> X:${x}, Y:${y}<br><hr>`;
+        if (bCell) {
+          html += `<strong>Tabellone Visibilità</strong><br>
                        Valo (Area): ${bCell.valo}<br>
                        Vis1: ${bCell.vis1}<br>
                        Vis2: ${bCell.vis2}<br>
                        Fog: ${bCell.fog ? "SI" : "NO"}<br><hr>`;
-          }
-          if (mCell) {
-              html += `<strong>Dati Missione</strong><br>
+        }
+        if (mCell) {
+          html += `<strong>Dati Missione</strong><br>
                     <strong>Mostro:</strong> ${mCell.mostab.mos ? `ID:${mCell.mostab.mosid} (HP:${mCell.mostab.corpo})` : "Nessuno"}<br>
                     <strong>Mobile:</strong> ${mCell.mobili.num ? `${mCell.mobili.img} (ID:${mCell.mobili.num})` : "Nessuno"}<br>
                     <strong>Passaggio Segreto:</strong> ${mCell.psgg.ps ? `ID:${mCell.psgg.ps} (${mCell.psgg.oriz ? "Oriz" : "Vert"})` : "No"}<br>
                     <strong>Trappola:</strong> ${mCell.trpl.tipo > 0 ? `Tipo:${mCell.trpl.tipo} (Caduta X:${mCell.trpl.rccadex} Y:${mCell.trpl.rccadey})` : "No"}<br>
                     <strong>Tesoro:</strong> ${
-                      mCell.tes.mon > 0 || mCell.tes.ogg > 0 || mCell.tes.arma > 0
+                      mCell.tes.mon > 0 ||
+                      mCell.tes.ogg > 0 ||
+                      mCell.tes.arma > 0
                         ? `<br>- Oro: ${mCell.tes.mon}<br>- Oggetto: ${mCell.tes.ogg}<br>- Arma: ${mCell.tes.arma}<br>- Trappola: ${mCell.tes.trp}`
                         : "Vuoto"
                     }<br>
                     <strong>Uscita:</strong> ${mCell.fine !== "0" ? "SI" : "No"}`;
-          }
-          if (!bCell && !mCell) html += "Cella vuota.";
-          details.innerHTML = html;
+        }
+        if (!bCell && !mCell) html += "Cella vuota.";
+        details.innerHTML = html;
 
-          // Aggiornamento pannello JSON
-          const jsonDisplay = document.getElementById("json-details");
-          if (jsonDisplay) {
-              jsonDisplay.textContent = JSON.stringify({ board: bCell, grid: mCell }, null, 2);
-          }
+        // Aggiornamento pannello JSON
+        const jsonDisplay = document.getElementById("json-details");
+        if (jsonDisplay) {
+          jsonDisplay.textContent = JSON.stringify(
+            { board: bCell, grid: mCell },
+            null,
+            2,
+          );
+        }
       }
 
       function renderBoard(board) {
-          boardData = board;
-          render();
+        boardData = board;
+        render();
       }
 
       function renderMap(data) {
-          mapData = data;
-          render();
+        mapData = data;
+        render();
       }
     </script>
   </body>

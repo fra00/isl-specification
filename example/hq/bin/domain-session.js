@@ -10,72 +10,56 @@ import { MapDefinition } from "./domain-map";
 import { Hero, Monster, TreasureCard } from "./domain-ruleset";
 
 export const HeroState = (data = {}) => ({
-  heroId: data.heroId ?? 0,
-  turnOrder: data.turnOrder ?? 0,
-  currentBody: data.currentBody ?? 0,
-  currentMind: data.currentMind ?? 0,
-  gold: data.gold ?? 500,
-  inventory: Array.isArray(data.inventory) ? [...data.inventory] : [],
-  equipment: Array.isArray(data.equipment) ? [...data.equipment] : [],
-  equipped: Array.isArray(data.equipped) ? [...data.equipped] : [],
-  availableSpells: Array.isArray(data.availableSpells)
-    ? [...data.availableSpells]
-    : [],
-  activeStatus: Array.isArray(data.activeStatus) ? [...data.activeStatus] : [],
-  isEscaped: data.isEscaped ?? false,
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  hero: data.hero ? Hero(data.hero) : Hero(),
+  heroId: data?.heroId ?? 0,
+  turnOrder: data?.turnOrder ?? 0,
+  currentBody: data?.currentBody ?? 0,
+  currentMind: data?.currentMind ?? 0,
+  gold: data?.gold ?? 500,
+  inventory: Array.isArray(data?.inventory) ? [...data.inventory] : [],
+  equipment: Array.isArray(data?.equipment) ? [...data.equipment] : [],
+  equipped: Array.isArray(data?.equipped) ? [...data.equipped] : [],
+  availableSpells: Array.isArray(data?.availableSpells) ? [...data.availableSpells] : [],
+  activeStatus: Array.isArray(data?.activeStatus) ? [...data.activeStatus] : [],
+  isEscaped: data?.isEscaped ?? false,
+  x: data?.x ?? 0,
+  y: data?.y ?? 0,
+  hero: data?.hero ? Hero(data.hero) : null
 });
 
 export const MonsterState = (data = {}) => ({
-  id: data.id ?? 0,
-  monster: data.monster ? Monster(data.monster) : null,
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  currentBody: data.currentBody ?? 0,
-  currentMind: data.currentMind ?? 0,
-  activeStatus: Array.isArray(data.activeStatus) ? [...data.activeStatus] : [],
+  id: data?.id ?? 0,
+  monster: data?.monster ? Monster(data.monster) : null,
+  x: data?.x ?? 0,
+  y: data?.y ?? 0,
+  currentBody: data?.currentBody ?? 0,
+  currentMind: data?.currentMind ?? 0,
+  activeStatus: Array.isArray(data?.activeStatus) ? [...data.activeStatus] : []
 });
 
 export const ScriptImage = (data = {}) => ({
-  x: data.x ?? 0,
-  y: data.y ?? 0,
-  src: data.src ?? "",
+  x: data?.x ?? 0,
+  y: data?.y ?? 0,
+  src: data?.src ?? ""
 });
 
 export const GameSession = (data = {}) => ({
-  campaignName: data.campaignName ?? "",
-  currentMap: data.currentMap
-    ? MapDefinition(data.currentMap)
-    : MapDefinition(),
-  currentMissionIndex: data.currentMissionIndex ?? 0,
-  heroes: Array.isArray(data.heroes)
-    ? data.heroes.map((h) => HeroState(h))
-    : [],
-  monsters: Array.isArray(data.monsters)
-    ? data.monsters.map((m) => MonsterState(m))
-    : [],
-  openedDoors: Array.isArray(data.openedDoors) ? [...data.openedDoors] : [],
-  spawnedLocations: Array.isArray(data.spawnedLocations)
-    ? [...data.spawnedLocations]
-    : [],
-  currentTurn: data.currentTurn ?? 1,
-  isHeroOrderConfirmed: data.isHeroOrderConfirmed ?? false,
-  lastAttack: data.lastAttack ?? null,
-  treasureDeck: Array.isArray(data.treasureDeck)
-    ? data.treasureDeck.map((t) => TreasureCard(t))
-    : [],
-  triggeredScripts: Array.isArray(data.triggeredScripts)
-    ? [...data.triggeredScripts]
-    : [],
-  scriptImages: Array.isArray(data.scriptImages)
-    ? data.scriptImages.map((image) => ScriptImage(image))
-    : [],
+  campaignName: data?.campaignName ?? "",
+  currentMap: data?.currentMap ? MapDefinition(data.currentMap) : null,
+  currentMissionIndex: data?.currentMissionIndex ?? 0,
+  heroes: Array.isArray(data?.heroes) ? data.heroes.map(h => HeroState(h)) : [],
+  monsters: Array.isArray(data?.monsters) ? data.monsters.map(m => MonsterState(m)) : [],
+  openedDoors: Array.isArray(data?.openedDoors) ? [...data.openedDoors] : [],
+  spawnedLocations: Array.isArray(data?.spawnedLocations) ? [...data.spawnedLocations] : [],
+  currentTurn: data?.currentTurn ?? 1,
+  isHeroOrderConfirmed: data?.isHeroOrderConfirmed ?? false,
+  lastAttack: data?.lastAttack ? { ...data.lastAttack } : null,
+  treasureDeck: Array.isArray(data?.treasureDeck) ? data.treasureDeck.map(t => TreasureCard(t)) : [],
+  triggeredScripts: Array.isArray(data?.triggeredScripts) ? [...data.triggeredScripts] : [],
+  scriptImages: Array.isArray(data?.scriptImages) ? data.scriptImages.map(s => ScriptImage(s)) : []
 });
 
 export const TurnPhase = (data = {}) => ({
-  HasMoved: data.HasMoved ?? false,
-  HasPerformedAction: data.HasPerformedAction ?? false,
-  IsTurnFinished: data.IsTurnFinished ?? false,
+  HasMoved: data?.HasMoved ?? false,
+  HasPerformedAction: data?.HasPerformedAction ?? false,
+  IsTurnFinished: data?.IsTurnFinished ?? false
 });

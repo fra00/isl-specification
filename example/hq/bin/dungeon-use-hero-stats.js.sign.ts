@@ -1,4 +1,4 @@
-export function useHeroStats(config: { staticEquipment: any[] }): {
+export declare function useHeroStats(config?: { staticEquipment?: Array<any> }): {
   calculateStats: (heroState: any) => {
     attacco: number;
     difesa: number;
@@ -9,7 +9,7 @@ export function useHeroStats(config: { staticEquipment: any[] }): {
     canAttackRanged: boolean;
     canDisarmTraps: boolean;
     hasDoubleAttack: boolean;
-  } | null;
+  };
   calculateAttackDice: (heroState: any, monster: any) => number;
   canAttackTwice: (heroState: any, monster: any) => boolean;
   getConsumableWeaponId: (heroState: any) => number | null;

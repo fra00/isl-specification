@@ -6,206 +6,177 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 
 export default function DungeonSpellCastModal({
   isOpen = false,
   hero = null,
   allSpells = [],
-  onCastSpell,
-  onClose
+  onCastSpell = () => {},
+  onClose = () => {}
 }) {
+  // Capability: resolveSpellCards
+  // Maps hero.availableSpells against allSpells and filters out missing spell references
+  const availableSpellCards = useMemo(() => {
+    if (!hero?.availableSpells || !Array.isArray(allSpells)) return [];
+    
+    return hero.availableSpells
+      .map(spellId => allSpells.find(s => s?.id === spellId))
+      .filter(spell => spell != null);
+  }, [hero?.availableSpells, allSpells]);
+
+  // Capability: handleCast
   const handleCast = useCallback((spellId) => {
     if (onCastSpell) {
       onCastSpell(spellId);
     }
   }, [onCastSpell]);
 
+  // Capability: handleClose
   const handleClose = useCallback(() => {
     if (onClose) {
       onClose();
     }
   }, [onClose]);
 
-  if (!isOpen || !hero) {
-    return null;
-  }
-
-  const availableSpellsIds = hero.availableSpells || [];
-  const spellsToRender = availableSpellsIds
-    .map(id => allSpells.find(s => s?.id === id))
-    .filter(Boolean);
-
-  const getTargetText = (targetType) => {
-    switch (targetType) {
-      case 'Self': return 'Su se stessi';
-      case 'Hero': return 'Personaggio';
-      case 'Monster': return 'Mostro';
-      case 'Point': return 'Punto nella mappa';
-      case 'Door': return 'Porta';
-      default: return targetType || 'Qualsiasi';
+  // Helper: Arcane element accent (Theme)
+  const getElementTheme = useCallback((elemento) => {
+    const el = (elemento || '').toLowerCase();
+    switch (el) {
+      case 'fuoco': return { border: 'border-red-900/80', text: 'text-red-400', bg: 'bg-red-950/30' };
+      case 'acqua': return { border: 'border-blue-900/80', text: 'text-blue-400', bg: 'bg-blue-950/30' };
+      case 'aria': return { border: 'border-gray-400/80', text: 'text-gray-300', bg: 'bg-gray-800/30' };
+      case 'terra': return { border: 'border-green-900/80', text: 'text-green-400', bg: 'bg-green-950/30' };
+      default: return { border: 'border-amber-700/80', text: 'text-amber-500', bg: 'bg-amber-950/30' };
     }
-  };
+  }, []);
 
-  const getElementAccent = (elemento) => {
-    switch ((elemento || '').toLowerCase()) {
-      case 'fuoco':
-        return {
-          ring: 'border-red-700/70',
-          glow: 'shadow-[0_18px_38px_rgba(127,29,29,0.28)]',
-          badge: 'bg-red-950/80 text-red-200 border-red-700/70',
-          action: 'bg-gradient-to-r from-red-900 via-red-800 to-amber-800 hover:from-red-800 hover:via-red-700 hover:to-amber-700 focus:ring-red-400/50',
-        };
-      case 'acqua':
-        return {
-          ring: 'border-sky-700/70',
-          glow: 'shadow-[0_18px_38px_rgba(12,74,110,0.26)]',
-          badge: 'bg-sky-950/80 text-sky-200 border-sky-700/70',
-          action: 'bg-gradient-to-r from-sky-900 via-sky-800 to-cyan-800 hover:from-sky-800 hover:via-sky-700 hover:to-cyan-700 focus:ring-sky-400/50',
-        };
-      case 'terra':
-        return {
-          ring: 'border-amber-800/70',
-          glow: 'shadow-[0_18px_38px_rgba(120,53,15,0.28)]',
-          badge: 'bg-amber-950/80 text-amber-200 border-amber-700/70',
-          action: 'bg-gradient-to-r from-amber-900 via-amber-800 to-stone-700 hover:from-amber-800 hover:via-amber-700 hover:to-stone-600 focus:ring-amber-400/50',
-        };
-      case 'aria':
-        return {
-          ring: 'border-violet-700/70',
-          glow: 'shadow-[0_18px_38px_rgba(76,29,149,0.24)]',
-          badge: 'bg-violet-950/80 text-violet-200 border-violet-700/70',
-          action: 'bg-gradient-to-r from-violet-900 via-violet-800 to-indigo-800 hover:from-violet-800 hover:via-violet-700 hover:to-indigo-700 focus:ring-violet-400/50',
-        };
-      default:
-        return {
-          ring: 'border-amber-900/60',
-          glow: 'shadow-[0_18px_38px_rgba(0,0,0,0.28)]',
-          badge: 'bg-stone-900/80 text-stone-200 border-stone-700/70',
-          action: 'bg-gradient-to-r from-amber-900 via-amber-800 to-stone-700 hover:from-amber-800 hover:via-amber-700 hover:to-stone-600 focus:ring-amber-400/50',
-        };
+  // Helper: Target Info Translation
+  const getTargetText = useCallback((targetType) => {
+    const target = (targetType || '').toLowerCase();
+    switch (target) {
+      case 'self': return 'Su se stessi';
+      case 'monster': return 'Mostro';
+      case 'hero': return 'Personaggio';
+      case 'point': return 'Punto sulla mappa';
+      case 'door': return 'Porta';
+      default: return targetType || 'Sconosciuto';
     }
-  };
+  }, []);
+
+  if (!isOpen || !hero) return null;
 
   return (
+    // Capability: maintainScrollableViewportLayout
+    // Overlay: Fixed full-screen backdrop, z-index 65, vertically scrollable
     <div 
-      className="fixed inset-0 z-[65] overflow-y-auto bg-black/85 p-4"
+      className="fixed inset-0 z-[65] bg-black/85 overflow-y-auto flex flex-col items-center p-4 sm:p-6"
       onClick={handleClose}
+      aria-modal="true"
+      role="dialog"
     >
+      {/* Dialog: Stone-and-bronze fantasy plaque */}
       <div 
-        className="mx-auto my-4 flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-amber-900/70 bg-stone-900/95 text-stone-100 shadow-[0_28px_70px_rgba(0,0,0,0.72)] backdrop-blur-sm font-serif"
+        className="relative w-full max-w-5xl my-auto bg-stone-900 border-4 border-amber-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute pointer-events-none" />
-
-        {/* Header */}
-        <div className="relative shrink-0 overflow-hidden border-b border-amber-900/50 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.12),_transparent_55%),linear-gradient(180deg,_rgba(28,25,23,0.98),_rgba(12,10,9,0.96))] px-5 py-5 md:px-7">
-          <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/40" />
-          <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/40" />
-          <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/40" />
-          <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/40" />
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="hidden h-20 w-20 overflow-hidden rounded-xl border border-amber-900/60 bg-stone-950/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:flex sm:items-end sm:justify-center">
-                {hero.hero?.portrait ? (
-                  <img
-                    src={`/img/eroi/${hero.hero.portrait}`}
-                    alt={hero.hero?.classe || 'Eroe'}
-                    className="h-full w-full object-contain object-bottom"
-                  />
-                ) : (
-                  <div className="text-center text-xs uppercase tracking-[0.2em] text-stone-600">Eroe</div>
-                )}
-              </div>
-
-              <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-[0.32em] text-amber-700">HeroQuest</div>
-                <h2 className="mt-1 text-2xl font-bold uppercase tracking-[0.12em] text-amber-500 md:text-3xl">Lancia Incantesimo</h2>
-                <p className="mt-2 text-sm uppercase tracking-[0.24em] text-stone-400 md:text-base">
-                  {hero.hero?.classe || 'Eroe'}
+        <div className="border-2 border-stone-700 m-1 rounded-lg flex flex-col h-full">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b-2 border-stone-700 bg-stone-800/50 rounded-t-md">
+            <div className="flex items-center gap-4">
+              {hero?.hero?.portrait && (
+                <img 
+                  src={`/img/${hero.hero.portrait}`} 
+                  alt={hero.hero.classe || 'Hero'} 
+                  className="w-16 h-16 rounded-full border-2 border-amber-600 object-cover shadow-md"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-amber-500 tracking-wider uppercase">
+                  Lancia Incantesimo
+                </h2>
+                <p className="text-stone-400 text-sm sm:text-lg font-serif">
+                  {hero?.hero?.classe || 'Eroe'} &bull; {availableSpellCards.length} incantesimi disponibili
                 </p>
-                <div className="mt-3 inline-flex items-center rounded-full border border-amber-800/60 bg-stone-950/80 px-3 py-1 text-xs uppercase tracking-[0.2em] text-amber-200">
-                  {spellsToRender.length} incantesimi disponibili
-                </div>
               </div>
             </div>
-
             <button 
-              onClick={handleClose}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-900/60 bg-stone-950/80 text-2xl leading-none text-stone-400 transition-colors hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-400/60"
+              onClick={handleClose} 
+              className="text-stone-400 hover:text-white text-4xl font-bold p-2 leading-none transition-colors"
               aria-label="Chiudi"
             >
               &times;
             </button>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-transparent" />
-            <div className="text-[10px] uppercase tracking-[0.28em] text-stone-500">Grimorio da Battaglia</div>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-transparent" />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 md:p-6">
-          {spellsToRender.length === 0 ? (
-            <div className="rounded-2xl border border-amber-900/50 bg-[linear-gradient(180deg,_rgba(28,25,23,0.82),_rgba(12,10,9,0.92))] px-6 py-12 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <div className="text-xs uppercase tracking-[0.3em] text-amber-700">Silenzio Arcano</div>
-              <p className="mt-4 text-lg text-stone-300 md:text-xl">Non hai piu incantesimi disponibili per questa missione.</p>
-              <p className="mt-2 text-sm text-stone-500">Il grimorio del tuo eroe e stato gia consumato nelle sale del dungeon.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {spellsToRender.map((spell) => {
-                const accent = getElementAccent(spell.elemento);
-
-                return (
-                <div key={spell.id} className={`relative flex flex-col overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,_rgba(41,37,36,0.95),_rgba(17,24,39,0.98))] ${accent.ring} ${accent.glow}`}>
-                  <div className="absolute top-2 left-2 h-3 w-3 border-l border-t border-amber-600/35 pointer-events-none" />
-                  <div className="absolute top-2 right-2 h-3 w-3 border-r border-t border-amber-600/35 pointer-events-none" />
-                  <div className="absolute bottom-2 left-2 h-3 w-3 border-l border-b border-amber-600/35 pointer-events-none" />
-                  <div className="absolute bottom-2 right-2 h-3 w-3 border-r border-b border-amber-600/35 pointer-events-none" />
-
-                  <div className="flex min-h-[220px] items-center justify-center border-b border-stone-700/60 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.14),_transparent_55%),linear-gradient(180deg,_rgba(12,10,9,0.94),_rgba(28,25,23,0.86))] p-4 md:min-h-[250px]">
-                    {spell.immagine ? (
-                      <img 
-                        src={`/img/cinc/${spell.immagine}`} 
-                        alt={spell.nome} 
-                        className="max-h-full max-w-full rounded-lg object-contain drop-shadow-[0_16px_20px_rgba(0,0,0,0.5)]"
-                      />
-                    ) : (
-                      <div className="text-sm italic text-stone-600">Nessuna immagine</div>
-                    )}
-                  </div>
-                  <div className="flex flex-grow flex-col gap-4 p-4 md:p-5">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${accent.badge}`}>
-                        {spell.elemento || 'Arcano'}
-                      </span>
-                      <span className="inline-flex items-center rounded-full border border-stone-700/70 bg-stone-950/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-300">
-                        Bersaglio: {getTargetText(spell.targetType)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold text-amber-300">{spell.nome}</h3>
-                      <p className="mt-3 text-sm leading-6 text-stone-300 md:text-[15px]">{spell.descrizione}</p>
-                    </div>
-
-                    <div className="mt-auto">
-                    <button
-                      onClick={() => handleCast(spell.id)}
-                      className={`w-full rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition-all focus:outline-none focus:ring-2 ${accent.action}`}
+          {/* Content / Spell Grid */}
+          <div className="p-4 sm:p-6">
+            {availableSpellCards.length === 0 ? (
+              <div className="text-center py-16 text-stone-400 font-serif text-xl bg-stone-950/50 rounded-lg border border-stone-800">
+                Non hai più incantesimi disponibili per questa missione.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {availableSpellCards.map(spell => {
+                  const theme = getElementTheme(spell.elemento);
+                  
+                  return (
+                    <div 
+                      key={spell.id} 
+                      className={`flex flex-col bg-stone-800 border-2 rounded-lg overflow-hidden shadow-lg transition-transform hover:-translate-y-1 ${theme.border}`}
                     >
-                      Lancia
-                    </button>
+                      {/* Image Panel */}
+                      <div className="relative h-48 w-full bg-black border-b-2 border-stone-700">
+                        {spell.immagine && (
+                          <img 
+                            src={`/img/cinc/${spell.immagine}`} 
+                            alt={spell.nome} 
+                            className="w-full h-full object-contain p-2"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Card Details */}
+                      <div className={`p-4 flex-grow flex flex-col ${theme.bg}`}>
+                        <h3 className={`text-xl font-bold font-serif mb-3 ${theme.text}`}>
+                          {spell.nome}
+                        </h3>
+                        
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-2 mb-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                          <span className="bg-stone-900 px-2 py-1 rounded border border-stone-700 text-stone-300 shadow-inner">
+                            {spell.elemento || 'Magia'}
+                          </span>
+                          <span className="bg-stone-900 px-2 py-1 rounded border border-stone-700 text-stone-300 shadow-inner">
+                            Bersaglio: {getTargetText(spell.targetType)}
+                          </span>
+                        </div>
+                        
+                        {/* Description */}
+                        <p className="text-stone-300 text-sm flex-grow mb-6 font-serif leading-relaxed">
+                          {spell.descrizione}
+                        </p>
+                        
+                        {/* Action Plaque */}
+                        <div className="mt-auto pt-4 border-t border-stone-700/50">
+                          <button
+                            onClick={() => handleCast(spell.id)}
+                            className="w-full py-3 bg-gradient-to-b from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 text-white font-bold font-serif tracking-widest rounded shadow-[0_4px_0_rgb(69,26,3)] active:shadow-[0_0px_0_rgb(69,26,3)] active:translate-y-1 transition-all border border-amber-500 uppercase"
+                          >
+                            Lancia
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )})}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
         </div>
       </div>
     </div>

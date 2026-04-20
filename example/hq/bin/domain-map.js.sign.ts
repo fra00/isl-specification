@@ -1,38 +1,53 @@
-export const MapObjectiveCoordinate: (data?: any) => { x: number; y: number };
-export const MapHeader: (data?: any) => {
+export declare const MapObjectiveCoordinate: (data?: any) => {
+  x: number;
+  y: number;
+};
+
+export declare const MapHeader: (data?: any) => {
   descrizione: string;
   mostro_uscita: number;
   tesoro_finale: { x: number; y: number };
   oggetto_f: number;
   arma_f: number;
+  merr: number;
   nfine: number;
 };
-export const BlockCellArea: (data?: any) => { antroc: boolean; inv: boolean };
-export const MapCellFurniture: (data?: any) => {
+
+export declare const BlockCellArea: (data?: any) => {
+  antroc: boolean;
+  inv: boolean;
+};
+
+export declare const MapCellFurniture: (data?: any) => {
   num: number | null;
   img: string;
 };
-export const MapCellMonster: (data?: any) => {
+
+export declare const MapCellMonster: (data?: any) => {
   mosid: number;
   mos: boolean;
   corpo: number;
 };
-export const MapCellTreasure: (data?: any) => {
+
+export declare const MapCellTreasure: (data?: any) => {
   mon: number;
   ogg: number;
   arma: number;
   trp: number;
 };
-export const MapCellPassage: (data?: any) => {
+
+export declare const MapCellPassage: (data?: any) => {
   ps: number | null;
   oriz: boolean;
 };
-export const MapCellTrap: (data?: any) => {
+
+export declare const MapCellTrap: (data?: any) => {
   tipo: number;
   rccadex: number;
   rccadey: number;
 };
-export const MapCell: (data?: any) => {
+
+export declare const MapCell: (data?: any) => {
   x: number;
   y: number;
   arnt: { antroc: boolean; inv: boolean };
@@ -43,9 +58,20 @@ export const MapCell: (data?: any) => {
   trpl: { tipo: number; rccadex: number; rccadey: number };
   fine: string;
 };
-export const MapHeroStart: (data?: any) => { id: number; x: number; y: number };
-export const MapDoor: (data?: any) => { x: number; y: number; oriz: boolean };
-export const MapScript: (data?: any) => {
+
+export declare const MapHeroStart: (data?: any) => {
+  id: number;
+  x: number;
+  y: number;
+};
+
+export declare const MapDoor: (data?: any) => {
+  x: number;
+  y: number;
+  oriz: boolean;
+};
+
+export declare const MapScript: (data?: any) => {
   x: number;
   y: number;
   text: string;
@@ -54,13 +80,15 @@ export const MapScript: (data?: any) => {
   morto: boolean;
   idmosc: number;
 };
-export const MapDefinition: (data?: any) => {
+
+export declare const MapDefinition: (data?: any) => {
   header: {
     descrizione: string;
     mostro_uscita: number;
     tesoro_finale: { x: number; y: number };
     oggetto_f: number;
     arma_f: number;
+    merr: number;
     nfine: number;
   };
   grid: Array<{
@@ -86,16 +114,19 @@ export const MapDefinition: (data?: any) => {
     idmosc: number;
   }>;
 };
-export const Mission: (data?: any) => {
+
+export declare const Mission: (data?: any) => {
   ordine: number;
   file: string;
   titolo: string;
 };
-export const Campaign: (data?: any) => {
+
+export declare const Campaign: (data?: any) => {
   nome_campagna: string;
   missioni: Array<{ ordine: number; file: string; titolo: string }>;
 };
-export const VisibilityCell: (data?: any) => {
+
+export declare const VisibilityCell: (data?: any) => {
   x: number;
   y: number;
   valo: string;
@@ -103,19 +134,14 @@ export const VisibilityCell: (data?: any) => {
   vis2: string;
   fog: boolean;
 };
-export const VisibilityMap: (data?: any) => {
+
+export declare const VisibilityMap: (data?: any) => {
   source: string;
   image: string;
-  data: Array<{
-    x: number;
-    y: number;
-    valo: string;
-    vis1: string;
-    vis2: string;
-    fog: boolean;
-  }>;
+  data: Array<{ x: number; y: number; valo: string; vis1: string; vis2: string; fog: boolean }>;
 };
-export const GameScript: (data?: any) => {
+
+export declare const GameScript: (data?: any) => {
   command: string;
   params: number;
   isOneTime: boolean;

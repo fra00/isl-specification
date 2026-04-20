@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -34,7 +34,7 @@
 ### 🔍 Appearance
 
 - **Overlay**: Fixed full-screen dark gothic overlay.
-- **Modal**: Centered large dark bronze panel aligned with the HeroQuest navigation flow.
+- **Modal**: Centered large dark bronze panel aligned with the Dungeon navigation flow.
 - **Responsive Layout**: On short viewports, the overlay itself MUST remain vertically scrollable so the full hero-order modal stays reachable and all hero cards remain clickable without overlapping the header or confirm area.
 - **Typography**: Bronze fantasy title, warm neutral body text, uppercase section labels.
 - **Sections**: Two internal panels side by side on large screens.

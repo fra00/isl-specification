@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 
-export function useHeroStats({ staticEquipment = [] }) {
+export function useHeroStats({ staticEquipment = [] } = {}) {
   const calculateStats = useCallback((heroState) => {
     if (!heroState || !heroState.hero) {
       return {
@@ -25,7 +25,6 @@ export function useHeroStats({ staticEquipment = [] }) {
     }
 
     const hero = heroState.hero;
-    const isDwarf = (hero.classe || '').toLowerCase() === 'nano';
     const stats = {
       attacco: hero.attacco || 0,
       difesa: hero.difesa || 0,
@@ -34,7 +33,7 @@ export function useHeroStats({ staticEquipment = [] }) {
       corpo: hero.corpo || 0,
       canAttackDiagonal: false,
       canAttackRanged: false,
-      canDisarmTraps: isDwarf,
+      canDisarmTraps: hero.classe?.toLowerCase() === "nano",
       hasDoubleAttack: false
     };
 
@@ -42,31 +41,31 @@ export function useHeroStats({ staticEquipment = [] }) {
     const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
 
     for (const item of equippedItems) {
-      if (item.dadatt > 0) {
+      if (item.dadatt != null && item.dadatt > 0) {
         stats.attacco = item.dadatt;
       }
-      if (item.daddif > 0) {
+      if (item.daddif != null && item.daddif > 0) {
         stats.difesa += item.daddif;
       }
-      if (item.daddifex > 0) {
+      if (item.daddifex != null && item.daddifex > 0) {
         stats.difesa += item.daddifex;
       }
-      if (item.movim) {
+      if (item.movim != null) {
         stats.movimento += item.movim;
       }
-      if (item.puntimente) {
+      if (item.puntimente != null) {
         stats.mente += item.puntimente;
       }
-      if (item.diago) {
+      if (item.diago === true) {
         stats.canAttackDiagonal = true;
       }
-      if (item.tiro || item.tirounavo) {
+      if (item.tiro === true || item.tirounavo === true) {
         stats.canAttackRanged = true;
       }
-      if (item.disinnesc) {
+      if (item.disinnesc === true) {
         stats.canDisarmTraps = true;
       }
-      if (item.doppioatt) {
+      if (item.doppioatt === true) {
         stats.hasDoubleAttack = true;
       }
     }
@@ -83,16 +82,16 @@ export function useHeroStats({ staticEquipment = [] }) {
   }, [staticEquipment]);
 
   const calculateAttackDice = useCallback((heroState, monster) => {
-    if (!heroState || !monster) return 0;
-
     const baseStats = calculateStats(heroState);
-    let dice = baseStats ? baseStats.attacco : 0;
+    let dice = baseStats.attacco;
+
+    if (!heroState || !monster) return dice;
 
     const equippedIds = heroState.equipped || [];
     const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
 
     for (const item of equippedItems) {
-      if (item.numdadicontr > 0 && item.targetMonster != null) {
+      if (item.numdadicontr != null && item.numdadicontr > 0 && item.targetMonster != null) {
         let isTarget = false;
         
         if (typeof item.targetMonster === 'number' && item.targetMonster === monster.id) {
@@ -120,7 +119,7 @@ export function useHeroStats({ staticEquipment = [] }) {
     const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
 
     for (const item of equippedItems) {
-      if (item.doppioatt) {
+      if (item.doppioatt === true) {
         if (item.mosdoppio != null && item.mosdoppio > 0) {
           if (item.mosdoppio === monster.id) {
             return true;
@@ -141,7 +140,7 @@ export function useHeroStats({ staticEquipment = [] }) {
     const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
 
     for (const item of equippedItems) {
-      if (item.tirounavo) {
+      if (item.tirounavo === true) {
         return item.id;
       }
     }

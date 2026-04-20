@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -48,6 +48,6 @@
   - Create a new `HeroState` by spreading all current properties and updating:
     - `gold` = `currentGold` - `item.prezzo`.
     - `equipment` = `currentEquipment` + `item.id` (Added to backpack).
-  - 💡 **Note**: Do NOT update `equipped` list. In HeroQuest, items must be manually equipped from the inventory later.
+  - 💡 **Note**: Do NOT update `equipped` list. In Dungeon, items must be manually equipped from the inventory later.
   - Update the `session.heroes` list with the new `HeroState`.
   - Return the updated `session`.

@@ -1,6 +1,6 @@
 # Magic Rules & Spellcasting Logic
 
-Questo documento definisce le regole autoritative per la gestione della magia, la selezione degli incantesimi e l'esecuzione degli effetti nel progetto Heroquest React.
+Questo documento definisce le regole autoritative per la gestione della magia, la selezione degli incantesimi e l'esecuzione degli effetti nel progetto Dungeon React.
 
 ## 1. Selezione Iniziale degli Incantesimi
 

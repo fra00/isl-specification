@@ -1,9 +1,9 @@
 export default function DungeonBoard(props: {
   gameSession: any;
   boardVisibilityMap: any;
-  onCellClick: (x: number, y: number) => void;
-  onCellHover: (x: number, y: number) => void;
-  onMonsterClick: (monsterId: number) => void;
+  onCellClick?: (x: number, y: number) => void;
+  onCellHover?: (x: number, y: number) => void;
+  onMonsterClick?: (monsterId: number) => void;
   hoveredPath?: Array<{ x: number; y: number }>;
   hoveredPathVariant?: "valid" | "blocked-by-second-wall" | null;
   secretPassages?: Array<{ x: number; y: number; img: string }>;

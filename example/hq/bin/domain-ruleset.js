@@ -6,88 +6,162 @@
  * Edit the ISL file instead.
  */
 
-export const Hero = (data = {}) => ({
-  id: data.id || 0,
-  classe: data.classe || "",
-  attacco: data.attacco || 0,
-  difesa: data.difesa || 0,
-  movimento: data.movimento || 0,
-  mente: data.mente || 0,
-  corpo: data.corpo || 0,
-  miniature: data.miniature || "",
-  miniatureDeath: data.miniatureDeath || "",
-  portrait: data.portrait || ""
+export const Hero = ({
+  id = 0,
+  classe = "",
+  attacco = 0,
+  difesa = 0,
+  movimento = 0,
+  mente = 0,
+  corpo = 0,
+  miniature = "",
+  miniatureDeath = "",
+  portrait = ""
+} = {}) => ({
+  id,
+  classe,
+  attacco,
+  difesa,
+  movimento,
+  mente,
+  corpo,
+  miniature,
+  miniatureDeath,
+  portrait
 });
 
-export const Monster = (data = {}) => ({
-  id: data.id || 0,
-  nome: data.nome || "",
-  movimento: data.movimento || 0,
-  attacco: data.attacco || 0,
-  difesa: data.difesa || 0,
-  corpo: data.corpo || 0,
-  mente: data.mente || 0,
-  immagine: data.immagine || "",
-  immalarge: data.immalarge || "",
-  nonmorto: Boolean(data.nonmorto)
+export const Monster = ({
+  id = 0,
+  nome = "",
+  movimento = 0,
+  attacco = 0,
+  difesa = 0,
+  corpo = 0,
+  mente = 0,
+  immagine = "",
+  immalarge = "",
+  nonmorto = false
+} = {}) => ({
+  id,
+  nome,
+  movimento,
+  attacco,
+  difesa,
+  corpo,
+  mente,
+  immagine,
+  immalarge,
+  nonmorto
 });
 
-export const Equipment = (data = {}) => ({
-  id: data.id || 0,
-  nome: data.nome || "",
-  dadatt: data.dadatt || 0,
-  daddif: data.daddif || 0,
-  daddifex: data.daddifex || 0,
-  numdadicontr: data.numdadicontr || 0,
-  targetMonster: data.targetMonster || "",
-  doppioatt: Boolean(data.doppioatt),
-  mosdoppio: data.mosdoppio || 0,
-  puntimente: data.puntimente || 0,
-  doppiamag: Boolean(data.doppiamag),
-  movim: data.movim || 0,
-  noogg: data.noogg || 0,
-  diago: Boolean(data.diago),
-  tiro: Boolean(data.tiro),
-  tirounavo: Boolean(data.tirounavo),
-  disinnesc: Boolean(data.disinnesc),
-  nopsg: Boolean(data.nopsg),
-  nopsgid: data.nopsgid || 0,
-  solopsg: Boolean(data.solopsg),
-  solopsgid: data.solopsgid || 0,
-  prezzo: data.prezzo || 0,
-  immagine: data.immagine || ""
+export const Equipment = ({
+  id = 0,
+  nome = "",
+  dadatt = 0,
+  daddif = 0,
+  daddifex = 0,
+  numdadicontr = 0,
+  targetMonster = "",
+  doppioatt = false,
+  mosdoppio = 0,
+  puntimente = 0,
+  doppiamag = false,
+  movim = 0,
+  noogg = 0,
+  diago = false,
+  tiro = false,
+  tirounavo = false,
+  disinnesc = false,
+  nopsg = false,
+  nopsgid = 0,
+  solopsg = false,
+  solopsgid = 0,
+  prezzo = 0,
+  immagine = ""
+} = {}) => ({
+  id,
+  nome,
+  dadatt,
+  daddif,
+  daddifex,
+  numdadicontr,
+  targetMonster,
+  doppioatt,
+  mosdoppio,
+  puntimente,
+  doppiamag,
+  movim,
+  noogg,
+  diago,
+  tiro,
+  tirounavo,
+  disinnesc,
+  nopsg,
+  nopsgid,
+  solopsg,
+  solopsgid,
+  prezzo,
+  immagine
 });
 
-export const Item = (data = {}) => ({
-  id: data.id || 0,
-  nome: data.nome || "",
-  hp: data.hp || 0,
-  mp: data.mp || 0,
-  targetType: data.targetType || "Self",
-  movimento: data.movimento || 0,
-  attacco: data.attacco || 0,
-  difesa: data.difesa || 0,
-  natt: data.natt || 0,
-  acqua: Boolean(data.acqua),
-  danni: data.danni || 0
+export const Item = ({
+  id = 0,
+  nome = "",
+  hp = 0,
+  mp = 0,
+  targetType = "Self",
+  movimento = 0,
+  attacco = 0,
+  difesa = 0,
+  natt = 0,
+  acqua = false,
+  danni = 0
+} = {}) => ({
+  id,
+  nome,
+  hp,
+  mp,
+  targetType,
+  movimento,
+  attacco,
+  difesa,
+  natt,
+  acqua,
+  danni
 });
 
-export const Spell = (data = {}) => ({
-  id: data.id || 0,
-  nome: data.nome || "",
-  elemento: data.elemento || "Fuoco",
-  descrizione: data.descrizione || "",
-  immagine: data.immagine || "",
-  dorso: data.dorso || "",
-  targetType: data.targetType || "Self",
-  effetto: data.effetto || "",
-  valore: data.valore || 0
+export const Spell = ({
+  id = 0,
+  nome = "",
+  elemento = "",
+  descrizione = "",
+  immagine = "",
+  dorso = "",
+  targetType = "Self",
+  effetto = "",
+  valore = 0
+} = {}) => ({
+  id,
+  nome,
+  elemento,
+  descrizione,
+  immagine,
+  dorso,
+  targetType,
+  effetto,
+  valore
 });
 
-export const TreasureCard = (data = {}) => ({
-  id: data.id || 0,
-  effetto: data.effetto || "",
-  azione: data.azione || "nessuna",
-  valore: data.valore || 0,
-  immagine: data.immagine || ""
+export const TreasureCard = ({
+  id = 0,
+  effetto = "",
+  azione = "nessuna",
+  valore = 0,
+  immagine = ""
+} = {}) => ({
+  id,
+  effetto,
+  azione,
+  valore,
+  immagine
 });

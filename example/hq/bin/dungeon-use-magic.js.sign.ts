@@ -1,9 +1,9 @@
-export function useMagicLogic(config: {
+export declare function useMagicLogic(config: {
   gameSession: any;
   onUpdateSession: (updater: (session: any) => any) => void;
   onNotify: (message: string) => void;
   onActionDone: () => void;
-  staticSpells: any[];
+  staticSpells: Array<any>;
   combatLogic: any;
   mapInteractionLogic: any;
   fogOfWarLogic: any;

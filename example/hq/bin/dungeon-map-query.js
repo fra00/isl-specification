@@ -6,68 +6,88 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-export function useDungeonMapQuery({ gameSession, visibilityMap = null }) {
-    const getMapCell = useCallback((x, y) => {
-        if (!gameSession?.currentMap?.grid) return null;
-        return gameSession.currentMap.grid.find(cell => cell.x === x && cell.y === y) || null;
-    }, [gameSession]);
+export const useDungeonMapQuery = ({ gameSession = null, visibilityMap = null } = {}) => {
+  // Use refs to maintain stable callbacks while accessing the latest context
+  const sessionRef = useRef(gameSession);
+  const visibilityRef = useRef(visibilityMap);
 
-    const getVisibilityCell = useCallback((x, y) => {
-        if (!visibilityMap?.data) return null;
-        return visibilityMap.data.find(cell => cell.x === x && cell.y === y) || null;
-    }, [visibilityMap]);
+  useEffect(() => {
+    sessionRef.current = gameSession;
+    visibilityRef.current = visibilityMap;
+  }, [gameSession, visibilityMap]);
 
-    const isDoor = useCallback((x, y) => {
-        if (!gameSession?.currentMap?.porte) return false;
-        return gameSession.currentMap.porte.some(door => door.x === x && door.y === y);
-    }, [gameSession]);
+  const getMapCell = useCallback((x, y) => {
+    const grid = sessionRef.current?.currentMap?.grid;
+    if (!grid || !Array.isArray(grid)) return null;
+    
+    return grid.find((cell) => cell.x === x && cell.y === y) ?? null;
+  }, []);
 
-    const isSecretPassage = useCallback((x, y) => {
-        const cell = getMapCell(x, y);
-        return cell?.psgg?.ps != null;
-    }, [getMapCell]);
+  const getVisibilityCell = useCallback((x, y) => {
+    const data = visibilityRef.current?.data;
+    if (!data || !Array.isArray(data)) return null;
+    
+    return data.find((cell) => cell.x === x && cell.y === y) ?? null;
+  }, []);
 
-    const isBlockedByFurniture = useCallback((x, y) => {
-        const cell = getMapCell(x, y);
-        return cell?.mobili?.num != null;
-    }, [getMapCell]);
+  const isDoor = useCallback((x, y) => {
+    const porte = sessionRef.current?.currentMap?.porte;
+    if (!porte || !Array.isArray(porte)) return false;
+    
+    return porte.some((door) => door.x === x && door.y === y);
+  }, []);
 
-    const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
-        if (!gameSession?.monsters) return false;
-        const monster = gameSession.monsters.find(m => m.x === x && m.y === y && m.id !== excludeEntityId);
-        return !!(monster && monster.currentBody > 0);
-    }, [gameSession]);
+  const isSecretPassage = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return cell?.psgg?.ps != null;
+  }, [getMapCell]);
 
-    const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
-        if (!gameSession?.heroes) return false;
-        const hero = gameSession.heroes.find(h => h.x === x && h.y === y && h.heroId !== excludeEntityId);
-        return !!hero;
-    }, [gameSession]);
+  const isBlockedByFurniture = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return cell?.mobili?.num != null;
+  }, [getMapCell]);
 
-    const isBlockedByRock = useCallback((x, y) => {
-        const cell = getMapCell(x, y);
-        return cell?.arnt?.antroc === true;
-    }, [getMapCell]);
+  const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {
+    const monsters = sessionRef.current?.monsters;
+    if (!monsters || !Array.isArray(monsters)) return false;
+    
+    const monster = monsters.find((m) => m.x === x && m.y === y && m.id !== excludeEntityId);
+    return monster != null && monster.currentBody > 0;
+  }, []);
 
-    const getMapDimensions = useCallback(() => {
-        return { width: 26, height: 19 };
-    }, []);
+  const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
+    const heroes = sessionRef.current?.heroes;
+    if (!heroes || !Array.isArray(heroes)) return false;
+    
+    return heroes.some((h) => h.x === x && h.y === y && h.heroId !== excludeEntityId);
+  }, []);
 
-    return {
-        getMapCell,
-        getVisibilityCell,
-        isDoor,
-        isSecretPassage,
-        isBlockedByFurniture,
-        isBlockedByMonster,
-        isOccupiedByHero,
-        isBlockedByRock,
-        getMapDimensions,
-        exposedContext: {
-            gameSession,
-            visibilityMap
-        }
-    };
-}
+  const isBlockedByRock = useCallback((x, y) => {
+    const cell = getMapCell(x, y);
+    return cell?.arnt?.antroc === true;
+  }, [getMapCell]);
+
+  const getMapDimensions = useCallback(() => {
+    return { width: 26, height: 19 };
+  }, []);
+
+  const exposedContext = useMemo(() => ({
+    gameSession,
+    visibilityMap
+  }), [gameSession, visibilityMap]);
+
+  return {
+    getMapCell,
+    getVisibilityCell,
+    isDoor,
+    isSecretPassage,
+    isBlockedByFurniture,
+    isBlockedByMonster,
+    isOccupiedByHero,
+    isBlockedByRock,
+    getMapDimensions,
+    exposedContext
+  };
+};

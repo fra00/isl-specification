@@ -8,13 +8,14 @@
 
 import React, { useCallback } from 'react';
 
-export default function DungeonInventoryModal({ 
-  isOpen = false, 
-  hero = null, 
-  onClose = () => {} 
-}) {
-  const handleClose = useCallback(() => {
-    onClose();
+export default function DungeonInventoryModal({ isOpen = false, hero = null, onClose }) {
+  const handleClose = useCallback((e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (onClose) {
+      onClose();
+    }
   }, [onClose]);
 
   if (!isOpen || !hero) {
@@ -22,11 +23,8 @@ export default function DungeonInventoryModal({
   }
 
   const heroData = hero.hero || {};
-  
-  // Fallback to portrait or miniature since 'immagine' is not in the Hero signature
+  // Fallback to portrait or miniature if the exact property is missing
   const heroImage = heroData.portrait || heroData.miniature || '';
-  
-  // Fallback to classe since 'nome' is not in the Hero signature
   const heroName = heroData.classe || 'Eroe Sconosciuto';
   const heroClass = heroData.classe || 'Classe Sconosciuta';
 
@@ -36,34 +34,36 @@ export default function DungeonInventoryModal({
       onClick={handleClose}
     >
       <div 
-        className="bg-gray-900 text-white rounded-lg shadow-2xl w-full max-w-[500px] flex flex-col overflow-hidden"
+        className="bg-gray-900 text-white rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h2 className="text-xl font-bold">Inventario</h2>
           <button 
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors text-xl leading-none"
+            className="text-gray-400 hover:text-white transition-colors"
             aria-label="Chiudi"
           >
-            ✕
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[80vh]">
+        <div className="p-6 overflow-y-auto">
           {/* Hero Identity */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-6 bg-gray-800 p-4 rounded-lg">
             {heroImage ? (
               <img 
                 src={`/img/personaggi/${heroImage}`} 
                 alt={heroName} 
-                className="w-16 h-16 object-cover rounded-full border-2 border-gray-600 bg-gray-800"
+                className="w-16 h-16 object-cover rounded-full border-2 border-gray-600"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
-                <span className="text-gray-500 text-xs">No Img</span>
+              <div className="w-16 h-16 bg-gray-700 rounded-full border-2 border-gray-600 flex items-center justify-center">
+                <span className="text-xs text-gray-400">No Img</span>
               </div>
             )}
             <div>
@@ -73,25 +73,25 @@ export default function DungeonInventoryModal({
           </div>
 
           {/* Gold Balance */}
-          <div className="mb-6 bg-gray-800 p-3 rounded-lg border border-yellow-600/30">
-            <p className="text-yellow-500 font-semibold">
-              Monete d'Oro: <span className="text-white ml-2">{hero.gold != null ? hero.gold : 0}</span>
+          <div className="mb-6 bg-yellow-900/20 border border-yellow-700/30 p-3 rounded-lg">
+            <p className="text-yellow-400 font-semibold flex items-center gap-2">
+              <span className="text-xl">🪙</span>
+              Monete d'Oro: {hero.gold ?? 0}
             </p>
           </div>
 
-          {/* Items Grid (Oggetti) */}
+          {/* Items Grid */}
           <div className="mb-6">
             <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Oggetti</h4>
             {hero.inventory && hero.inventory.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {hero.inventory.map((itemId, index) => (
-                  <div 
-                    key={`item-${itemId}-${index}`} 
-                    className="bg-gray-800 p-3 rounded border border-gray-700 flex flex-col items-center justify-center text-center"
-                  >
-                    {/* Registry not available in context, using placeholder as per ISL "ELSE" condition */}
-                    <span className="text-sm text-gray-400">Unknown Item</span>
-                    <span className="text-xs text-gray-600 mt-1">ID: {itemId}</span>
+                {hero.inventory.map((itemId, idx) => (
+                  <div key={`item-${itemId}-${idx}`} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center text-center border border-gray-700">
+                    <div className="w-10 h-10 bg-gray-700 rounded mb-2 flex items-center justify-center text-xs text-gray-500">
+                      ?
+                    </div>
+                    <span className="text-xs text-gray-300">Unknown Item</span>
+                    <span className="text-[10px] text-gray-500">ID: {itemId}</span>
                   </div>
                 ))}
               </div>
@@ -100,24 +100,25 @@ export default function DungeonInventoryModal({
             )}
           </div>
 
-          {/* Equipment List (Equipaggiamento) */}
+          {/* Equipment List */}
           <div>
             <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Equipaggiamento</h4>
             {hero.equipment && hero.equipment.length > 0 ? (
-              <ul className="space-y-2">
-                {hero.equipment.map((equipId, index) => (
-                  <li 
-                    key={`equip-${equipId}-${index}`} 
-                    className="bg-gray-800 p-3 rounded border border-gray-700 flex justify-between items-center"
-                  >
-                    {/* Registry not available in context, using placeholder */}
-                    <span className="text-sm text-gray-300">Equipaggiamento Sconosciuto</span>
-                    <span className="text-xs text-gray-500">ID: {equipId}</span>
-                  </li>
+              <div className="flex flex-col gap-2">
+                {hero.equipment.map((equipId, idx) => (
+                  <div key={`equip-${equipId}-${idx}`} className="bg-gray-800 p-3 rounded-lg flex items-center gap-3 border border-gray-700">
+                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500 shrink-0">
+                      ?
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-300">Unknown Equipment</span>
+                      <span className="text-[10px] text-gray-500">ID: {equipId}</span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p className="text-sm text-gray-500 italic">Nessun equipaggiamento posseduto.</p>
+              <p className="text-sm text-gray-500 italic">Nessun equipaggiamento.</p>
             )}
           </div>
         </div>

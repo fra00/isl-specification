@@ -11,14 +11,14 @@ import React, { useCallback } from 'react';
 export default function HeroSummary({
   heroes = [],
   staticHeroes = [],
-  equipmentList = [],
+  staticEquipment = [],
   selectedIndex = 0,
-  onSelect = () => {}
+  onSelect
 }) {
-  // Guard: If no heroes are available
+  // Guard: No heroes available
   if (!heroes || heroes.length === 0) {
     return (
-      <div className="p-4 bg-gray-900 text-gray-300 border border-gray-700 rounded text-center font-serif">
+      <div className="p-4 bg-gray-900 text-gray-300 border border-gray-700 rounded font-serif text-center shadow-lg">
         No Heroes Available
       </div>
     );
@@ -27,85 +27,93 @@ export default function HeroSummary({
   // Guard: Ensure selectedIndex is within bounds
   const safeIndex = selectedIndex >= heroes.length ? 0 : selectedIndex;
   const currentHeroState = heroes[safeIndex];
-
-  // Find static hero definition (fallback to the one embedded in state if not found in static list)
-  const staticHero = staticHeroes.find(h => h?.id === currentHeroState?.heroId) || currentHeroState?.hero;
+  
+  // Resolve static hero definition (fallback to the hero object embedded in state if static list is missing it)
+  const currentStaticHero = staticHeroes.find(h => h?.id === currentHeroState?.heroId) || currentHeroState?.hero;
 
   // Capability: handleSelect
   const handleSelect = useCallback((e) => {
-    const index = parseInt(e.target.value, 10);
-    if (!isNaN(index)) {
-      onSelect(index);
+    if (typeof onSelect === 'function') {
+      onSelect(Number(e.target.value));
     }
   }, [onSelect]);
 
   return (
-    <div className="flex flex-col w-full max-w-md bg-gray-900 border-2 border-yellow-800 rounded-lg shadow-2xl font-serif text-gray-200 overflow-hidden">
-      {/* SELECTOR */}
-      <div className="p-3 bg-gray-800 border-b border-yellow-800">
-        <label htmlFor="hero-selector" className="sr-only">Select Hero</label>
+    <div className="bg-gray-900 text-gray-200 p-5 rounded-lg border-2 border-gray-700 shadow-2xl max-w-sm font-serif">
+      
+      {/* Hero Selector */}
+      <div className="mb-5">
+        <label htmlFor="hero-selector" className="block text-xs text-gray-400 uppercase tracking-wider mb-2">
+          Select Hero
+        </label>
         <select
           id="hero-selector"
           value={safeIndex}
           onChange={handleSelect}
-          className="w-full p-2 bg-gray-900 text-yellow-500 border border-yellow-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-600 cursor-pointer"
+          className="w-full bg-yellow-900 text-yellow-100 border border-yellow-700 rounded p-2 outline-none focus:ring-2 focus:ring-yellow-600 shadow-inner cursor-pointer"
         >
-          {heroes.map((heroState, idx) => {
-            const hDef = staticHeroes.find(h => h?.id === heroState?.heroId) || heroState?.hero;
+          {heroes.map((hState, idx) => {
+            const hDef = staticHeroes.find(h => h?.id === hState?.heroId) || hState?.hero;
             return (
-              <option key={`hero-${heroState?.heroId || idx}`} value={idx}>
-                {hDef?.classe || `Hero ${heroState?.heroId}`}
+              <option key={`hero-option-${idx}`} value={idx}>
+                {hDef?.classe || `Hero ${hState?.heroId}`}
               </option>
             );
           })}
         </select>
       </div>
 
-      <div className="flex flex-row p-4 gap-4">
-        {/* PORTRAIT */}
-        <div className="flex-shrink-0 w-32 h-32 border-2 border-gray-700 rounded overflow-hidden bg-black flex items-center justify-center shadow-inner">
-          {staticHero?.portrait ? (
+      {/* Portrait Area */}
+      <div className="flex justify-center mb-5">
+        <div className="w-32 h-32 border-4 border-gray-800 rounded overflow-hidden bg-black flex items-center justify-center shadow-inner relative">
+          {currentStaticHero?.portrait ? (
             <img
-              src={`/img/eroi/${staticHero.portrait}`}
-              alt={staticHero.classe || 'Hero Portrait'}
+              src={`/img/eroi/${currentStaticHero.portrait}`}
+              alt={currentStaticHero.classe || 'Hero Portrait'}
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-gray-500 text-sm">No Portrait</span>
+            <span className="text-gray-600 text-sm">No Portrait</span>
           )}
         </div>
-
-        {/* STATS & INVENTORY */}
-        <div className="flex flex-col flex-grow gap-3">
-          {/* GOLD */}
-          <div className="bg-gray-800 p-2 rounded border border-gray-700 flex items-center justify-between shadow-sm">
-            <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Gold</span>
-            <span className="text-yellow-400 font-bold text-lg">{currentHeroState?.gold ?? 0}</span>
-          </div>
-
-          {/* EQUIPMENT */}
-          <div className="flex flex-col flex-grow bg-gray-800 p-2 rounded border border-gray-700 shadow-sm">
-            <span className="text-xs text-gray-400 uppercase tracking-wider mb-1 border-b border-gray-700 pb-1 font-bold">
-              Equipment
-            </span>
-            <ul className="overflow-y-auto max-h-20 text-sm space-y-1 pr-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-              {currentHeroState?.equipment && currentHeroState.equipment.length > 0 ? (
-                currentHeroState.equipment.map((eqId, idx) => {
-                  const eqDef = equipmentList.find(e => e?.id === eqId);
-                  return (
-                    <li key={`eq-${eqId}-${idx}`} className="text-gray-300 truncate flex items-center gap-2">
-                      <span className="text-yellow-700 text-xs">♦</span>
-                      {eqDef?.nome || `Unknown Item (${eqId})`}
-                    </li>
-                  );
-                })
-              ) : (
-                <li className="text-gray-500 italic text-xs mt-1">No equipment</li>
-              )}
-            </ul>
-          </div>
-        </div>
       </div>
+
+      {/* Gold Summary Card */}
+      <div className="bg-gray-800 border border-gray-700 rounded p-3 mb-5 flex justify-between items-center shadow-sm">
+        <span className="text-gray-400 text-xs uppercase tracking-wider font-bold">Gold</span>
+        <span className="text-yellow-400 font-bold text-lg flex items-center gap-1">
+          {currentHeroState?.gold || 0}
+          <span className="text-yellow-600 text-sm">gp</span>
+        </span>
+      </div>
+
+      {/* Equipment List */}
+      <div>
+        <h3 className="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1">
+          Equipment
+        </h3>
+        <ul className="overflow-y-auto max-h-48 bg-gray-800 rounded border border-gray-700 p-2 space-y-1 shadow-inner custom-scrollbar">
+          {currentHeroState?.equipment && currentHeroState.equipment.length > 0 ? (
+            currentHeroState.equipment.map((eqId, idx) => {
+              const eq = staticEquipment.find(e => e?.id === eqId);
+              return (
+                <li 
+                  key={`eq-${eqId}-${idx}`} 
+                  className="text-sm text-gray-300 bg-gray-900 px-3 py-2 rounded border border-gray-800 flex items-center"
+                >
+                  <span className="w-2 h-2 bg-gray-600 rounded-full mr-2"></span>
+                  {eq?.nome || `Unknown Item (${eqId})`}
+                </li>
+              );
+            })
+          ) : (
+            <li className="text-sm text-gray-500 italic text-center py-4">
+              Inventory is empty
+            </li>
+          )}
+        </ul>
+      </div>
+
     </div>
   );
 }

@@ -1,7 +1,7 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-secret-passages
 
@@ -40,8 +40,8 @@
 
 #### searchPassages
 
-- **Contract**: Scans visible area for secret passages.
-- **Trigger**: User clicks "Cerca Passaggi".
+- **Contract**: Scans visible area for secret passages and marks them as discovered if adjacent to revealed cells.
+- **Trigger**: User clicks "Cerca Passaggi" during hero turn.
 - **Flow**:
   - Call `sessionManager.executeMissionScripts({ baseSession: gameSession, eventType: 5, visibilityMap })` before normal secret-passage discovery.
   - Let `activeSession` = the script result session when scripts were handled, otherwise `gameSession`.
@@ -93,3 +93,50 @@
     - IF `isVisible` is true: Add `passage` to `visiblePassages`.
 
   - RETURN `visiblePassages`.
+
+### 🚨 Constraints
+
+- **searchPassages MUST NOT execute if any monster is currently visible to the active hero.** (Precondition: filter visible monsters; cancel action with message if any exist.)
+- Discovered passages are persisted in `foundPassages` and remain visible across future hero turns.
+- A passage is discoverable ONLY if it is adjacent to a cell that is already revealed (fog == false).
+- Only hero actions (explicit user click on "Cerca Passaggi") trigger discovery; monsters cannot discover passages.
+
+### ⚙ Logic & Execution Rules (operational semantics — normative execution constraints)
+
+#### Adjacency Definition
+
+- A secret passage (cell at x, y) is adjacent to visible cells if:
+  - For horizontal passage: cells at (x, y-1) or (x, y+1) have fog == false
+  - For vertical passage: cells at (x-1, y) or (x+1, y) have fog == false
+
+#### Discovery Persistence
+
+- Once a passage is added to `foundPassages`, it persists across all future turns until the mission ends.
+- Passages discovered via mission script (eventType: 5) are applied immediately without adjacency checks.
+
+#### State Consistency
+
+- `foundPassages` in memory MUST match what is displayed on the board via `getFoundPassages()`.
+- If a passage cell becomes fogged again (dynamic fog changes), the passage remains in `foundPassages` but is not rendered.
+
+### ✅ Acceptance Criteria
+
+- Passage discovery succeeds only when adjacent to revealed cells.
+- Discovered passages persist and are visible until mission end.
+- No new passages are discovered if any monster is visible.
+- Mission script discovery (eventType: 5) bypasses adjacency rules.
+- UI correctly hides passages when their adjacent cells are fogged.
+
+### 🧪 Test Scenarios
+
+#### No Visible Monsters
+
+- Given: Hero at (5, 5), no visible monsters, passage at (6, 5) adjacent to revealed cell (6, 4)
+- When: User clicks "Cerca Passaggi"
+- Then: Passage is discovered and added to `foundPassages`
+
+#### Visible Monster Present
+
+- Given: Hero at (5, 5), visible monster at (7, 7), passage at (6, 5) adjacent to revealed cell
+- When: User clicks "Cerca Passaggi"
+- Then: Action is cancelled with notification "Non puoi cercare con i mostri visibili!"

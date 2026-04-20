@@ -8,64 +8,9 @@
 
 import React, { useState, useEffect } from "react";
 import PageContent from "./page-presentation";
+import { Monster, Hero, Equipment, Item, TreasureCard } from "./domain-ruleset";
+import { VisibilityMap, Campaign } from "./domain-map";
 import { getAllSpells } from "./domain-spells-data";
-
-class MainContentErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-
-  componentDidCatch(error) {
-    console.error("HeroQuest runtime crashed:", error);
-  }
-
-  handleRetry = () => {
-    this.setState({ error: null });
-    if (typeof this.props.onRetry === "function") {
-      this.props.onRetry();
-    }
-  };
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-6 text-center">
-          <div className="space-y-4">
-            <p className="text-xl font-bold">Errore inatteso nel runtime di HeroQuest.</p>
-            <p>{this.state.error.message}</p>
-            <button
-              onClick={this.handleRetry}
-              className="px-4 py-2 rounded bg-red-700 hover:bg-red-800 text-white"
-            >
-              Riprova
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-const validateArrayAsset = (payload, assetName) => {
-  if (!Array.isArray(payload)) {
-    throw new Error(`Asset non valido: ${assetName}`);
-  }
-  return payload;
-};
-
-const validateObjectAsset = (payload, assetName) => {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new Error(`Asset non valido: ${assetName}`);
-  }
-  return payload;
-};
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -78,17 +23,11 @@ export default function MainContent() {
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
   const [error, setError] = useState(null);
-  const [retryVersion, setRetryVersion] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
     const bootstrap = async () => {
-      if (isMounted) {
-        setIsAppReady(false);
-        setError(null);
-      }
-
       try {
         const [
           monstersRes,
@@ -96,7 +35,7 @@ export default function MainContent() {
           boardDataRes,
           equipmentRes,
           itemsRes,
-          treasureRes,
+          treasureDeckRes,
           campaignRes
         ] = await Promise.all([
           fetch("/jsonData/monsters.json"),
@@ -114,44 +53,43 @@ export default function MainContent() {
           !boardDataRes.ok ||
           !equipmentRes.ok ||
           !itemsRes.ok ||
-          !treasureRes.ok ||
+          !treasureDeckRes.ok ||
           !campaignRes.ok
         ) {
-          throw new Error("Network response was not ok during assets fetch.");
+          throw new Error("Failed to fetch one or more assets");
         }
 
-        const monsters = validateArrayAsset(await monstersRes.json(), "monsters.json");
-        const heroes = validateArrayAsset(await heroesRes.json(), "heroes.json");
-        const boardData = validateObjectAsset(await boardDataRes.json(), "tabellone/default.json");
-        const equipment = validateArrayAsset(await equipmentRes.json(), "equipment.json");
-        const items = validateArrayAsset(await itemsRes.json(), "items.json");
-        const treasureDeck = validateArrayAsset(await treasureRes.json(), "treasure-card.json");
-        const campaign = validateObjectAsset(await campaignRes.json(), "campagne.json");
+        const monstersJson = await monstersRes.json();
+        const heroesJson = await heroesRes.json();
+        const boardDataJson = await boardDataRes.json();
+        const equipmentJson = await equipmentRes.json();
+        const itemsJson = await itemsRes.json();
+        const treasureDeckJson = await treasureDeckRes.json();
+        const campaignJson = await campaignRes.json();
 
         if (!isMounted) return;
 
-        const normalizedBoardData = {
-          ...boardData,
-          data: boardData?.data?.map((cell) => ({
+        setGlobalMonsters((monstersJson || []).map(Monster));
+        setGlobalHeroes((heroesJson || []).map(Hero));
+        setGlobalEquipment((equipmentJson || []).map(Equipment));
+        setGlobalItems((itemsJson || []).map(Item));
+        setGlobalTreasureDeck((treasureDeckJson || []).map(TreasureCard));
+        setGlobalCampaign(Campaign(campaignJson || {}));
+
+        const normalizedBoardData = VisibilityMap({
+          ...(boardDataJson || {}),
+          data: (boardDataJson?.data || []).map((cell) => ({
             ...cell,
-            fog: true
-          })) || []
-        };
-
-        setGlobalMonsters(monsters);
-        setGlobalHeroes(heroes);
+            fog: cell.fog !== undefined ? cell.fog : true
+          }))
+        });
         setGlobalBoardData(normalizedBoardData);
-        setGlobalEquipment(equipment);
-        setGlobalItems(items);
-        setGlobalTreasureDeck(treasureDeck);
-        setGlobalCampaign(campaign);
-        setGlobalSpells(getAllSpells());
 
+        setGlobalSpells(getAllSpells());
         setIsAppReady(true);
       } catch (err) {
-        if (isMounted) {
-          setError("Errore durante il caricamento degli asset: " + err.message);
-        }
+        if (!isMounted) return;
+        setError(err instanceof Error ? err.message : String(err));
       }
     };
 
@@ -160,39 +98,19 @@ export default function MainContent() {
     return () => {
       isMounted = false;
     };
-  }, [retryVersion]);
-
-  const retryBootstrap = () => {
-    setRetryVersion((previousValue) => previousValue + 1);
-  };
-
-  if (error) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-red-500 p-4 text-center">
-        <div className="space-y-4">
-          <p className="text-xl font-bold">{error}</p>
-          <button
-            onClick={retryBootstrap}
-            className="px-4 py-2 rounded bg-red-700 hover:bg-red-800 text-white"
-          >
-            Riprova caricamento
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAppReady) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-black text-white">
-        <p className="text-2xl animate-pulse">Inizializzazione Sistema...</p>
-      </div>
-    );
-  }
+  }, []);
 
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-black overflow-hidden">
-      <MainContentErrorBoundary onRetry={retryBootstrap}>
+    <div className="w-full h-screen bg-black overflow-hidden">
+      {error ? (
+        <div className="w-full h-full flex items-center justify-center text-red-500">
+          Errore durante il caricamento degli asset: {error}
+        </div>
+      ) : !isAppReady ? (
+        <div className="w-full h-full flex items-center justify-center text-white">
+          Inizializzazione Sistema...
+        </div>
+      ) : (
         <PageContent
           monsters={globalMonsters}
           heroes={globalHeroes}
@@ -203,7 +121,7 @@ export default function MainContent() {
           treasureDeck={globalTreasureDeck}
           campaign={globalCampaign}
         />
-      </MainContentErrorBoundary>
+      )}
     </div>
   );
 }

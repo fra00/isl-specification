@@ -1,4 +1,4 @@
-export function useVisibilityCalc(config: { gameSession: any; visibilityMap: any }): {
+export declare function useVisibilityCalc(config: { gameSession: any; visibilityMap: any }): {
   calculateVisibleCells: (startX: number, startY: number) => Array<{ x: number; y: number }>;
   hasLineOfSight: (startX: number, startY: number, targetX: number, targetY: number) => boolean;
 };

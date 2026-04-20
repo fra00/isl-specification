@@ -15,15 +15,13 @@ export const useDungeonVisibleMonsters = ({ gameSession, boardVisibilityMap }) =
     }
 
     return gameSession.monsters.filter((monster) => {
-      if (!monster || monster.x == null || monster.y == null) {
-        return false;
-      }
+      if (!monster) return false;
 
       const cell = boardVisibilityMap.data.find(
-        (c) => c.x === monster.x && c.y === monster.y
+        (c) => c != null && c.x === monster.x && c.y === monster.y
       );
 
-      if (!cell || cell.fog) {
+      if (!cell || cell.fog === true) {
         return false;
       }
 

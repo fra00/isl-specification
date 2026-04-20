@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -39,6 +39,7 @@ Componente fullscreen sarà l'entry point e il contenitore principale dell'appli
 ### 🔍 Appearance
 
 width: full width
+
 - height: `100vh`
 - fullscreen black shell with hidden overflow
 - loading and fatal-error screens stay centered in the viewport

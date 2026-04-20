@@ -1,5 +1,6 @@
 # Fog of War & Visibility Logic Rules
-Questo documento definisce le regole autoritative per la gestione della nebbia di guerra e della visibilità nel progetto Heroquest React.
+
+Questo documento definisce le regole autoritative per la gestione della nebbia di guerra e della visibilità nel progetto Dungeon React.
 
 ## 1. Rimozione della Nebbia (Trigger Area)
 
@@ -17,7 +18,6 @@ Questo documento definisce le regole autoritative per la gestione della nebbia d
 - Il Ray Tracing (propropagazione lineare della vista) non è onnipresente.
 - Deve essere eseguito **solo ed esclusivamente** nei punti identificati come corridoi, tipicamente `valo: "1"`.
 - Se il personaggio si trova in una stanza dove `valo` è diverso da "1" , `valo` definisce l'intera stanza, il Ray Tracing non deve essere calcolato. Tutte le celle on quel `valo` devono avere `fog: false`.
-
 
 ## 4. Persistenza
 

@@ -6,14 +6,14 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback } from 'react';
-import { PageNavigationEnum } from './domain-core';
-import PlayGame from './play-game';
-import EditorGame from './editor-game';
-import MainMenu from './main-menu';
-import Armory from './armory';
-import Dungeon from './dungeon';
-import DungeonDescription from './dungeon-description';
+import React, { useState, useCallback, useEffect } from "react";
+import { PageNavigationEnum } from "./domain-core";
+import PlayGame from "./play-game";
+import EditorGame from "./editor-game";
+import MainMenu from "./main-menu";
+import Armory from "./armory";
+import Dungeon from "./dungeon";
+import DungeonDescription from "./dungeon-description";
 
 export default function PageContent({
   monsters = [],
@@ -28,6 +28,12 @@ export default function PageContent({
   const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
   const [gameSession, setGameSession] = useState(null);
 
+  useEffect(() => {
+    if (!currentPageView) {
+      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
+    }
+  }, [currentPageView]);
+
   const changePageView = useCallback((nextPageView) => {
     setCurrentPageView(nextPageView);
   }, []);
@@ -37,18 +43,18 @@ export default function PageContent({
   }, []);
 
   const startMission = useCallback((missionIndex) => {
-    console.log("Mission started:", missionIndex);
+    console.log(`Starting mission: ${missionIndex}`);
   }, []);
 
-  const showPageView = () => {
+  const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             campaign={campaign}
             staticHeroes={heroes}
@@ -60,16 +66,16 @@ export default function PageContent({
       case PageNavigationEnum.SHOP:
         return (
           <Armory
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
             staticMonsters={monsters}
             staticVisibilityMap={boardData}
@@ -82,8 +88,8 @@ export default function PageContent({
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
-            gameSession={gameSession}
             onChangePageView={changePageView}
+            gameSession={gameSession}
             onUpdateSession={updateSession}
           />
         );
@@ -93,9 +99,9 @@ export default function PageContent({
   };
 
   return (
-    <div className="w-full h-screen bg-black overflow-hidden flex justify-center">
-      <div className="w-full lg:w-2/3 h-full">
-        {showPageView()}
+    <div className="w-full h-screen overflow-hidden bg-black">
+      <div className="w-full lg:w-2/3 h-full mx-auto">
+        {renderPageView()}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # Regole di Gestione delle Porte e Passaggi
 
-Questo documento descrive il funzionamento tecnico e le regole di business relative alle porte e ai passaggi segreti nel progetto Heroquest React.
+Questo documento descrive il funzionamento tecnico e le regole di business relative alle porte e ai passaggi segreti nel progetto Dungeon React.
 
 ## 1. Natura delle Porte
 

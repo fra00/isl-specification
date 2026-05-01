@@ -268,7 +268,10 @@
     - Let `dy` = absolute(`hero.y` - `monster.y`).
     - Let `dist` = `dx` + `dy`.
     - Initialize `isValidTarget` to false.
-    - IF `dist` <= 1: Set `isValidTarget` to true.
+    - IF `dist` <= 1:
+      - Let `heroCellVis` = visibility cell at (`hero.x`, `hero.y`), `monsterCellVis` = visibility cell at (`monster.x`, `monster.y`).
+      - IF `heroCellVis.valo` == `monsterCellVis.valo`: Set `isValidTarget` to true.
+      - ELSE allow melee only when at least one of the two cells is an opened door cell (its coordinate key is present in `gameSession.openedDoors`).
     - ELSE IF `dx` == 1 AND `dy` == 1 AND `stats.canAttackDiagonal` is true:
       - IF `visibilityCalc` is null: treat target as invalid and RETURN without attack resolution.
       - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `isValidTarget` to true.
@@ -408,6 +411,7 @@
 - Capabilities internalState, checkMissionObjective, updateCanAttack, rollMovement, handleBoardHover MUST avoid undefined side effects outside declared flow and side effects.
 - The "Roll Movement" availability MUST be tied to the active hero turn context; stale transient state from a previous turn MUST NOT disable movement for the next hero.
 - A hero with `currentBody` <= 0 MUST be treated as dead: cannot roll movement, cannot move, cannot attack, and cannot consume turn actions.
+- Hero melee attacks (`dist` <= 1) MUST respect topological adjacency: crossing different `valo` cells is forbidden unless one of the two adjacent cells is an opened door cell.
 - Dead or escaped heroes MUST be skipped by turn progression; `currentTurn` MUST advance to the next living, non-escaped hero.
 - `InvisiblePassage` MUST expire automatically at the end of the affected hero turn and MUST NOT persist across subsequent turns unless recast.
 

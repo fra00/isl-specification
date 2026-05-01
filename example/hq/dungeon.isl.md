@@ -142,8 +142,8 @@
   - **Props**:
     - `isOpen`: true.
     - `hero`: `currentHero`.
-    - `onToggleEquip`: `hooksInventoryLogic.toggleEquipItem`.
-    - `onUseItem`: `hooksItemLogic.useItem`.
+    - `onToggleEquip`: wrapper that calls `hooksInventoryLogic.toggleEquipItem(heroId, itemId, gameSession)`.
+    - `onUseItem`: `handleUseItem` (supports both immediate-use items and monster-target items such as Holy Water).
     - `onClose`: Trigger `closeInventory`.
 
 - **Spell Casting Modal**: Displays `DungeonSpellCastModal` if `isSpellCastModalOpen` is true.
@@ -391,7 +391,8 @@
 - **Signature**: `(heroId: Integer, itemId: Integer)`
 - **Flow**:
   - Find `item` in `staticItems` matching `itemId`.
-  - IF `item.targetType` EQUALS "Monster":
+  - Let `requiresMonsterTarget` = (`item.targetType` EQUALS "Monster") OR (`item.acqua` is true).
+  - IF `requiresMonsterTarget` is true:
     - Set `targetingItem` to `item`.
     - Set `isInventoryOpen` to false.
     - Set `notificationMessage` to "Seleziona un mostro bersaglio per " + `item.nome`.

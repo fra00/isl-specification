@@ -35,7 +35,8 @@ export function useDungeonMapQuery({ gameSession, visibilityMap }) {
 
     const isBlockedByFurniture = useCallback((x, y) => {
         const cell = getMapCell(x, y);
-        return cell?.mobili?.num != null;
+        if (!cell) return false;
+        return cell?.mobili?.num != null || cell?.arnt?.inv === true || cell?.mobili?.flpo === true || cell?.mobili?.flpv === true;
     }, [getMapCell]);
 
     const isBlockedByMonster = useCallback((x, y, excludeEntityId) => {

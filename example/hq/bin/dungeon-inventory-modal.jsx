@@ -13,6 +13,8 @@ export default function DungeonInventoryModal({
   hero = null,
   allItems = [],
   allEquipment = [],
+  onToggleEquip = () => {},
+  onUseItem = () => {},
   onClose = () => {}
 }) {
   const handleClose = useCallback((e) => {
@@ -101,6 +103,12 @@ export default function DungeonInventoryModal({
                           {item ? (item.nome || item.descrizione || `Oggetto ID ${itemId}`) : `Oggetto ID ${itemId}`}
                         </p>
                       </div>
+                      <button
+                        onClick={() => onUseItem(hero.heroId, itemId)}
+                        className="px-2 py-1 text-xs rounded bg-indigo-700 hover:bg-indigo-600 border border-indigo-500 text-white"
+                      >
+                        Usa
+                      </button>
                     </div>
                   );
                 })}
@@ -119,6 +127,7 @@ export default function DungeonInventoryModal({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {hero.equipment.map((eqId, index) => {
                   const eq = allEquipment?.find(e => e.id === eqId);
+                  const isEquipped = hero.equipped?.includes(eqId) === true;
                   return (
                     <div key={`eq-${eqId}-${index}`} className="flex items-center space-x-3 rounded-lg border border-gray-700 bg-gray-800 p-3 shadow-sm">
                       {eq?.immagine && (
@@ -134,6 +143,12 @@ export default function DungeonInventoryModal({
                           {eq ? (eq.nome || eq.descrizione || `Equipaggiamento ID ${eqId}`) : `Equipaggiamento ID ${eqId}`}
                         </p>
                       </div>
+                      <button
+                        onClick={() => onToggleEquip(hero.heroId, eqId)}
+                        className={`px-2 py-1 text-xs rounded border ${isEquipped ? 'bg-green-700 hover:bg-green-600 border-green-500 text-white' : 'bg-stone-700 hover:bg-stone-600 border-stone-500 text-stone-100'}`}
+                      >
+                        {isEquipped ? 'Equipaggiato' : 'Equipaggia'}
+                      </button>
                     </div>
                   );
                 })}

@@ -62,6 +62,10 @@ export function useTreasureSearch(config) {
         const isTreasureSquare = (mapCell.tes.ts === 1);
 
         if (isTreasureSquare && !hasLoot) {
+          const alreadyFound = foundTreasures.some(ft => ft.x === mapCell.x && ft.y === mapCell.y);
+          if (!alreadyFound) {
+            setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.png" }]);
+          }
           onNotify("Il tesoro è vuoto.");
           treasureFound = true;
           break;

@@ -66,6 +66,7 @@
       - Let `hasLoot` = (`mapCell.tes.mon` > 0 OR `mapCell.tes.ogg` > 0 OR `mapCell.tes.arma` > 0 OR `mapCell.tes.trp` > 0).
       - Let `isTreasureSquare` = (`mapCell.tes.ts` == 1).
       - IF `isTreasureSquare` AND NOT `hasLoot`:
+        - IF (`mapCell.x`, `mapCell.y`) NOT in `foundTreasures`, add `{x: mapCell.x, y: mapCell.y, img: "tesoro.png"}` to `foundTreasures` so the empty chest is still rendered on the board.
         - Trigger `onNotify("Il tesoro è vuoto.")`.
         - Set `treasureFound` to true.
         - BREAK the loop (consume the search action without `collectTreasureAtCell`, without drawing a treasure card, and without mutating map or hero state).
@@ -110,7 +111,7 @@
 - Capability-level state changes MUST be bounded and deterministic for equivalent inputs/state.
 - Capabilities internalState, searchTreasure, getFoundTreasures, applyTreasureEffect MUST avoid undefined side effects outside declared flow and side effects.
 - Collectible map loot (`hasLoot`) MUST be applied only through `collectTreasureAtCell`, and `searchTreasure` MUST add a local `foundTreasures` marker only after a successful pickup with loot.
-- When `mapCell.tes.ts` == 1 and there is no collectible loot (`hasLoot` is false), `searchTreasure` MUST notify `"Il tesoro è vuoto."`, MUST set `treasureFound` so the same action does not draw a treasure card, and MUST NOT call `collectTreasureAtCell` or mutate session state for that branch.
+- When `mapCell.tes.ts` == 1 and there is no collectible loot (`hasLoot` is false), `searchTreasure` MUST render the chest marker in local `foundTreasures`, MUST notify `"Il tesoro è vuoto."`, MUST set `treasureFound` so the same action does not draw a treasure card, and MUST NOT call `collectTreasureAtCell` or mutate session state for that branch.
 
 ### 🚨 Global Constraints
 

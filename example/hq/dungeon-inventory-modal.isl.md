@@ -20,6 +20,8 @@
 - `hero`: @HeroState (The hero whose inventory is displayed).
 - `allItems`: List<@Item> (Registry used to resolve inventory IDs to human-readable labels).
 - `allEquipment`: List<@Equipment> (Registry used to resolve equipment IDs to human-readable labels).
+- `onToggleEquip`: (heroId: Integer, itemId: Integer) -> void (Callback to equip/unequip owned equipment).
+- `onUseItem`: (heroId: Integer, itemId: Integer) -> void (Callback to consume/use an inventory item).
 - `onClose`: () -> void (Callback to close the modal).
 
 ### 🔍 Appearance
@@ -40,10 +42,15 @@
   - List: Iterate `hero.inventory`.
     - Guard: IF item exists in `allItems`: display item `nome` (or `descrizione` when available) and image.
     - IF item is missing in registry: display localized fallback `"Oggetto ID <id>"` (never English `"Unknown Item"` text).
+    - Render action button "Usa" that calls `onUseItem(hero.heroId, itemId)`.
 - **Equipment List (Equipaggiamento)**:
   - List: Iterate `hero.equipment`.
     - IF equipment exists in `allEquipment`: display equipment `nome` (or `descrizione` when available) and image.
     - IF equipment is missing in registry: display localized fallback `"Equipaggiamento ID <id>"` (never English `"Unknown equipment"` text).
+    - Render action button:
+      - IF `itemId` is in `hero.equipped`: show "Equipaggiato".
+      - ELSE: show "Equipaggia".
+    - Button click must call `onToggleEquip(hero.heroId, itemId)`.
 
 ### ⚡ Capabilities
 
@@ -57,6 +64,7 @@
 ### 🚨 Constraints
 
 - handleClose MUST trigger onClose without mutating hero inventory/equipment data.
+- Item/equipment buttons MUST delegate to callbacks (`onUseItem`, `onToggleEquip`) and MUST NOT mutate session state locally.
 - Close interaction MUST be available only while isOpen is true.
 - Modal close MUST be idempotent for repeated close gestures in the same visible state.
 

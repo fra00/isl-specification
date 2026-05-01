@@ -76,6 +76,16 @@ export function useTurnLogic({
 
   const isMissionObjectiveCompleted = useMemo(() => checkMissionObjective(), [checkMissionObjective]);
 
+  const canMeleeAcrossCells = useCallback((fromX, fromY, toX, toY) => {
+    const fromCell = visibilityMap?.data?.find(c => c.x === fromX && c.y === fromY);
+    const toCell = visibilityMap?.data?.find(c => c.x === toX && c.y === toY);
+    if (!fromCell || !toCell) return true;
+    if (fromCell.valo === toCell.valo) return true;
+
+    const openedDoors = gameSession?.openedDoors || [];
+    return openedDoors.includes(`${fromX},${fromY}`) || openedDoors.includes(`${toX},${toY}`);
+  }, [visibilityMap, gameSession?.openedDoors]);
+
   const endTurn = useCallback((force = false) => {
     if (isMoving && !force) return;
 
@@ -275,7 +285,7 @@ export function useTurnLogic({
     const dist = dx + dy;
 
     let isValidTarget = false;
-    if (dist <= 1) {
+    if (dist <= 1 && canMeleeAcrossCells(hero.x, hero.y, monster.x, monster.y)) {
       isValidTarget = true;
     } else if (dx === 1 && dy === 1 && stats.canAttackDiagonal) {
       if (visibilityCalc?.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)) isValidTarget = true;
@@ -358,7 +368,7 @@ export function useTurnLogic({
         });
       }
     }
-  }, [gameSession, isMoving, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, sessionManager, visibilityMap, combatLogic, onNotify, isMovingStarted, mapInteractionLogic]);
+  }, [gameSession, isMoving, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, sessionManager, visibilityMap, combatLogic, onNotify, isMovingStarted, mapInteractionLogic, canMeleeAcrossCells]);
 
   const handleOpenDoor = useCallback(() => {
     if (canOpenDoor) {
@@ -393,7 +403,7 @@ export function useTurnLogic({
         const dy = Math.abs(hero.y - monster.y);
         const dist = dx + dy;
 
-        if (dist <= 1) {
+        if (dist <= 1 && canMeleeAcrossCells(hero.x, hero.y, monster.x, monster.y)) {
           attackPossible = true;
           break;
         } else if (dx === 1 && dy === 1 && stats.canAttackDiagonal) {
@@ -423,7 +433,7 @@ export function useTurnLogic({
         sessionManager.clearHeroStatusEverywhere("Courage");
       }
     }
-  }, [gameSession, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, visibilityMap, onNotify, sessionManager]);
+  }, [gameSession, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, visibilityMap, onNotify, sessionManager, canMeleeAcrossCells]);
 
   useEffect(() => {
     const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);

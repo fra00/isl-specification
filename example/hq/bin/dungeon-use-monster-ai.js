@@ -34,6 +34,17 @@ export function useMonsterAI(config) {
     return Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1;
   }, []);
 
+  const canMeleeAcrossCells = useCallback((fromX, fromY, toX, toY, currentSession) => {
+    const visData = visibilityMap?.data || [];
+    const fromCell = visData.find(c => c.x === fromX && c.y === fromY);
+    const toCell = visData.find(c => c.x === toX && c.y === toY);
+    if (!fromCell || !toCell) return true;
+    if (fromCell.valo === toCell.valo) return true;
+
+    const openedDoors = currentSession?.openedDoors || [];
+    return openedDoors.includes(`${fromX},${fromY}`) || openedDoors.includes(`${toX},${toY}`);
+  }, [visibilityMap]);
+
   const isOccupied = useCallback((x, y, excludeMonsterId, currentSession) => {
     const hasHero = currentSession.heroes?.some(h => h.x === x && h.y === y && !h.isEscaped && h.currentBody > 0);
     const hasMonster = currentSession.monsters?.some(m => m.id !== excludeMonsterId && m.x === x && m.y === y && m.currentBody > 0);
@@ -209,7 +220,7 @@ export function useMonsterAI(config) {
       }
 
       // Combat
-      if (isAdjacent(currentMonsterX, currentMonsterY, hero.x, hero.y)) {
+      if (isAdjacent(currentMonsterX, currentMonsterY, hero.x, hero.y) && canMeleeAcrossCells(currentMonsterX, currentMonsterY, hero.x, hero.y, currentSession)) {
         const heroStats = heroStatsLogic?.calculateStats(hero);
         const attackDice = monster.monster?.attacco || 0;
         const defenseDice = heroStats?.difesa || 0;
@@ -238,7 +249,7 @@ export function useMonsterAI(config) {
       onNotify("Nuovo Turno! Tocca agli eroi.");
     }
 
-  }, [onNotify, findNearestHero, isAdjacent, isOccupied, pathfinding, visibilityMap, sessionManager, heroStatsLogic, combatLogic]);
+  }, [onNotify, findNearestHero, isAdjacent, isOccupied, pathfinding, visibilityMap, sessionManager, heroStatsLogic, combatLogic, canMeleeAcrossCells]);
 
   const performInstantAttack = useCallback(async (monster, hero) => {
     if (!monster || !hero) return;

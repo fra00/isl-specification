@@ -62,6 +62,7 @@
   - **End Turn**:
     - Position: First action in the stack.
     - Style: Red danger plaque with stronger visual emphasis than the other actions.
+    - Disabled IF `isMoving` is true.
     - OnClick: Trigger `onEndTurn`.
   - **Roll Movement**:
     - Disabled IF `turnPhase.HasMoved` is true OR `movementPoints` is NOT null.

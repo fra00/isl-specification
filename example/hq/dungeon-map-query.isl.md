@@ -56,8 +56,16 @@
 
 #### isBlockedByFurniture
 
-- **Contract**: `getMapCell` (@MapCell) and Checks if the cell is blocked by furniture.
+- **Contract**: `getMapCell` (@MapCell) and checks if the cell is not traversable because of furniture or furniture footprint/invisible occupancy flags.
 - **Signature**: `(x: Integer, y: Integer) -> Boolean`
+- **Flow**:
+  1. get the cell from `getMapCell` (@MapCell) with coordinates `x` and `y`.
+  2. return TRUE if at least one of these conditions holds:
+     - `cell.mobili.num` is not null (furniture anchor tile),
+     - `cell.arnt.inv` is true (invisible non-transitable area),
+     - `cell.mobili.flpo` is true (furniture footprint occupancy),
+     - `cell.mobili.flpv` is true (hidden/secondary furniture footprint occupancy).
+  3. otherwise return FALSE.
 
 #### isBlockedByMonster
 

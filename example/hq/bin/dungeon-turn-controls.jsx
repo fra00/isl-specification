@@ -169,6 +169,7 @@ export default function DungeonTurnControls(props) {
           {/* End Turn - Always First & Anchored */}
           <button
             onClick={onEndTurn}
+            disabled={isMoving}
             className="w-full py-2 px-3 rounded text-sm font-bold uppercase tracking-wide transition-all border shadow-inner bg-red-900/90 hover:bg-red-800 border-red-700 text-red-100 active:scale-95"
           >
             Fine Turno

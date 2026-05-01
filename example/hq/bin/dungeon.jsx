@@ -384,7 +384,8 @@ export default function Dungeon({
 
     const handleUseItem = useCallback((heroId, itemId) => {
         const item = staticItems?.find(i => i.id === itemId);
-        if (item?.targetType === "Monster") {
+        const requiresMonsterTarget = item?.targetType === "Monster" || item?.acqua === true;
+        if (requiresMonsterTarget) {
             setTargetingItem(item);
             setIsInventoryOpen(false);
             setNotificationMessage(`Seleziona un mostro bersaglio per ${item.nome}`);
@@ -611,6 +612,8 @@ export default function Dungeon({
                     hero={currentHero}
                     allItems={staticItems}
                     allEquipment={staticEquipment}
+                    onToggleEquip={(heroId, itemId) => hooksInventoryLogic.toggleEquipItem(heroId, itemId, gameSession)}
+                    onUseItem={handleUseItem}
                     onClose={() => setIsInventoryOpen(false)}
                 />
             )}

@@ -59,11 +59,16 @@
   - IF `gameSession` is null OR `gameSession.currentMap` is null RETURN.
   - Create `placedHeroes` by mapping `gameSession.heroes`.
   - FOR EACH `heroState` in `placedHeroes`:
+    - Let `defaultEquipped`:
+      - IF `heroState.equipped` exists and is not empty, keep it.
+      - ELSE initialize it from `heroState.equipment` (owned default gear starts equipped).
     - Find `spawnPoint` in `gameSession.currentMap.eroi_start` where `id` == `heroState.heroId`.
     - IF `spawnPoint` exists:
       - Set `heroState.x` to `spawnPoint.x`.
       - Set `heroState.y` to `spawnPoint.y`.
       - Set `heroState.isEscaped` to false.
+      - Set `heroState.equipped` to `defaultEquipped`.
+    - ELSE set `heroState.equipped` to `defaultEquipped`.
   - Build an initialized @GameSession preserving all unrelated properties, setting `heroes` to `placedHeroes`, and setting `treasureDeck` to `treasureDeck`.
   - Execute mission start scripts (`eventType = 6`) against that initialized snapshot.
   - Persist the resulting full-session snapshot through `commitSessionUpdate`.

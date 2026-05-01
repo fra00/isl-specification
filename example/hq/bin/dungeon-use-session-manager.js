@@ -32,15 +32,22 @@ export function useDungeonSessionManager({
     
     const placedHeroes = gameSession.heroes.map(heroState => {
       const spawnPoint = gameSession.currentMap.eroi_start.find(p => p.id === heroState.heroId);
+      const defaultEquipped = (heroState.equipped && heroState.equipped.length > 0)
+        ? [...heroState.equipped]
+        : [...(heroState.equipment || [])];
       if (spawnPoint) {
         return {
           ...heroState,
           x: spawnPoint.x,
           y: spawnPoint.y,
-          isEscaped: false
+          isEscaped: false,
+          equipped: defaultEquipped
         };
       }
-      return heroState;
+      return {
+        ...heroState,
+        equipped: defaultEquipped
+      };
     });
 
     const initializedSession = {

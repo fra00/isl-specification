@@ -46,7 +46,7 @@ export const moveCurrentHeroInSession = (session, nextX, nextY) => {
   return clonedSession;
 };
 
-export const resolveHeroAttackInSession = (session, { monsterId, combatResult, statusesToRemove = [], consumedWeaponId = null }) => {
+export const resolveHeroAttackInSession = (session, { monsterId, combatResult, statusesToRemove = [], consumedWeaponId = null, isRanged = false }) => {
   if (!session) return session;
   const clonedSession = JSON.parse(JSON.stringify(session));
   const activeHero = clonedSession.heroes?.find((h) => h.turnOrder === clonedSession.currentTurn);
@@ -75,7 +75,8 @@ export const resolveHeroAttackInSession = (session, { monsterId, combatResult, s
   clonedSession.lastAttack = {
     hero: activeHero,
     monster: targetMonster,
-    combatResult: combatResult
+    combatResult: combatResult,
+    isRanged: isRanged
   };
 
   return clonedSession;

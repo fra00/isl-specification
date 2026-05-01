@@ -343,7 +343,7 @@ export function useTurnLogic({
         }
       }
 
-      sessionManager.resolveHeroAttack(monsterId, combatResult, statusesToRemove, consumedId, attackBaseSession);
+      sessionManager.resolveHeroAttack(monsterId, combatResult, statusesToRemove, consumedId, attackBaseSession, isRanged);
 
       if (newBody <= 0) {
         const afterAttackSession = {

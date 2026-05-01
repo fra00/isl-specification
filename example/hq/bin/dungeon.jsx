@@ -37,6 +37,8 @@ import DungeonSpellCastModal from './dungeon-spell-cast-modal';
 import { useMonsterAI } from './dungeon-use-monster-ai';
 import { useDungeonSessionManager } from './dungeon-use-session-manager';
 
+const BACKGROUND_MUSIC_VOLUME = 0.25;
+
 export default function Dungeon({
     gameSession,
     onChangePageView,
@@ -50,6 +52,19 @@ export default function Dungeon({
 }) {
     const [isMissionInitialized, setIsMissionInitialized] = useState(false);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+
+    const bgMusicRef = useRef(null);
+    useEffect(() => {
+        const audio = new Audio('/audio/gioco.mp3');
+        audio.loop = true;
+        audio.volume = BACKGROUND_MUSIC_VOLUME;
+        bgMusicRef.current = audio;
+        audio.play().catch(() => {});
+        return () => {
+            audio.pause();
+            audio.src = '';
+        };
+    }, []);
     const [isSpellSelectionRequired, setIsSpellSelectionRequired] = useState(false);
     const [isSpellCastModalOpen, setIsSpellCastModalOpen] = useState(false);
     const [isMissionSummaryOpen, setIsMissionSummaryOpen] = useState(false);
@@ -84,6 +99,24 @@ export default function Dungeon({
             return cell && !cell.fog;
         });
     }, [gameSession?.monsters, boardVisibilityMap]);
+
+    const prevMonstersVisibleRef = useRef(false);
+    useEffect(() => {
+        if (areMonstersVisible && !prevMonstersVisibleRef.current) {
+            new Audio('/audio/mostri.mp3').play().catch(() => {});
+        }
+        prevMonstersVisibleRef.current = areMonstersVisible;
+    }, [areMonstersVisible]);
+
+    useEffect(() => {
+        if (!gameSession?.lastAttack?.combatResult) return;
+        const { damageDealt } = gameSession.lastAttack.combatResult;
+        const isRanged = !!gameSession.lastAttack.isRanged;
+        const src = damageDealt > 0
+            ? (isRanged ? '/audio/tiro.mp3' : '/audio/danno.mp3')
+            : (isRanged ? '/audio/tirom.mp3' : '/audio/parata.mp3');
+        new Audio(src).play().catch(() => {});
+    }, [gameSession?.lastAttack]);
 
     const hooksMonsters = useDungeonMonsters({
         gameSession,

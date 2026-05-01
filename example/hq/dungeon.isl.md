@@ -206,6 +206,41 @@
 - `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, `hooksSessionManager`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
 - `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
 
+#### combatSound
+
+- **Contract**: Plays a one-shot sound effect whenever a combat result is resolved, selecting the audio file based on outcome and attack type.
+- **Trigger**: When `gameSession.lastAttack` changes to a non-null value containing a `combatResult`.
+- **Flow**:
+  - Let `hit` = `gameSession.lastAttack.combatResult.damageDealt` > 0.
+  - Let `ranged` = `gameSession.lastAttack.isRanged` is true.
+  - IF `ranged` AND `hit`: play `/audio/tiro.mp3`.
+  - IF `ranged` AND NOT `hit`: play `/audio/tirom.mp3`.
+  - IF NOT `ranged` AND `hit`: play `/audio/danno.mp3`.
+  - IF NOT `ranged` AND NOT `hit`: play `/audio/parata.mp3`.
+  - Errors MUST be silently caught (browser autoplay policy).
+- **Constraint**: The sound MUST fire exactly once per new `lastAttack` result. It MUST NOT replay when the modal is closed or when unrelated state changes.
+- **Constraint**: `isRanged` is set by `resolveHeroAttack` when the attacker's distance is > 1 (ranged weapon used). Monster attacks always have `isRanged = false`.
+
+#### monsterAlertSound
+
+- **Contract**: Plays `/audio/mostri.mp3` once when the first monster becomes visible on the map.
+- **Trigger**: When `areMonstersVisible` transitions from `false` to `true`.
+- **Flow**:
+  - Track the previous value of `areMonstersVisible` using a ref.
+  - IF `areMonstersVisible` is `true` AND previous value was `false`: create a new `Audio` instance for `/audio/mostri.mp3` and call `play()`. Errors MUST be silently caught.
+  - Update the ref to the current value of `areMonstersVisible`.
+- **Constraint**: The sound MUST fire at most once per false→true transition. It MUST NOT play again for each additional monster that becomes visible in the same or subsequent reveals until `areMonstersVisible` resets to `false` first.
+
+#### backgroundMusic
+
+- **Contract**: Plays `/audio/gioco.mp3` in a continuous loop for the entire dungeon session.
+- **Trigger**: On Mount.
+- **Flow**:
+  - Create an `Audio` instance pointing to `/audio/gioco.mp3`.
+  - Set `loop` to true and `volume` to `BACKGROUND_MUSIC_VOLUME` (default 0.25).
+  - Call `play()`. Errors MUST be silently caught (browser autoplay policy).
+- **Cleanup**: On Unmount, pause the audio and clear its `src` to release the resource.
+
 #### initializeMission
 
 - **Contract**: Initializes hero positions and map vision once the mission starts.
@@ -468,6 +503,7 @@
 - Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
 - Capabilities internal state, initializeMission, confirmHeroOrder, confirmSpellSelection, closeCombatResult MUST remain deterministic for equivalent props/state and user actions.
 - Campaign persistence paths (`completeMission`, `leaveDungeonAfterRetreat`) MUST persist the mission-end hero snapshot without restoring `currentBody`/`currentMind` to base hero maxima.
+- `backgroundMusic` MUST stop and release the audio resource on unmount. It MUST NOT throw if the browser blocks autoplay.
 
 ### 🚨 Global Constraints
 

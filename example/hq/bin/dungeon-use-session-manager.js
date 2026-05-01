@@ -686,7 +686,7 @@ export function useDungeonSessionManager({
     return true;
   }, [commitSessionUpdate]);
 
-  const resolveHeroAttack = useCallback((monsterId, combatResult, statusesToRemove, consumedWeaponId, baseSession) => {
+  const resolveHeroAttack = useCallback((monsterId, combatResult, statusesToRemove, consumedWeaponId, baseSession, isRanged = false) => {
     const sourceSession = baseSession != null ? baseSession : gameSession;
     if (sourceSession == null) return false;
 
@@ -694,7 +694,8 @@ export function useDungeonSessionManager({
       monsterId,
       combatResult,
       statusesToRemove,
-      consumedWeaponId
+      consumedWeaponId,
+      isRanged
     });
 
     commitSessionUpdate(() => newSession);

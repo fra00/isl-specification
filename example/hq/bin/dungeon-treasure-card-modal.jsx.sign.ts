@@ -1,1 +1,1 @@
-export default function TreasureCardModal(props: { isOpen: boolean; card: any; onClose: () => void }): React.ReactElement | null;
+export default function TreasureCardModal(props: { isOpen?: boolean; card?: { id: number; effetto: string; azione: string; valore: number; immagine: string } | null; onClose?: () => void }): React.ReactElement | null;

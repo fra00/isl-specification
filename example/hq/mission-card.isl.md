@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./mission-card
 
@@ -47,3 +47,38 @@
     - Do nothing (or prevent default).
   - ELSE:
     - Trigger `onSelect(index)`.
+
+### 🚨 Constraints
+
+- If `status` is `LOCKED`, `handleInteraction` MUST NOT call `onSelect`.
+- If `mission` is null/undefined, interaction MUST be ignored safely without side effects.
+- For selectable statuses (`AVAILABLE`, `COMPLETED`), `handleInteraction` MUST emit exactly one `onSelect(index)` per user action.
+
+### 🚨 Global Constraints
+
+- Visual status semantics (`LOCKED`, `AVAILABLE`, `COMPLETED`) MUST remain consistent across icon, styling, and action affordance.
+- `MissionCard` MUST remain a pure presentation component and MUST NOT decide campaign progression rules.
+- Equivalent props (`mission`, `index`, `status`) MUST produce equivalent rendering and interaction outcomes.
+
+### ✅ Acceptance Criteria
+
+- [ ] `handleInteraction` satisfies local constraints for locked, selectable, and null-mission cases.
+- [ ] Component-level status semantics are coherent in both visuals and interaction behavior.
+- [ ] Role boundary remains Presentation-only with no domain progression logic leakage.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Locked Mission**:
+   - Target: `handleInteraction`
+   - Input: `status = LOCKED`, valid `mission`, valid `index`
+   - Expected: no `onSelect` invocation
+
+2. **Capability Constraint - Selectable Mission**:
+   - Target: `handleInteraction`
+   - Input: `status = AVAILABLE` (or `COMPLETED`), valid `mission`, valid `index`
+   - Expected: one `onSelect(index)` invocation
+
+3. **Global Constraint - Status Semantics Consistency**:
+   - Target: `MissionCard` as component
+   - Input: same props rendered repeatedly
+   - Expected: same status visuals and same interaction behavior across renders

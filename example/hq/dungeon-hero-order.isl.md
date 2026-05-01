@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-hero-order
 
@@ -117,3 +117,38 @@
   - Let the full-screen overlay scroll vertically when the viewport is too short for the full modal.
   - Keep the hero-order modal centered on larger screens but reachable from top to bottom on smaller ones.
   - Preserve full-card click targets for both available heroes and assigned slots.
+
+### 🚨 Constraints
+
+- Each capability MUST honor its declared trigger and contract without hidden side effects.
+- Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
+- Capabilities `HeroOrderSection`, internalState, initialize, selectHero, removeHero MUST remain deterministic for equivalent props/state and user actions.
+
+### 🚨 Global Constraints
+
+- MUST keep UI behavior consistent with declared capabilities and triggers.
+- MUST NOT embed business/domain decisions that belong to Backend or Business Logic components.
+- MUST preserve interaction determinism for equivalent user actions and state.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for all declared interaction handlers.
+- [ ] Component-level global constraints remain valid across capability sequences.
+- [ ] Presentation boundary is preserved (no business/domain mutation logic in UI handlers).
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Handler Determinism**:
+   - Target: `HeroOrderSection`
+   - Input: repeated equivalent user actions with same props/state
+   - Expected: same observable UI outcome and side effects
+
+2. **Capability Constraint - Invalid Input Guard**:
+   - Target: declared interaction handlers
+   - Input: null/missing/invalid interaction context
+   - Expected: safe handling without runtime crash or undefined behavior
+
+3. **Global Constraint - Cross-Capability Coherence**:
+   - Target: component capability sequence
+   - Input: realistic interaction flow spanning multiple handlers
+   - Expected: consistent rendering semantics and preserved component boundary

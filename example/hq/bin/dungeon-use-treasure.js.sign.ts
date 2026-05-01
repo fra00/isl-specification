@@ -8,7 +8,8 @@ export declare function useTreasureSearch(config: {
   onTreasureCardDrawn: (card: any) => void;
   onWanderingMonster: (x: number, y: number) => void;
 }): {
+  foundTreasures: { x: number; y: number; img: string }[];
   searchTreasure: () => void;
-  getFoundTreasures: () => Array<{ x: number; y: number; img: string }>;
+  getFoundTreasures: () => { x: number; y: number; img: string }[];
   applyTreasureEffect: (card: any) => void;
 };

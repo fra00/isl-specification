@@ -71,9 +71,13 @@ export class ISLTestGenerator {
     const implContent = fs.readFileSync(implPath, "utf-8");
 
     let signatureContent = "";
-    const signPath = implPath + ".sign.json";
-    if (fs.existsSync(signPath)) {
-      signatureContent = fs.readFileSync(signPath, "utf-8");
+    const signTsPath = implPath + ".sign.ts";
+    const signJsonPath = implPath + ".sign.json";
+    if (fs.existsSync(signTsPath)) {
+      signatureContent = fs.readFileSync(signTsPath, "utf-8");
+    } else if (fs.existsSync(signJsonPath)) {
+      // Backward compatibility with older generators.
+      signatureContent = fs.readFileSync(signJsonPath, "utf-8");
     }
 
     // Determine test file path (e.g., bin/test/component.test.jsx)

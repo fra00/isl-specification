@@ -1,5 +1,5 @@
 export declare function useInventoryLogic(config: {
-  staticEquipment: Array<any>;
+  staticEquipment: any[];
   sessionManager: any;
 }): {
   isItemCompatibleWithHero: (hero: any, item: any) => boolean;

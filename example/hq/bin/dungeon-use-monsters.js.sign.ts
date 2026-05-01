@@ -3,8 +3,9 @@ export declare function useDungeonMonsters(config: {
   visibilityMap: any;
   onUpdateSession: (session: any) => void;
   onNotify: (message: string) => void;
-  monsterDefinitions: Array<any>;
+  monsterDefinitions: any[];
 }): {
+  spawnedLocations: string[];
   spawnWanderingMonster: (heroX: number, heroY: number) => {
     id: number;
     monster: {
@@ -23,6 +24,6 @@ export declare function useDungeonMonsters(config: {
     y: number;
     currentBody: number;
     currentMind: number;
-    activeStatus: Array<string>;
+    activeStatus: string[];
   } | null;
 };

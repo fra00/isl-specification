@@ -9,6 +9,7 @@
 import { useCallback } from 'react';
 
 export function useHeroStats({ staticEquipment = [] } = {}) {
+  
   const calculateStats = useCallback((heroState) => {
     if (!heroState || !heroState.hero) {
       return {
@@ -37,44 +38,53 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
       hasDoubleAttack: false
     };
 
-    const equippedIds = heroState.equipped || [];
-    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+    const equippedItems = staticEquipment.filter(item => 
+      heroState.equipped?.includes(item.id)
+    );
 
     for (const item of equippedItems) {
-      if (item.dadatt != null && item.dadatt > 0) {
+      if (item.dadatt > 0) {
         stats.attacco = item.dadatt;
       }
-      if (item.daddif != null && item.daddif > 0) {
+      
+      if (item.daddif > 0) {
         stats.difesa += item.daddif;
       }
-      if (item.daddifex != null && item.daddifex > 0) {
+      
+      if (item.daddifex > 0) {
         stats.difesa += item.daddifex;
       }
-      if (item.movim != null) {
+      
+      if (item.movim) {
         stats.movimento += item.movim;
       }
-      if (item.puntimente != null) {
+      
+      if (item.puntimente) {
         stats.mente += item.puntimente;
       }
+      
       if (item.diago === true) {
         stats.canAttackDiagonal = true;
       }
+      
       if (item.tiro === true || item.tirounavo === true) {
         stats.canAttackRanged = true;
       }
+      
       if (item.disinnesc === true) {
         stats.canDisarmTraps = true;
       }
+      
       if (item.doppioatt === true) {
         stats.hasDoubleAttack = true;
       }
     }
 
-    const activeStatus = heroState.activeStatus || [];
-    if (activeStatus.includes("RockSkin")) {
+    if (heroState.activeStatus?.includes("RockSkin")) {
       stats.difesa += 1;
     }
-    if (activeStatus.includes("Courage")) {
+    
+    if (heroState.activeStatus?.includes("Courage")) {
       stats.attacco += 2;
     }
 
@@ -82,16 +92,17 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
   }, [staticEquipment]);
 
   const calculateAttackDice = useCallback((heroState, monster) => {
+    if (!heroState || !monster) return 0;
+
     const baseStats = calculateStats(heroState);
     let dice = baseStats.attacco;
 
-    if (!heroState || !monster) return dice;
-
-    const equippedIds = heroState.equipped || [];
-    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+    const equippedItems = staticEquipment.filter(item => 
+      heroState.equipped?.includes(item.id)
+    );
 
     for (const item of equippedItems) {
-      if (item.numdadicontr != null && item.numdadicontr > 0 && item.targetMonster != null) {
+      if (item.numdadicontr > 0 && item.targetMonster != null) {
         let isTarget = false;
         
         if (typeof item.targetMonster === 'number' && item.targetMonster === monster.id) {
@@ -110,13 +121,14 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
     }
 
     return dice;
-  }, [calculateStats, staticEquipment]);
+  }, [staticEquipment, calculateStats]);
 
   const canAttackTwice = useCallback((heroState, monster) => {
     if (!heroState || !monster) return false;
 
-    const equippedIds = heroState.equipped || [];
-    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+    const equippedItems = staticEquipment.filter(item => 
+      heroState.equipped?.includes(item.id)
+    );
 
     for (const item of equippedItems) {
       if (item.doppioatt === true) {
@@ -136,8 +148,9 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
   const getConsumableWeaponId = useCallback((heroState) => {
     if (!heroState) return null;
 
-    const equippedIds = heroState.equipped || [];
-    const equippedItems = staticEquipment.filter(item => equippedIds.includes(item.id));
+    const equippedItems = staticEquipment.filter(item => 
+      heroState.equipped?.includes(item.id)
+    );
 
     for (const item of equippedItems) {
       if (item.tirounavo === true) {

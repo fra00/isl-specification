@@ -14,23 +14,30 @@ export const CombatDiceResult = {
   BLACK_SHIELD: 'BLACK_SHIELD'
 };
 
-export function useCombatLogic() {
+export const CombatResult = (data = {}) => ({
+  attackerDice: data.attackerDice || [],
+  defenderDice: data.defenderDice || [],
+  skulls: data.skulls ?? 0,
+  shields: data.shields ?? 0,
+  damageDealt: data.damageDealt ?? 0
+});
+
+export function useCombatLogic(config = {}) {
   const resolveCombat = useCallback((attackDiceCount, defenseDiceCount, defenderIsHero) => {
-    const validAttackDice = Math.max(0, attackDiceCount || 0);
-    const validDefenseDice = Math.max(0, defenseDiceCount || 0);
-    const isHeroDefending = defenderIsHero === true;
+    const safeAttackCount = Math.max(0, attackDiceCount ?? 0);
+    const safeDefenseCount = Math.max(0, defenseDiceCount ?? 0);
 
     const attackerDice = [];
     let skulls = 0;
 
-    for (let i = 0; i < validAttackDice; i++) {
+    for (let i = 0; i < safeAttackCount; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
-      if (roll <= 3) {
+      if (roll >= 1 && roll <= 3) {
         attackerDice.push(CombatDiceResult.SKULL);
         skulls++;
-      } else if (roll <= 5) {
+      } else if (roll === 4 || roll === 5) {
         attackerDice.push(CombatDiceResult.WHITE_SHIELD);
-      } else {
+      } else if (roll === 6) {
         attackerDice.push(CombatDiceResult.BLACK_SHIELD);
       }
     }
@@ -38,32 +45,38 @@ export function useCombatLogic() {
     const defenderDice = [];
     let shields = 0;
 
-    for (let i = 0; i < validDefenseDice; i++) {
+    for (let i = 0; i < safeDefenseCount; i++) {
       const roll = Math.floor(Math.random() * 6) + 1;
-      if (roll <= 3) {
-        defenderDice.push(CombatDiceResult.SKULL);
-      } else if (roll <= 5) {
-        defenderDice.push(CombatDiceResult.WHITE_SHIELD);
-        if (isHeroDefending) {
-          shields++;
-        }
-      } else {
-        defenderDice.push(CombatDiceResult.BLACK_SHIELD);
-        if (!isHeroDefending) {
-          shields++;
-        }
+      let face = null;
+      
+      if (roll >= 1 && roll <= 3) {
+        face = CombatDiceResult.SKULL;
+      } else if (roll === 4 || roll === 5) {
+        face = CombatDiceResult.WHITE_SHIELD;
+      } else if (roll === 6) {
+        face = CombatDiceResult.BLACK_SHIELD;
+      }
+      
+      if (face) {
+        defenderDice.push(face);
+      }
+
+      if (defenderIsHero && face === CombatDiceResult.WHITE_SHIELD) {
+        shields++;
+      } else if (!defenderIsHero && face === CombatDiceResult.BLACK_SHIELD) {
+        shields++;
       }
     }
 
     const damageDealt = Math.max(0, skulls - shields);
 
-    return {
+    return CombatResult({
       attackerDice,
       defenderDice,
       skulls,
       shields,
       damageDealt
-    };
+    });
   }, []);
 
   return { resolveCombat };

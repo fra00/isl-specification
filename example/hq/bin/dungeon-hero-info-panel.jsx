@@ -6,222 +6,187 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-export default function DungeonHeroInfoPanel({
-  currentHero,
-  currentHeroStats,
-  movementPoints
-}) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  
-  const panelRef = useRef(null);
-  const positionRef = useRef(position);
+export default function DungeonHeroInfoPanel({ currentHero, currentHeroStats = null, movementPoints = null }) {
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const dragOffset = useRef({ x: 0, y: 0 });
+    const panelRef = useRef(null);
 
-  // Keep ref updated for stale-closure-free access in event listeners
-  useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
+    const PANEL_WIDTH = 310;
 
-  // Capability: initializePosition
-  useEffect(() => {
-    const initPosition = () => {
-      const panelWidth = 310;
-      const defaultX = Math.max(0, window.innerWidth - panelWidth - 20);
-      const defaultY = 20;
+    const clampPosition = useCallback((x, y) => {
+        if (typeof window === 'undefined') return { x, y };
+        const maxX = Math.max(0, window.innerWidth - PANEL_WIDTH);
+        const maxY = Math.max(0, window.innerHeight - 100); // Safe margin for bottom
+        return {
+            x: Math.max(0, Math.min(x, maxX)),
+            y: Math.max(0, Math.min(y, maxY))
+        };
+    }, []);
 
-      try {
-        const stored = localStorage.getItem("dungeonHeroInfoPanelPosition");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (typeof parsed.x === "number" && typeof parsed.y === "number") {
-            const clampedX = Math.min(Math.max(0, parsed.x), window.innerWidth - panelWidth);
-            const clampedY = Math.min(Math.max(0, parsed.y), window.innerHeight - 100);
-            setPosition({ x: clampedX, y: clampedY });
-            setIsInitialized(true);
-            return;
-          }
+    // initializePosition
+    useEffect(() => {
+        let restored = false;
+        try {
+            const stored = localStorage.getItem('dungeonHeroInfoPanelPosition');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+                    setPosition(clampPosition(parsed.x, parsed.y));
+                    restored = true;
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to restore panel position', e);
         }
-      } catch (e) {
-        // Fallback to default on parse error
-      }
+        
+        if (!restored && typeof window !== 'undefined') {
+            // Default position: right side, safe top offset
+            setPosition(clampPosition(window.innerWidth - PANEL_WIDTH - 20, 20));
+        }
+        setIsInitialized(true);
+    }, [clampPosition]);
 
-      setPosition({ x: defaultX, y: defaultY });
-      setIsInitialized(true);
-    };
+    // handleViewportResize
+    useEffect(() => {
+        const handleResize = () => {
+            setPosition(prev => clampPosition(prev.x, prev.y));
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [clampPosition]);
 
-    initPosition();
-  }, []);
+    // beginDrag
+    const beginDrag = useCallback((e) => {
+        setIsDragging(true);
+        dragOffset.current = {
+            x: e.clientX - position.x,
+            y: e.clientY - position.y
+        };
+    }, [position]);
 
-  // Capability: handleViewportResize
-  useEffect(() => {
-    const handleResize = () => {
-      setPosition((prev) => {
-        const panelWidth = panelRef.current?.offsetWidth || 310;
-        const panelHeight = panelRef.current?.offsetHeight || 400;
-        const newX = Math.max(0, Math.min(prev.x, window.innerWidth - panelWidth));
-        const newY = Math.max(0, Math.min(prev.y, window.innerHeight - panelHeight));
-        return { x: newX, y: newY };
-      });
-    };
+    // persistDragPosition (Global listeners for drag)
+    useEffect(() => {
+        if (!isDragging) return;
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+        const handleMouseMove = (e) => {
+            const newX = e.clientX - dragOffset.current.x;
+            const newY = e.clientY - dragOffset.current.y;
+            setPosition(clampPosition(newX, newY));
+        };
 
-  // Capability: beginDrag
-  const handleMouseDown = useCallback((e) => {
-    setIsDragging(true);
-    setDragOffset({
-      x: e.clientX - positionRef.current.x,
-      y: e.clientY - positionRef.current.y
-    });
-  }, []);
+        const handleMouseUp = () => {
+            setIsDragging(false);
+        };
 
-  // Capability: persistDragPosition
-  useEffect(() => {
-    if (!isDragging) return;
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
 
-    const handleMouseMove = (e) => {
-      let newX = e.clientX - dragOffset.x;
-      let newY = e.clientY - dragOffset.y;
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, clampPosition]);
 
-      const panelWidth = panelRef.current?.offsetWidth || 310;
-      const panelHeight = panelRef.current?.offsetHeight || 400;
+    // Persist to localStorage when drag ends
+    useEffect(() => {
+        if (!isDragging && isInitialized) {
+            try {
+                localStorage.setItem('dungeonHeroInfoPanelPosition', JSON.stringify(position));
+            } catch (e) {
+                console.warn('Failed to save panel position', e);
+            }
+        }
+    }, [isDragging, position, isInitialized]);
 
-      newX = Math.max(0, Math.min(newX, window.innerWidth - panelWidth));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - panelHeight));
+    // renderGuard
+    if (!currentHero) return null;
+    if (!isInitialized) return null;
 
-      setPosition({ x: newX, y: newY });
-    };
+    const heroClass = currentHero.hero?.classe || 'Sconosciuto';
+    const portraitSrc = currentHero.hero?.portrait ? `img/eroi/${currentHero.hero.portrait}` : null;
+    
+    const attack = currentHeroStats?.attacco ?? currentHero.hero?.attacco ?? 0;
+    const defense = currentHeroStats?.difesa ?? currentHero.hero?.difesa ?? 0;
+    const body = currentHero.currentBody ?? 0;
+    const mind = currentHero.currentMind ?? 0;
+    const gold = currentHero.gold ?? 0;
+    const activeEffects = Array.isArray(currentHero.activeStatus) ? currentHero.activeStatus : [];
 
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      localStorage.setItem(
-        "dungeonHeroInfoPanelPosition",
-        JSON.stringify(positionRef.current)
-      );
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
-  // Capability: renderGuard
-  if (!currentHero || !isInitialized) {
-    return null;
-  }
-
-  // Safe data extraction
-  const heroClass = currentHero.hero?.classe || "Sconosciuto";
-  const portraitSrc = currentHero.hero?.portrait ? `img/eroi/${currentHero.hero.portrait}` : null;
-  
-  const attack = currentHeroStats?.attacco ?? currentHero.hero?.attacco ?? 0;
-  const defense = currentHeroStats?.difesa ?? currentHero.hero?.difesa ?? 0;
-  const body = currentHero.currentBody ?? currentHero.hero?.corpo ?? 0;
-  const mind = currentHero.currentMind ?? currentHero.hero?.mente ?? 0;
-  const gold = currentHero.gold ?? 0;
-  
-  const activeEffects = currentHero.activeStatus || [];
-
-  // Capability: renderPanel
-  return (
-    <div
-      ref={panelRef}
-      style={{ left: position.x, top: position.y }}
-      className="fixed z-50 w-[310px] bg-stone-900 border-2 border-amber-800 rounded-lg shadow-2xl text-stone-200 font-serif select-none flex flex-col overflow-hidden"
-    >
-      {/* Header / Drag Handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className={`bg-stone-800 border-b-2 border-amber-800 p-3 flex flex-col items-center justify-center ${
-          isDragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
-      >
-        <h2 className="text-amber-500 font-bold text-lg tracking-wider uppercase drop-shadow-md">
-          Scheda Eroe
-        </h2>
-        <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-700 to-transparent my-1"></div>
-        <span className="text-stone-400 text-xs italic">Trascina per spostare</span>
-      </div>
-
-      <div className="p-4 flex flex-col gap-4">
-        {/* Hero Summary */}
-        <div className="flex flex-col items-center relative">
-          <div className="w-24 h-24 border-4 border-amber-700 rounded-full overflow-hidden bg-stone-950 shadow-inner flex items-center justify-center relative">
-            {portraitSrc ? (
-              <img src={portraitSrc} alt={heroClass} className="w-full h-full object-cover" draggable={false} />
-            ) : (
-              <span className="text-stone-600 text-sm">Nessuna Immagine</span>
-            )}
-          </div>
-          <h3 className="mt-2 text-xl font-bold text-stone-100 capitalize drop-shadow">
-            {heroClass}
-          </h3>
-          
-          {/* Movement Chip */}
-          {movementPoints != null && (
-            <div className="absolute -right-2 top-0 bg-blue-900 border-2 border-blue-400 text-blue-100 font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg transform rotate-12">
-              {movementPoints}
+    // renderPanel
+    return (
+        <div 
+            ref={panelRef}
+            className="fixed z-50 w-[310px] bg-stone-800 border-2 border-amber-700/50 rounded-sm shadow-2xl text-stone-200 flex flex-col select-none"
+            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        >
+            {/* Header */}
+            <div 
+                className={`bg-stone-900 border-b border-amber-700/50 p-2 flex flex-col items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                onMouseDown={beginDrag}
+            >
+                <h2 className="text-amber-500 font-bold tracking-wider uppercase text-sm">Scheda Eroe</h2>
+                <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-700/50 to-transparent mt-1 mb-1"></div>
+                <span className="text-[10px] text-stone-500 uppercase tracking-widest">Trascina per spostare</span>
             </div>
-          )}
-        </div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-stone-800 border border-stone-600 rounded p-2 flex flex-col items-center shadow-inner">
-            <span className="text-stone-400 text-xs uppercase tracking-wider">Salute</span>
-            <span className="text-red-400 font-bold text-lg">{body}</span>
-          </div>
-          <div className="bg-stone-800 border border-stone-600 rounded p-2 flex flex-col items-center shadow-inner">
-            <span className="text-stone-400 text-xs uppercase tracking-wider">Mente</span>
-            <span className="text-blue-400 font-bold text-lg">{mind}</span>
-          </div>
-          <div className="bg-stone-800 border border-stone-600 rounded p-2 flex flex-col items-center shadow-inner">
-            <span className="text-stone-400 text-xs uppercase tracking-wider">Attacco</span>
-            <span className="text-orange-400 font-bold text-lg">{attack}</span>
-          </div>
-          <div className="bg-stone-800 border border-stone-600 rounded p-2 flex flex-col items-center shadow-inner">
-            <span className="text-stone-400 text-xs uppercase tracking-wider">Difesa</span>
-            <span className="text-green-400 font-bold text-lg">{defense}</span>
-          </div>
-          <div className="col-span-2 bg-stone-800 border border-stone-600 rounded p-2 flex flex-col items-center shadow-inner">
-            <span className="text-stone-400 text-xs uppercase tracking-wider">Oro</span>
-            <span className="text-yellow-400 font-bold text-lg">{gold}</span>
-          </div>
-        </div>
+            {/* Hero Summary */}
+            <div className="p-4 flex items-center gap-4 border-b border-stone-700/50 bg-stone-800/50">
+                <div className="w-16 h-16 rounded-full border-4 border-amber-800/80 shadow-md overflow-hidden bg-stone-900 flex-shrink-0">
+                    {portraitSrc ? (
+                        <img src={portraitSrc} alt={heroClass} className="w-full h-full object-cover" draggable="false" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-stone-500 text-xs">?</div>
+                    )}
+                </div>
+                <div className="flex flex-col flex-grow">
+                    <span className="text-lg font-bold text-stone-100 capitalize">{heroClass}</span>
+                    <div className="mt-1 flex items-center">
+                        <span className="bg-blue-900/80 border border-blue-700 text-blue-100 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm">
+                            Movimento: {movementPoints !== null ? movementPoints : '-'}
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-        {/* Active Effects */}
-        <div className="mt-2">
-          <h4 className="text-stone-400 text-xs uppercase tracking-wider mb-2 border-b border-stone-700 pb-1">
-            Effetti Attivi
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {activeEffects.length > 0 ? (
-              activeEffects.map((effect, index) => (
-                <span
-                  key={`${effect}-${index}`}
-                  className="bg-indigo-900 border border-indigo-500 text-indigo-200 text-xs px-2 py-1 rounded-full shadow"
-                >
-                  {effect}
-                </span>
-              ))
-            ) : (
-              <span className="bg-stone-800 border border-stone-600 text-stone-500 text-xs px-2 py-1 rounded-full italic">
-                Nessuno
-              </span>
-            )}
-          </div>
+            {/* Stats Section */}
+            <div className="p-4 grid grid-cols-2 gap-3 bg-stone-800">
+                <StatPlaque label="Oro" value={gold} icon="🪙" />
+                <StatPlaque label="Salute" value={body} icon="❤️" valueColor="text-red-400" />
+                <StatPlaque label="Mente" value={mind} icon="🧠" valueColor="text-blue-400" />
+                <StatPlaque label="Attacco" value={attack} icon="⚔️" />
+                <StatPlaque label="Difesa" value={defense} icon="🛡️" />
+            </div>
+
+            {/* Active Effects */}
+            <div className="p-4 border-t border-stone-700/50 bg-stone-900/30">
+                <h3 className="text-xs text-stone-400 uppercase tracking-wider mb-2">Effetti Attivi</h3>
+                <div className="flex flex-wrap gap-2">
+                    {activeEffects.length > 0 ? (
+                        activeEffects.map((effect, idx) => (
+                            <span key={idx} className="bg-purple-900/60 border border-purple-700/50 text-purple-200 px-2 py-1 rounded text-xs shadow-sm">
+                                {effect}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="bg-stone-700/50 border border-stone-600/50 text-stone-400 px-2 py-1 rounded text-xs italic">
+                            Nessuno
+                        </span>
+                    )}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+}
+
+function StatPlaque({ label, value, icon, valueColor = "text-stone-100" }) {
+    return (
+        <div className="bg-stone-900 border border-stone-600 p-2 rounded flex flex-col items-center justify-center shadow-inner">
+            <span className="text-xs text-stone-400 mb-1">{icon} {label}</span>
+            <span className={`text-lg font-bold ${valueColor}`}>{value}</span>
+        </div>
+    );
 }

@@ -2655,7 +2655,7 @@
       },
       "mobili": {
         "num": 8,
-        "img": "tavoloo.jpg",
+        "img": "tavoloo.png",
         "flpo": false,
         "flpv": false
       },
@@ -7479,7 +7479,7 @@
       },
       "mobili": {
         "num": 3,
-        "img": "armadiov.jpg",
+        "img": "armadiov.png",
         "flpo": false,
         "flpv": false
       },
@@ -8199,7 +8199,7 @@
       },
       "mobili": {
         "num": 19,
-        "img": "scala.jpg",
+        "img": "scala.png",
         "flpo": false,
         "flpv": false
       },
@@ -15795,7 +15795,7 @@
       },
       "mobili": {
         "num": 9,
-        "img": "tavolov.jpg",
+        "img": "tavolov.png",
         "flpo": false,
         "flpv": false
       },

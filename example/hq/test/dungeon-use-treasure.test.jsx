@@ -59,7 +59,7 @@ describe("useTreasureSearch", () => {
 
     expect(sessionManager.collectTreasureAtCell).toHaveBeenCalledWith(4, 2, 2);
     expect(result.current.getFoundTreasures()).toEqual([
-      { x: 2, y: 2, img: "tesoro.jpg" },
+      { x: 2, y: 2, img: "tesoro.png" },
     ]);
     expect(onActionDone).toHaveBeenCalled();
   });

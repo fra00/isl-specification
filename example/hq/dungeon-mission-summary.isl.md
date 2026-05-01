@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-mission-summary
 
@@ -50,3 +50,38 @@
 - **Trigger**: User clicks the main button.
 - **Flow**:
   - Trigger `onClose`.
+
+### 🚨 Constraints
+
+- handleFinalize MUST invoke onClose exactly once per finalize action.
+- Finalize interaction MUST be available only when summary modal is open.
+- Finalize flow MUST NOT alter hero loot/gold data directly.
+
+### 🚨 Global Constraints
+
+- Mission summary MUST present hero outcome data consistently with provided heroes, llItems, and llEquipment.
+- Dead heroes filtering and loot rendering MUST remain deterministic for equivalent inputs.
+- Component MUST remain Presentation-only and MUST NOT decide campaign progression outcomes.
+
+### ✅ Acceptance Criteria
+
+- [ ] handleFinalize enforces local constraints for visibility, single invocation, and no state mutation.
+- [ ] Component-level hero/loot summary semantics are stable and deterministic.
+- [ ] Presentation boundary is respected with no progression logic leakage.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Finalize Action**:
+   - Target: handleFinalize
+   - Input: isOpen = true, user clicks finalize button
+   - Expected: one onClose call and no direct data mutation
+
+2. **Capability Constraint - Closed Modal**:
+   - Target: handleFinalize
+   - Input: isOpen = false
+   - Expected: finalize interaction is not exposed
+
+3. **Global Constraint - Summary Determinism**:
+   - Target: DungeonMissionSummary as component
+   - Input: same heroes/items/equipment props across renders
+   - Expected: same filtered hero list and same loot presentation

@@ -9,17 +9,18 @@
 import React, { useMemo, useCallback } from 'react';
 
 export default function DungeonSpellCastModal({
-  isOpen = false,
-  hero = null,
-  allSpells = [],
-  onCastSpell = () => {},
-  onClose = () => {}
+  isOpen,
+  hero,
+  allSpells,
+  onCastSpell,
+  onClose
 }) {
   // Capability: resolveSpellCards
-  // Maps hero.availableSpells against allSpells and filters out missing spell references
-  const availableSpellCards = useMemo(() => {
-    if (!hero?.availableSpells || !Array.isArray(allSpells)) return [];
-    
+  // Maps hero.availableSpells against allSpells and filters out missing references
+  const availableSpells = useMemo(() => {
+    if (!hero?.availableSpells || !Array.isArray(hero.availableSpells) || !Array.isArray(allSpells)) {
+      return [];
+    }
     return hero.availableSpells
       .map(spellId => allSpells.find(s => s?.id === spellId))
       .filter(spell => spell != null);
@@ -27,157 +28,183 @@ export default function DungeonSpellCastModal({
 
   // Capability: handleCast
   const handleCast = useCallback((spellId) => {
-    if (onCastSpell) {
+    if (typeof onCastSpell === 'function') {
       onCastSpell(spellId);
     }
   }, [onCastSpell]);
 
   // Capability: handleClose
-  const handleClose = useCallback(() => {
-    if (onClose) {
+  const handleClose = useCallback((e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (typeof onClose === 'function') {
       onClose();
     }
   }, [onClose]);
 
-  // Helper: Arcane element accent (Theme)
+  // Helper to derive arcane element accent colors
   const getElementTheme = useCallback((elemento) => {
     const el = (elemento || '').toLowerCase();
     switch (el) {
-      case 'fuoco': return { border: 'border-red-900/80', text: 'text-red-400', bg: 'bg-red-950/30' };
-      case 'acqua': return { border: 'border-blue-900/80', text: 'text-blue-400', bg: 'bg-blue-950/30' };
-      case 'aria': return { border: 'border-gray-400/80', text: 'text-gray-300', bg: 'bg-gray-800/30' };
-      case 'terra': return { border: 'border-green-900/80', text: 'text-green-400', bg: 'bg-green-950/30' };
-      default: return { border: 'border-amber-700/80', text: 'text-amber-500', bg: 'bg-amber-950/30' };
+      case 'fuoco':
+        return { text: 'text-red-500', border: 'border-red-900/80', bg: 'bg-red-950/30' };
+      case 'acqua':
+        return { text: 'text-blue-400', border: 'border-blue-900/80', bg: 'bg-blue-950/30' };
+      case 'terra':
+        return { text: 'text-green-500', border: 'border-green-900/80', bg: 'bg-green-950/30' };
+      case 'aria':
+        return { text: 'text-gray-300', border: 'border-gray-700/80', bg: 'bg-gray-800/30' };
+      default:
+        return { text: 'text-amber-500', border: 'border-amber-700/50', bg: 'bg-stone-800' };
     }
   }, []);
 
-  // Helper: Target Info Translation
-  const getTargetText = useCallback((targetType) => {
+  // Helper to translate target type for the badge
+  const getTargetLabel = useCallback((targetType) => {
     const target = (targetType || '').toLowerCase();
     switch (target) {
       case 'self': return 'Su se stessi';
-      case 'monster': return 'Mostro';
       case 'hero': return 'Personaggio';
+      case 'monster': return 'Mostro';
       case 'point': return 'Punto sulla mappa';
       case 'door': return 'Porta';
       default: return targetType || 'Sconosciuto';
     }
   }, []);
 
-  if (!isOpen || !hero) return null;
+  if (!isOpen) {
+    return null;
+  }
 
+  // Capability: maintainScrollableViewportLayout
+  // The outer div uses fixed inset-0 and overflow-y-auto to ensure the modal is scrollable on short viewports
   return (
-    // Capability: maintainScrollableViewportLayout
-    // Overlay: Fixed full-screen backdrop, z-index 65, vertically scrollable
     <div 
-      className="fixed inset-0 z-[65] bg-black/85 overflow-y-auto flex flex-col items-center p-4 sm:p-6"
+      className="fixed inset-0 z-[65] bg-black/85 overflow-y-auto flex items-start justify-center p-4 sm:p-6 md:p-12"
       onClick={handleClose}
-      aria-modal="true"
       role="dialog"
+      aria-modal="true"
+      aria-labelledby="spell-modal-title"
     >
-      {/* Dialog: Stone-and-bronze fantasy plaque */}
       <div 
-        className="relative w-full max-w-5xl my-auto bg-stone-900 border-4 border-amber-800 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col"
+        className="relative w-full max-w-6xl bg-stone-900 border-4 border-amber-800/90 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.8)] p-6 md:p-8 text-stone-200 font-serif my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-2 border-stone-700 m-1 rounded-lg flex flex-col h-full">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b-2 border-stone-700 bg-stone-800/50 rounded-t-md">
-            <div className="flex items-center gap-4">
-              {hero?.hero?.portrait && (
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-2 border-amber-800/60 pb-4 mb-6 gap-4">
+          <div className="flex items-center gap-4">
+            {hero?.hero?.portrait && (
+              <div className="w-16 h-16 rounded-full border-2 border-amber-600 overflow-hidden shrink-0 bg-stone-800">
                 <img 
-                  src={`/img/${hero.hero.portrait}`} 
+                  src={`/img/portraits/${hero.hero.portrait}`} 
                   alt={hero.hero.classe || 'Hero'} 
-                  className="w-16 h-16 rounded-full border-2 border-amber-600 object-cover shadow-md"
+                  className="w-full h-full object-cover"
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
-              )}
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-amber-500 tracking-wider uppercase">
-                  Lancia Incantesimo
-                </h2>
-                <p className="text-stone-400 text-sm sm:text-lg font-serif">
-                  {hero?.hero?.classe || 'Eroe'} &bull; {availableSpellCards.length} incantesimi disponibili
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={handleClose} 
-              className="text-stone-400 hover:text-white text-4xl font-bold p-2 leading-none transition-colors"
-              aria-label="Chiudi"
-            >
-              &times;
-            </button>
-          </div>
-
-          {/* Content / Spell Grid */}
-          <div className="p-4 sm:p-6">
-            {availableSpellCards.length === 0 ? (
-              <div className="text-center py-16 text-stone-400 font-serif text-xl bg-stone-950/50 rounded-lg border border-stone-800">
-                Non hai più incantesimi disponibili per questa missione.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {availableSpellCards.map(spell => {
-                  const theme = getElementTheme(spell.elemento);
-                  
-                  return (
-                    <div 
-                      key={spell.id} 
-                      className={`flex flex-col bg-stone-800 border-2 rounded-lg overflow-hidden shadow-lg transition-transform hover:-translate-y-1 ${theme.border}`}
-                    >
-                      {/* Image Panel */}
-                      <div className="relative h-48 w-full bg-black border-b-2 border-stone-700">
-                        {spell.immagine && (
-                          <img 
-                            src={`/img/cinc/${spell.immagine}`} 
-                            alt={spell.nome} 
-                            className="w-full h-full object-contain p-2"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        )}
-                      </div>
-                      
-                      {/* Card Details */}
-                      <div className={`p-4 flex-grow flex flex-col ${theme.bg}`}>
-                        <h3 className={`text-xl font-bold font-serif mb-3 ${theme.text}`}>
-                          {spell.nome}
-                        </h3>
-                        
-                        {/* Badges */}
-                        <div className="flex flex-wrap gap-2 mb-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                          <span className="bg-stone-900 px-2 py-1 rounded border border-stone-700 text-stone-300 shadow-inner">
-                            {spell.elemento || 'Magia'}
-                          </span>
-                          <span className="bg-stone-900 px-2 py-1 rounded border border-stone-700 text-stone-300 shadow-inner">
-                            Bersaglio: {getTargetText(spell.targetType)}
-                          </span>
-                        </div>
-                        
-                        {/* Description */}
-                        <p className="text-stone-300 text-sm flex-grow mb-6 font-serif leading-relaxed">
-                          {spell.descrizione}
-                        </p>
-                        
-                        {/* Action Plaque */}
-                        <div className="mt-auto pt-4 border-t border-stone-700/50">
-                          <button
-                            onClick={() => handleCast(spell.id)}
-                            className="w-full py-3 bg-gradient-to-b from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 text-white font-bold font-serif tracking-widest rounded shadow-[0_4px_0_rgb(69,26,3)] active:shadow-[0_0px_0_rgb(69,26,3)] active:translate-y-1 transition-all border border-amber-500 uppercase"
-                          >
-                            Lancia
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             )}
+            <div>
+              <h2 id="spell-modal-title" className="text-3xl md:text-4xl font-bold text-amber-500 tracking-wide uppercase drop-shadow-md">
+                Lancia Incantesimo
+              </h2>
+              <p className="text-lg text-stone-400 italic">
+                {hero?.hero?.classe || 'Eroe Sconosciuto'}
+              </p>
+            </div>
           </div>
           
+          <div className="flex items-center gap-6 self-end sm:self-auto">
+            <div className="text-right bg-stone-950/50 px-4 py-2 rounded border border-stone-700">
+              <span className="block text-3xl font-bold text-amber-400 leading-none">
+                {availableSpells.length}
+              </span>
+              <span className="text-xs text-stone-500 uppercase tracking-widest font-sans">
+                Disponibili
+              </span>
+            </div>
+            <button 
+              onClick={handleClose}
+              className="text-stone-500 hover:text-amber-400 transition-colors p-2 rounded-full hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              aria-label="Chiudi"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        {/* Spell Grid */}
+        {availableSpells.length === 0 ? (
+          <div className="text-center py-16 px-4 bg-stone-950/30 rounded-lg border border-stone-800">
+            <p className="text-xl text-stone-500 italic">
+              Non hai più incantesimi disponibili per questa missione.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {availableSpells.map((spell) => {
+              const theme = getElementTheme(spell.elemento);
+              
+              return (
+                <div 
+                  key={spell.id} 
+                  className={`flex flex-col bg-stone-800 border-2 rounded-lg overflow-hidden shadow-lg transition-transform hover:-translate-y-1 ${theme.border} ${theme.bg}`}
+                >
+                  {/* Card Image Panel */}
+                  <div className="h-48 bg-black relative border-b border-stone-700 flex items-center justify-center p-2">
+                    {spell.immagine ? (
+                      <img 
+                        src={`/img/cinc/${spell.immagine}`} 
+                        alt={spell.nome} 
+                        className="max-w-full max-h-full object-contain drop-shadow-md"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMyMjIiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZmlsbD0iIzU1NSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkltbWFnaW5lIG1hbmNhbnRlPC90ZXh0Pjwvc3ZnPg==';
+                        }}
+                      />
+                    ) : (
+                      <div className="text-stone-600 italic text-sm">Nessuna immagine</div>
+                    )}
+                    
+                    {spell.elemento && (
+                      <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-bold uppercase border border-stone-600 text-stone-300 tracking-wider shadow-sm">
+                        {spell.elemento}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Card Content Panel */}
+                  <div className="p-4 flex-1 flex flex-col">
+                    <h3 className={`text-xl font-bold mb-3 uppercase tracking-wide ${theme.text} drop-shadow-sm`}>
+                      {spell.nome || 'Incantesimo Sconosciuto'}
+                    </h3>
+                    
+                    <div className="mb-4 inline-flex items-center bg-stone-950/80 px-3 py-1.5 rounded text-xs text-stone-300 border border-stone-700 self-start shadow-inner">
+                      <span className="text-stone-500 mr-1">Bersaglio:</span> 
+                      <span className="font-semibold">{getTargetLabel(spell.targetType)}</span>
+                    </div>
+                    
+                    <div className="text-sm text-stone-300 flex-1 mb-6 leading-relaxed bg-stone-900/50 p-3 rounded border border-stone-700/50">
+                      {spell.descrizione || 'Nessuna descrizione disponibile.'}
+                    </div>
+                    
+                    {/* Action Plaque */}
+                    <div className="mt-auto pt-4 border-t border-stone-700/50">
+                      <button
+                        onClick={() => handleCast(spell.id)}
+                        className="w-full py-3 bg-gradient-to-b from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 text-amber-100 font-bold rounded border border-amber-600/50 transition-all uppercase tracking-widest shadow-[0_4px_10px_rgba(0,0,0,0.5)] active:scale-[0.98] active:shadow-inner"
+                      >
+                        Lancia
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -103,6 +103,12 @@ Structure containing the details of a combat interaction.
 - Given identical RNG seed, `resolveCombat` with same parameters produces identical results.
 - No external state is modified; output depends only on input.
 
+### 🚨 Global Constraints
+
+- MUST preserve component-level determinism across all state transitions and orchestration flows.
+- MUST ensure all capability-level mutations respect declared shared state boundaries.
+- MUST keep cross-capability outcomes consistent with declared domain references and invariants.
+
 ### ✅ Acceptance Criteria
 
 - Random die rolls follow 1-6 distribution.
@@ -130,3 +136,4 @@ Structure containing the details of a combat interaction.
 - Given: attackDiceCount = -5, defenseDiceCount = -2
 - When: `resolveCombat` called
 - Then: Treated as attackDiceCount = 0, defenseDiceCount = 0
+

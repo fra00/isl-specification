@@ -1,9 +1,9 @@
-export declare const MapObjectiveCoordinate: (data?: any) => {
+export const MapObjectiveCoordinate: (data?: any) => {
   x: number;
   y: number;
 };
 
-export declare const MapHeader: (data?: any) => {
+export const MapHeader: (data?: any) => {
   descrizione: string;
   mostro_uscita: number;
   tesoro_finale: { x: number; y: number };
@@ -13,65 +13,66 @@ export declare const MapHeader: (data?: any) => {
   nfine: number;
 };
 
-export declare const BlockCellArea: (data?: any) => {
+export const BlockCellArea: (data?: any) => {
   antroc: boolean;
   inv: boolean;
 };
 
-export declare const MapCellFurniture: (data?: any) => {
+export const MapCellFurniture: (data?: any) => {
   num: number | null;
   img: string;
 };
 
-export declare const MapCellMonster: (data?: any) => {
+export const MapCellMonster: (data?: any) => {
   mosid: number;
   mos: boolean;
   corpo: number;
 };
 
-export declare const MapCellTreasure: (data?: any) => {
+export const MapCellTreasure: (data?: any) => {
+  ts: number;
   mon: number;
   ogg: number;
   arma: number;
   trp: number;
 };
 
-export declare const MapCellPassage: (data?: any) => {
+export const MapCellPassage: (data?: any) => {
   ps: number | null;
   oriz: boolean;
 };
 
-export declare const MapCellTrap: (data?: any) => {
+export const MapCellTrap: (data?: any) => {
   tipo: number;
   rccadex: number;
   rccadey: number;
 };
 
-export declare const MapCell: (data?: any) => {
+export const MapCell: (data?: any) => {
   x: number;
   y: number;
   arnt: { antroc: boolean; inv: boolean };
   mobili: { num: number | null; img: string };
   mostab: { mosid: number; mos: boolean; corpo: number };
-  tes: { mon: number; ogg: number; arma: number; trp: number };
+  tes: { ts: number; mon: number; ogg: number; arma: number; trp: number };
   psgg: { ps: number | null; oriz: boolean };
   trpl: { tipo: number; rccadex: number; rccadey: number };
   fine: string;
 };
 
-export declare const MapHeroStart: (data?: any) => {
+export const MapHeroStart: (data?: any) => {
   id: number;
   x: number;
   y: number;
 };
 
-export declare const MapDoor: (data?: any) => {
+export const MapDoor: (data?: any) => {
   x: number;
   y: number;
   oriz: boolean;
 };
 
-export declare const MapScript: (data?: any) => {
+export const MapScript: (data?: any) => {
   x: number;
   y: number;
   text: string;
@@ -81,7 +82,7 @@ export declare const MapScript: (data?: any) => {
   idmosc: number;
 };
 
-export declare const MapDefinition: (data?: any) => {
+export const MapDefinition: (data?: any) => {
   header: {
     descrizione: string;
     mostro_uscita: number;
@@ -97,7 +98,7 @@ export declare const MapDefinition: (data?: any) => {
     arnt: { antroc: boolean; inv: boolean };
     mobili: { num: number | null; img: string };
     mostab: { mosid: number; mos: boolean; corpo: number };
-    tes: { mon: number; ogg: number; arma: number; trp: number };
+    tes: { ts: number; mon: number; ogg: number; arma: number; trp: number };
     psgg: { ps: number | null; oriz: boolean };
     trpl: { tipo: number; rccadex: number; rccadey: number };
     fine: string;
@@ -115,18 +116,18 @@ export declare const MapDefinition: (data?: any) => {
   }>;
 };
 
-export declare const Mission: (data?: any) => {
+export const Mission: (data?: any) => {
   ordine: number;
   file: string;
   titolo: string;
 };
 
-export declare const Campaign: (data?: any) => {
+export const Campaign: (data?: any) => {
   nome_campagna: string;
   missioni: Array<{ ordine: number; file: string; titolo: string }>;
 };
 
-export declare const VisibilityCell: (data?: any) => {
+export const VisibilityCell: (data?: any) => {
   x: number;
   y: number;
   valo: string;
@@ -135,13 +136,20 @@ export declare const VisibilityCell: (data?: any) => {
   fog: boolean;
 };
 
-export declare const VisibilityMap: (data?: any) => {
+export const VisibilityMap: (data?: any) => {
   source: string;
   image: string;
-  data: Array<{ x: number; y: number; valo: string; vis1: string; vis2: string; fog: boolean }>;
+  data: Array<{
+    x: number;
+    y: number;
+    valo: string;
+    vis1: string;
+    vis2: string;
+    fog: boolean;
+  }>;
 };
 
-export declare const GameScript: (data?: any) => {
+export const GameScript: (data?: any) => {
   command: string;
   params: number;
   isOneTime: boolean;

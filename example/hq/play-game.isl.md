@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./play-game
 
@@ -133,6 +133,14 @@ Represents the visual progression state of a mission in the selection screen.
   - Determine `maxAccessibleIndex`:
     - `maxUnlockedMissionIndex` (initialized in `initSession`).
   - IF `index` <= `maxAccessibleIndex` AND `savedData` is NOT null THEN:
+    - Let `isReplayOfCompletedMission` = `index` < `savedData.nextMissionIndex`.
+    - Build `heroesForMission` from `savedData.heroes`:
+      - IF `isReplayOfCompletedMission` is true:
+        - Keep each hero snapshot unchanged except:
+          - Set `currentBody` to the hero base maximum `hero.hero.corpo`.
+          - Set `currentMind` to the hero base maximum `hero.hero.mente`.
+      - ELSE:
+        - Keep each hero snapshot unchanged (campaign progression must preserve persisted vitals).
     - Identify the mission file from `campaign.missioni[index].file`.
     - Fetch map data from `/jsonData/map/[filename]` (extension is included in the filename).
     - Parse into @MapDefinition.
@@ -140,7 +148,7 @@ Represents the visual progression state of a mission in the selection screen.
     - Inside that updater:
       - Start from `previousSession` when available, otherwise outer `gameSession`.
       - Set `campaignName` to `campaign.nome_campagna`.
-      - Set `heroes` to `savedData.heroes`.
+      - Set `heroes` to `heroesForMission`.
       - Set `currentMap` to the loaded map.
       - Set `currentMissionIndex` to `index`.
       - Reset `monsters`, `openedDoors`, and `spawnedLocations` to empty lists.
@@ -170,9 +178,34 @@ Represents the visual progression state of a mission in the selection screen.
 
 ### 🚨 Constraints
 
-- **Progression Rule**: The user MUST NOT be able to start a mission with an index higher than `currentMissionIndex`.
+- **Progression Rule**: The user MUST NOT be able to start a mission with an index higher than `maxUnlockedMissionIndex`.
 - **Default State**: If no `gameSession` exists, the user is treated as a new player (only @Mission 0 is unlocked).
 - **Data Source**: Must load campaign structure strictly from `campagne.json`.
+- **Replay Rule**: When starting a mission already completed (`index` < saved `nextMissionIndex`), heroes MUST start with `currentBody` and `currentMind` restored to base maxima (`hero.corpo`, `hero.mente`).
+- **Progression Vital Rule**: When starting the current progression mission (`index` == saved `nextMissionIndex`), heroes MUST preserve persisted `currentBody`/`currentMind`.
 - **Visual Direction**: The page must remain darker and more gothic than the main menu while preserving palette continuity with bronze, ember, shadow, and black-stone tones.
 - **Layout Fit Rule**: The component must adapt to 100% of the available container height; content that exceeds available space must scroll vertically.
 - **Overflow Rule**: Horizontal scrolling must be prevented at page level and inside mission/detail panels.
+
+### 🚨 Global Constraints
+
+- MUST keep component-wide navigation/rendering behavior coherent across all capabilities.
+- MUST enforce UI-level consistency, accessibility intent, and deterministic interaction outcomes.
+- MUST delegate business/domain decisions to referenced Business Logic or Backend components.
+
+### ✅ Acceptance Criteria
+
+- [ ] Specification is internally consistent (roles, contracts, and constraints do not conflict).
+- [ ] Declared capabilities are represented with deterministic behavior.
+- [ ] Document is aligned to ISL v1.6.2 conventions.
+
+### 🧪 Test Scenarios
+
+1. **Contract Conformance**:
+   - Input: representative valid domain/state inputs
+   - Expected: outputs and side effects satisfy declared contracts
+
+2. **Constraint Enforcement**:
+   - Input: boundary and invalid inputs
+   - Expected: constraints are enforced and violations are handled explicitly
+

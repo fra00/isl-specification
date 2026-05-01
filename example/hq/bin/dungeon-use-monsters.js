@@ -6,61 +6,62 @@
  * Edit the ISL file instead.
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameSession, MonsterState } from './domain-session';
 
-export const useDungeonMonsters = ({
+export function useDungeonMonsters({
   gameSession,
   visibilityMap,
   onUpdateSession,
   onNotify,
   monsterDefinitions
-}) => {
-  // Use refs for state access to ensure referential stability of returned functions
-  // and to avoid unnecessary re-renders or effect triggers.
+}) {
+  // Refs for stable access in effects/callbacks without triggering re-renders
   const sessionRef = useRef(gameSession);
-  const onUpdateSessionRef = useRef(onUpdateSession);
-  const onNotifyRef = useRef(onNotify);
-  const monsterDefsRef = useRef(monsterDefinitions);
-  const visibilityMapRef = useRef(visibilityMap);
+  const notifyRef = useRef(onNotify);
+  const updateRef = useRef(onUpdateSession);
+  const monstersDefRef = useRef(monsterDefinitions);
 
-  // Sync refs with current props
   useEffect(() => {
     sessionRef.current = gameSession;
-    onUpdateSessionRef.current = onUpdateSession;
-    onNotifyRef.current = onNotify;
-    monsterDefsRef.current = monsterDefinitions;
-    visibilityMapRef.current = visibilityMap;
-  }, [gameSession, onUpdateSession, onNotify, monsterDefinitions, visibilityMap]);
+    notifyRef.current = onNotify;
+    updateRef.current = onUpdateSession;
+    monstersDefRef.current = monsterDefinitions;
+  }, [gameSession, onNotify, onUpdateSession, monsterDefinitions]);
+
+  // internalState: Tracks which static monster spawn points have already been materialized
+  const [spawnedLocations, setSpawnedLocations] = useState(() => gameSession?.spawnedLocations || []);
+
+  // Sync internal state if gameSession changes externally
+  useEffect(() => {
+    if (gameSession?.spawnedLocations) {
+      setSpawnedLocations(gameSession.spawnedLocations);
+    }
+  }, [gameSession?.spawnedLocations]);
 
   // Capability: spawnMonsters
-  // Triggered specifically when visibilityMap changes
   useEffect(() => {
-    if (!visibilityMap || !visibilityMap.data) return;
+    if (!visibilityMap?.data) return;
 
     const currentSession = sessionRef.current;
-    if (!currentSession || !currentSession.currentMap) return;
+    if (!currentSession?.currentMap?.grid) return;
 
     const newMonsters = [];
     const newSpawnedLocations = [];
-    const spawnedSet = new Set(currentSession.spawnedLocations || []);
+    const currentSpawned = currentSession.spawnedLocations || [];
 
-    visibilityMap.data.forEach((visCell) => {
+    visibilityMap.data.forEach(visCell => {
       const locKey = `${visCell.x},${visCell.y}`;
       
-      if (!visCell.fog && !spawnedSet.has(locKey)) {
-        const mapCell = currentSession.currentMap.grid?.find(
-          (c) => c.x === visCell.x && c.y === visCell.y
-        );
-
+      if (!visCell.fog && !currentSpawned.includes(locKey) && !newSpawnedLocations.includes(locKey)) {
+        const mapCell = currentSession.currentMap.grid.find(c => c.x === visCell.x && c.y === visCell.y);
+        
         if (mapCell?.mostab?.mos === true) {
-          const monsterDef = monsterDefsRef.current?.find(
-            (m) => m.id === mapCell.mostab.mosid
-          );
-
+          const monsterDef = monstersDefRef.current?.find(m => m.id === mapCell.mostab.mosid);
+          
           if (monsterDef) {
             const newMonster = MonsterState({
-              id: Date.now() + Math.floor(Math.random() * 100000),
+              id: Math.floor(Math.random() * 1000000) + Date.now(),
               monster: monsterDef,
               x: visCell.x,
               y: visCell.y,
@@ -68,10 +69,9 @@ export const useDungeonMonsters = ({
               currentMind: monsterDef.mente,
               activeStatus: []
             });
-
+            
             newMonsters.push(newMonster);
             newSpawnedLocations.push(locKey);
-            spawnedSet.add(locKey);
           }
         }
       }
@@ -81,49 +81,50 @@ export const useDungeonMonsters = ({
       const updatedSession = GameSession({
         ...currentSession,
         monsters: [...(currentSession.monsters || []), ...newMonsters],
-        spawnedLocations: [...(currentSession.spawnedLocations || []), ...newSpawnedLocations]
+        spawnedLocations: [...currentSpawned, ...newSpawnedLocations]
       });
-      onUpdateSessionRef.current?.(updatedSession);
+      
+      setSpawnedLocations(updatedSession.spawnedLocations);
+      updateRef.current?.(updatedSession);
     }
-  }, [visibilityMap]); // Strictly bound to visibilityMap changes
+  }, [visibilityMap]); // Trigger ONLY when visibilityMap changes
+
+  // Helper to check if a cell is walkable and unoccupied
+  const isWalkableAndUnoccupied = useCallback((x, y, session) => {
+    if (!session?.currentMap?.grid) return false;
+    
+    const cell = session.currentMap.grid.find(c => c.x === x && c.y === y);
+    if (!cell) return false;
+    if (cell.arnt?.antroc || cell.arnt?.inv || cell.mobili?.num != null) return false;
+
+    const hasHero = session.heroes?.some(h => h.x === x && h.y === y);
+    const hasMonster = session.monsters?.some(m => m.x === x && m.y === y);
+    if (hasHero || hasMonster) return false;
+
+    return true;
+  }, []);
 
   // Capability: spawnWanderingMonster
   const spawnWanderingMonster = useCallback((heroX, heroY) => {
     const currentSession = sessionRef.current;
-    const currentVisibility = visibilityMapRef.current;
-    
-    if (!currentSession || !currentSession.currentMap) return null;
+    if (!currentSession) return null;
 
-    let wanderingMonsterId = currentSession.currentMap.header?.merr;
-    if (wanderingMonsterId == null || isNaN(wanderingMonsterId)) {
-      wanderingMonsterId = 1; // Fallback to Orc
+    let wanderingMonsterId = currentSession.currentMap?.header?.merr;
+    if (wanderingMonsterId == null) {
+      wanderingMonsterId = 1; // Fallback ID 1 (Orco)
     }
 
     if (wanderingMonsterId === -1) {
-      onNotifyRef.current?.("In questa missione il mostro errante non è un mostro standard.");
+      notifyRef.current?.("In questa missione il mostro errante non è un mostro standard.");
       return null;
     }
 
-    const isWalkableAndUnoccupied = (x, y) => {
-      const mapCell = currentSession.currentMap.grid?.find((c) => c.x === x && c.y === y);
-      if (!mapCell) return false;
-      if (mapCell.arnt?.antroc || mapCell.arnt?.inv) return false;
-      if (mapCell.mobili?.num != null) return false;
-
-      const hasHero = currentSession.heroes?.some((h) => h.x === x && h.y === y);
-      if (hasHero) return false;
-
-      const hasMonster = currentSession.monsters?.some((m) => m.x === x && m.y === y && m.currentBody > 0);
-      if (hasMonster) return false;
-
-      return true;
-    };
-
     let spawnCell = null;
+    const visData = visibilityMap?.data;
 
-    if (currentVisibility && currentVisibility.data) {
-      const heroVisCell = currentVisibility.data.find((c) => c.x === heroX && c.y === heroY);
-
+    if (visData && visData.length > 0) {
+      const heroVisCell = visData.find(c => c.x === heroX && c.y === heroY);
+      
       if (heroVisCell) {
         const adjacentCoords = [
           { x: heroX, y: heroY - 1 }, // Up
@@ -132,40 +133,38 @@ export const useDungeonMonsters = ({
           { x: heroX + 1, y: heroY }  // Right
         ];
 
-        // 1. Adjacent, same valo, !fog, walkable, unoccupied
+        // 1. Check adjacent cells in the same valo
         for (const coord of adjacentCoords) {
-          const adjVis = currentVisibility.data.find((c) => c.x === coord.x && c.y === coord.y);
-          if (adjVis && !adjVis.fog && adjVis.valo === heroVisCell.valo) {
-            if (isWalkableAndUnoccupied(coord.x, coord.y)) {
-              spawnCell = { x: coord.x, y: coord.y };
+          const adjCell = visData.find(c => c.x === coord.x && c.y === coord.y);
+          if (adjCell && !adjCell.fog && adjCell.valo === heroVisCell.valo) {
+            if (isWalkableAndUnoccupied(coord.x, coord.y, currentSession)) {
+              spawnCell = adjCell;
               break;
             }
           }
         }
 
-        // 2. Same valo, not hero cell, walkable, unoccupied
+        // 2. Iterate visibilityMap.data for the first free cell in the same valo
         if (!spawnCell) {
-          const sameValoCells = currentVisibility.data.filter(
-            (c) => !c.fog && c.valo === heroVisCell.valo && (c.x !== heroX || c.y !== heroY)
-          );
-          for (const c of sameValoCells) {
-            if (isWalkableAndUnoccupied(c.x, c.y)) {
-              spawnCell = { x: c.x, y: c.y };
-              break;
+          for (const cell of visData) {
+            if (!cell.fog && cell.valo === heroVisCell.valo && (cell.x !== heroX || cell.y !== heroY)) {
+              if (isWalkableAndUnoccupied(cell.x, cell.y, currentSession)) {
+                spawnCell = cell;
+                break;
+              }
             }
           }
         }
       }
 
-      // 3. Any visible cell, not hero cell, walkable, unoccupied
+      // 3. Iterate all visible cells if no same-valo cell was selected
       if (!spawnCell) {
-        const visibleCells = currentVisibility.data.filter(
-          (c) => !c.fog && (c.x !== heroX || c.y !== heroY)
-        );
-        for (const c of visibleCells) {
-          if (isWalkableAndUnoccupied(c.x, c.y)) {
-            spawnCell = { x: c.x, y: c.y };
-            break;
+        for (const cell of visData) {
+          if (!cell.fog && (cell.x !== heroX || cell.y !== heroY)) {
+            if (isWalkableAndUnoccupied(cell.x, cell.y, currentSession)) {
+              spawnCell = cell;
+              break;
+            }
           }
         }
       }
@@ -178,7 +177,7 @@ export const useDungeonMonsters = ({
         { x: heroX + 1, y: heroY }
       ];
       for (const coord of adjacentCoords) {
-        if (isWalkableAndUnoccupied(coord.x, coord.y)) {
+        if (isWalkableAndUnoccupied(coord.x, coord.y, currentSession)) {
           spawnCell = { x: coord.x, y: coord.y };
           break;
         }
@@ -186,25 +185,25 @@ export const useDungeonMonsters = ({
     }
 
     if (!spawnCell) {
-      onNotifyRef.current?.("Non c'è spazio per il mostro errante!");
+      notifyRef.current?.("Non c'è spazio per il mostro errante!");
       return null;
     }
 
-    let monsterDef = monsterDefsRef.current?.find((m) => m.id === wanderingMonsterId);
+    let monsterDef = monstersDefRef.current?.find(m => m.id === wanderingMonsterId);
     
     if (!monsterDef && wanderingMonsterId !== 1) {
-      monsterDef = monsterDefsRef.current?.find((m) => m.id === 1);
+      monsterDef = monstersDefRef.current?.find(m => m.id === 1);
     }
     
-    if (!monsterDef && monsterDefsRef.current?.length > 0) {
-      const randomIndex = Math.floor(Math.random() * monsterDefsRef.current.length);
-      monsterDef = monsterDefsRef.current[randomIndex];
+    if (!monsterDef && monstersDefRef.current?.length > 0) {
+      const randomIndex = Math.floor(Math.random() * monstersDefRef.current.length);
+      monsterDef = monstersDefRef.current[randomIndex];
     }
 
     if (!monsterDef) return null;
 
     const newMonster = MonsterState({
-      id: Date.now() + Math.floor(Math.random() * 100000),
+      id: Math.floor(Math.random() * 1000000) + Date.now(),
       monster: monsterDef,
       x: spawnCell.x,
       y: spawnCell.y,
@@ -218,12 +217,12 @@ export const useDungeonMonsters = ({
       monsters: [...(currentSession.monsters || []), newMonster]
     });
 
-    onUpdateSessionRef.current?.(updatedSession);
-
+    updateRef.current?.(updatedSession);
     return newMonster;
-  }, []); // Empty dependency array because all state access is via refs
+  }, [visibilityMap, isWalkableAndUnoccupied]);
 
   return {
+    spawnedLocations,
     spawnWanderingMonster
   };
-};
+}

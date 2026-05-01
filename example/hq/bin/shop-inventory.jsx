@@ -6,7 +6,7 @@
  * Edit the ISL file instead.
  */
 
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 
 export default function ShopInventory({
   items = [],
@@ -18,10 +18,12 @@ export default function ShopInventory({
   onEnterDungeon = () => {},
   onExit = () => {}
 }) {
+  const selectedItem = items?.find(i => i?.id === selectedItemId);
+
   const handleItemClick = useCallback((id) => {
-    const item = items.find((i) => i.id === id);
-    if (item == null) return;
-    onSelect(id);
+    if (items?.find(i => i?.id === id) != null) {
+      onSelect(id);
+    }
   }, [items, onSelect]);
 
   const handleBuyClick = useCallback(() => {
@@ -30,86 +32,83 @@ export default function ShopInventory({
     }
   }, [canBuy, onBuy]);
 
-  const selectedItem = items.find((i) => i.id === selectedItemId);
+  const handleEnterDungeonClick = useCallback(() => {
+    onEnterDungeon();
+  }, [onEnterDungeon]);
+
+  const handleExitClick = useCallback(() => {
+    onExit();
+  }, [onExit]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 bg-gray-950 text-gray-200 p-6 rounded-xl border-2 border-gray-800 font-serif shadow-2xl max-w-5xl mx-auto">
+    <div className="flex flex-col lg:flex-row gap-4 p-4 h-full bg-gray-900 text-gray-200 border border-gray-700 font-serif">
       
       {/* Left Column: Item List */}
-      <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl font-bold text-gray-400 mb-4 border-b border-gray-800 pb-2 uppercase tracking-widest">
-          Armeria
+      <div className="flex-1 overflow-y-auto border border-gray-700 bg-gray-800 p-2 min-h-[300px]">
+        <h2 className="text-xl text-yellow-600 mb-4 border-b border-gray-700 pb-2 px-2">
+          Inventario Armeria
         </h2>
-        <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 space-y-2 custom-scrollbar">
-          {items.map((item) => {
-            const isSelected = selectedItemId === item.id;
+        <ul className="space-y-1">
+          {items?.map((item) => {
+            if (item == null) return null;
+            const isSelected = item.id === selectedItemId;
+            
             return (
-              <div
+              <li
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
-                className={`p-4 cursor-pointer rounded-lg flex justify-between items-center border transition-all duration-200 ${
+                className={`flex justify-between p-3 cursor-pointer transition-colors border-l-4 ${
                   isSelected
-                    ? 'border-yellow-600 bg-gray-800 shadow-[0_0_10px_rgba(202,138,4,0.2)]'
-                    : 'border-gray-800 bg-gray-900 hover:bg-gray-800 hover:border-gray-600'
+                    ? 'bg-gray-700 border-yellow-600'
+                    : 'border-transparent hover:bg-gray-700 hover:border-gray-500'
                 }`}
               >
-                <span className={`font-bold text-lg ${isSelected ? 'text-yellow-500' : 'text-gray-300'}`}>
+                <span className={isSelected ? 'text-yellow-500 font-bold' : 'text-gray-300'}>
                   {item.nome}
                 </span>
-                <span className="text-yellow-600 font-mono font-bold bg-gray-950 px-3 py-1 rounded border border-gray-800">
-                  {item.prezzo} MO
-                </span>
-              </div>
+                <span className="text-gray-400">{item.prezzo} MO</span>
+              </li>
             );
           })}
-          {items.length === 0 && (
-            <div className="text-center text-gray-600 italic py-8">
-              Nessun oggetto disponibile.
-            </div>
+          {(!items || items.length === 0) && (
+            <li className="text-gray-500 italic p-4 text-center">
+              Nessun oggetto disponibile
+            </li>
           )}
-        </div>
+        </ul>
       </div>
 
       {/* Right Column: Preview & Actions */}
-      <div className="w-full md:w-80 flex flex-col gap-6">
+      <div className="w-full lg:w-1/3 flex flex-col gap-4">
         
         {/* Preview Card */}
-        <div className="border-2 border-gray-800 bg-gray-900 p-6 rounded-xl flex flex-col items-center min-h-[300px] justify-center relative overflow-hidden shadow-inner">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-950 opacity-50 pointer-events-none"></div>
-          
+        <div className="border border-gray-700 bg-gray-800 p-4 flex flex-col items-center justify-center min-h-[250px] relative">
           {selectedItem ? (
-            <div className="relative z-10 flex flex-col items-center w-full">
-              {selectedItem.immagine ? (
+            <>
+              {selectedItem.immagine && (
                 <img
                   src={`/img/equip/${selectedItem.immagine}`}
-                  alt={selectedItem.nome}
-                  className="w-40 h-40 object-contain mb-6 drop-shadow-lg"
+                  alt={selectedItem.nome || 'Oggetto'}
+                  className="w-32 h-32 object-contain mb-4 drop-shadow-md"
                 />
-              ) : (
-                <div className="w-40 h-40 mb-6 bg-gray-800 rounded flex items-center justify-center border border-gray-700">
-                  <span className="text-gray-600 text-sm">No Image</span>
-                </div>
               )}
-              
-              <h3 className="text-2xl font-bold text-yellow-500 mb-2 text-center">
+              <h3 className="text-xl text-yellow-500 mb-2 text-center">
                 {selectedItem.nome}
               </h3>
+              <p className="text-gray-400 mb-4">
+                {selectedItem.prezzo} Monete d'Oro
+              </p>
               
               {!canBuy && buyReason && (
-                <div className="mt-4 w-full bg-red-950/50 border border-red-900 rounded p-3">
-                  <p className="text-red-400 text-sm text-center font-semibold">
-                    {buyReason}
-                  </p>
+                <div className="mt-auto w-full bg-red-900/30 border border-red-800 p-2 text-center">
+                  <p className="text-red-400 text-sm">{buyReason}</p>
                 </div>
               )}
-            </div>
+            </>
           ) : (
-            <div className="relative z-10 flex flex-col items-center text-gray-600">
-              <svg className="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v7h-2l-1 2H8l-1-2H5V5z" clipRule="evenodd" />
-              </svg>
-              <p className="italic text-center">Seleziona un oggetto<br/>per visualizzare i dettagli</p>
-            </div>
+            <p className="text-gray-500 italic text-center">
+              Seleziona un oggetto per visualizzare i dettagli
+            </p>
           )}
         </div>
 
@@ -118,30 +117,31 @@ export default function ShopInventory({
           <button
             onClick={handleBuyClick}
             disabled={!canBuy || !selectedItem}
-            title={!canBuy ? buyReason : ""}
-            className={`py-3 px-4 rounded-lg font-bold uppercase tracking-widest transition-all duration-200 shadow-lg ${
+            title={!canBuy ? buyReason : 'Acquista oggetto'}
+            className={`p-3 font-bold uppercase tracking-wider transition-colors border ${
               canBuy && selectedItem
-                ? 'bg-red-900 hover:bg-red-800 text-white border-2 border-red-700 hover:border-red-500'
-                : 'bg-gray-900 text-gray-600 cursor-not-allowed border-2 border-gray-800'
+                ? 'border-yellow-600 text-yellow-500 hover:bg-yellow-900/50 hover:text-yellow-400'
+                : 'border-gray-700 text-gray-600 bg-gray-800 cursor-not-allowed'
             }`}
           >
             Acquista
           </button>
           
           <button
-            onClick={onEnterDungeon}
-            className="py-3 px-4 rounded-lg font-bold uppercase tracking-widest bg-gray-800 hover:bg-gray-700 text-gray-200 border-2 border-gray-600 transition-all duration-200 shadow-lg"
+            onClick={handleEnterDungeonClick}
+            className="p-3 font-bold uppercase tracking-wider transition-colors border border-red-800 text-red-500 hover:bg-red-900/50 hover:text-red-400"
           >
             Entra nel dungeon
           </button>
           
           <button
-            onClick={onExit}
-            className="py-3 px-4 rounded-lg font-bold uppercase tracking-widest bg-gray-950 hover:bg-gray-900 text-gray-400 border-2 border-gray-800 transition-all duration-200"
+            onClick={handleExitClick}
+            className="p-3 font-bold uppercase tracking-wider transition-colors border border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
           >
             Indietro
           </button>
         </div>
+        
       </div>
     </div>
   );

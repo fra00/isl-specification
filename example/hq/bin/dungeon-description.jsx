@@ -9,14 +9,8 @@
 import React, { useCallback } from 'react';
 import { PageNavigationEnum } from './domain-core';
 
-export default function DungeonDescription({ 
-  gameSession, 
-  onChangePageView, 
-  onUpdateSession 
-}) {
-  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
-
-  const handleEnterDungeon = useCallback(() => {
+export default function DungeonDescription({ gameSession, onChangePageView, onUpdateSession }) {
+  const handleEnter = useCallback(() => {
     if (onChangePageView) {
       onChangePageView(PageNavigationEnum.DUNGEON);
     }
@@ -34,48 +28,64 @@ export default function DungeonDescription({
     }
   }, [onChangePageView]);
 
-  return (
-    <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-black to-stone-900 overflow-hidden relative">
-      {/* Background Effects: Mist and Rune Haze */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent pointer-events-none"></div>
-      <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMDAwIiAvPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMzMzIiAvPgo8L3N2Zz4=')] pointer-events-none"></div>
+  const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
 
-      {/* Main Briefing Panel */}
-      <div className="flex flex-col max-w-4xl w-full max-h-[90%] bg-stone-900/90 border-2 border-amber-700/50 rounded-xl shadow-[0_0_40px_rgba(180,83,9,0.2)] p-8 relative z-10 mx-4">
-        
-        {/* Header */}
-        <h1 className="text-4xl md:text-5xl font-serif text-amber-500 mb-8 text-center tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] uppercase shrink-0">
-          Briefing Missione
+  return (
+    <div className="h-full w-full flex flex-col bg-gradient-to-b from-gray-900 via-stone-900 to-black text-stone-300 overflow-hidden overflow-x-hidden relative font-sans">
+      {/* Background effects: Mist and Rune Haze */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800/20 via-transparent to-transparent pointer-events-none"></div>
+      <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] pointer-events-none"></div>
+
+      {/* Custom Scrollbar Styles for Bronze Palette */}
+      <style>{`
+        .bronze-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .bronze-scrollbar::-webkit-scrollbar-track {
+          background: #1c1917; /* stone-900 */
+          border-radius: 4px;
+        }
+        .bronze-scrollbar::-webkit-scrollbar-thumb {
+          background: #b45309; /* amber-700 */
+          border-radius: 4px;
+        }
+        .bronze-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #d97706; /* amber-600 */
+        }
+      `}</style>
+
+      <div className="flex-1 flex flex-col p-8 max-w-4xl mx-auto w-full z-10 h-full">
+        {/* Briefing Header */}
+        <h1 className="text-4xl md:text-5xl font-serif text-amber-600 mb-8 text-center drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] tracking-wider shrink-0">
+          Briefing della Missione
         </h1>
 
-        {/* Scrollable Description Area */}
-        <div className="flex-1 overflow-y-auto pr-4 mb-10 text-stone-300 font-serif text-xl leading-relaxed [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-900/50 [&::-webkit-scrollbar-thumb]:bg-amber-700/70 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-amber-600">
-          <div className="whitespace-pre-wrap text-justify">
+        {/* Scrollable Description Text */}
+        <div className="flex-1 overflow-y-auto pr-4 bronze-scrollbar bg-black/40 p-6 rounded-lg border border-stone-800 shadow-inner">
+          <p className="text-lg md:text-xl leading-relaxed whitespace-pre-wrap text-stone-300 font-serif">
             {description}
-          </div>
+          </p>
         </div>
 
-        {/* Actions Row */}
-        <div className="flex flex-wrap justify-center gap-6 mt-auto shrink-0">
+        {/* Action Row */}
+        <div className="mt-8 flex flex-wrap justify-center gap-4 shrink-0">
           <button
-            onClick={handleBack}
-            className="px-8 py-3 bg-stone-800 border border-stone-600 text-stone-400 font-bold uppercase tracking-widest hover:bg-stone-700 hover:text-stone-200 transition-all duration-300 rounded shadow-md"
+            onClick={handleEnter}
+            className="bg-gradient-to-b from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 text-black font-bold py-3 px-8 rounded shadow-[0_0_15px_rgba(180,83,9,0.4)] transition-all border border-amber-500 uppercase tracking-wide"
           >
-            Indietro
+            Entra nel dungeon
           </button>
-          
           <button
             onClick={handleShop}
-            className="px-8 py-3 bg-stone-800 border border-amber-700/70 text-amber-600 font-bold uppercase tracking-widest hover:bg-amber-900/40 hover:text-amber-400 transition-all duration-300 rounded shadow-md"
+            className="bg-stone-800 hover:bg-stone-700 text-amber-500 font-bold py-3 px-8 rounded shadow-lg transition-all border border-amber-800 uppercase tracking-wide"
           >
             Armeria
           </button>
-
           <button
-            onClick={handleEnterDungeon}
-            className="px-10 py-3 bg-amber-900/80 border-2 border-amber-500 text-amber-400 font-bold uppercase tracking-widest hover:bg-amber-800 hover:text-amber-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all duration-300 rounded shadow-lg"
+            onClick={handleBack}
+            className="bg-transparent hover:bg-stone-800/50 text-stone-400 font-bold py-3 px-8 rounded transition-all uppercase tracking-wide"
           >
-            Entra nel dungeon
+            Indietro
           </button>
         </div>
       </div>

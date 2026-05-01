@@ -9,18 +9,20 @@
 import { useState, useCallback } from 'react';
 import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 
-export function useTreasureSearch({
-  gameSession,
-  visibilityMap,
-  onNotify,
-  onActionDone,
-  onForceTurnEnd,
-  sessionManager,
-  onTreasureCardDrawn,
-  onWanderingMonster
-}) {
+export function useTreasureSearch(config) {
+  const {
+    gameSession,
+    visibilityMap,
+    onNotify,
+    onActionDone,
+    onForceTurnEnd,
+    sessionManager,
+    onTreasureCardDrawn,
+    onWanderingMonster
+  } = config;
+
   const [foundTreasures, setFoundTreasures] = useState([]);
-  const { calculateVisibleCells } = useVisibilityCalc({ gameSession, visibilityMap });
+  const visibilityCalc = useVisibilityCalc({ gameSession, visibilityMap });
 
   const searchTreasure = useCallback(() => {
     if (gameSession?.monsters && gameSession.monsters.length > 0) {
@@ -28,10 +30,12 @@ export function useTreasureSearch({
       return;
     }
 
-    const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
-    if (!currentHero) return;
+    const hero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    if (!hero) {
+      return;
+    }
 
-    const scriptResult = sessionManager.executeMissionScripts({
+    const scriptResult = sessionManager?.executeMissionScripts({
       baseSession: gameSession,
       eventType: 3,
       visibilityMap
@@ -46,38 +50,45 @@ export function useTreasureSearch({
       return;
     }
 
-    const visibleCells = calculateVisibleCells(currentHero.x, currentHero.y);
+    const visibleCells = visibilityCalc?.calculateVisibleCells(hero.x, hero.y) || [];
     let treasureFound = false;
     let treasureCollectionFailed = false;
 
     for (const cell of visibleCells) {
       const mapCell = gameSession?.currentMap?.grid?.find(c => c.x === cell.x && c.y === cell.y);
-      if (mapCell?.tes) {
-        const { mon, ogg, arma, trp } = mapCell.tes;
-        if (mon !== 0 || ogg !== 0 || arma !== 0 || trp !== 0) {
+      
+      if (mapCell && mapCell.tes) {
+        const hasLoot = (mapCell.tes.mon > 0 || mapCell.tes.ogg > 0 || mapCell.tes.arma > 0 || mapCell.tes.trp > 0);
+        const isTreasureSquare = (mapCell.tes.ts === 1);
+
+        if (isTreasureSquare && !hasLoot) {
+          onNotify("Il tesoro è vuoto.");
+          treasureFound = true;
+          break;
+        }
+
+        if (hasLoot) {
           const alreadyFound = foundTreasures.some(ft => ft.x === mapCell.x && ft.y === mapCell.y);
+          
           if (!alreadyFound) {
-            const didCollectTreasure = sessionManager.collectTreasureAtCell(currentHero.heroId, mapCell.x, mapCell.y);
+            const didCollectTreasure = sessionManager?.collectTreasureAtCell(hero.heroId, mapCell.x, mapCell.y);
+            
             if (didCollectTreasure) {
               treasureFound = true;
-              setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.jpg" }]);
+              setFoundTreasures(prev => [...prev, { x: mapCell.x, y: mapCell.y, img: "tesoro.png" }]);
             } else {
               treasureCollectionFailed = true;
               onNotify("Errore durante la raccolta del tesoro.");
             }
-            break;
           }
+          break;
         }
       }
     }
 
-    if (treasureFound) {
-      // Specific notifications are handled inside the loop via sessionManager
-    } else if (treasureCollectionFailed) {
-      // Keep the action flow deterministic without spawning a treasure card fallback on a failed static-treasure persistence.
-    } else {
+    if (!treasureFound && !treasureCollectionFailed) {
       if (gameSession?.treasureDeck && gameSession.treasureDeck.length > 0) {
-        const drawnCard = sessionManager.drawTreasureCard();
+        const drawnCard = sessionManager?.drawTreasureCard();
         if (drawnCard) {
           onTreasureCardDrawn(drawnCard);
         }
@@ -94,9 +105,9 @@ export function useTreasureSearch({
     onActionDone,
     onForceTurnEnd,
     sessionManager,
-    calculateVisibleCells,
-    foundTreasures,
-    onTreasureCardDrawn
+    onTreasureCardDrawn,
+    visibilityCalc,
+    foundTreasures
   ]);
 
   const getFoundTreasures = useCallback(() => {
@@ -104,13 +115,16 @@ export function useTreasureSearch({
   }, [foundTreasures]);
 
   const applyTreasureEffect = useCallback((card) => {
-    const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
+    if (!card) return;
+    
+    const currentHero = gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
     if (currentHero) {
-      sessionManager.applyTreasureCardEffect(currentHero.heroId, card, onWanderingMonster);
+      sessionManager?.applyTreasureCardEffect(currentHero.heroId, card, onWanderingMonster);
     }
   }, [gameSession, sessionManager, onWanderingMonster]);
 
   return {
+    foundTreasures,
     searchTreasure,
     getFoundTreasures,
     applyTreasureEffect

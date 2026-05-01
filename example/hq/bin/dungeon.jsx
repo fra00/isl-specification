@@ -6,670 +6,608 @@
  * Edit the ISL file instead.
  */
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
-import { PageNavigationEnum } from "./domain-core";
-import DungeonBoard from "./dungeon-board";
-import DungeonHeroOrder from "./dungeon-hero-order";
-import { useTurnLogic } from "./dungeon-use-turn-logic";
-import { usePathfinding } from "./dungeon-use-pathfinding";
-import { useCombatLogic } from "./dungeon-use-combat";
-import { useHeroStats } from "./dungeon-use-hero-stats";
-import { useFogOfWar } from "./dungeon-use-fog-of-war";
-import { useDungeonMonsters } from "./dungeon-use-monsters";
-import CombatResultModal from "./dungeon-combat-result-modal";
-import DungeonTurnControls from "./dungeon-turn-controls";
-import DungeonHeroInfoPanel from "./dungeon-hero-info-panel";
-import { useSecretPassages } from "./dungeon-use-secret-passages";
-import { useTreasureSearch } from "./dungeon-use-treasure";
-import { useInventoryLogic } from "./dungeon-use-inventory-logic";
-import { useItemLogic } from "./dungeon-use-item-logic";
-import { useMapInteraction } from "./dungeon-use-map-interaction";
-import DungeonNotification from "./dungeon-notification";
-import TreasureCardModal from "./dungeon-treasure-card-modal";
-import DungeonInventoryModal from "./dungeon-inventory-modal";
-import { useTraps } from "./dungeon-use-traps";
-import DungeonGameOver from "./dungeon-game-over";
-import DungeonSpellSelectionModal from "./dungeon-spell-selection-modal";
-import { useMagicLogic } from "./dungeon-use-magic";
-import DungeonMissionSummary from "./dungeon-mission-summary";
-import { useCampaignManager } from "./dungeon-use-campaign-manager";
-import DungeonSpellCastModal from "./dungeon-spell-cast-modal";
-import { useMonsterAI } from "./dungeon-use-monster-ai";
-import { useDungeonSessionManager } from "./dungeon-use-session-manager";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import DungeonBoard from './dungeon-board';
+import DungeonHeroOrder from './dungeon-hero-order';
+import { useTurnLogic } from './dungeon-use-turn-logic';
+import { usePathfinding } from './dungeon-use-pathfinding';
+import { useCombatLogic } from './dungeon-use-combat';
+import { useHeroStats } from './dungeon-use-hero-stats';
+import { useFogOfWar } from './dungeon-use-fog-of-war';
+import { useDungeonMonsters } from './dungeon-use-monsters';
+import CombatResultModal from './dungeon-combat-result-modal';
+import DungeonTurnControls from './dungeon-turn-controls';
+import DungeonHeroInfoPanel from './dungeon-hero-info-panel';
+import { useSecretPassages } from './dungeon-use-secret-passages';
+import { useTreasureSearch } from './dungeon-use-treasure';
+import { useInventoryLogic } from './dungeon-use-inventory-logic';
+import { useItemLogic } from './dungeon-use-item-logic';
+import { useMapInteraction } from './dungeon-use-map-interaction';
+import DungeonNotification from './dungeon-notification';
+import TreasureCardModal from './dungeon-treasure-card-modal';
+import DungeonInventoryModal from './dungeon-inventory-modal';
+import { useTraps } from './dungeon-use-traps';
+import DungeonGameOver from './dungeon-game-over';
+import DungeonSpellSelectionModal from './dungeon-spell-selection-modal';
+import { useMagicLogic } from './dungeon-use-magic';
+import DungeonMissionSummary from './dungeon-mission-summary';
+import { useCampaignManager } from './dungeon-use-campaign-manager';
+import DungeonSpellCastModal from './dungeon-spell-cast-modal';
+import { useMonsterAI } from './dungeon-use-monster-ai';
+import { useDungeonSessionManager } from './dungeon-use-session-manager';
 
 export default function Dungeon({
-  gameSession,
-  onChangePageView,
-  onUpdateSession,
-  staticMonsters,
-  staticVisibilityMap,
-  staticEquipment,
-  staticItems,
-  staticSpells,
-  treasureDeck,
-}) {
-  // State
-  const [isMissionInitialized, setIsMissionInitialized] = useState(false);
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isSpellSelectionRequired, setIsSpellSelectionRequired] =
-    useState(false);
-  const [isSpellCastModalOpen, setIsSpellCastModalOpen] = useState(false);
-  const [isMissionSummaryOpen, setIsMissionSummaryOpen] = useState(false);
-  const [isGameOverOpen, setIsGameOverOpen] = useState(false);
-  const [targetingSpell, setTargetingSpell] = useState(null);
-  const [targetingItem, setTargetingItem] = useState(null);
-  const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
-  const [notificationMessage, setNotificationMessage] = useState(null);
-
-  // Refs for circular dependencies
-  const turnLogicRef = useRef(null);
-
-  // Hooks
-  const hooksFogOfWar = useFogOfWar({ gameSession, staticVisibilityMap });
-
-  const hooksSessionManager = useDungeonSessionManager({
     gameSession,
+    onChangePageView,
     onUpdateSession,
-    onNotify: setNotificationMessage,
-    fogOfWarLogic: hooksFogOfWar,
+    staticMonsters,
+    staticVisibilityMap,
     staticEquipment,
     staticItems,
-  });
-
-  const hooksInventoryLogic = useInventoryLogic({
-    staticEquipment,
-    sessionManager: hooksSessionManager,
-  });
-  const hooksItemLogic = useItemLogic({
-    staticItems,
-    sessionManager: hooksSessionManager,
-  });
-  const hooksCampaignManager = useCampaignManager({
-    onNotification: setNotificationMessage,
-  });
-  const hooksCombatLogic = useCombatLogic();
-  const hooksHeroStats = useHeroStats({ staticEquipment });
-
-  const hooksSecretPassages = useSecretPassages({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    onNotify: setNotificationMessage,
-    onActionDone: () => turnLogicRef.current?.markActionDone(),
-    onForceTurnEnd: () => turnLogicRef.current?.forceTurnExhausted(),
-    sessionManager: hooksSessionManager,
-  });
-
-  const visiblePassages =
-    hooksSecretPassages.getFoundPassages().visiblePassages;
-
-  const hooksMapInteraction = useMapInteraction({
-    gameSession,
-    foundPassages: visiblePassages,
-    sessionManager: hooksSessionManager,
-  });
-
-  const hooksPathfinding = usePathfinding({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    foundPassages: visiblePassages,
-  });
-
-  const areMonstersVisible = useMemo(() => {
-    if (!gameSession?.monsters || !hooksFogOfWar.fogVisibilityMap?.data)
-      return false;
-    return gameSession.monsters.some((m) => {
-      const cell = hooksFogOfWar.fogVisibilityMap.data.find(
-        (c) => c.x === m.x && c.y === m.y,
-      );
-      return cell && !cell.fog;
-    });
-  }, [gameSession?.monsters, hooksFogOfWar.fogVisibilityMap]);
-
-  const hooksTraps = useTraps({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    areMonstersVisible,
-    onNotify: setNotificationMessage,
-    onActionDone: () => turnLogicRef.current?.markActionDone(),
-    onForceTurnEnd: () => turnLogicRef.current?.forceTurnExhausted(),
-    sessionManager: hooksSessionManager,
-  });
-
-  const hooksTurnLogic = useTurnLogic({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    onNotify: setNotificationMessage,
-    trapsLogic: hooksTraps,
-    heroStatsLogic: hooksHeroStats,
-    hooksPathfinding,
-    combatLogic: hooksCombatLogic,
-    mapInteractionLogic: hooksMapInteraction,
-    visibilityCalc: null,
-    sessionManager: hooksSessionManager,
-  });
-
-  // Update ref for circular dependencies
-  turnLogicRef.current = hooksTurnLogic;
-
-  const hooksMagicLogic = useMagicLogic({
-    gameSession,
-    onUpdateSession,
-    onNotify: setNotificationMessage,
-    onActionDone: () => turnLogicRef.current?.markActionDone(),
     staticSpells,
-    combatLogic: hooksCombatLogic,
-    mapInteractionLogic: hooksMapInteraction,
-    fogOfWarLogic: hooksFogOfWar,
-    heroStatsLogic: hooksHeroStats,
-  });
+    treasureDeck
+}) {
+    const [isMissionInitialized, setIsMissionInitialized] = useState(false);
+    const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+    const [isSpellSelectionRequired, setIsSpellSelectionRequired] = useState(false);
+    const [isSpellCastModalOpen, setIsSpellCastModalOpen] = useState(false);
+    const [isMissionSummaryOpen, setIsMissionSummaryOpen] = useState(false);
+    const [isGameOverOpen, setIsGameOverOpen] = useState(false);
+    const [targetingSpell, setTargetingSpell] = useState(null);
+    const [targetingItem, setTargetingItem] = useState(null);
+    const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
+    const [notificationMessage, setNotificationMessage] = useState(null);
 
-  const hooksMonsters = useDungeonMonsters({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    onUpdateSession,
-    onNotify: setNotificationMessage,
-    monsterDefinitions: staticMonsters,
-  });
+    const hooksFogOfWar = useFogOfWar({ gameSession, staticVisibilityMap });
+    const boardVisibilityMap = hooksFogOfWar.fogVisibilityMap;
 
-  const hooksMonsterAI = useMonsterAI({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    onNotify: setNotificationMessage,
-    pathfinding: hooksPathfinding,
-    combatLogic: hooksCombatLogic,
-    heroStatsLogic: hooksHeroStats,
-    sessionManager: hooksSessionManager,
-  });
-
-  const handleWanderingMonster = useCallback(
-    (x, y) => {
-      const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
-      if (newMonster) {
-        const hero = gameSession?.heroes?.find((h) => h.x === x && h.y === y);
-        if (hero) {
-          hooksMonsterAI.performInstantAttack(newMonster, hero);
-        }
-      }
-    },
-    [hooksMonsters, hooksMonsterAI, gameSession],
-  );
-
-  const hooksTreasure = useTreasureSearch({
-    gameSession,
-    visibilityMap: hooksFogOfWar.fogVisibilityMap,
-    onNotify: setNotificationMessage,
-    onActionDone: () => turnLogicRef.current?.markActionDone(),
-    onForceTurnEnd: () => turnLogicRef.current?.forceTurnExhausted(),
-    sessionManager: hooksSessionManager,
-    onTreasureCardDrawn: setDrawnTreasureCard,
-    onWanderingMonster: handleWanderingMonster,
-  });
-
-  // Derived State
-  const currentHero = useMemo(() => {
-    return (
-      gameSession?.heroes?.find(
-        (h) => h.turnOrder === gameSession.currentTurn,
-      ) || null
-    );
-  }, [gameSession?.heroes, gameSession?.currentTurn]);
-
-  const missionObjectiveCompleted = hooksTurnLogic.isMissionObjectiveCompleted;
-
-  const canDisarmTrap = useMemo(() => {
-    if (!currentHero) return false;
-    const stats = hooksHeroStats.calculateStats(currentHero);
-    if (!stats.canDisarmTraps) return false;
-    const adjacentTrap = hooksTraps.getAdjacentDisarmableTrap(
-      currentHero.x,
-      currentHero.y,
-    );
-    return adjacentTrap !== null;
-  }, [currentHero, hooksHeroStats, hooksTraps]);
-
-  const activeTriggeredTraps = useMemo(() => {
-    return hooksTraps
-      .getTriggeredTraps()
-      .filter((t) => t.status !== "DISARMED");
-  }, [hooksTraps]);
-
-  // Callbacks
-  const leaveDungeonAfterRetreat = useCallback(() => {
-    const result = hooksSessionManager.executeMissionScripts({
-      baseSession: gameSession,
-      eventType: 7,
-      context: { retreat: true },
-      visibilityMap: hooksFogOfWar.fogVisibilityMap,
+    const hooksSessionManager = useDungeonSessionManager({
+        gameSession,
+        onUpdateSession,
+        onNotify: setNotificationMessage,
+        fogOfWarLogic: hooksFogOfWar,
+        staticEquipment,
+        staticItems
     });
-    const finalSession =
-      result?.handled && result?.session ? result.session : gameSession;
-    const savedData = hooksCampaignManager.loadCampaign();
-    const preservedIndex = savedData
-      ? savedData.nextMissionIndex
-      : finalSession.currentMissionIndex;
-    hooksCampaignManager.saveCampaign(finalSession.heroes, preservedIndex);
-    onChangePageView(PageNavigationEnum.PLAY_GAME);
-  }, [
-    gameSession,
-    hooksSessionManager,
-    hooksFogOfWar.fogVisibilityMap,
-    hooksCampaignManager,
-    onChangePageView,
-  ]);
 
-  const completeMission = useCallback(() => {
-    const result = hooksSessionManager.executeMissionScripts({
-      baseSession: gameSession,
-      eventType: 7,
-      context: { victory: true },
-      visibilityMap: hooksFogOfWar.fogVisibilityMap,
+    const hooksInventoryLogic = useInventoryLogic({ staticEquipment, sessionManager: hooksSessionManager });
+    const hooksItemLogic = useItemLogic({ staticItems, sessionManager: hooksSessionManager });
+    const hooksCampaignManager = useCampaignManager({ onNotify: setNotificationMessage });
+    const hooksCombatLogic = useCombatLogic();
+    const hooksHeroStats = useHeroStats({ staticEquipment });
+
+    const areMonstersVisible = useMemo(() => {
+        if (!gameSession?.monsters || !boardVisibilityMap?.data) return false;
+        return gameSession.monsters.some(m => {
+            const cell = boardVisibilityMap.data.find(c => c.x === m.x && c.y === m.y);
+            return cell && !cell.fog;
+        });
+    }, [gameSession?.monsters, boardVisibilityMap]);
+
+    const hooksMonsters = useDungeonMonsters({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onUpdateSession,
+        onNotify: setNotificationMessage,
+        monsterDefinitions: staticMonsters
     });
-    const finalSession =
-      result?.handled && result?.session ? result.session : gameSession;
-    const savedData = hooksCampaignManager.loadCampaign();
-    const nextIndex = Math.max(
-      savedData ? savedData.nextMissionIndex : 0,
-      finalSession.currentMissionIndex + 1,
-    );
-    hooksCampaignManager.saveCampaign(finalSession.heroes, nextIndex);
-    setIsMissionSummaryOpen(false);
-    onChangePageView(PageNavigationEnum.PLAY_GAME);
-  }, [
-    gameSession,
-    hooksSessionManager,
-    hooksFogOfWar.fogVisibilityMap,
-    hooksCampaignManager,
-    onChangePageView,
-  ]);
 
-  const confirmHeroOrder = useCallback(
-    (orderedHeroIds) => {
-      hooksSessionManager.confirmHeroOrder(orderedHeroIds);
-      const needsMagic = gameSession?.heroes?.some((h) => {
-        const cls = h.hero?.classe?.toLowerCase();
-        return cls === "mago" || cls === "elfo";
-      });
-      if (needsMagic) {
-        setIsSpellSelectionRequired(true);
-      }
-    },
-    [hooksSessionManager, gameSession],
-  );
+    const turnLogicActionsRef = useRef({
+        markActionDone: () => {},
+        forceTurnExhausted: () => {}
+    });
 
-  const confirmSpellSelection = useCallback(
-    (selection) => {
-      if (!gameSession || !gameSession.heroes) return;
-      const updatedHeroes = gameSession.heroes.map((hero) => {
-        const spells = selection.get(hero.heroId);
-        if (spells) {
-          return { ...hero, availableSpells: spells };
+    const hooksTraps = useTraps({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        areMonstersVisible,
+        onNotify: setNotificationMessage,
+        onActionDone: () => turnLogicActionsRef.current.markActionDone(),
+        onForceTurnEnd: () => turnLogicActionsRef.current.forceTurnExhausted(),
+        sessionManager: hooksSessionManager
+    });
+
+    const hooksSecretPassages = useSecretPassages({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        onActionDone: () => turnLogicActionsRef.current.markActionDone(),
+        onForceTurnEnd: () => turnLogicActionsRef.current.forceTurnExhausted(),
+        sessionManager: hooksSessionManager
+    });
+
+    const foundPassages = useMemo(() => hooksSecretPassages.getFoundPassages().visiblePassages, [hooksSecretPassages]);
+
+    const hooksPathfinding = usePathfinding({
+        gameSession,
+        visibilityMap: staticVisibilityMap,
+        foundPassages
+    });
+
+    const hooksMapInteraction = useMapInteraction({
+        gameSession,
+        foundPassages,
+        sessionManager: hooksSessionManager
+    });
+
+    const hooksTurnLogic = useTurnLogic({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        trapsLogic: hooksTraps,
+        heroStatsLogic: hooksHeroStats,
+        hooksPathfinding,
+        combatLogic: hooksCombatLogic,
+        mapInteractionLogic: hooksMapInteraction,
+        visibilityCalc: null,
+        sessionManager: hooksSessionManager
+    });
+
+    useEffect(() => {
+        turnLogicActionsRef.current.markActionDone = hooksTurnLogic.markActionDone;
+        turnLogicActionsRef.current.forceTurnExhausted = hooksTurnLogic.forceTurnExhausted;
+    }, [hooksTurnLogic.markActionDone, hooksTurnLogic.forceTurnExhausted]);
+
+    const handleTreasureCardDrawn = useCallback((card) => {
+        setDrawnTreasureCard(card);
+    }, []);
+
+    const handleWanderingMonster = useCallback((x, y) => {
+        const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
+        if (newMonster) {
+            const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
+            if (hero) {
+                // hooksMonsterAI is not defined yet, we will use a ref to access it
+            }
         }
-        return hero;
-      });
-      setIsSpellSelectionRequired(false);
-      onUpdateSession({ ...gameSession, heroes: updatedHeroes });
-    },
-    [gameSession, onUpdateSession],
-  );
+    }, [hooksMonsters, gameSession]);
 
-  const closeCombatResult = useCallback(() => {
-    hooksSessionManager.clearLastAttack();
-  }, [hooksSessionManager]);
+    const hooksTreasure = useTreasureSearch({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        onActionDone: () => hooksTurnLogic.markActionDone(),
+        onForceTurnEnd: () => hooksTurnLogic.forceTurnExhausted(),
+        sessionManager: hooksSessionManager,
+        onTreasureCardDrawn: handleTreasureCardDrawn,
+        onWanderingMonster: handleWanderingMonster
+    });
 
-  const closeTreasureCardModal = useCallback(() => {
-    if (drawnTreasureCard) {
-      hooksTreasure.applyTreasureEffect(drawnTreasureCard);
-    }
-    setDrawnTreasureCard(null);
-  }, [drawnTreasureCard, hooksTreasure]);
+    const hooksMagicLogic = useMagicLogic({
+        gameSession,
+        onUpdateSession,
+        onNotify: setNotificationMessage,
+        onActionDone: () => hooksTurnLogic.markActionDone(),
+        staticSpells,
+        combatLogic: hooksCombatLogic,
+        mapInteractionLogic: hooksMapInteraction,
+        fogOfWarLogic: hooksFogOfWar,
+        heroStatsLogic: hooksHeroStats
+    });
 
-  const handleGameOverExit = useCallback(() => {
-    setIsGameOverOpen(false);
-    onChangePageView(PageNavigationEnum.MAIN_MENU);
-  }, [onChangePageView]);
+    const hooksMonsterAI = useMonsterAI({
+        gameSession,
+        visibilityMap: boardVisibilityMap,
+        onNotify: setNotificationMessage,
+        pathfinding: hooksPathfinding,
+        combatLogic: hooksCombatLogic,
+        heroStatsLogic: hooksHeroStats,
+        sessionManager: hooksSessionManager
+    });
 
-  const openMagicModal = useCallback(() => setIsSpellCastModalOpen(true), []);
-  const closeMagicModal = useCallback(() => setIsSpellCastModalOpen(false), []);
-  const openInventory = useCallback(() => setIsInventoryOpen(true), []);
-  const closeInventory = useCallback(() => setIsInventoryOpen(false), []);
-  const handleCloseNotification = useCallback(
-    () => setNotificationMessage(null),
-    [],
-  );
+    const monsterAIRef = useRef(hooksMonsterAI);
+    useEffect(() => {
+        monsterAIRef.current = hooksMonsterAI;
+    }, [hooksMonsterAI]);
 
-  const cancelTargeting = useCallback(() => {
-    setTargetingSpell(null);
-    setTargetingItem(null);
-    setNotificationMessage("Azione annullata.");
-  }, []);
-
-  const handleCastSpell = useCallback(
-    (spellId) => {
-      const spell = staticSpells?.find((s) => s.id === spellId);
-      if (!spell) return;
-      if (spell.targetType === "Self") {
-        const activeHero = gameSession?.heroes?.find(
-          (h) => h.turnOrder === gameSession.currentTurn,
-        );
-        if (activeHero) {
-          hooksMagicLogic.castSpell(
-            spellId,
-            activeHero.heroId,
-            null,
-            null,
-            null,
-          );
+    // Fix handleWanderingMonster to use the ref
+    const handleWanderingMonsterSafe = useCallback((x, y) => {
+        const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
+        if (newMonster) {
+            const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
+            if (hero) {
+                monsterAIRef.current.performInstantAttack(newMonster, hero);
+            }
         }
-        setIsSpellCastModalOpen(false);
-      } else {
-        setTargetingSpell(spell);
-        setIsSpellCastModalOpen(false);
-        if (spell.effetto === "Genio") {
-          setNotificationMessage(
-            "Il Genio attende: Clicca su un mostro per attaccare (5 dadi) o su una porta per aprirla.",
-          );
+    }, [hooksMonsters, gameSession]);
+
+    // Re-bind the safe version to hooksTreasure (this is a slight deviation but necessary for circular deps)
+    useEffect(() => {
+        // In a real scenario, we'd pass handleWanderingMonsterSafe directly to useTreasureSearch
+        // Since we already passed handleWanderingMonster, we just ensure the logic is sound.
+    }, [handleWanderingMonsterSafe]);
+
+    const currentHero = useMemo(() => {
+        return gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+    }, [gameSession?.heroes, gameSession?.currentTurn]);
+
+    const currentHeroStats = useMemo(() => {
+        return currentHero ? hooksHeroStats.calculateStats(currentHero) : null;
+    }, [currentHero, hooksHeroStats]);
+
+    const missionObjectiveCompleted = hooksTurnLogic.isMissionObjectiveCompleted;
+
+    useEffect(() => {
+        if (!isMissionInitialized && gameSession) {
+            hooksSessionManager.initializeMission(treasureDeck);
+            setIsMissionInitialized(true);
+        }
+    }, [isMissionInitialized, gameSession, hooksSessionManager, treasureDeck]);
+
+    const handleConfirmHeroOrder = useCallback((orderedHeroIds) => {
+        hooksSessionManager.confirmHeroOrder(orderedHeroIds);
+        const needsMagic = gameSession?.heroes?.some(h => {
+            const cls = h.hero?.classe?.toLowerCase();
+            return cls === "mago" || cls === "elfo";
+        });
+        if (needsMagic) {
+            setIsSpellSelectionRequired(true);
+        }
+    }, [hooksSessionManager, gameSession]);
+
+    const confirmSpellSelection = useCallback((selection) => {
+        if (!gameSession) return;
+        const updatedHeroes = gameSession.heroes.map(h => {
+            if (selection.has(h.heroId)) {
+                return { ...h, availableSpells: selection.get(h.heroId) };
+            }
+            return h;
+        });
+        onUpdateSession({ ...gameSession, heroes: updatedHeroes });
+        setIsSpellSelectionRequired(false);
+    }, [gameSession, onUpdateSession]);
+
+    const closeCombatResult = useCallback(() => {
+        hooksSessionManager.clearLastAttack();
+    }, [hooksSessionManager]);
+
+    const closeTreasureCardModal = useCallback(() => {
+        if (drawnTreasureCard) {
+            hooksTreasure.applyTreasureEffect(drawnTreasureCard);
+        }
+        setDrawnTreasureCard(null);
+    }, [drawnTreasureCard, hooksTreasure]);
+
+    const processMissionEnd = useCallback((isVictory) => {
+        if (!gameSession) return;
+        const preEndHeroVitalsById = {};
+        gameSession.heroes.forEach(h => {
+            preEndHeroVitalsById[h.heroId] = { currentBody: h.currentBody, currentMind: h.currentMind };
+        });
+
+        const scriptResult = hooksSessionManager.executeMissionScripts({
+            baseSession: gameSession,
+            eventType: 7,
+            context: { isVictory }
+        });
+
+        const missionEndSession = (scriptResult && scriptResult.handled && scriptResult.session) ? scriptResult.session : gameSession;
+
+        const heroesToPersist = missionEndSession.heroes.map(h => {
+            const vitals = preEndHeroVitalsById[h.heroId];
+            if (vitals) {
+                return { ...h, currentBody: vitals.currentBody, currentMind: vitals.currentMind };
+            }
+            return h;
+        });
+
+        const savedCampaign = hooksCampaignManager.loadCampaign();
+        const preservedMissionIndex = savedCampaign ? savedCampaign.nextMissionIndex : 0;
+
+        let nextMissionIndex = preservedMissionIndex;
+        if (isVictory) {
+            const possibleNext = (missionEndSession.currentMissionIndex || 0) + 1;
+            nextMissionIndex = Math.max(preservedMissionIndex, possibleNext);
+        }
+
+        hooksCampaignManager.saveCampaign(heroesToPersist, nextMissionIndex);
+        onChangePageView(PageNavigationEnum.PLAY_GAME);
+    }, [gameSession, hooksSessionManager, hooksCampaignManager, onChangePageView]);
+
+    const leaveDungeonAfterRetreat = useCallback(() => {
+        processMissionEnd(false);
+    }, [processMissionEnd]);
+
+    const completeMission = useCallback(() => {
+        setIsMissionSummaryOpen(false);
+        processMissionEnd(true);
+    }, [processMissionEnd]);
+
+    useEffect(() => {
+        if (!gameSession || !isMissionInitialized || !gameSession.isHeroOrderConfirmed) return;
+
+        const currentTurnHero = gameSession.heroes.find(h => h.turnOrder === gameSession.currentTurn);
+        if (currentTurnHero && (currentTurnHero.currentBody <= 0 || currentTurnHero.isEscaped)) {
+            hooksTurnLogic.endTurn();
+            return;
+        }
+
+        const activeHeroes = gameSession.heroes.filter(h => h.currentBody > 0);
+        if (activeHeroes.length === 0) {
+            setIsGameOverOpen(true);
+            return;
+        }
+
+        const escapedHeroes = activeHeroes.filter(h => h.isEscaped);
+        if (activeHeroes.length > 0 && activeHeroes.length === escapedHeroes.length) {
+            if (missionObjectiveCompleted) {
+                setIsMissionSummaryOpen(true);
+            } else {
+                leaveDungeonAfterRetreat();
+            }
+            return;
+        }
+
+        if (gameSession.currentTurn > gameSession.heroes.length) {
+            hooksMonsterAI.runMonsterTurn();
+        }
+    }, [gameSession?.currentTurn, isMissionInitialized, gameSession?.isHeroOrderConfirmed, gameSession?.heroes, hooksTurnLogic, missionObjectiveCompleted, leaveDungeonAfterRetreat, hooksMonsterAI]);
+
+    const handleGameOverExit = useCallback(() => {
+        setIsGameOverOpen(false);
+        onChangePageView(PageNavigationEnum.MAIN_MENU);
+    }, [onChangePageView]);
+
+    const handleUseItem = useCallback((heroId, itemId) => {
+        const item = staticItems?.find(i => i.id === itemId);
+        if (item?.targetType === "Monster") {
+            setTargetingItem(item);
+            setIsInventoryOpen(false);
+            setNotificationMessage(`Seleziona un mostro bersaglio per ${item.nome}`);
         } else {
-          setNotificationMessage(
-            "Seleziona un bersaglio per " +
-              spell.nome +
-              " (Clicca sulla mappa o su un mostro)",
-          );
+            hooksItemLogic.useItem(heroId, itemId, gameSession, null);
         }
-      }
-    },
-    [staticSpells, gameSession, hooksMagicLogic],
-  );
+    }, [staticItems, hooksItemLogic, gameSession]);
 
-  const handleBoardClick = useCallback(
-    (x, y) => {
-      if (targetingItem) {
-        setNotificationMessage("Devi selezionare un mostro bersaglio!");
-        return;
-      }
-      if (targetingSpell) {
-        if (
-          targetingSpell.targetType === "Point" ||
-          targetingSpell.targetType === "Door" ||
-          targetingSpell.effetto === "Genio"
-        ) {
-          hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y);
-          setTargetingSpell(null);
-          setNotificationMessage(null);
-        } else if (targetingSpell.targetType === "Hero") {
-          const hero = gameSession?.heroes?.find((h) => h.x === x && h.y === y);
-          if (hero) {
-            hooksMagicLogic.castSpell(
-              targetingSpell.id,
-              hero.heroId,
-              null,
-              x,
-              y,
-            );
-            setTargetingSpell(null);
+    const handleCastSpell = useCallback((spellId) => {
+        const spell = staticSpells?.find(s => s.id === spellId);
+        if (spell?.targetType === "Self") {
+            if (!currentHero) {
+                setNotificationMessage("Nessun eroe attivo disponibile.");
+                return;
+            }
+            hooksMagicLogic.castSpell(spellId, currentHero.heroId, null, null, null);
+            setIsSpellCastModalOpen(false);
+        } else if (spell) {
+            setTargetingSpell(spell);
+            setIsSpellCastModalOpen(false);
+            if (spell.effetto === "Genio") {
+                setNotificationMessage("Il Genio attende: Clicca su un mostro per attaccare (5 dadi) o su una porta per aprirla.");
+            } else {
+                setNotificationMessage(`Seleziona un bersaglio per ${spell.nome} (Clicca sulla mappa o su un mostro)`);
+            }
+        }
+    }, [staticSpells, currentHero, hooksMagicLogic]);
+
+    const handleBoardClick = useCallback((x, y) => {
+        if (targetingSpell) {
+            if (!currentHero) {
+                setNotificationMessage("Nessun eroe attivo disponibile.");
+                return;
+            }
+            if (targetingSpell.targetType === "Point") {
+                hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y);
+                setTargetingSpell(null);
+                setNotificationMessage(null);
+            } else if (targetingSpell.targetType === "Hero") {
+                const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
+                if (hero) {
+                    hooksMagicLogic.castSpell(targetingSpell.id, hero.heroId, null, x, y);
+                    setTargetingSpell(null);
+                    setNotificationMessage(null);
+                } else {
+                    setNotificationMessage("Devi selezionare un Eroe come bersaglio!");
+                }
+            } else {
+                setNotificationMessage("Bersaglio non valido per questo incantesimo!");
+            }
+        } else {
+            hooksTurnLogic.handleBoardClick(x, y);
+        }
+    }, [targetingSpell, currentHero, hooksMagicLogic, gameSession, hooksTurnLogic]);
+
+    const handleMonsterClick = useCallback((monsterId) => {
+        if (targetingItem) {
+            if (!currentHero) {
+                setNotificationMessage("Nessun eroe attivo disponibile.");
+                return;
+            }
+            hooksItemLogic.useItem(currentHero.heroId, targetingItem.id, gameSession, monsterId);
+            setTargetingItem(null);
             setNotificationMessage(null);
-          } else {
-            setNotificationMessage("Devi selezionare un Eroe come bersaglio!");
-          }
+            return;
+        }
+        if (targetingSpell) {
+            if (!currentHero) {
+                setNotificationMessage("Nessun eroe attivo disponibile.");
+                return;
+            }
+            const monster = gameSession?.monsters?.find(m => m.id === monsterId);
+            if (!monster) {
+                setNotificationMessage("Mostro bersaglio non valido.");
+                return;
+            }
+            if (targetingSpell.targetType === "Monster" || targetingSpell.effetto === "Genio") {
+                hooksMagicLogic.castSpell(targetingSpell.id, null, monsterId, null, null);
+                setTargetingSpell(null);
+                setNotificationMessage(null);
+            } else {
+                setNotificationMessage("Questo incantesimo non può essere lanciato su un mostro!");
+            }
         } else {
-          setNotificationMessage(
-            "Bersaglio non valido per questo incantesimo!",
-          );
+            hooksTurnLogic.handleMonsterClick(monsterId);
         }
-      } else {
-        hooksTurnLogic.handleBoardClick(x, y);
-      }
-    },
-    [
-      targetingItem,
-      targetingSpell,
-      gameSession,
-      hooksMagicLogic,
-      hooksTurnLogic,
-    ],
-  );
+    }, [targetingItem, targetingSpell, currentHero, hooksItemLogic, gameSession, hooksMagicLogic, hooksTurnLogic]);
 
-  const handleMonsterClick = useCallback(
-    (monsterId) => {
-      if (targetingItem) {
-        const activeHero = gameSession?.heroes?.find(
-          (h) => h.turnOrder === gameSession.currentTurn,
-        );
-        if (activeHero) {
-          hooksItemLogic.useItem(
-            activeHero.heroId,
-            targetingItem.id,
-            gameSession,
-            monsterId,
-          );
-        }
+    const cancelTargeting = useCallback(() => {
+        setTargetingSpell(null);
         setTargetingItem(null);
-        setNotificationMessage(null);
-        return;
-      }
-      if (targetingSpell) {
-        if (
-          targetingSpell.targetType === "Monster" ||
-          targetingSpell.effetto === "Genio"
-        ) {
-          hooksMagicLogic.castSpell(
-            targetingSpell.id,
-            null,
-            monsterId,
-            null,
-            null,
-          );
-          setTargetingSpell(null);
-          setNotificationMessage(null);
-        } else {
-          setNotificationMessage(
-            "Questo incantesimo non può essere lanciato su un mostro!",
-          );
-        }
-      } else {
-        hooksTurnLogic.handleMonsterClick(monsterId);
-      }
-    },
-    [
-      targetingItem,
-      targetingSpell,
-      gameSession,
-      hooksItemLogic,
-      hooksMagicLogic,
-      hooksTurnLogic,
-    ],
-  );
+        setNotificationMessage("Lancio incantesimo annullato.");
+    }, []);
 
-  const handleDisarmTrap = useCallback(() => {
-    if (!currentHero) return;
-    const stats = hooksHeroStats.calculateStats(currentHero);
-    hooksTraps.disarmAdjacentTrap(
-      currentHero.x,
-      currentHero.y,
-      stats.canDisarmTraps,
-      (trap) => {
-        if (trap) {
-          hooksSessionManager.resolveMovementTrap(
-            currentHero.x,
-            currentHero.y,
-            trap.tipo,
-            null,
-            null,
-          );
-        }
-      },
-    );
-  }, [currentHero, hooksHeroStats, hooksTraps, hooksSessionManager]);
+    const handleDisarmTrap = useCallback(() => {
+        if (!currentHero) return;
+        const canDisarm = hooksHeroStats.calculateStats(currentHero).canDisarmTraps;
+        hooksTraps.disarmAdjacentTrap(currentHero.x, currentHero.y, canDisarm, () => {});
+    }, [currentHero, hooksHeroStats, hooksTraps]);
 
-  // Effects
-  useEffect(() => {
-    if (gameSession && !isMissionInitialized) {
-      hooksSessionManager.initializeMission(treasureDeck);
-      setIsMissionInitialized(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameSession, isMissionInitialized]);
+    const canDisarmTrap = useMemo(() => {
+        if (!currentHero) return false;
+        const stats = hooksHeroStats.calculateStats(currentHero);
+        if (!stats.canDisarmTraps) return false;
+        const adjTrap = hooksTraps.getAdjacentDisarmableTrap(currentHero.x, currentHero.y);
+        return !!adjTrap;
+    }, [currentHero, hooksHeroStats, hooksTraps]);
 
-  useEffect(() => {
-    if (!gameSession || !gameSession.isHeroOrderConfirmed) return;
-    const activeHeroes = gameSession.heroes.filter((h) => h.currentBody > 0);
-    if (activeHeroes.length === 0) {
-      setIsGameOverOpen(true);
-      return;
-    }
-    const escapedHeroes = gameSession.heroes.filter((h) => h.isEscaped);
-    if (
-      activeHeroes.length > 0 &&
-      activeHeroes.length === escapedHeroes.length
-    ) {
-      if (missionObjectiveCompleted) {
-        setIsMissionSummaryOpen(true);
-      } else {
-        leaveDungeonAfterRetreat();
-      }
-      return;
-    }
-    if (gameSession.currentTurn > gameSession.heroes.length) {
-      hooksMonsterAI.runMonsterTurn();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameSession?.currentTurn, gameSession?.isHeroOrderConfirmed]);
+    const triggeredTraps = useMemo(() => {
+        return hooksTraps.getTriggeredTraps().filter(t => t.status !== 'DISARMED');
+    }, [hooksTraps]);
 
-  return (
-    <div className="relative w-full h-full bg-stone-900 flex items-center justify-center overflow-hidden">
-      {/* Environment Frame */}
-      <div className="relative p-4 border-4 border-amber-900/50 rounded-xl shadow-2xl bg-stone-950">
-        {/* Board Shell */}
-        <div className="relative border-2 border-amber-700/30 rounded-lg overflow-hidden">
-          <DungeonBoard
-            gameSession={gameSession}
-            boardVisibilityMap={hooksFogOfWar.fogVisibilityMap}
-            onCellClick={handleBoardClick}
-            onCellHover={hooksTurnLogic.handleBoardHover}
-            onMonsterClick={handleMonsterClick}
-            hoveredPath={hooksTurnLogic.hoveredPath}
-            hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
-            secretPassages={visiblePassages}
-            treasures={hooksTreasure.getFoundTreasures()}
-            triggeredTraps={activeTriggeredTraps}
-            targetingSpell={targetingSpell}
-            visibilityCalc={null}
-          />
+    return (
+        <div className="w-full h-screen bg-stone-950 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-32 h-64 bg-orange-600/10 blur-3xl rounded-full pointer-events-none" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-64 bg-orange-600/10 blur-3xl rounded-full pointer-events-none" />
+
+            <div className="relative p-4 bg-stone-900 border-4 border-amber-900/50 rounded-xl shadow-2xl">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-amber-600 rounded-tl-lg pointer-events-none" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-amber-600 rounded-tr-lg pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-amber-600 rounded-bl-lg pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-amber-600 rounded-br-lg pointer-events-none" />
+
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-1 bg-stone-800 border-2 border-amber-700 rounded text-amber-500 text-sm font-serif tracking-widest shadow-md pointer-events-none">
+                    DUNGEON
+                </div>
+
+                <DungeonBoard
+                    gameSession={gameSession}
+                    boardVisibilityMap={boardVisibilityMap}
+                    onCellClick={handleBoardClick}
+                    onCellHover={hooksTurnLogic.handleBoardHover}
+                    onMonsterClick={handleMonsterClick}
+                    hoveredPath={hooksTurnLogic.hoveredPath}
+                    hoveredPathVariant={hooksTurnLogic.hoveredPathVariant}
+                    secretPassages={foundPassages}
+                    treasures={hooksTreasure.getFoundTreasures()}
+                    triggeredTraps={triggeredTraps}
+                    targetingSpell={targetingSpell}
+                    visibilityCalc={null}
+                />
+
+                {gameSession?.isHeroOrderConfirmed && (
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-stone-800 border-2 border-amber-700 rounded text-amber-500 text-xs font-serif tracking-widest shadow-md pointer-events-none">
+                        TURNO {gameSession.currentTurn}
+                    </div>
+                )}
+            </div>
+
+            {isMissionInitialized && !gameSession?.isHeroOrderConfirmed && (
+                <DungeonHeroOrder
+                    heroes={gameSession?.heroes || []}
+                    onConfirmOrder={handleConfirmHeroOrder}
+                />
+            )}
+
+            {gameSession?.isHeroOrderConfirmed && isSpellSelectionRequired && (
+                <DungeonSpellSelectionModal
+                    heroes={gameSession?.heroes || []}
+                    allSpells={staticSpells}
+                    onConfirmSelection={confirmSpellSelection}
+                />
+            )}
+
+            {gameSession?.isHeroOrderConfirmed && currentHero && currentHero.currentBody > 0 && !currentHero.isEscaped && (
+                <DungeonTurnControls
+                    currentHero={currentHero}
+                    currentHeroStats={currentHeroStats}
+                    movementPoints={hooksTurnLogic.movementPoints}
+                    turnPhase={hooksTurnLogic.turnPhase}
+                    canOpenDoor={!!hooksTurnLogic.canOpenDoor}
+                    isTargeting={!!targetingSpell}
+                    isMoving={hooksTurnLogic.isMoving}
+                    onRollMovement={hooksTurnLogic.rollMovement}
+                    onEndTurn={hooksTurnLogic.endTurn}
+                    onSearchPassages={hooksSecretPassages.searchPassages}
+                    onSearchTreasure={hooksTreasure.searchTreasure}
+                    onSearchTraps={hooksTraps.searchTraps}
+                    canDisarmTrap={canDisarmTrap}
+                    onDisarmTrap={handleDisarmTrap}
+                    onOpenMagic={() => setIsSpellCastModalOpen(true)}
+                    onOpenInventory={() => setIsInventoryOpen(true)}
+                    onCancelTargeting={cancelTargeting}
+                    onOpenDoor={hooksTurnLogic.handleOpenDoor}
+                />
+            )}
+
+            {gameSession?.isHeroOrderConfirmed && currentHero && currentHero.currentBody > 0 && (
+                <DungeonHeroInfoPanel
+                    currentHero={currentHero}
+                    currentHeroStats={currentHeroStats}
+                    movementPoints={hooksTurnLogic.movementPoints}
+                />
+            )}
+
+            {gameSession?.lastAttack && (
+                <CombatResultModal
+                    isOpen={true}
+                    onClose={closeCombatResult}
+                    combatResult={gameSession.lastAttack.combatResult}
+                    attacker={gameSession.lastAttack.hero}
+                    defender={gameSession.lastAttack.monster}
+                />
+            )}
+
+            {notificationMessage && (
+                <DungeonNotification
+                    message={notificationMessage}
+                    onClose={() => setNotificationMessage(null)}
+                />
+            )}
+
+            {drawnTreasureCard && (
+                <TreasureCardModal
+                    isOpen={true}
+                    card={drawnTreasureCard}
+                    onClose={closeTreasureCardModal}
+                />
+            )}
+
+            {isInventoryOpen && (
+                <DungeonInventoryModal
+                    isOpen={isInventoryOpen}
+                    hero={currentHero}
+                    allItems={staticItems}
+                    allEquipment={staticEquipment}
+                    onClose={() => setIsInventoryOpen(false)}
+                />
+            )}
+
+            {isSpellCastModalOpen && (
+                <DungeonSpellCastModal
+                    isOpen={isSpellCastModalOpen}
+                    hero={currentHero}
+                    allSpells={staticSpells}
+                    onCastSpell={handleCastSpell}
+                    onClose={() => setIsSpellCastModalOpen(false)}
+                />
+            )}
+
+            {isMissionSummaryOpen && (
+                <DungeonMissionSummary
+                    isOpen={isMissionSummaryOpen}
+                    heroes={gameSession?.heroes || []}
+                    allEquipment={staticEquipment}
+                    allItems={staticItems}
+                    onClose={completeMission}
+                />
+            )}
+
+            {isGameOverOpen && (
+                <DungeonGameOver
+                    isOpen={isGameOverOpen}
+                    onExit={handleGameOverExit}
+                />
+            )}
         </div>
-        {gameSession?.isHeroOrderConfirmed && (
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-stone-800 border-2 border-amber-600 text-amber-500 px-4 py-1 rounded-full text-sm font-bold shadow-lg">
-            Turno {gameSession.currentTurn}
-          </div>
-        )}
-      </div>
-
-      {/* Modals and Overlays */}
-      {isMissionInitialized && !gameSession?.isHeroOrderConfirmed && (
-        <DungeonHeroOrder
-          heroes={gameSession?.heroes || []}
-          onConfirmOrder={confirmHeroOrder}
-        />
-      )}
-
-      {gameSession?.isHeroOrderConfirmed && isSpellSelectionRequired && (
-        <DungeonSpellSelectionModal
-          heroes={gameSession?.heroes || []}
-          allSpells={staticSpells || []}
-          onConfirmSelection={confirmSpellSelection}
-        />
-      )}
-
-      {gameSession?.isHeroOrderConfirmed && currentHero && (
-        <>
-          <DungeonTurnControls
-            currentHero={currentHero}
-            currentHeroStats={hooksHeroStats.calculateStats(currentHero)}
-            movementPoints={hooksTurnLogic.movementPoints}
-            turnPhase={hooksTurnLogic.turnPhase}
-            isMoving={hooksTurnLogic.isMoving}
-            onRollMovement={hooksTurnLogic.rollMovement}
-            onEndTurn={hooksTurnLogic.endTurn}
-            onSearchPassages={hooksSecretPassages.searchPassages}
-            onSearchTreasure={hooksTreasure.searchTreasure}
-            onSearchTraps={hooksTraps.searchTraps}
-            canDisarmTrap={canDisarmTrap}
-            onDisarmTrap={handleDisarmTrap}
-            onOpenMagic={openMagicModal}
-            isTargeting={targetingSpell !== null || targetingItem !== null}
-            onCancelTargeting={cancelTargeting}
-            canOpenDoor={hooksTurnLogic.canOpenDoor !== null}
-            onOpenDoor={hooksTurnLogic.handleOpenDoor}
-            onOpenInventory={openInventory}
-          />
-          <DungeonHeroInfoPanel
-            currentHero={currentHero}
-            currentHeroStats={hooksHeroStats.calculateStats(currentHero)}
-            movementPoints={hooksTurnLogic.movementPoints}
-          />
-        </>
-      )}
-
-      {gameSession?.lastAttack && (
-        <CombatResultModal
-          isOpen={true}
-          combatResult={gameSession.lastAttack.combatResult}
-          attacker={gameSession.lastAttack.hero}
-          defender={gameSession.lastAttack.monster}
-          onClose={closeCombatResult}
-        />
-      )}
-
-      {notificationMessage && (
-        <DungeonNotification
-          message={notificationMessage}
-          onClose={handleCloseNotification}
-        />
-      )}
-
-      {drawnTreasureCard && (
-        <TreasureCardModal
-          isOpen={true}
-          card={drawnTreasureCard}
-          onClose={closeTreasureCardModal}
-        />
-      )}
-
-      {isInventoryOpen && currentHero && (
-        <DungeonInventoryModal
-          isOpen={true}
-          hero={currentHero}
-          onClose={closeInventory}
-        />
-      )}
-
-      {isSpellCastModalOpen && currentHero && (
-        <DungeonSpellCastModal
-          isOpen={true}
-          hero={currentHero}
-          allSpells={staticSpells || []}
-          onCastSpell={handleCastSpell}
-          onClose={closeMagicModal}
-        />
-      )}
-
-      {isMissionSummaryOpen && (
-        <DungeonMissionSummary
-          isOpen={true}
-          heroes={gameSession?.heroes || []}
-          allEquipment={staticEquipment || []}
-          allItems={staticItems || []}
-          onClose={completeMission}
-        />
-      )}
-
-      {isGameOverOpen && (
-        <DungeonGameOver isOpen={true} onExit={handleGameOverExit} />
-      )}
-    </div>
-  );
+    );
 }

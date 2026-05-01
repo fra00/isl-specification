@@ -1,23 +1,21 @@
-export declare function useTurnLogic(config?: {
-  gameSession?: any;
-  visibilityMap?: any;
-  onNotify?: (message: string) => void;
-  trapsLogic?: any;
-  heroStatsLogic?: any;
-  hooksPathfinding?: any;
-  combatLogic?: any;
-  mapInteractionLogic?: any;
-  visibilityCalc?: any;
-  sessionManager?: any;
+export declare function useTurnLogic(config: {
+  gameSession: any;
+  visibilityMap: any;
+  onNotify: (message: string) => void;
+  trapsLogic: any;
+  heroStatsLogic: any;
+  hooksPathfinding: any;
+  combatLogic: any;
+  mapInteractionLogic: any;
+  visibilityCalc: any;
+  sessionManager: any;
 }): {
   turnPhase: { HasMoved: boolean; HasPerformedAction: boolean; IsTurnFinished: boolean };
   movementPoints: number | null;
-  hoveredPath: Array<{ x: number; y: number }>;
-  hoveredPathVariant: string | null;
+  hoveredPath: { x: number; y: number }[];
+  hoveredPathVariant: "valid" | "blocked-by-second-wall" | null;
   isMoving: boolean;
-  canOpenDoor: any | null;
-  canAttack: boolean;
-  isMissionObjectiveCompleted: boolean;
+  canOpenDoor: { found: boolean; destination: { x: number; y: number }; passageCell: { x: number; y: number } } | null;
   handleOpenDoor: () => void;
   rollMovement: () => void;
   handleBoardHover: (x: number, y: number) => void;
@@ -26,4 +24,6 @@ export declare function useTurnLogic(config?: {
   markActionDone: () => void;
   forceTurnExhausted: (positionOverride?: { x: number; y: number }) => void;
   endTurn: (force?: boolean) => void;
+  isMissionObjectiveCompleted: boolean;
+  canAttack: boolean;
 };

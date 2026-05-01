@@ -16,127 +16,132 @@ export default function DungeonMissionSummary({
   onClose
 }) {
   const handleFinalize = useCallback(() => {
-    if (onClose) {
+    if (isOpen && onClose) {
       onClose();
     }
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
   }
 
-  // Filter heroes who have not died (currentBody > 0)
-  const survivingHeroes = heroes.filter(hero => hero != null && hero.currentBody > 0);
+  const aliveHeroes = heroes.filter(h => h != null && h.currentBody > 0);
+
+  const getItemName = (id) => {
+    const item = allItems.find(i => i?.id === id);
+    return item?.nome || 'Oggetto Sconosciuto';
+  };
+
+  const getEquipmentName = (id) => {
+    const equip = allEquipment.find(e => e?.id === id);
+    return equip?.nome || 'Equipaggiamento Sconosciuto';
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
-      <div className="bg-stone-900 border-4 border-yellow-700 p-8 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto text-stone-200 shadow-2xl shadow-yellow-900/20">
+    <div className="fixed inset-0 z-[80] bg-black/95 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-stone-900 border-4 border-stone-600 rounded-xl p-6 md:p-10 max-w-6xl w-full shadow-2xl relative">
         
-        <div className="text-center mb-12 border-b-2 border-stone-800 pb-6">
-          <h1 className="text-4xl md:text-6xl font-bold text-yellow-500 mb-4 tracking-widest uppercase" style={{ fontFamily: 'serif' }}>
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-amber-500 tracking-widest uppercase drop-shadow-md mb-2">
             Missione Compiuta
           </h1>
-          <h2 className="text-2xl text-stone-400 uppercase tracking-wider">
+          <h2 className="text-xl md:text-2xl text-stone-400 font-serif italic">
             Riepilogo Missione
           </h2>
         </div>
 
-        {survivingHeroes.length === 0 ? (
-          <div className="text-center text-2xl text-red-500 my-16 font-bold">
-            Nessun eroe è sopravvissuto a questa missione...
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {survivingHeroes.map((heroState, idx) => {
-              const heroDef = heroState.hero;
-              if (!heroDef) return null;
+        {/* Hero Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {aliveHeroes.map((heroState, index) => {
+            const heroDef = heroState.hero;
+            if (!heroDef) return null;
 
-              return (
-                <div 
-                  key={`hero-${heroState.heroId || idx}`} 
-                  className="bg-stone-800 border border-stone-600 rounded-lg p-5 flex flex-col items-center shadow-lg"
-                >
+            return (
+              <div 
+                key={heroState.heroId || index} 
+                className="bg-stone-800 border border-stone-700 rounded-lg p-5 flex flex-col items-center shadow-lg"
+              >
+                {/* Portrait */}
+                <div className="w-24 h-24 rounded-full border-2 border-amber-600 overflow-hidden mb-4 bg-stone-950 flex-shrink-0">
                   {heroDef.portrait ? (
-                    <img
-                      src={heroDef.portrait}
-                      alt={heroDef.classe}
-                      className="w-32 h-32 object-cover rounded-full border-4 border-yellow-600 mb-4 bg-stone-900"
+                    <img 
+                      src={heroDef.portrait} 
+                      alt={heroDef.classe} 
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-32 h-32 rounded-full border-4 border-yellow-600 mb-4 bg-stone-700 flex items-center justify-center">
-                      <span className="text-stone-500 text-sm">No Image</span>
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center text-stone-500">?</div>
                   )}
-                  
-                  <h3 className="text-2xl font-bold text-yellow-400 mb-1 capitalize text-center">
-                    {heroDef.classe}
-                  </h3>
+                </div>
 
-                  <div className="w-full mt-6 space-y-4">
-                    <div className="flex items-center justify-between bg-stone-900 p-3 rounded border border-stone-700">
-                      <span className="text-stone-400 font-semibold flex items-center gap-2">
-                        <span className="text-xl">💰</span> Oro:
-                      </span>
-                      <span className="text-yellow-500 font-bold text-lg">{heroState.gold || 0}</span>
-                    </div>
+                {/* Name & Class */}
+                <h3 className="text-xl font-bold text-stone-200 mb-4 text-center capitalize">
+                  {heroDef.classe}
+                </h3>
 
-                    <div className="bg-stone-900 p-3 rounded border border-stone-700">
-                      <h4 className="text-stone-400 font-semibold border-b border-stone-700 pb-2 mb-2 uppercase text-sm tracking-wider">
-                        Oggetti Trovati
-                      </h4>
-                      <ul className="text-sm space-y-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                        {(!heroState.inventory || heroState.inventory.length === 0) ? (
-                          <li className="text-stone-600 italic">Nessun oggetto</li>
-                        ) : (
-                          heroState.inventory.map((itemId, i) => {
-                            const item = allItems.find(item => item.id === itemId);
-                            return (
-                              <li key={`item-${itemId}-${i}`} className="text-stone-300 flex items-start gap-2">
-                                <span className="text-yellow-700">•</span> 
-                                <span>{item?.nome || `Oggetto Sconosciuto (${itemId})`}</span>
-                              </li>
-                            );
-                          })
-                        )}
+                {/* Gold */}
+                <div className="flex items-center gap-2 bg-stone-900 px-4 py-2 rounded-full border border-yellow-600/30 mb-4 w-full justify-center">
+                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" />
+                    <path d="M10 4a6 6 0 100 12 6 6 0 000-12zm0 10a4 4 0 110-8 4 4 0 010 8z" />
+                  </svg>
+                  <span className="text-yellow-500 font-bold text-lg">{heroState.gold || 0}</span>
+                </div>
+
+                {/* Loot Section */}
+                <div className="w-full flex-1 flex flex-col gap-3 text-sm">
+                  {/* Items */}
+                  <div className="bg-stone-900/50 rounded p-3 border border-stone-700/50 flex-1">
+                    <h4 className="text-stone-400 font-semibold mb-2 border-b border-stone-700 pb-1">Oggetti</h4>
+                    {heroState.inventory && heroState.inventory.length > 0 ? (
+                      <ul className="list-disc list-inside text-stone-300 space-y-1">
+                        {heroState.inventory.map((itemId, idx) => (
+                          <li key={`${itemId}-${idx}`} className="truncate" title={getItemName(itemId)}>
+                            {getItemName(itemId)}
+                          </li>
+                        ))}
                       </ul>
-                    </div>
+                    ) : (
+                      <p className="text-stone-600 italic text-xs">Nessun oggetto</p>
+                    )}
+                  </div>
 
-                    <div className="bg-stone-900 p-3 rounded border border-stone-700">
-                      <h4 className="text-stone-400 font-semibold border-b border-stone-700 pb-2 mb-2 uppercase text-sm tracking-wider">
-                        Equipaggiamento
-                      </h4>
-                      <ul className="text-sm space-y-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                        {(!heroState.equipment || heroState.equipment.length === 0) ? (
-                          <li className="text-stone-600 italic">Nessun equipaggiamento</li>
-                        ) : (
-                          heroState.equipment.map((equipId, i) => {
-                            const equip = allEquipment.find(e => e.id === equipId);
-                            return (
-                              <li key={`equip-${equipId}-${i}`} className="text-stone-300 flex items-start gap-2">
-                                <span className="text-yellow-700">•</span> 
-                                <span>{equip?.nome || `Equipaggiamento Sconosciuto (${equipId})`}</span>
-                              </li>
-                            );
-                          })
-                        )}
+                  {/* Equipment */}
+                  <div className="bg-stone-900/50 rounded p-3 border border-stone-700/50 flex-1">
+                    <h4 className="text-stone-400 font-semibold mb-2 border-b border-stone-700 pb-1">Equipaggiamento</h4>
+                    {heroState.equipment && heroState.equipment.length > 0 ? (
+                      <ul className="list-disc list-inside text-stone-300 space-y-1">
+                        {heroState.equipment.map((equipId, idx) => (
+                          <li key={`${equipId}-${idx}`} className="truncate" title={getEquipmentName(equipId)}>
+                            {getEquipmentName(equipId)}
+                          </li>
+                        ))}
                       </ul>
-                    </div>
+                    ) : (
+                      <p className="text-stone-600 italic text-xs">Nessun equipaggiamento</p>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+          {aliveHeroes.length === 0 && (
+            <div className="col-span-full text-center text-stone-500 italic py-10">
+              Nessun eroe è sopravvissuto alla missione.
+            </div>
+          )}
+        </div>
 
+        {/* Actions */}
         <div className="flex justify-center mt-8">
           <button
             onClick={handleFinalize}
-            className="bg-yellow-700 hover:bg-yellow-600 text-stone-900 font-bold py-4 px-10 rounded-lg text-xl transition-all border-2 border-yellow-500 shadow-[0_0_15px_rgba(202,138,4,0.5)] hover:shadow-[0_0_25px_rgba(202,138,4,0.8)] uppercase tracking-wider"
+            className="bg-amber-700 hover:bg-amber-600 text-stone-100 font-bold py-4 px-10 rounded-lg text-xl transition-all border-2 border-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.4)] hover:shadow-[0_0_25px_rgba(217,119,6,0.6)] active:scale-95"
           >
             Torna al Villaggio
           </button>
         </div>
-        
       </div>
     </div>
   );

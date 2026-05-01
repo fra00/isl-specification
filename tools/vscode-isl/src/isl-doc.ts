@@ -112,24 +112,30 @@ export class ISLDocGenerator {
       let signatureContent = "";
 
       if (entry.implementationPath) {
-        // Try to find the .sign.json file
-        // Assuming outputBaseDir logic from generator: projectRoot/bin
-        // We need to reconstruct where the generator put the file.
-        // For simplicity, we look relative to the manifest location if possible,
-        // or we might need the outputBaseDir passed in constructor to be accurate.
-        // Here we assume the .sign.json is next to the implementation file in the 'bin' folder relative to project root.
-
-        // Heuristic: Assume standard structure project/bin/file.jsx.sign.json
+        // Try to find the signature file.
+        // Current generator writes .sign.ts; .sign.json is legacy fallback.
         const projectRoot = path.dirname(path.dirname(this.manifestPath)); // build/../ -> project root
-        const signPath = path.join(
+        const signTsPath = path.join(
+          projectRoot,
+          "bin",
+          entry.implementationPath + ".sign.ts",
+        );
+        const signJsonPath = path.join(
           projectRoot,
           "bin",
           entry.implementationPath + ".sign.json",
         );
 
-        if (fs.existsSync(signPath)) {
+        if (fs.existsSync(signTsPath)) {
           try {
-            const signData = JSON.parse(fs.readFileSync(signPath, "utf-8"));
+            const signData = fs.readFileSync(signTsPath, "utf-8");
+            signatureContent = `\n**Real Implementation Signature**:\n\`\`\`ts\n${signData}\n\`\`\``;
+          } catch (e) {
+            // ignore error
+          }
+        } else if (fs.existsSync(signJsonPath)) {
+          try {
+            const signData = JSON.parse(fs.readFileSync(signJsonPath, "utf-8"));
             signatureContent = `\n**Real Implementation Signature**:\n\`\`\`json\n${JSON.stringify(signData, null, 2)}\n\`\`\``;
           } catch (e) {
             // ignore error

@@ -9,18 +9,12 @@
 import React, { useState, useEffect } from 'react';
 import { CombatDiceResult } from './dungeon-use-combat';
 
-export default function CombatResultModal({
-  isOpen = false,
-  onClose,
-  combatResult,
-  attacker,
-  defender
-}) {
+export default function CombatResultModal({ isOpen, onClose, combatResult, attacker, defender }) {
   const [animationActive, setAnimationActive] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure the DOM is ready before triggering CSS transitions
+      // Slight delay to ensure the modal is rendered before starting CSS transitions
       const timer = setTimeout(() => setAnimationActive(true), 50);
       return () => clearTimeout(timer);
     } else {
@@ -30,14 +24,17 @@ export default function CombatResultModal({
 
   if (!isOpen) return null;
 
+  // Guard clause for missing combat data
   if (!combatResult) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="relative w-full max-w-[820px] h-[520px] bg-stone-900 rounded-2xl shadow-2xl border-4 border-amber-700/50 flex flex-col items-center justify-center p-8">
-          <h2 className="text-3xl text-amber-500 mb-4 font-serif">Rapporto di combattimento non disponibile</h2>
+        <div className="relative w-[820px] h-[520px] bg-stone-900 rounded-2xl shadow-2xl border-4 border-amber-700/50 flex flex-col items-center justify-center p-8">
+          <h2 className="text-3xl text-amber-500 font-bold mb-4 text-center">
+            Rapporto di Combattimento Non Disponibile
+          </h2>
           <button
             onClick={onClose}
-            className="px-8 py-3 bg-gradient-to-b from-amber-600 to-amber-800 text-white font-bold rounded shadow-lg hover:from-amber-500 hover:to-amber-700 border border-amber-400/50"
+            className="mt-6 px-8 py-3 bg-gradient-to-b from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg font-bold text-xl border-2 border-amber-400 shadow-lg transition-all active:scale-95 uppercase tracking-wider"
           >
             Chiudi
           </button>
@@ -46,142 +43,145 @@ export default function CombatResultModal({
     );
   }
 
-  const getEntityImage = (entity) => {
-    if (!entity) return "";
-    if (entity.hero?.portrait) return `/img/eroi/${entity.hero.portrait}`;
-    if (entity.monster?.immalarge) return `/img/mostri/${entity.monster.immalarge}`;
-    return "";
+  const getPortraitUrl = (entity) => {
+    if (entity?.hero?.portrait) return `/img/eroi/${entity.hero.portrait}`;
+    if (entity?.monster?.immalarge) return `/img/mostri/${entity.monster.immalarge}`;
+    return '';
   };
 
   const getEntityName = (entity) => {
-    if (!entity) return "Sconosciuto";
-    if (entity.hero?.classe) return entity.hero.classe;
-    if (entity.monster?.nome) return entity.monster.nome;
-    return "Sconosciuto";
-  };
-
-  const isBarbarian = (entity) => {
-    return entity?.hero?.classe?.toLowerCase() === 'barbaro';
+    if (entity?.hero?.classe) return entity.hero.classe;
+    if (entity?.monster?.nome) return entity.monster.nome;
+    return 'Sconosciuto';
   };
 
   const getDiceImage = (face) => {
-    if (face === CombatDiceResult.SKULL) return "/img/altro/teschio.jpg";
-    if (face === CombatDiceResult.WHITE_SHIELD) return "/img/altro/scudo.jpg";
-    if (face === CombatDiceResult.BLACK_SHIELD) return "/img/altro/scudo-nero.png";
-    return "";
+    if (face === CombatDiceResult.SKULL) return '/img/altro/teschio.png';
+    if (face === CombatDiceResult.WHITE_SHIELD) return '/img/altro/scudo.png';
+    if (face === CombatDiceResult.BLACK_SHIELD) return '/img/altro/scudo-nero.png';
+    return '';
   };
 
   const getTitle = (damage) => {
-    if (damage > 2) return "Impatto Devastante";
-    if (damage > 0) return "Colpo a Segno";
-    return "Attacco Respinto";
+    if (damage === 0) return 'Attacco Respinto';
+    if (damage >= 3) return 'Impatto Devastante';
+    return 'Colpo a Segno';
   };
 
-  const attackerImg = getEntityImage(attacker);
-  const defenderImg = getEntityImage(defender);
+  const attackerImg = getPortraitUrl(attacker);
+  const defenderImg = getPortraitUrl(defender);
   const attackerName = getEntityName(attacker);
   const defenderName = getEntityName(defender);
-  const title = getTitle(combatResult.damageDealt);
+  const isAttackerBarbarian = attacker?.hero?.classe?.toLowerCase() === 'barbaro';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-[820px] h-[520px] bg-stone-900 rounded-2xl shadow-2xl border-4 border-amber-700/80 overflow-hidden flex">
+      <div className="relative w-[820px] h-[520px] bg-stone-900 rounded-2xl shadow-2xl border-4 border-amber-700/50 overflow-hidden flex flex-col items-center justify-between p-6">
         
-        {/* Background Flares & Decor */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-0 left-0 w-1/2 h-full bg-red-900/20 rounded-l-2xl blur-3xl"></div>
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-900/20 rounded-r-2xl blur-3xl"></div>
-          {/* Corner marks */}
-          <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-amber-600/50"></div>
-          <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-amber-600/50"></div>
-          <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-amber-600/50"></div>
-          <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-amber-600/50"></div>
-        </div>
+        {/* Background Flares */}
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-red-900/40 to-transparent z-0"></div>
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-blue-900/40 to-transparent z-0"></div>
+        
+        {/* Decorative Bronze Corners */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-amber-700/50 rounded-tl-xl z-10"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-amber-700/50 rounded-tr-xl z-10"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-amber-700/50 rounded-bl-xl z-10"></div>
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-amber-700/50 rounded-br-xl z-10"></div>
 
-        {/* Attacker Portrait (Left) */}
+        {/* Portraits */}
         {attackerImg && (
-          <div className={`absolute left-0 top-0 bottom-0 w-1/3 z-[2] flex items-center justify-start opacity-60 ${isBarbarian(attacker) ? '-ml-12' : 'ml-4'}`}>
-            <img src={attackerImg} alt={attackerName} className="max-h-[90%] object-contain drop-shadow-2xl" />
-          </div>
+          <img
+            src={attackerImg}
+            alt={attackerName}
+            className={`absolute top-1/2 -translate-y-1/2 z-[2] h-[120%] object-contain opacity-40 mix-blend-screen pointer-events-none ${
+              isAttackerBarbarian ? '-ml-16 left-12' : '-left-8'
+            }`}
+          />
         )}
-
-        {/* Defender Portrait (Right) */}
         {defenderImg && (
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 z-[2] flex items-center justify-end opacity-60 mr-4">
-            <img src={defenderImg} alt={defenderName} className="max-h-[90%] object-contain drop-shadow-2xl" />
-          </div>
+          <img
+            src={defenderImg}
+            alt={defenderName}
+            className="absolute -right-8 top-1/2 -translate-y-1/2 z-[2] h-[120%] object-contain opacity-40 mix-blend-screen pointer-events-none scale-x-[-1]"
+          />
         )}
 
         {/* Center Info */}
-        <div className="relative z-[3] flex flex-col items-center justify-between w-full h-full py-6 px-4">
+        <div className="relative z-[3] flex flex-col items-center w-full h-full justify-between">
           
           {/* Title Block */}
-          <div className="text-center bg-black/60 px-8 py-3 rounded-lg border border-amber-900/50 backdrop-blur-md mt-2">
-            <h2 className="text-4xl font-serif text-amber-500 tracking-wider uppercase drop-shadow-md">{title}</h2>
-            <p className="text-stone-300 mt-1 text-lg">{attackerName} vs {defenderName}</p>
+          <div className="text-center mt-2">
+            <h2 className="text-4xl font-black text-amber-500 tracking-wider uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+              {getTitle(combatResult.damageDealt)}
+            </h2>
+            <p className="text-xl text-stone-300 mt-2 font-semibold drop-shadow-md">
+              {attackerName} <span className="text-amber-600 mx-2">VS</span> {defenderName}
+            </p>
           </div>
 
           {/* Dice Container */}
-          <div className="flex flex-col gap-6 bg-stone-800/80 p-6 rounded-xl border-2 border-stone-600 shadow-inner w-full max-w-md backdrop-blur-sm">
+          <div className="bg-stone-800/90 border-2 border-amber-700/60 rounded-xl p-6 flex flex-col gap-6 w-full max-w-lg backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.5)]">
             
-            {/* Attacker Dice */}
+            {/* Attacker Dice Row */}
             <div className="flex flex-col items-center">
-              <span className="text-red-400 font-bold mb-2 uppercase tracking-widest text-sm">Attaccante</span>
-              <div className="flex gap-3 min-h-[64px]">
-                {combatResult.attackerDice?.map((face, idx) => (
+              <span className="text-red-400 font-bold uppercase tracking-widest text-sm mb-3">Attaccante</span>
+              <div className="flex items-center justify-center gap-3 min-h-[56px]">
+                {combatResult.attackerDice?.map((face, index) => (
                   <img
-                    key={`att-${idx}`}
+                    key={`atk-${index}`}
                     src={getDiceImage(face)}
-                    alt={face}
-                    className={`w-16 h-16 rounded shadow-md border border-stone-500 transition-all duration-500 ease-out ${animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'}`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
+                    alt="Dado Attacco"
+                    className={`w-14 h-14 object-contain drop-shadow-lg transition-all duration-500 ease-out ${
+                      animationActive ? 'translate-x-0 opacity-100' : '-translate-x-16 opacity-0'
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   />
                 ))}
                 {(!combatResult.attackerDice || combatResult.attackerDice.length === 0) && (
-                  <span className="text-stone-500 italic flex items-center">Nessun dado</span>
+                  <span className="text-stone-500 italic">Nessun dado tirato</span>
                 )}
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-stone-500 to-transparent"></div>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-700/50 to-transparent"></div>
 
-            {/* Defender Dice */}
+            {/* Defender Dice Row */}
             <div className="flex flex-col items-center">
-              <span className="text-blue-400 font-bold mb-2 uppercase tracking-widest text-sm">Difensore</span>
-              <div className="flex gap-3 min-h-[64px]">
-                {combatResult.defenderDice?.map((face, idx) => (
+              <span className="text-blue-400 font-bold uppercase tracking-widest text-sm mb-3">Difensore</span>
+              <div className="flex items-center justify-center gap-3 min-h-[56px]">
+                {combatResult.defenderDice?.map((face, index) => (
                   <img
-                    key={`def-${idx}`}
+                    key={`def-${index}`}
                     src={getDiceImage(face)}
-                    alt={face}
-                    className={`w-16 h-16 rounded shadow-md border border-stone-500 transition-all duration-500 ease-out ${animationActive ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'}`}
-                    style={{ transitionDelay: `${idx * 100}ms` }}
+                    alt="Dado Difesa"
+                    className={`w-14 h-14 object-contain drop-shadow-lg transition-all duration-500 ease-out ${
+                      animationActive ? 'translate-x-0 opacity-100' : 'translate-x-16 opacity-0'
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   />
                 ))}
                 {(!combatResult.defenderDice || combatResult.defenderDice.length === 0) && (
-                  <span className="text-stone-500 italic flex items-center">Nessun dado</span>
+                  <span className="text-stone-500 italic">Nessun dado tirato</span>
                 )}
               </div>
             </div>
-
           </div>
 
-          {/* Result Text (Damage Medallion) */}
-          <div className="flex flex-col items-center justify-center bg-gradient-to-b from-red-900 to-red-950 border-4 border-amber-600 rounded-full w-32 h-32 shadow-[0_0_30px_rgba(220,38,38,0.4)] z-20 -mt-4">
-            <span className="text-amber-200 text-xs uppercase font-bold tracking-wider mb-1">Danni Inflitti</span>
-            <span className="text-5xl font-black text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-              {combatResult.damageDealt ?? 0}
-            </span>
-          </div>
+          {/* Result Text & Close Button */}
+          <div className="flex flex-col items-center gap-6 mb-2">
+            <div className="bg-red-950/80 border-2 border-red-700/50 rounded-full px-8 py-3 shadow-[0_0_20px_rgba(220,38,38,0.3)]">
+              <span className="text-2xl font-bold text-red-100">
+                Danni Inflitti: <span className="text-red-400 text-3xl ml-2">{combatResult.damageDealt || 0}</span>
+              </span>
+            </div>
 
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="mt-2 px-10 py-3 bg-gradient-to-b from-amber-600 to-amber-800 text-amber-100 font-bold text-lg rounded shadow-[0_4px_14px_rgba(0,0,0,0.5)] hover:from-amber-500 hover:to-amber-700 border border-amber-400/50 transition-colors active:scale-95"
-          >
-            Chiudi
-          </button>
+            <button
+              onClick={onClose}
+              className="px-10 py-3 bg-gradient-to-b from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg font-bold text-xl border-2 border-amber-400 shadow-lg transition-all active:scale-95 uppercase tracking-wider"
+            >
+              Chiudi
+            </button>
+          </div>
 
         </div>
       </div>

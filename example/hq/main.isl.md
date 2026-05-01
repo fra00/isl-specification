@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./main-content
 
@@ -68,3 +68,38 @@ IF `isAppReady` is false:
     - SET `isAppReady` to true.
   - CATCH Error:
     - Display critical error: "Errore durante il caricamento degli asset: " + error.message.
+
+### 🚨 Constraints
+
+- All required startup assets MUST be loaded (or a fatal loading error MUST be surfaced explicitly).
+- `isAppReady` MUST become true only after assets and derived state (`globalBoardData`, `globalSpells`) are initialized coherently.
+- Asset loading failures MUST NOT produce partially initialized runtime states presented as ready.
+
+### 🚨 Global Constraints
+
+- All rendering branches of `MainContent` MUST be mutually exclusive (`loading` vs `ready`) and deterministic.
+- Component-level global assets passed to child presentation layers MUST remain structurally consistent across re-renders.
+- MainContent MUST act as application bootstrap/presentation boundary and MUST NOT own gameplay business rules.
+
+### ✅ Acceptance Criteria
+
+- [ ] `bootstrap` enforces its local constraints for both success and failure paths.
+- [ ] `MainContent` global constraints remain valid across loading and ready states.
+- [ ] Role, references, and state boundary are consistent with Presentation responsibility.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Successful Bootstrap**:
+   - Target: `bootstrap`
+   - Input: all required JSON assets available and valid
+   - Expected: all global assets initialized coherently, `isAppReady = true`, ready view rendered
+
+2. **Capability Constraint - Fatal Bootstrap Error**:
+   - Target: `bootstrap`
+   - Input: at least one required asset fetch fails
+   - Expected: explicit critical loading error shown, `isAppReady` remains false, no fake-ready state
+
+3. **Global Constraint - Rendering Exclusivity**:
+   - Target: `MainContent` as component
+   - Input: state transitions `isAppReady false -> true`
+   - Expected: loading and ready branches never overlap and child receives a coherent asset bundle

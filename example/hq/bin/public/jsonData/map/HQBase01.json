@@ -2367,7 +2367,7 @@
       },
       "mobili": {
         "num": 11,
-        "img": "tombao.jpg",
+        "img": "tombao.png",
         "flpo": false,
         "flpv": false
       },
@@ -5931,7 +5931,7 @@
       },
       "mobili": {
         "num": 5,
-        "img": "altarev.jpg",
+        "img": "altarev.png",
         "flpo": false,
         "flpv": false
       },
@@ -6111,7 +6111,7 @@
       },
       "mobili": {
         "num": 8,
-        "img": "tavoloo.jpg",
+        "img": "tavoloo.png",
         "flpo": false,
         "flpv": false
       },
@@ -8271,7 +8271,7 @@
       },
       "mobili": {
         "num": null,
-        "img": "caminoo.jpg",
+        "img": "caminoo.png",
         "flpo": false,
         "flpv": false
       },
@@ -9171,7 +9171,7 @@
       },
       "mobili": {
         "num": 18,
-        "img": "trono.jpg",
+        "img": "trono.png",
         "flpo": false,
         "flpv": false
       },
@@ -10179,7 +10179,7 @@
       },
       "mobili": {
         "num": 8,
-        "img": "tavoloo.jpg",
+        "img": "tavoloo.png",
         "flpo": false,
         "flpv": false
       },
@@ -10863,7 +10863,7 @@
       },
       "mobili": {
         "num": 7,
-        "img": "torturao.jpg",
+        "img": "torturao.png",
         "flpo": false,
         "flpv": true
       },
@@ -13851,7 +13851,7 @@
       },
       "mobili": {
         "num": 16,
-        "img": "libreriao.jpg",
+        "img": "libreriao.png",
         "flpo": false,
         "flpv": false
       },
@@ -14211,7 +14211,7 @@
       },
       "mobili": {
         "num": 2,
-        "img": "armadioo.jpg",
+        "img": "armadioo.png",
         "flpo": false,
         "flpv": false
       },
@@ -14679,7 +14679,7 @@
       },
       "mobili": {
         "num": 19,
-        "img": "scala.jpg",
+        "img": "scala.png",
         "flpo": false,
         "flpv": false
       },
@@ -15795,7 +15795,7 @@
       },
       "mobili": {
         "num": 13,
-        "img": "scrivaniav.jpg",
+        "img": "scrivaniav.png",
         "flpo": false,
         "flpv": false
       },
@@ -16011,7 +16011,7 @@
       },
       "mobili": {
         "num": 15,
-        "img": "armeriav.jpg",
+        "img": "armeriav.png",
         "flpo": true,
         "flpv": false
       },
@@ -18099,7 +18099,7 @@
       },
       "mobili": {
         "num": 16,
-        "img": "libreriao.jpg",
+        "img": "libreriao.png",
         "flpo": false,
         "flpv": false
       },

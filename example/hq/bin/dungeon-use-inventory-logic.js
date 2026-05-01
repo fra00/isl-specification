@@ -8,34 +8,28 @@
 
 import { useCallback } from 'react';
 
-export function useInventoryLogic({ staticEquipment = [], sessionManager }) {
+export function useInventoryLogic({ staticEquipment, sessionManager }) {
+  
   const isItemCompatibleWithHero = useCallback((hero, item) => {
-    if (hero == null || item == null) {
-      return false;
-    }
+    if (!hero || !item) return false;
 
     if (item.solopsg === true && item.solopsgid !== hero.heroId) {
       return false;
     }
-
+    
     if (item.nopsg === true && item.nopsgid === hero.heroId) {
       return false;
     }
-
+    
     return true;
   }, []);
 
   const toggleEquipItem = useCallback((heroId, itemId, gameSession) => {
-    if (gameSession == null) {
-      return false;
-    }
-
-    if (sessionManager?.toggleEquipItem == null) {
-      return false;
-    }
-
-    return sessionManager.toggleEquipItem(heroId, itemId, staticEquipment);
-  }, [sessionManager, staticEquipment]);
+    if (!gameSession) return false;
+    
+    // Using the real signature from useDungeonSessionManager which only takes (heroId, itemId)
+    return sessionManager.toggleEquipItem(heroId, itemId);
+  }, [sessionManager]);
 
   return {
     isItemCompatibleWithHero,

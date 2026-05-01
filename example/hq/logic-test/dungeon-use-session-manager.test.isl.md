@@ -109,6 +109,14 @@
   - The Holy Water item is removed from inventory.
   - `onUpdateSession` is called with the updated session.
 
+## Scenario: Empty Map Treasure Cell Leaves State Unchanged In Boundary
+
+- **Given**: A `MapCell` at `(10, 18)` has `tes` with `mon`, `ogg`, `arma`, and `trp` all less than or equal to 0 (no collectible payload).
+- **When**: `collectTreasureAtCell(heroId, 10, 18)` is triggered.
+- **Assert (Expected Outcomes)**:
+  - The emitted session is unchanged for heroes, map `tes` payload, and unrelated branches (boundary early-exit).
+  - `onNotify` is NOT invoked by `collectTreasureAtCell` for this case (empty-pile messaging belongs to `searchTreasure`).
+
 ## Scenario: Treasure Collection Clears Only One Cell
 
 - **Given**: A hero sees a treasure cell at `(6, 6)` containing `mon = 50` while other treasure cells remain untouched.

@@ -8,8 +8,7 @@
 
 import { Spell } from "./domain-ruleset";
 
-const staticSpells = [
-  // Fuoco (Set 1)
+export const staticSpells = [
   Spell({
     id: 1,
     nome: "Palla di Fuoco",
@@ -43,8 +42,6 @@ const staticSpells = [
     dorso: "Fuoco00_Dorso.png",
     descrizione: "Aumenta l'attacco di un eroe di 2 dadi finché sono presenti mostri."
   }),
-
-  // Acqua (Set 2)
   Spell({
     id: 4,
     nome: "Acqua Guaritrice",
@@ -78,8 +75,6 @@ const staticSpells = [
     dorso: "Acqua00_Dorso.png",
     descrizione: "Fa addormentare un mostro (salta il turno) finché non viene attaccato."
   }),
-
-  // Terra (Set 3)
   Spell({
     id: 7,
     nome: "Pelle di Pietra",
@@ -113,8 +108,6 @@ const staticSpells = [
     dorso: "Terra00_Dorso.png",
     descrizione: "Evoca un Genio per attaccare (5 dadi) o aprire una porta a distanza."
   }),
-
-  // Aria (Set 4)
   Spell({
     id: 10,
     nome: "Tempesta",
@@ -151,9 +144,10 @@ const staticSpells = [
 ];
 
 export const getAllSpells = () => {
-  return staticSpells;
+  return [...staticSpells];
 };
 
 export const getSpellsByElement = (elemento) => {
-  return staticSpells.filter(spell => spell?.elemento === elemento);
+  if (!elemento) return [];
+  return staticSpells.filter((spell) => spell?.elemento === elemento);
 };

@@ -1,4 +1,4 @@
-export declare function useHeroStats(config?: { staticEquipment?: Array<any> }): {
+export declare function useHeroStats(config?: { staticEquipment?: any[] }): {
   calculateStats: (heroState: any) => {
     attacco: number;
     difesa: number;

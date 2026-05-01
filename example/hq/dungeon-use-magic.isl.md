@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-magic
 
@@ -89,7 +89,7 @@
           - Update `targetMonster.currentBody` by subtracting `damage`.
           - Trigger `onNotify(targetMonster.monster.nome + " subisce " + damage + " danni!")`.
           - IF `targetMonster.currentBody` <= 0:
-            - Remove `targetMonster` from `gameSession.monsters`.
+            - Remove `targetMonster` from `nextSession.monsters`.
           - ELSE:
             - IF `targetMonster.activeStatus` contains "Sleep":
               - Remove "Sleep" from `targetMonster.activeStatus`.
@@ -102,7 +102,7 @@
           - Update `targetMonster.currentBody` by subtracting `damage`.
           - Trigger `onNotify(targetMonster.monster.nome + " subisce " + damage + " danni!")`.
           - IF `targetMonster.currentBody` <= 0:
-            - Remove `targetMonster` from `gameSession.monsters`.
+            - Remove `targetMonster` from `nextSession.monsters`.
           - ELSE:
             - IF `targetMonster.activeStatus` contains "Sleep":
               - Remove "Sleep" from `targetMonster.activeStatus`.
@@ -136,8 +136,8 @@
           - **Immunity Check**:
             - IF `targetMonster.monster.nonmorto` is true:
               - Trigger `onNotify("I non-morti non possono dormire!")`.
-              - Trigger `onActionDone()`.
-              - RETURN.
+              - Set `wasCastSuccessful` to false.
+              - BREAK this spell case without mutating session state.
           - **Mental Resistance Test**:
             - Roll a standard 6-sided die for each point of `targetMonster.currentMind`.
             - IF any die result is 6:
@@ -162,7 +162,7 @@
             - Set `nextSession.lastAttack` to {hero: currentHero, monster: targetMonster, combatResult: combatResult}.
             - Trigger `onNotify("Il Genio attacca " + targetMonster.monster.nome + "!")`.
             - IF `targetMonster.currentBody` <= 0:
-              - Remove `targetMonster` from `gameSession.monsters`.
+              - Remove `targetMonster` from `nextSession.monsters`.
             - ELSE:
               - IF `targetMonster.activeStatus` contains "Sleep":
                 - Remove "Sleep" from `targetMonster.activeStatus`.
@@ -189,6 +189,7 @@
         - IF `targetHero` is found:
           - Add "InvisiblePassage" to `targetHero.activeStatus`.
           - Trigger `onNotify(targetHero.hero.classe + " può attraversare muri e occupanti durante il movimento!")`.
+          - The status is temporary and MUST expire automatically at the end of the affected hero turn.
           - Set `wasCastSuccessful` to true.
       - CASE "Pelle di Pietra":
         - Find `targetHero` in the current session `heroes` matching `targetHeroId`.
@@ -218,11 +219,10 @@
       - Remove `spellId` from the current-session copy of `currentHero.availableSpells`.
       - Trigger `onNotify(currentHero.hero.classe + " lancia " + spell.nome + "!")`.
       - RETURN the fully updated `nextSession`, ensuring monster damage, status changes, and spell consumption persist in a single atomic commit.
-      - Trigger `onActionDone()`.
-    - IF wasCastSuccessful is false:
-      - Trigger onNotify('Bersaglio non valido.')
-      - Trigger onActionDone()
+    - ELSE:
+      - Trigger `onNotify("Bersaglio non valido.")`.
       - RETURN the current session unchanged.
+  - After `commitSessionUpdate`, call `onActionDone()` exactly once.
 
 #### removeExpiredEffects
 
@@ -245,6 +245,7 @@
 
 - `castSpell` MUST persist damage, status updates, `lastAttack`, and spell consumption in a single session commit.
 - Spell consumption MUST be derived from the latest available hero snapshot, not from a stale closure of `gameSession`.
+- `InvisiblePassage` MUST NOT be permanent: it applies only for the current hero turn and MUST be removed automatically when that hero turn ends.
 - **Monster-targeting spells (Palla di Fuoco, Frecce di Fuoco, Sonno, Tempesta, Genio attack)**: Target monster MUST have `fog = false` in the current `boardVisibilityMap`. If the monster is under fog (not visible), the spell MUST be rejected and `onNotify("Il bersaglio non è visibile!")` MUST be triggered.
 - **Monster-targeting spells**: MUST require BOTH `hasLineOfSight` (geometric LOS check) AND target visibility (`fog = false`). Failure of either check cancels the spell.
 - **Hero-targeting spells**: MUST verify that the target hero and the caster are in the same room/area (`sourceValo === targetValo`), unless the spell is "Self" or "Point" type.
@@ -279,3 +280,26 @@
      - CANCEL spell.
      - Trigger `onNotify("Bersaglio fuori portata!")`.
      - RETURN.
+
+### 🚨 Global Constraints
+
+- MUST preserve component-level determinism across all state transitions and orchestration flows.
+- MUST ensure all capability-level mutations respect declared shared state boundaries.
+- MUST keep cross-capability outcomes consistent with declared domain references and invariants.
+
+### ✅ Acceptance Criteria
+
+- [ ] Specification is internally consistent (roles, contracts, and constraints do not conflict).
+- [ ] Declared capabilities are represented with deterministic behavior.
+- [ ] Document is aligned to ISL v1.6.2 conventions.
+
+### 🧪 Test Scenarios
+
+1. **Contract Conformance**:
+   - Input: representative valid domain/state inputs
+   - Expected: outputs and side effects satisfy declared contracts
+
+2. **Constraint Enforcement**:
+   - Input: boundary and invalid inputs
+   - Expected: constraints are enforced and violations are handled explicitly
+

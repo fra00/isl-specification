@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./dungeon
 
@@ -95,7 +95,7 @@
   - `visibilityCalc` MUST be the live `hooksVisibilityCalc` instance and MUST NOT be `null` while the board supports line-of-sight highlights, targeting previews, or tracer rendering.
   - `hoveredPath` MUST be passed together with `hoveredPathVariant`; passing only the variant is invalid because the board highlight is driven by the actual path coordinates.
 - **Turn Controls**:
-  - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
+  - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0 AND `currentHero.isEscaped` is false.
   - **Props**:
     - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
     - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
@@ -116,7 +116,7 @@
     - `onOpenDoor`: `hooksTurnLogic.handleOpenDoor`.
     - `onOpenInventory`: Trigger `openInventory`.
 - **Hero Info Panel**:
-  - Displays `@DungeonHeroInfoPanel` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null.
+  - Displays `@DungeonHeroInfoPanel` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0.
   - **Props**:
     - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
     - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
@@ -190,6 +190,8 @@
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
 - `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `staticVisibilityMap`.
+  - MUST be instantiated through `@useVisibilityCalc` and MUST NOT be hardcoded to `null`.
+  - MUST be propagated as-is to both `hooksTurnLogic` and `DungeonBoard` as `visibilityCalc`.
 - `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, and `hooksSessionManager`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
 - `hooksMagicLogic`: @useMagicLogic passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `staticSpells`, `hooksCombatLogic`, `hooksMapInteraction`, `hooksFogOfWar`, and `hooksHeroStats`.
 - `hooksMapInteraction`: @useMapInteraction passing `gameSession`, `hooksSecretPassages.getFoundPassages().visiblePassages`, and `hooksSessionManager`.
@@ -264,6 +266,10 @@
 - **Contract**: Monitors turn changes to trigger Master Turn automatically.
 - **Trigger**: When `gameSession.currentTurn` changes.
 - **Flow**:
+  - Let `currentTurnHero` = hero where `turnOrder` equals `gameSession.currentTurn`.
+  - IF `currentTurnHero` exists AND (`currentTurnHero.currentBody` <= 0 OR `currentTurnHero.isEscaped` is true):
+    - Trigger `hooksTurnLogic.endTurn(true)` to immediately skip unusable turns.
+    - RETURN.
   - Let `activeHeroes` = heroes where `currentBody` > 0.
   - **Defeat Check**:
     - IF `activeHeroes` length is 0:
@@ -284,22 +290,34 @@
 
 - **Contract**: Persists hero progress after a voluntary retreat without advancing the campaign unlock index.
 - **Flow**:
+  - Build `preEndHeroVitalsById` from current `gameSession.heroes` as a map keyed by `heroId` containing `{ currentBody, currentMind }`.
   - Execute mission end scripts (`eventType = 7`) against the current session using retreat context.
   - Let `missionEndSession` = the returned script session when handled, otherwise `gameSession`.
+  - Build `heroesToPersist` by mapping `missionEndSession.heroes`:
+    - For each hero, IF `preEndHeroVitalsById` contains the same `heroId`:
+      - Keep all fields from the mission-end hero snapshot.
+      - Override only `currentBody` and `currentMind` with the corresponding values from `preEndHeroVitalsById`.
+    - ELSE keep the mission-end hero snapshot unchanged.
   - Load the existing campaign save, when available.
   - Preserve the highest unlocked mission index already saved.
-  - Trigger `hooksCampaignManager.saveCampaign(missionEndSession.heroes, preservedMissionIndex)`.
+  - Trigger `hooksCampaignManager.saveCampaign(heroesToPersist, preservedMissionIndex)`.
   - Navigate back to @PageNavigationEnum.PLAY_GAME.
 
 #### completeMission
 
 - **Contract**: Saves progress and returns to mission selection.
 - **Flow**:
+  - Build `preEndHeroVitalsById` from current `gameSession.heroes` as a map keyed by `heroId` containing `{ currentBody, currentMind }`.
   - Execute mission end scripts (`eventType = 7`) against the current session using victory context.
   - Let `missionEndSession` = the returned script session when handled, otherwise `gameSession`.
+  - Build `heroesToPersist` by mapping `missionEndSession.heroes`:
+    - For each hero, IF `preEndHeroVitalsById` contains the same `heroId`:
+      - Keep all fields from the mission-end hero snapshot.
+      - Override only `currentBody` and `currentMind` with the corresponding values from `preEndHeroVitalsById`.
+    - ELSE keep the mission-end hero snapshot unchanged.
   - Load the existing campaign save, when available.
   - Let `nextMissionIndex` = the greater of the already unlocked mission index and `missionEndSession.currentMissionIndex + 1`.
-  - Call `hooksCampaignManager.saveCampaign(missionEndSession.heroes, nextMissionIndex)`.
+  - Call `hooksCampaignManager.saveCampaign(heroesToPersist, nextMissionIndex)`.
   - Set `isMissionSummaryOpen` to false.
   - onChangePageView to @PageNavigationEnum.PLAY_GAME.
 
@@ -352,7 +370,10 @@
 - **Flow**:
   - Find `spell` in `staticSpells` matching `spellId`.
   - IF `spell.targetType` EQUALS "Self":
-    - Find `currentHero` in `gameSession.heroes`.
+    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - IF `currentHero` is null:
+      - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
+      - RETURN.
     - Call `hooksMagicLogic.castSpell(spellId, currentHero.heroId, null, null, null)`.
     - Set `isSpellCastModalOpen` to false.
   - ELSE:
@@ -369,8 +390,14 @@
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
   - IF `targetingSpell` is NOT null:
-    - Find `currentHero` in `gameSession.heroes`.
-    - IF `targetingSpell.Message` to `null`.
+    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - IF `currentHero` is null:
+      - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
+      - RETURN.
+    - IF `targetingSpell.targetType` EQUALS "Point":
+      - Call `hooksMagicLogic.castSpell(targetingSpell.id, null, null, x, y)`.
+      - Set `targetingSpell` to `null`.
+      - Set `notificationMessage` to `null`.
     - ELSE IF `targetingSpell.targetType` EQUALS "Hero":
       - Find `hero` in `gameSession.heroes` at coordinates `x, y`.
       - IF `hero` is found:
@@ -390,17 +417,29 @@
 - **Signature**: `(monsterId: Integer)`
 - **Flow**:
   - IF `targetingItem` is NOT null:
-    - Find `currentHero` in `gameSession.heroes`.
+    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - IF `currentHero` is null:
+      - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
+      - RETURN.
     - Call `hooksItemLogic.useItem(currentHero.heroId, targetingItem.id, gameSession, monsterId)`.
     - Set `targetingItem` to `null`.
     - Set `notificationMessage` to `null`.
     - RETURN.
   - IF `targetingSpell` is NOT null:
-    - Find `currentHero` in `gameSession.heroes`.
+    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - IF `currentHero` is null:
+      - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
+      - RETURN.
     - Find `monster` in `gameSession.monsters` by `monsterId`.
+    - IF `monster` is null:
+      - Set `notificationMessage` to "Mostro bersaglio non valido.".
+      - RETURN.
     - IF `targetingSpell.targetType` EQUALS "Monster" OR `targetingSpell.effetto` EQUALS "Genio":
       - Call `hooksMagicLogic.castSpell(targetingSpell.id, null, monsterId, null, null)`.
-      - Set `targetingSpell` to `null`.otificationMessage` to "Questo incantesimo non può essere lanciato su un mostro!".
+      - Set `targetingSpell` to `null`.
+      - Set `notificationMessage` to `null`.
+    - ELSE:
+      - Set `notificationMessage` to "Questo incantesimo non può essere lanciato su un mostro!".
   - ELSE:
     - Call `hooksTurnLogic.handleMonsterClick(monsterId)`.
 
@@ -422,3 +461,39 @@
 - **Contract**: Closes the inventory modal.
 - **Flow**:
   - Set `isInventoryOpen` to false.
+
+### 🚨 Constraints
+
+- Each capability MUST honor its declared trigger and contract without hidden side effects.
+- Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
+- Capabilities internal state, initializeMission, confirmHeroOrder, confirmSpellSelection, closeCombatResult MUST remain deterministic for equivalent props/state and user actions.
+- Campaign persistence paths (`completeMission`, `leaveDungeonAfterRetreat`) MUST persist the mission-end hero snapshot without restoring `currentBody`/`currentMind` to base hero maxima.
+
+### 🚨 Global Constraints
+
+- MUST keep UI behavior consistent with declared capabilities and triggers.
+- MUST NOT embed business/domain decisions that belong to Backend or Business Logic components.
+- MUST preserve interaction determinism for equivalent user actions and state.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for all declared interaction handlers.
+- [ ] Component-level global constraints remain valid across capability sequences.
+- [ ] Presentation boundary is preserved (no business/domain mutation logic in UI handlers).
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Handler Determinism**:
+   - Target: internal state
+   - Input: repeated equivalent user actions with same props/state
+   - Expected: same observable UI outcome and side effects
+
+2. **Capability Constraint - Invalid Input Guard**:
+   - Target: declared interaction handlers
+   - Input: null/missing/invalid interaction context
+   - Expected: safe handling without runtime crash or undefined behavior
+
+3. **Global Constraint - Cross-Capability Coherence**:
+   - Target: component capability sequence
+   - Input: realistic interaction flow spanning multiple handlers
+   - Expected: consistent rendering semantics and preserved component boundary

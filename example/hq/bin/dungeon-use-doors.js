@@ -8,30 +8,25 @@
 
 import { useMemo } from 'react';
 
-export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
+export const useDungeonDoors = ({ gameSession, boardVisibilityMap }) => {
   const visibleDoors = useMemo(() => {
-    if (!gameSession?.currentMap || !boardVisibilityMap) {
+    if (!gameSession?.currentMap?.porte || !boardVisibilityMap?.data) {
       return [];
     }
 
-    const doors = gameSession.currentMap.porte || [];
-    const openedDoors = gameSession.openedDoors || [];
-    const visibilityData = boardVisibilityMap.data || [];
     const result = [];
+    const openedDoors = gameSession.openedDoors || [];
 
-    for (let i = 0; i < doors.length; i++) {
-      const door = doors[i];
+    gameSession.currentMap.porte.forEach((door) => {
       const x = parseInt(door.x, 10);
       const y = parseInt(door.y, 10);
       const doorCoordKey = `${x},${y}`;
       let isVisible = false;
 
-      // Check Persisted Visibility
       if (openedDoors.includes(doorCoordKey)) {
         isVisible = true;
       }
 
-      // Check Dynamic Visibility (Fog of War)
       if (!isVisible) {
         const cellsToCheck = [{ x, y }];
         
@@ -43,10 +38,9 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
           cellsToCheck.push({ x: x + 1, y });
         }
 
-        for (let j = 0; j < cellsToCheck.length; j++) {
-          const coord = cellsToCheck[j];
-          const visCell = visibilityData.find(
-            (c) => c.x === coord.x && c.y === coord.y
+        for (const coord of cellsToCheck) {
+          const visCell = boardVisibilityMap.data.find(
+            (cell) => cell.x === coord.x && cell.y === coord.y
           );
           
           if (visCell && visCell.fog === false) {
@@ -56,15 +50,14 @@ export function useDungeonDoors({ gameSession, boardVisibilityMap }) {
         }
       }
 
-      // Add to Render List
       if (isVisible) {
-        const img = door.oriz ? 'portao.jpg' : 'portav.jpg';
+        const img = door.oriz ? 'portao.png' : 'portav.png';
         result.push({ x, y, img });
       }
-    }
+    });
 
     return result;
   }, [gameSession, boardVisibilityMap]);
 
   return { visibleDoors };
-}
+};

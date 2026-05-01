@@ -5175,7 +5175,7 @@
       },
       "mobili": {
         "num": 11,
-        "img": "scala.jpg",
+        "img": "scala.png",
         "flpo": false,
         "flpv": false
       },
@@ -15651,7 +15651,7 @@
       },
       "mobili": {
         "num": 1,
-        "img": "caminov.jpg",
+        "img": "caminov.png",
         "flpo": true,
         "flpv": false
       },
@@ -16767,7 +16767,7 @@
       },
       "mobili": {
         "num": 4,
-        "img": "tavoloo.jpg",
+        "img": "tavoloo.png",
         "flpo": false,
         "flpv": false
       },

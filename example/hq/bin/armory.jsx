@@ -6,155 +6,147 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import { loadShopData, validatePurchase, executePurchase } from "./shop-logic";
-import HeroSummary from "./hero-summary";
-import ShopInventory from "./shop-inventory";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { PageNavigationEnum } from './domain-core';
+import { loadShopData, validatePurchase, executePurchase } from './shop-logic';
+import HeroSummary from './hero-summary';
+import ShopInventory from './shop-inventory';
 
 export default function Armory({ gameSession, onUpdateSession, onChangePageView }) {
-  const [staticHeroes, setStaticHeroes] = useState([]);
-  const [shopItems, setShopItems] = useState([]);
-  const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+    const [staticHeroes, setStaticHeroes] = useState([]);
+    const [shopItems, setShopItems] = useState([]);
+    const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
+    const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize: Load shop data
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-
-    loadShopData()
-      .then((data) => {
-        if (isMounted) {
-          setStaticHeroes(data?.heroes || []);
-          setShopItems(data?.items || []);
-          setIsLoading(false);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load shop data:", error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Derived State
-  const currentHeroState = useMemo(() => {
-    return gameSession?.heroes?.[selectedHeroIndex] || null;
-  }, [gameSession, selectedHeroIndex]);
-
-  const selectedItem = useMemo(() => {
-    if (selectedEquipmentId == null) return null;
-    return shopItems.find((item) => item.id === selectedEquipmentId) || null;
-  }, [shopItems, selectedEquipmentId]);
-
-  const purchaseValidation = useMemo(() => {
-    if (!currentHeroState || !selectedItem) {
-      return { allowed: false, reason: "" };
-    }
-    return validatePurchase(currentHeroState, selectedItem);
-  }, [currentHeroState, selectedItem]);
-
-  // Capabilities
-  const handleSelectHero = useCallback((index) => {
-    setSelectedHeroIndex(index);
-    setSelectedEquipmentId(null);
-  }, []);
-
-  const handleSelectItem = useCallback((itemId) => {
-    setSelectedEquipmentId(itemId);
-  }, []);
-
-  const handleBuyItem = useCallback(() => {
-    if (!currentHeroState || !selectedItem) return;
-    
-    const { allowed } = validatePurchase(currentHeroState, selectedItem);
-    
-    if (allowed) {
-      onUpdateSession((prevSession) => {
-        const sessionToUpdate = prevSession || gameSession;
-        return executePurchase(sessionToUpdate, selectedHeroIndex, selectedItem);
-      });
-    }
-  }, [currentHeroState, selectedItem, selectedHeroIndex, onUpdateSession, gameSession]);
-
-  const handleEnterDungeon = useCallback(() => {
-    if (onChangePageView) {
-      onChangePageView(PageNavigationEnum.DUNGEON);
-    }
-  }, [onChangePageView]);
-
-  const handleExitShop = useCallback(() => {
-    if (onChangePageView) {
-      onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
-    }
-  }, [onChangePageView]);
-
-  // Render Loading State
-  if (isLoading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-stone-950 text-amber-500">
-        <p className="font-serif text-xl tracking-widest animate-pulse">Forging Armory...</p>
-      </div>
-    );
-  }
-
-  // Render Main Component
-  return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-br from-stone-900 via-stone-950 to-black text-stone-300">
-      {/* Abstract Forge Background Effects */}
-      <div className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-900 via-transparent to-transparent"></div>
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-orange-950/30 to-transparent"></div>
-      
-      {/* Header */}
-      <header className="relative z-10 flex h-16 shrink-0 items-center justify-center border-b border-amber-900/50 bg-stone-950/80 px-6 shadow-md shadow-black/50">
-        <div className="text-center">
-          <h1 className="font-serif text-2xl font-bold tracking-widest text-amber-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-            ARMORY
-          </h1>
-          <p className="text-xs text-stone-400">Equip your heroes for the darkness ahead</p>
-        </div>
-      </header>
-
-      {/* Main Content Area - Two Columns on Large Screens */}
-      <main className="relative z-10 flex h-[calc(100%-4rem)] w-full flex-col gap-4 p-4 lg:flex-row lg:p-6">
+    useEffect(() => {
+        let isMounted = true;
+        setIsLoading(true);
         
-        {/* Left Column: Hero Summary */}
-        <section className="flex h-1/3 w-full flex-col overflow-hidden rounded-lg border border-stone-800 bg-stone-950/90 shadow-lg shadow-black/60 lg:h-full lg:w-1/3 xl:w-1/4">
-          <div className="h-full w-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-amber-900/50 [&::-webkit-scrollbar-thumb]:rounded-full">
-            <HeroSummary
-              heroes={gameSession?.heroes || []}
-              staticHeroes={staticHeroes}
-              staticEquipment={shopItems}
-              selectedIndex={selectedHeroIndex}
-              onSelect={handleSelectHero}
-            />
-          </div>
-        </section>
+        loadShopData()
+            .then((data) => {
+                if (isMounted) {
+                    setStaticHeroes(data?.heroes || []);
+                    setShopItems(data?.items || []);
+                    setIsLoading(false);
+                }
+            })
+            .catch((error) => {
+                console.error("Failed to load armory data:", error);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            });
 
-        {/* Right Column: Shop Inventory */}
-        <section className="flex h-2/3 w-full flex-col overflow-hidden rounded-lg border border-stone-800 bg-stone-950/90 shadow-lg shadow-black/60 lg:h-full lg:w-2/3 xl:w-3/4">
-          <div className="h-full w-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-stone-950 [&::-webkit-scrollbar-thumb]:bg-amber-900/50 [&::-webkit-scrollbar-thumb]:rounded-full">
-            <ShopInventory
-              items={shopItems}
-              selectedItemId={selectedEquipmentId}
-              canBuy={purchaseValidation.allowed}
-              buyReason={purchaseValidation.reason}
-              onSelect={handleSelectItem}
-              onBuy={handleBuyItem}
-              onEnterDungeon={handleEnterDungeon}
-              onExit={handleExitShop}
-            />
-          </div>
-        </section>
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
-      </main>
-    </div>
-  );
+    const currentHeroState = useMemo(() => {
+        return gameSession?.heroes?.[selectedHeroIndex] || null;
+    }, [gameSession, selectedHeroIndex]);
+
+    const enrichedShopItems = useMemo(() => {
+        if (!currentHeroState) return shopItems;
+        
+        return shopItems.map(item => {
+            const validation = validatePurchase(currentHeroState, item);
+            return {
+                ...item,
+                canBuy: validation.allowed,
+                buyReason: validation.reason
+            };
+        });
+    }, [shopItems, currentHeroState]);
+
+    const selectedItemDetails = useMemo(() => {
+        if (selectedEquipmentId == null) return null;
+        return enrichedShopItems.find(item => item.id === selectedEquipmentId) || null;
+    }, [enrichedShopItems, selectedEquipmentId]);
+
+    const selectHero = useCallback((index) => {
+        setSelectedHeroIndex(index);
+        setSelectedEquipmentId(null);
+    }, []);
+
+    const selectItem = useCallback((itemId) => {
+        setSelectedEquipmentId(itemId);
+    }, []);
+
+    const buyItem = useCallback(() => {
+        if (!currentHeroState || !selectedItemDetails || !selectedItemDetails.canBuy) return;
+        
+        const originalItem = shopItems.find(i => i.id === selectedItemDetails.id);
+        if (!originalItem) return;
+
+        if (onUpdateSession) {
+            onUpdateSession((prevSession) => {
+                const sessionToUpdate = prevSession || gameSession;
+                if (!sessionToUpdate) return prevSession;
+                return executePurchase(sessionToUpdate, selectedHeroIndex, originalItem);
+            });
+        }
+    }, [currentHeroState, selectedItemDetails, selectedHeroIndex, onUpdateSession, gameSession, shopItems]);
+
+    const enterDungeon = useCallback(() => {
+        if (onChangePageView) {
+            onChangePageView(PageNavigationEnum.DUNGEON);
+        }
+    }, [onChangePageView]);
+
+    const exitShop = useCallback(() => {
+        if (onChangePageView) {
+            onChangePageView(PageNavigationEnum.DUNGEON_DESCRIPTION);
+        }
+    }, [onChangePageView]);
+
+    return (
+        <div className="flex flex-col h-full w-full bg-gradient-to-br from-stone-900 via-black to-stone-800 text-stone-200 overflow-hidden relative">
+            {/* Background effects */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-orange-900/20 via-black/50 to-transparent pointer-events-none"></div>
+
+            {/* Header */}
+            <header className="flex-none p-4 border-b border-amber-700/30 bg-black/40 z-10">
+                <h1 className="text-2xl font-serif text-amber-500 tracking-wider uppercase drop-shadow-md">Armory</h1>
+                <p className="text-sm text-stone-400 italic">Equip your heroes for the darkness ahead.</p>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 gap-4 z-10">
+                {isLoading ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <span className="text-amber-500 animate-pulse text-lg font-serif tracking-widest">Loading Armory...</span>
+                    </div>
+                ) : (
+                    <>
+                        {/* Left Column: Hero Summary */}
+                        <section className="flex-none lg:w-1/3 flex flex-col overflow-hidden bg-black/60 border border-stone-700 rounded shadow-lg shadow-black/50">
+                            <HeroSummary
+                                heroes={gameSession?.heroes || []}
+                                staticHeroes={staticHeroes}
+                                staticEquipment={shopItems}
+                                selectedIndex={selectedHeroIndex}
+                                onSelect={selectHero}
+                            />
+                        </section>
+
+                        {/* Right Column: Shop Inventory */}
+                        <section className="flex-1 flex flex-col overflow-hidden bg-black/60 border border-stone-700 rounded shadow-lg shadow-black/50">
+                            <ShopInventory
+                                items={enrichedShopItems}
+                                selectedItemId={selectedEquipmentId}
+                                canBuy={selectedItemDetails?.canBuy ?? false}
+                                buyReason={selectedItemDetails?.buyReason ?? ""}
+                                onSelect={selectItem}
+                                onBuy={buyItem}
+                                onEnterDungeon={enterDungeon}
+                                onExit={exitShop}
+                            />
+                        </section>
+                    </>
+                )}
+            </main>
+        </div>
+    );
 }

@@ -4,14 +4,18 @@ export declare const CombatDiceResult: {
   BLACK_SHIELD: string;
 };
 
-export declare function useCombatLogic(): {
-  resolveCombat: (
-    attackDiceCount: number,
-    defenseDiceCount: number,
-    defenderIsHero: boolean
-  ) => {
-    attackerDice: Array<string>;
-    defenderDice: Array<string>;
+export declare const CombatResult: (data?: any) => {
+  attackerDice: string[];
+  defenderDice: string[];
+  skulls: number;
+  shields: number;
+  damageDealt: number;
+};
+
+export declare function useCombatLogic(config?: any): {
+  resolveCombat: (attackDiceCount: number, defenseDiceCount: number, defenderIsHero: boolean) => {
+    attackerDice: string[];
+    defenderDice: string[];
     skulls: number;
     shields: number;
     damageDealt: number;

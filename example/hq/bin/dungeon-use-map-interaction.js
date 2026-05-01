@@ -9,56 +9,42 @@
 import { useCallback } from 'react';
 
 export function useMapInteraction({ gameSession, foundPassages = [], sessionManager }) {
+    
     const isFrontOfDoor = useCallback((x, y) => {
-        if (!gameSession || !gameSession.currentMap) return null;
+        if (!gameSession?.currentMap?.grid) return null;
 
-        const { currentMap, openedDoors = [], heroes = [], currentTurn } = gameSession;
-        const grid = currentMap.grid || [];
-        const porte = currentMap.porte || [];
-
-        const coordsToCheck = [
-            { cx: x, cy: y },
-            { cx: x, cy: y - 1 },
-            { cx: x, cy: y + 1 },
-            { cx: x - 1, cy: y },
-            { cx: x + 1, cy: y }
+        // 4 cardinal neighbors + the cell itself (diagonals ignored)
+        const neighbors = [
+            { dx: 0, dy: 0 },
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 }
         ];
 
         let foundPassage = null;
+        let isHorizontal = false;
 
-        for (const { cx, cy } of coordsToCheck) {
-            const coordKey = `${cx},${cy}`;
-            if (openedDoors.includes(coordKey)) continue;
+        for (const { dx, dy } of neighbors) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const coordKey = `${nx},${ny}`;
 
-            let passageDef = null;
+            if (gameSession.openedDoors?.includes(coordKey)) continue;
 
-            const door = porte.find(p => p.x === cx && p.y === cy);
+            const door = gameSession.currentMap.porte?.find(p => p.x === nx && p.y === ny);
             if (door) {
-                passageDef = { x: cx, y: cy, oriz: door.oriz };
-            } else {
-                const isSecret = foundPassages.some(p => p.x === cx && p.y === cy);
-                if (isSecret) {
-                    const cell = grid.find(c => c.x === cx && c.y === cy);
-                    if (cell && cell.psgg) {
-                        passageDef = { x: cx, y: cy, oriz: cell.psgg.oriz };
-                    }
-                }
+                foundPassage = { x: nx, y: ny };
+                isHorizontal = !!door.oriz;
+                break;
             }
 
-            if (passageDef) {
-                let isValid = false;
-                if (passageDef.oriz) {
-                    if (x === passageDef.x && (y === passageDef.y || y === passageDef.y - 1 || y === passageDef.y + 1)) {
-                        isValid = true;
-                    }
-                } else {
-                    if (y === passageDef.y && (x === passageDef.x || x === passageDef.x - 1 || x === passageDef.x + 1)) {
-                        isValid = true;
-                    }
-                }
-
-                if (isValid) {
-                    foundPassage = passageDef;
+            const secretPassage = foundPassages?.find(p => p.x === nx && p.y === ny);
+            if (secretPassage) {
+                const gridCell = gameSession.currentMap.grid.find(c => c.x === nx && c.y === ny);
+                if (gridCell?.psgg) {
+                    foundPassage = { x: nx, y: ny };
+                    isHorizontal = !!gridCell.psgg.oriz;
                     break;
                 }
             }
@@ -66,50 +52,81 @@ export function useMapInteraction({ gameSession, foundPassages = [], sessionMana
 
         if (!foundPassage) return null;
 
-        const activeHero = heroes.find(h => h.turnOrder === currentTurn);
+        const activeHero = gameSession.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
         if (!activeHero) return null;
 
-        const heroCell = grid.find(c => c.x === activeHero.x && c.y === activeHero.y);
-        const heroArea = heroCell ? heroCell.valo : undefined;
+        const px = foundPassage.x;
+        const py = foundPassage.y;
+        const hx = activeHero.x;
+        const hy = activeHero.y;
 
-        let sideA, sideB;
-        if (foundPassage.oriz) {
-            sideA = { x: foundPassage.x, y: foundPassage.y - 1 };
-            sideB = { x: foundPassage.x, y: foundPassage.y };
+        // Orientation Validation
+        if (isHorizontal) {
+            if (!(hx === px && (hy === py || hy === py - 1 || hy === py + 1))) return null;
         } else {
-            sideA = { x: foundPassage.x - 1, y: foundPassage.y };
-            sideB = { x: foundPassage.x, y: foundPassage.y };
+            if (!(hy === py && (hx === px || hx === px - 1 || hx === px + 1))) return null;
         }
 
-        const sideACell = grid.find(c => c.x === sideA.x && c.y === sideA.y);
-        
-        let destination;
-        if (sideACell && sideACell.valo === heroArea) {
-            destination = sideB;
+        // Determine Candidate Sides Robustly
+        const candidateCoords = isHorizontal
+            ? [{ x: px, y: py - 1 }, { x: px, y: py + 1 }]
+            : [{ x: px - 1, y: py }, { x: px + 1, y: py }];
+
+        const candidates = candidateCoords
+            .map(coord => gameSession.currentMap.grid.find(c => c.x === coord.x && c.y === coord.y))
+            .filter(Boolean);
+
+        if (candidates.length < 2) return null;
+
+        const heroCell = gameSession.currentMap.grid.find(c => c.x === hx && c.y === hy);
+        const heroArea = heroCell?.valo;
+
+        let heroSide = null;
+        let destinationSide = null;
+
+        const match0 = candidates[0].valo === heroArea;
+        const match1 = candidates[1].valo === heroArea;
+
+        if (heroArea !== undefined && match0 && !match1) {
+            heroSide = candidates[0];
+            destinationSide = candidates[1];
+        } else if (heroArea !== undefined && match1 && !match0) {
+            heroSide = candidates[1];
+            destinationSide = candidates[0];
         } else {
-            destination = sideA;
+            // Fallback to nearest by Manhattan distance
+            const dist0 = Math.abs(candidates[0].x - hx) + Math.abs(candidates[0].y - hy);
+            const dist1 = Math.abs(candidates[1].x - hx) + Math.abs(candidates[1].y - hy);
+            if (dist0 <= dist1) {
+                heroSide = candidates[0];
+                destinationSide = candidates[1];
+            } else {
+                heroSide = candidates[1];
+                destinationSide = candidates[0];
+            }
         }
+
+        if (!heroSide || !destinationSide) return null;
+
+        // Destination Guard
+        if (destinationSide.arnt?.antroc || destinationSide.arnt?.inv) return null;
 
         return {
             found: true,
-            destination,
-            passageCell: { x: foundPassage.x, y: foundPassage.y }
+            destination: { x: destinationSide.x, y: destinationSide.y },
+            passageCell: { x: px, y: py }
         };
     }, [gameSession, foundPassages]);
 
     const openPassage = useCallback((passageX, passageY, destinationX, destinationY) => {
-        if (!gameSession || !gameSession.currentMap) return false;
+        if (!gameSession?.currentMap) return false;
 
         const isDoor = gameSession.currentMap.porte?.some(p => p.x === passageX && p.y === passageY);
         const isSecret = foundPassages?.some(p => p.x === passageX && p.y === passageY);
 
         if (!isDoor && !isSecret) return false;
 
-        if (sessionManager && sessionManager.openPassage) {
-            return sessionManager.openPassage(passageX, passageY, destinationX, destinationY, foundPassages);
-        }
-
-        return false;
+        return sessionManager?.openPassage(passageX, passageY, destinationX, destinationY, foundPassages) ?? false;
     }, [gameSession, foundPassages, sessionManager]);
 
     return {

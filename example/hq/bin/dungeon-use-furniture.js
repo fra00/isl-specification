@@ -8,44 +8,50 @@
 
 import { useMemo } from 'react';
 
-export const useDungeonFurniture = ({ gameSession, boardVisibilityMap }) => {
-  const visibleFurniture = useMemo(() => {
-    if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
-      return [];
-    }
-
-    const visibleItems = [];
-    const visibilityLookup = new Map();
-
-    // Create a lookup map for O(1) visibility checks
-    for (let i = 0; i < boardVisibilityMap.data.length; i++) {
-      const vCell = boardVisibilityMap.data[i];
-      visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
-    }
-
-    for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
-      const mapCell = gameSession.currentMap.grid[i];
-      const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
-
-      if (vCell && vCell.fog === false) {
-        if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
-          visibleItems.push({
-            x: mapCell.x,
-            y: mapCell.y,
-            img: "../cell/pietra.jpg"
-          });
-        } else if (mapCell.mobili?.num != null) {
-          visibleItems.push({
-            x: mapCell.x,
-            y: mapCell.y,
-            img: mapCell.mobili.img
-          });
+export function useDungeonFurniture({ gameSession, boardVisibilityMap } = {}) {
+    const visibleFurniture = useMemo(() => {
+        if (!gameSession?.currentMap?.grid || !boardVisibilityMap?.data) {
+            return [];
         }
-      }
-    }
 
-    return visibleItems;
-  }, [gameSession?.currentMap, boardVisibilityMap]);
+        const result = [];
+        const visibilityLookup = new Map();
+        
+        // Create a lookup map for O(1) visibility checks
+        for (let i = 0; i < boardVisibilityMap.data.length; i++) {
+            const vCell = boardVisibilityMap.data[i];
+            if (vCell != null) {
+                visibilityLookup.set(`${vCell.x},${vCell.y}`, vCell);
+            }
+        }
 
-  return { visibleFurniture };
-};
+        for (let i = 0; i < gameSession.currentMap.grid.length; i++) {
+            const mapCell = gameSession.currentMap.grid[i];
+            if (!mapCell) continue;
+
+            const vCell = visibilityLookup.get(`${mapCell.x},${mapCell.y}`);
+
+            if (vCell && vCell.fog === false) {
+                if (mapCell.arnt?.antroc === true && mapCell.arnt?.inv === false) {
+                    result.push({
+                        x: mapCell.x,
+                        y: mapCell.y,
+                        img: "../cell/pietra.png"
+                    });
+                } else if (mapCell.mobili?.num != null) {
+                    result.push({
+                        x: mapCell.x,
+                        y: mapCell.y,
+                        img: mapCell.mobili.img
+                    });
+                }
+            }
+        }
+
+        return result;
+    }, [gameSession, boardVisibilityMap]);
+
+    return {
+        visibleFurniture
+    };
+}

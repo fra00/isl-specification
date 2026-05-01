@@ -1,4 +1,4 @@
-export declare const Hero: (data?: any) => {
+export function Hero(data?: any): {
   id: number;
   classe: string;
   attacco: number;
@@ -11,7 +11,7 @@ export declare const Hero: (data?: any) => {
   portrait: string;
 };
 
-export declare const Monster: (data?: any) => {
+export function Monster(data?: any): {
   id: number;
   nome: string;
   movimento: number;
@@ -24,14 +24,14 @@ export declare const Monster: (data?: any) => {
   nonmorto: boolean;
 };
 
-export declare const Equipment: (data?: any) => {
+export function Equipment(data?: any): {
   id: number;
   nome: string;
   dadatt: number;
   daddif: number;
   daddifex: number;
   numdadicontr: number;
-  targetMonster: string | number;
+  targetMonster: number | string;
   doppioatt: boolean;
   mosdoppio: number;
   puntimente: number;
@@ -50,7 +50,7 @@ export declare const Equipment: (data?: any) => {
   immagine: string;
 };
 
-export declare const Item: (data?: any) => {
+export function Item(data?: any): {
   id: number;
   nome: string;
   hp: number;
@@ -64,7 +64,7 @@ export declare const Item: (data?: any) => {
   danni: number;
 };
 
-export declare const Spell: (data?: any) => {
+export function Spell(data?: any): {
   id: number;
   nome: string;
   elemento: string;
@@ -76,7 +76,7 @@ export declare const Spell: (data?: any) => {
   valore: number;
 };
 
-export declare const TreasureCard: (data?: any) => {
+export function TreasureCard(data?: any): {
   id: number;
   effetto: string;
   azione: string;

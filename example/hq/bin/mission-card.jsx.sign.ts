@@ -1,1 +1,1 @@
-export default function MissionCard(props: { mission: any, index: number, status?: string, onSelect?: (index: number) => void }): React.ReactElement;
+export default function MissionCard(props: { mission?: { ordine?: number; titolo?: string; [key: string]: any }; index?: number; status?: string; onSelect?: (index: number) => void }): React.ReactElement | null;

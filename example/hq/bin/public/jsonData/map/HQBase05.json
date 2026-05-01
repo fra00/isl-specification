@@ -2115,7 +2115,7 @@
       },
       "mobili": {
         "num": 19,
-        "img": "scala.jpg",
+        "img": "scala.png",
         "flpo": false,
         "flpv": false
       },
@@ -7119,7 +7119,7 @@
       },
       "mobili": {
         "num": 13,
-        "img": "scrivaniav.jpg",
+        "img": "scrivaniav.png",
         "flpo": true,
         "flpv": false
       },
@@ -7983,7 +7983,7 @@
       },
       "mobili": {
         "num": 18,
-        "img": "trono.jpg",
+        "img": "trono.png",
         "flpo": false,
         "flpv": false
       },
@@ -8199,7 +8199,7 @@
       },
       "mobili": {
         "num": 8,
-        "img": "tavoloo.jpg",
+        "img": "tavoloo.png",
         "flpo": false,
         "flpv": false
       },
@@ -12087,7 +12087,7 @@
       },
       "mobili": {
         "num": 16,
-        "img": "libreriao.jpg",
+        "img": "libreriao.png",
         "flpo": false,
         "flpv": false
       },
@@ -12195,7 +12195,7 @@
       },
       "mobili": {
         "num": 16,
-        "img": "libreriao.jpg",
+        "img": "libreriao.png",
         "flpo": false,
         "flpv": false
       },

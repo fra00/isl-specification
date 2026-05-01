@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback } from "react";
 
 /**
  * @typedef {object} Node
@@ -36,7 +36,7 @@ import React, { useRef, useState, useCallback } from 'react';
 export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
   const fileInputRef = useRef(null);
   const [showMermaidModal, setShowMermaidModal] = useState(false);
-  const [mermaidCode, setMermaidCode] = useState('');
+  const [mermaidCode, setMermaidCode] = useState("");
 
   /**
    * Helper function to trigger a file download.
@@ -45,26 +45,29 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
    * @param {string} mimeType - The MIME type of the file.
    * @param {boolean} isDataUrl - True if contentOrUrl is a data URL, false if it's raw content.
    */
-  const downloadFile = useCallback((filename, contentOrUrl, mimeType, isDataUrl = false) => {
-    const a = document.createElement('a');
-    a.download = filename;
+  const downloadFile = useCallback(
+    (filename, contentOrUrl, mimeType, isDataUrl = false) => {
+      const a = document.createElement("a");
+      a.download = filename;
 
-    if (isDataUrl) {
-      a.href = contentOrUrl;
-    } else {
-      const blob = new Blob([contentOrUrl], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      a.href = url;
-      // Clean up the object URL after download is initiated
-      a.onclick = () => {
-        requestAnimationFrame(() => URL.revokeObjectURL(url));
-      };
-    }
+      if (isDataUrl) {
+        a.href = contentOrUrl;
+      } else {
+        const blob = new Blob([contentOrUrl], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        // Clean up the object URL after download is initiated
+        a.onclick = () => {
+          requestAnimationFrame(() => URL.revokeObjectURL(url));
+        };
+      }
 
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }, []);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
+    [],
+  );
 
   /**
    * Exports the SVG content into a JPG image.
@@ -73,7 +76,7 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
   const esportaJpg = useCallback(() => {
     const svgElement = getSvgElement();
     if (!svgElement) {
-      console.error('SVG element not found for export.');
+      console.error("SVG element not found for export.");
       return;
     }
 
@@ -82,32 +85,34 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
 
     // Serialize SVG to string
     const svgString = new XMLSerializer().serializeToString(clonedSvgElement);
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const svgBlob = new Blob([svgString], {
+      type: "image/svg+xml;charset=utf-8",
+    });
     const svgUrl = URL.createObjectURL(svgBlob);
 
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       // Set canvas dimensions to match SVG's rendered size
       const svgRect = svgElement.getBoundingClientRect();
       canvas.width = svgRect.width;
       canvas.height = svgRect.height;
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         // Fill background with white for JPG, as SVG can have transparent background
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const jpgUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
-        downloadFile('flowchart.jpg', jpgUrl, 'image/jpeg', true); // Pass true for isDataUrl
+        const jpgUrl = canvas.toDataURL("image/jpeg", 0.9); // 0.9 quality
+        downloadFile("flowchart.png", jpgUrl, "image/jpeg", true); // Pass true for isDataUrl
       } else {
-        console.error('Could not get 2D context for canvas.');
+        console.error("Could not get 2D context for canvas.");
       }
       URL.revokeObjectURL(svgUrl); // Clean up the SVG object URL
     };
     img.onerror = (error) => {
-      console.error('Error loading SVG for JPG export:', error);
+      console.error("Error loading SVG for JPG export:", error);
       URL.revokeObjectURL(svgUrl); // Clean up on error too
     };
     img.src = svgUrl;
@@ -118,40 +123,43 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
    */
   const esportaJson = useCallback(() => {
     if (!flowData) {
-      console.error('No flow data available for JSON export.');
+      console.error("No flow data available for JSON export.");
       return;
     }
     const jsonString = JSON.stringify(flowData, null, 2);
-    downloadFile('flowchart.json', jsonString, 'application/json', false); // Pass false for isDataUrl
+    downloadFile("flowchart.json", jsonString, "application/json", false); // Pass false for isDataUrl
   }, [flowData, downloadFile]);
 
   /**
    * Handles the file selection for loading JSON.
    * @param {React.ChangeEvent<HTMLInputElement>} event - The change event from the file input.
    */
-  const handleFileChange = useCallback((event) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result;
-          if (typeof content === 'string') {
-            const parsedData = JSON.parse(content);
-            onLoadJson(parsedData);
+  const handleFileChange = useCallback(
+    (event) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const content = e.target?.result;
+            if (typeof content === "string") {
+              const parsedData = JSON.parse(content);
+              onLoadJson(parsedData);
+            }
+          } catch (error) {
+            console.error("Error parsing JSON file:", error);
+            alert("Invalid JSON file.");
           }
-        } catch (error) {
-          console.error('Error parsing JSON file:', error);
-          alert('Invalid JSON file.');
-        }
-      };
-      reader.readAsText(file);
-    }
-    // Reset the file input value to allow selecting the same file again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [onLoadJson]);
+        };
+        reader.readAsText(file);
+      }
+      // Reset the file input value to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [onLoadJson],
+  );
 
   /**
    * Triggers the hidden file input to open the file dialog.
@@ -165,23 +173,23 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
    */
   const esportaMermaid = useCallback(() => {
     if (!flowData || !flowData.nodes || !flowData.connections) {
-      console.error('No flow data available for Mermaid export.');
+      console.error("No flow data available for Mermaid export.");
       return;
     }
 
     const { nodes, connections } = flowData;
-    const mermaidLines = ['graph TD'];
+    const mermaidLines = ["graph TD"];
 
     // Map node IDs to their labels for easy lookup
-    const nodeMap = new Map(nodes.map(node => [node.id, node.label]));
+    const nodeMap = new Map(nodes.map((node) => [node.id, node.label]));
 
     // Add nodes
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       mermaidLines.push(`  ${node.id}[${node.label}]`);
     });
 
     // Add connections
-    connections.forEach(conn => {
+    connections.forEach((conn) => {
       let connectionString = `  ${conn.sourceNodeId}`;
       if (conn.label) {
         connectionString += ` -->|${conn.label}| `;
@@ -192,7 +200,7 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
       mermaidLines.push(connectionString);
     });
 
-    setMermaidCode(mermaidLines.join('\n'));
+    setMermaidCode(mermaidLines.join("\n"));
     setShowMermaidModal(true);
   }, [flowData]);
 
@@ -200,12 +208,15 @@ export default function TOOLBarMain({ getSvgElement, flowData, onLoadJson }) {
    * Copies the mermaid code to the clipboard.
    */
   const copyMermaidToClipboard = useCallback(() => {
-    navigator.clipboard.writeText(mermaidCode).then(() => {
-      alert('Mermaid code copied to clipboard!');
-    }).catch(err => {
-      console.error('Failed to copy mermaid code: ', err);
-      alert('Failed to copy mermaid code.');
-    });
+    navigator.clipboard
+      .writeText(mermaidCode)
+      .then(() => {
+        alert("Mermaid code copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy mermaid code: ", err);
+        alert("Failed to copy mermaid code.");
+      });
   }, [mermaidCode]);
 
   return (

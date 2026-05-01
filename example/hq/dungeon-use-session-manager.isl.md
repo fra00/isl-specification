@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-04-09
 **Implementation**: ./dungeon-use-session-manager
 
@@ -110,6 +110,11 @@
   - IF `gameSession.openedDoors` contains `coordKey` RETURN false.
   - TRY:
     - Call `fogOfWarLogic.revealFromPoint(destinationX, destinationY)`.
+    - Validate reveal outcome on the live fog map:
+      - Let `revealedCell` = cell at (`destinationX`,`destinationY`) in `fogOfWarLogic.fogVisibilityMap.data`.
+      - IF `revealedCell` is null OR `revealedCell.fog` is still true:
+        - Trigger `onNotify("Impossibile aprire la porta da questa posizione.")`.
+        - RETURN false.
     - Call `commitSessionUpdate` with an updater.
     - Inside the updater, IF the provided session is null RETURN the provided session unchanged.
     - Let `existingDoors` = the provided session `openedDoors` or an empty list.
@@ -258,10 +263,10 @@
 - **Signature**: `() -> @TreasureCard | null`
 - **Flow**:
   - IF outer `gameSession` is null OR outer `gameSession.treasureDeck` is empty RETURN null.
-  - Let `drawnCard` = first element of the outer `gameSession.treasureDeck`.
+  - Let `drawnCard` = random element of the outer `gameSession.treasureDeck`.
   - Call `commitSessionUpdate` with an updater.
   - Inside the updater, IF the provided session is null OR `treasureDeck` is empty RETURN the provided session unchanged.
-  - RETURN a new @GameSession preserving all unrelated properties and setting `treasureDeck` to the provided session `treasureDeck` without the first card.
+  - Setting `treasureDeck` to the provided session `treasureDeck` without `drawnCard`.
   - RETURN `drawnCard`.
 
 #### applyTreasureCardEffect
@@ -273,9 +278,6 @@
   - Find `hero` in the outer `gameSession.heroes` matching `heroId`.
   - IF `hero` is null RETURN false.
   - Initialize `wanderingMonsterCoords` as null.
-  - IF `card.azione` is `mostro_errante`, set `wanderingMonsterCoords` to the outer hero coordinates immediately so the method does not depend on synchronous execution of the React state updater.
-  - Call `commitSessionUpdate` with an updater.
-  - Inside the updater, IF the provided session is null RETURN the provided session unchanged.
   - Find `hero` in the provided session `heroes` matching `heroId`.
   - IF `hero` is null RETURN the provided session unchanged.
   - Create `updatedHero` as a copy of `hero`.
@@ -285,7 +287,13 @@
       - Trigger `onNotify("Hai trovato " + card.valore + " monete d'oro!")`.
     - CASE "aggiungi_oggetto":
       - Add `card.valore` to `updatedHero.inventory`.
-      - Trigger `onNotify("Hai trovato un oggetto: " + card.valore)`.
+      - Let `resolvedItem` = entry in `staticItems` where `id` == `card.valore`, when available.
+      - Let `resolvedEquipment` = entry in `staticEquipment` where `id` == `card.valore`, when available.
+      - Let `resolvedLabel`:
+        - IF `resolvedItem` exists: (`resolvedItem.descrizione` when available, otherwise `resolvedItem.nome`).
+        - ELSE IF `resolvedEquipment` exists: (`resolvedEquipment.descrizione` when available, otherwise `resolvedEquipment.nome`).
+        - ELSE: "ID " + `card.valore`.
+      - Trigger `onNotify("Hai trovato un oggetto: " + resolvedLabel)`.
     - CASE "modifica_hp":
       - Add `card.valore` to `updatedHero.currentBody`.
       - Trigger `onNotify("Punti Corpo modificati!")`.
@@ -490,8 +498,34 @@
 - Capabilities that can run during chained or asynchronous dungeon flows MUST persist through `commitSessionUpdate`, so they always compute from the latest available session snapshot rather than a stale closure.
 - A capability MUST call `onUpdateSession` only if the requested mutation produces a valid session state transition.
 - `openPassage` MUST reveal fog before persisting the opened door coordinate, so failed reveal logic cannot leave the session half-updated.
+- `openPassage` MUST emit "Porta aperta." only after destination reveal succeeds and the door-open state is persisted.
+- If destination reveal fails or keeps fog unchanged, the operation MUST return false and MUST NOT append the door to `openedDoors`.
 - `initializeMission` MUST preserve `currentMap`, `currentMissionIndex`, `monsters`, `openedDoors`, and all other unrelated branches of `@GameSession`.
 - `toggleEquipItem` MUST only change the targeted hero `equipped` list; it MUST preserve `equipment`, `inventory`, `gold`, and all unrelated session branches.
 - `useItem` MUST remove only one inventory instance per invocation and MUST preserve unrelated heroes, map data, and door state.
 - `collectTreasureAtCell`, `resolveMovementTrap`, and `resolveHeroAttack` MUST preserve all unrelated heroes, monsters, map rows, and door state while updating only the affected branches.
+- Treasure notifications MUST prefer human-readable labels (`descrizione`/`nome`) resolved from `staticItems`/`staticEquipment`; raw numeric IDs MUST be used only as fallback when no matching definition exists.
 - `startNextHeroRound` and `advanceTurn` MUST remain the only persisted turn-index mutations inside the dungeon boundary.
+
+### 🚨 Global Constraints
+
+- MUST preserve component-level determinism across all state transitions and orchestration flows.
+- MUST ensure all capability-level mutations respect declared shared state boundaries.
+- MUST keep cross-capability outcomes consistent with declared domain references and invariants.
+
+### ✅ Acceptance Criteria
+
+- [ ] Specification is internally consistent (roles, contracts, and constraints do not conflict).
+- [ ] Declared capabilities are represented with deterministic behavior.
+- [ ] Document is aligned to ISL v1.6.2 conventions.
+
+### 🧪 Test Scenarios
+
+1. **Contract Conformance**:
+   - Input: representative valid domain/state inputs
+   - Expected: outputs and side effects satisfy declared contracts
+
+2. **Constraint Enforcement**:
+   - Input: boundary and invalid inputs
+   - Expected: constraints are enforced and violations are handled explicitly
+

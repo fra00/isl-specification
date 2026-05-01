@@ -6,14 +6,15 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect } from "react";
-import PageContent from "./page-presentation";
-import { Monster, Hero, Equipment, Item, TreasureCard } from "./domain-ruleset";
-import { VisibilityMap, Campaign } from "./domain-map";
-import { getAllSpells } from "./domain-spells-data";
+import React, { useState, useEffect } from 'react';
+import PageContent from './page-presentation';
+import { getAllSpells } from './domain-spells-data';
+import { VisibilityMap } from './domain-map';
 
 export default function MainContent() {
   const [isAppReady, setIsAppReady] = useState(false);
+  const [error, setError] = useState(null);
+  
   const [globalMonsters, setGlobalMonsters] = useState([]);
   const [globalHeroes, setGlobalHeroes] = useState([]);
   const [globalBoardData, setGlobalBoardData] = useState(null);
@@ -22,7 +23,6 @@ export default function MainContent() {
   const [globalSpells, setGlobalSpells] = useState([]);
   const [globalTreasureDeck, setGlobalTreasureDeck] = useState([]);
   const [globalCampaign, setGlobalCampaign] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,64 +32,67 @@ export default function MainContent() {
         const [
           monstersRes,
           heroesRes,
-          boardDataRes,
+          boardRes,
           equipmentRes,
           itemsRes,
-          treasureDeckRes,
+          treasureRes,
           campaignRes
         ] = await Promise.all([
-          fetch("/jsonData/monsters.json"),
-          fetch("/jsonData/heroes.json"),
-          fetch("/jsonData/tabellone/default.json"),
-          fetch("/jsonData/equipment.json"),
-          fetch("/jsonData/items.json"),
-          fetch("/jsonData/treasure-card.json"),
-          fetch("/jsonData/campagne.json")
+          fetch('/jsonData/monsters.json'),
+          fetch('/jsonData/heroes.json'),
+          fetch('/jsonData/tabellone/default.json'),
+          fetch('/jsonData/equipment.json'),
+          fetch('/jsonData/items.json'),
+          fetch('/jsonData/treasure-card.json'),
+          fetch('/jsonData/campagne.json')
         ]);
 
         if (
-          !monstersRes.ok ||
-          !heroesRes.ok ||
-          !boardDataRes.ok ||
-          !equipmentRes.ok ||
-          !itemsRes.ok ||
-          !treasureDeckRes.ok ||
+          !monstersRes.ok || 
+          !heroesRes.ok || 
+          !boardRes.ok || 
+          !equipmentRes.ok || 
+          !itemsRes.ok || 
+          !treasureRes.ok || 
           !campaignRes.ok
         ) {
-          throw new Error("Failed to fetch one or more assets");
+          throw new Error("HTTP error during fetch");
         }
 
-        const monstersJson = await monstersRes.json();
-        const heroesJson = await heroesRes.json();
-        const boardDataJson = await boardDataRes.json();
-        const equipmentJson = await equipmentRes.json();
-        const itemsJson = await itemsRes.json();
-        const treasureDeckJson = await treasureDeckRes.json();
-        const campaignJson = await campaignRes.json();
+        const monstersData = await monstersRes.json();
+        const heroesData = await heroesRes.json();
+        const boardDataRaw = await boardRes.json();
+        const equipmentData = await equipmentRes.json();
+        const itemsData = await itemsRes.json();
+        const treasureData = await treasureRes.json();
+        const campaignData = await campaignRes.json();
 
         if (!isMounted) return;
-
-        setGlobalMonsters((monstersJson || []).map(Monster));
-        setGlobalHeroes((heroesJson || []).map(Hero));
-        setGlobalEquipment((equipmentJson || []).map(Equipment));
-        setGlobalItems((itemsJson || []).map(Item));
-        setGlobalTreasureDeck((treasureDeckJson || []).map(TreasureCard));
-        setGlobalCampaign(Campaign(campaignJson || {}));
 
         const normalizedBoardData = VisibilityMap({
-          ...(boardDataJson || {}),
-          data: (boardDataJson?.data || []).map((cell) => ({
+          source: boardDataRaw?.source || "",
+          image: boardDataRaw?.image || "",
+          data: (boardDataRaw?.data || []).map(cell => ({
             ...cell,
-            fog: cell.fog !== undefined ? cell.fog : true
+            fog: cell?.fog != null ? cell.fog : true
           }))
         });
-        setGlobalBoardData(normalizedBoardData);
 
+        setGlobalMonsters(monstersData || []);
+        setGlobalHeroes(heroesData || []);
+        setGlobalBoardData(normalizedBoardData);
+        setGlobalEquipment(equipmentData || []);
+        setGlobalItems(itemsData || []);
+        setGlobalTreasureDeck(treasureData || []);
+        setGlobalCampaign(campaignData || null);
+        
         setGlobalSpells(getAllSpells());
+        
         setIsAppReady(true);
       } catch (err) {
-        if (!isMounted) return;
-        setError(err instanceof Error ? err.message : String(err));
+        if (isMounted) {
+          setError("Errore durante il caricamento degli asset: " + err.message);
+        }
       }
     };
 
@@ -100,28 +103,38 @@ export default function MainContent() {
     };
   }, []);
 
+  if (error != null) {
+    return (
+      <div className="w-full h-[100vh] bg-black overflow-hidden flex items-center justify-center">
+        <div className="text-red-500 text-center p-4">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAppReady) {
+    return (
+      <div className="w-full h-[100vh] bg-black overflow-hidden flex items-center justify-center">
+        <div className="text-white text-center p-4">
+          <p>Inizializzazione Sistema...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-screen bg-black overflow-hidden">
-      {error ? (
-        <div className="w-full h-full flex items-center justify-center text-red-500">
-          Errore durante il caricamento degli asset: {error}
-        </div>
-      ) : !isAppReady ? (
-        <div className="w-full h-full flex items-center justify-center text-white">
-          Inizializzazione Sistema...
-        </div>
-      ) : (
-        <PageContent
-          monsters={globalMonsters}
-          heroes={globalHeroes}
-          boardData={globalBoardData}
-          equipment={globalEquipment}
-          items={globalItems}
-          spells={globalSpells}
-          treasureDeck={globalTreasureDeck}
-          campaign={globalCampaign}
-        />
-      )}
+    <div className="w-full h-[100vh] bg-black overflow-hidden">
+      <PageContent 
+        monsters={globalMonsters}
+        heroes={globalHeroes}
+        boardData={globalBoardData}
+        equipment={globalEquipment}
+        items={globalItems}
+        spells={globalSpells}
+        treasureDeck={globalTreasureDeck}
+        campaign={globalCampaign}
+      />
     </div>
   );
 }

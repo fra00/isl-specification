@@ -14,7 +14,7 @@ export const HeroState = (data = {}) => ({
   turnOrder: data?.turnOrder ?? 0,
   currentBody: data?.currentBody ?? 0,
   currentMind: data?.currentMind ?? 0,
-  gold: data?.gold ?? 500,
+  gold: data?.gold ?? 0,
   inventory: Array.isArray(data?.inventory) ? [...data.inventory] : [],
   equipment: Array.isArray(data?.equipment) ? [...data.equipment] : [],
   equipped: Array.isArray(data?.equipped) ? [...data.equipped] : [],
@@ -23,12 +23,12 @@ export const HeroState = (data = {}) => ({
   isEscaped: data?.isEscaped ?? false,
   x: data?.x ?? 0,
   y: data?.y ?? 0,
-  hero: data?.hero ? Hero(data.hero) : null
+  hero: Hero(data?.hero)
 });
 
 export const MonsterState = (data = {}) => ({
   id: data?.id ?? 0,
-  monster: data?.monster ? Monster(data.monster) : null,
+  monster: Monster(data?.monster),
   x: data?.x ?? 0,
   y: data?.y ?? 0,
   currentBody: data?.currentBody ?? 0,
@@ -44,7 +44,7 @@ export const ScriptImage = (data = {}) => ({
 
 export const GameSession = (data = {}) => ({
   campaignName: data?.campaignName ?? "",
-  currentMap: data?.currentMap ? MapDefinition(data.currentMap) : null,
+  currentMap: MapDefinition(data?.currentMap),
   currentMissionIndex: data?.currentMissionIndex ?? 0,
   heroes: Array.isArray(data?.heroes) ? data.heroes.map(h => HeroState(h)) : [],
   monsters: Array.isArray(data?.monsters) ? data.monsters.map(m => MonsterState(m)) : [],
@@ -52,7 +52,7 @@ export const GameSession = (data = {}) => ({
   spawnedLocations: Array.isArray(data?.spawnedLocations) ? [...data.spawnedLocations] : [],
   currentTurn: data?.currentTurn ?? 1,
   isHeroOrderConfirmed: data?.isHeroOrderConfirmed ?? false,
-  lastAttack: data?.lastAttack ? { ...data.lastAttack } : null,
+  lastAttack: data?.lastAttack ?? null,
   treasureDeck: Array.isArray(data?.treasureDeck) ? data.treasureDeck.map(t => TreasureCard(t)) : [],
   triggeredScripts: Array.isArray(data?.triggeredScripts) ? [...data.triggeredScripts] : [],
   scriptImages: Array.isArray(data?.scriptImages) ? data.scriptImages.map(s => ScriptImage(s)) : []

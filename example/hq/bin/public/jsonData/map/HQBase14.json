@@ -4815,7 +4815,7 @@
       },
       "mobili": {
         "num": 10,
-        "img": "trono.jpg",
+        "img": "trono.png",
         "flpo": false,
         "flpv": false
       },
@@ -11763,7 +11763,7 @@
       },
       "mobili": {
         "num": 6,
-        "img": "tombav.jpg",
+        "img": "tombav.png",
         "flpo": true,
         "flpv": false
       },
@@ -14679,7 +14679,7 @@
       },
       "mobili": {
         "num": 11,
-        "img": "scala.jpg",
+        "img": "scala.png",
         "flpo": false,
         "flpv": false
       },

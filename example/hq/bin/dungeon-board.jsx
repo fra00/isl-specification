@@ -6,17 +6,17 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useDungeonFurniture } from './dungeon-use-furniture';
-import { useDungeonDoors } from './dungeon-use-doors';
-import { useDungeonVisibleMonsters } from './dungeon-use-visible-monsters';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useDungeonFurniture } from "./dungeon-use-furniture";
+import { useDungeonDoors } from "./dungeon-use-doors";
+import { useDungeonVisibleMonsters } from "./dungeon-use-visible-monsters";
 
 export default function DungeonBoard({
   gameSession,
   boardVisibilityMap,
-  onCellClick = () => {},
-  onCellHover = () => {},
-  onMonsterClick = () => {},
+  onCellClick,
+  onCellHover,
+  onMonsterClick,
   hoveredPath = [],
   hoveredPathVariant = null,
   secretPassages = [],
@@ -42,13 +42,26 @@ export default function DungeonBoard({
     return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
   }, [gameSession?.heroes, gameSession?.currentTurn]);
 
+  const visibilityLookup = useMemo(() => {
+    const map = new Map();
+    if (boardVisibilityMap?.data) {
+      boardVisibilityMap.data.forEach(c => map.set(`${c.x},${c.y}`, c.fog));
+    }
+    return map;
+  }, [boardVisibilityMap]);
+
+  const isFogged = useCallback((x, y) => {
+    const key = `${x},${y}`;
+    return visibilityLookup.has(key) ? visibilityLookup.get(key) : true;
+  }, [visibilityLookup]);
+
   const handleCellClick = useCallback((x, y) => {
-    onCellClick(x + 1, y + 1);
+    onCellClick?.(x + 1, y + 1);
   }, [onCellClick]);
 
   const handleCellHover = useCallback((x, y) => {
     setHoveredCell({ x, y });
-    onCellHover(x + 1, y + 1);
+    onCellHover?.(x + 1, y + 1);
   }, [onCellHover]);
 
   const handleMouseLeaveBoard = useCallback(() => {
@@ -56,55 +69,44 @@ export default function DungeonBoard({
   }, []);
 
   const handleHeroTargetHover = useCallback((hero) => {
-    if (targetingSpell?.targetType === 'Hero') {
+    if (targetingSpell?.targetType === "Hero") {
       setHoveredCell({ x: hero.x - 1, y: hero.y - 1 });
-      onCellHover(hero.x, hero.y);
+      onCellHover?.(hero.x, hero.y);
     }
   }, [targetingSpell, onCellHover]);
 
-  const handleHeroTargetClick = useCallback((e, hero) => {
-    if (targetingSpell?.targetType === 'Hero') {
-      e.stopPropagation();
-      onCellClick(hero.x, hero.y);
+  const handleHeroTargetClick = useCallback((hero, e) => {
+    e.stopPropagation();
+    if (targetingSpell?.targetType === "Hero") {
+      onCellClick?.(hero.x, hero.y);
     }
   }, [targetingSpell, onCellClick]);
 
-  const handleMonsterHover = useCallback((monsterState) => {
-    // Optional enhancement: could set a local state for tooltip
-    if (!targetingSpell) {
-      // Default physical attack indication handled by cursor classes
-    }
-  }, [targetingSpell]);
+  const handleMonsterHover = useCallback((monster) => {
+    // Handled natively via title attribute for immediate lightweight feedback
+  }, []);
 
   const gridCells = useMemo(() => {
     const cells = [];
     for (let y = 0; y < 19; y++) {
       for (let x = 0; x < 26; x++) {
-        cells.push({ x, y, cx: x + 1, cy: y + 1 });
+        cells.push({ x, y });
       }
     }
     return cells;
   }, []);
 
-  const getCursorClass = useCallback((cx, cy, isMonster = false, isHero = false) => {
-    if (targetingSpell) {
-      if (targetingSpell.targetType === 'Point' || targetingSpell.targetType === 'Door' || targetingSpell.effetto === 'Genio') {
-        return 'cursor-crosshair';
-      }
-      if (targetingSpell.targetType === 'Monster' && isMonster) return 'cursor-crosshair';
-      if (targetingSpell.targetType === 'Hero' && isHero) return 'cursor-crosshair';
-      return 'cursor-default';
+  const getCursorClass = useCallback((x, y) => {
+    if (!targetingSpell) return "cursor-pointer";
+    if (targetingSpell.targetType === "Point" || targetingSpell.targetType === "Door" || targetingSpell.effetto === "Genio") {
+      return "cursor-crosshair";
     }
-    return 'cursor-pointer';
+    return "cursor-default";
   }, [targetingSpell]);
-
-  if (!isLoaded) {
-    return <div className="w-[884px] h-[646px] bg-black flex items-center justify-center text-white">Loading Board...</div>;
-  }
 
   return (
     <div 
-      className="relative w-[884px] h-[646px] overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] select-none"
+      className="relative w-[884px] h-[646px] overflow-hidden select-none"
       onMouseLeave={handleMouseLeaveBoard}
     >
       <style>
@@ -123,44 +125,58 @@ export default function DungeonBoard({
       </style>
 
       {/* Board Background */}
-      <img src="/img/tabellone/default.bmp" alt="Board" className="absolute inset-0 w-full h-full object-cover z-0" />
+      <img 
+        src="/img/tabellone/default.bmp" 
+        alt="Game Board" 
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+
+      {/* Ambient Grading */}
+      <div className="absolute inset-0 pointer-events-none z-[5] bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.05)_0%,rgba(0,0,0,0.4)_100%)]" />
 
       {/* Grid & Fog Layer */}
       <div className="absolute inset-0 grid grid-cols-[repeat(26,34px)] grid-rows-[repeat(19,34px)] z-10">
-        {gridCells.map(({ x, y, cx, cy }) => {
-          const visCell = boardVisibilityMap?.data?.find(c => c.x === cx && c.y === cy);
-          const isFogged = visCell ? visCell.fog : true;
+        {gridCells.map((cell) => {
+          const fog = isFogged(cell.x + 1, cell.y + 1);
+          const isHovered = hoveredCell?.x === cell.x && hoveredCell?.y === cell.y;
+          const inPath = hoveredPath?.some(p => p.x === cell.x + 1 && p.y === cell.y + 1);
           
-          const isPathHovered = hoveredPath?.some(p => p.x === cx && p.y === cy);
-          let pathHighlightClass = '';
-          if (isPathHovered) {
-            if (hoveredPathVariant === 'valid') pathHighlightClass = 'bg-green-500/40';
-            else if (hoveredPathVariant === 'blocked-by-second-wall') pathHighlightClass = 'bg-red-500/40';
+          let highlightClass = "";
+          
+          if (inPath) {
+            highlightClass = hoveredPathVariant === "valid" ? "bg-green-500/40" : "bg-red-500/40";
           }
 
-          let targetHighlightClass = '';
-          if (targetingSpell && hoveredCell?.x === x && hoveredCell?.y === y) {
-            const hasLOS = activeHero && visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, cx, cy);
-            const hasMonster = visibleMonsters?.some(m => m.x === cx && m.y === cy);
-            const hasClosedDoor = visibleDoors?.some(d => d.x === cx && d.y === cy); // Simplified door check
+          if (targetingSpell && isHovered) {
+            const hasMonster = visibleMonsters?.some(m => m.x === cell.x + 1 && m.y === cell.y + 1);
+            const isClosedDoor = gameSession?.currentMap?.porte?.some(d => d.x === cell.x + 1 && d.y === cell.y + 1) && !gameSession?.openedDoors?.includes(`${cell.x + 1},${cell.y + 1}`);
+            const hasHero = gameSession?.heroes?.some(h => h.x === cell.x + 1 && h.y === cell.y + 1);
 
-            if (targetingSpell.effetto === 'Genio' && (hasMonster || hasClosedDoor)) {
-              targetHighlightClass = 'bg-blue-500/30 animate-pulse border-2 border-blue-500';
-            } else if (targetingSpell.targetType === 'Point' || targetingSpell.targetType === 'Door') {
-               targetHighlightClass = hasLOS ? 'bg-blue-400/50' : 'bg-red-500/40';
+            if (targetingSpell.effetto === "Genio" && (hasMonster || isClosedDoor)) {
+              highlightClass = "bg-blue-500/30 animate-pulse border border-blue-500";
+            } else {
+              let isValidTarget = false;
+              if (targetingSpell.targetType === "Point") isValidTarget = true;
+              if (targetingSpell.targetType === "Door" && isClosedDoor) isValidTarget = true;
+              if (targetingSpell.targetType === "Monster" && hasMonster) isValidTarget = true;
+              if (targetingSpell.targetType === "Hero" && hasHero) isValidTarget = true;
+
+              if (isValidTarget) {
+                const hasLOS = activeHero && visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, cell.x + 1, cell.y + 1);
+                highlightClass = hasLOS ? "bg-blue-400/50" : "bg-red-500/40";
+              }
             }
           }
 
           return (
             <div
-              key={`${x}-${y}`}
-              className={`w-[34px] h-[34px] relative ${getCursorClass(cx, cy)}`}
-              onClick={() => handleCellClick(x, y)}
-              onMouseEnter={() => handleCellHover(x, y)}
+              key={`cell-${cell.x}-${cell.y}`}
+              className={`w-[34px] h-[34px] relative ${getCursorClass(cell.x, cell.y)}`}
+              onClick={() => handleCellClick(cell.x, cell.y)}
+              onMouseEnter={() => handleCellHover(cell.x, cell.y)}
             >
-              {isFogged && <div className="absolute inset-0 bg-black z-10" />}
-              {!isFogged && pathHighlightClass && <div className={`absolute inset-0 z-20 ${pathHighlightClass}`} />}
-              {!isFogged && targetHighlightClass && <div className={`absolute inset-0 z-20 ${targetHighlightClass}`} />}
+              {fog && <div className="absolute inset-0 bg-black" />}
+              {highlightClass && <div className={`absolute inset-0 ${highlightClass}`} />}
             </div>
           );
         })}
@@ -168,231 +184,172 @@ export default function DungeonBoard({
 
       {/* Global Mist Layers */}
       <div 
-        className="absolute top-[-100px] left-[-100px] w-[calc(100%+200px)] h-[calc(100%+200px)] pointer-events-none z-20 opacity-10 bg-[url('/img/mist.jpeg')] bg-no-repeat bg-center bg-[length:100%_100%]" 
-        style={{ animation: 'mist1 14s ease-in-out infinite alternate' }} 
+        className="absolute -top-[100px] -left-[100px] w-[calc(100%+200px)] h-[calc(100%+200px)] opacity-10 pointer-events-none z-20" 
+        style={{ 
+          backgroundImage: 'url(/img/mist.jpeg)', 
+          backgroundRepeat: 'no-repeat', 
+          backgroundPosition: 'center', 
+          backgroundSize: '100% 100%', 
+          animation: 'mist1 14s ease-in-out infinite alternate' 
+        }} 
       />
       <div 
-        className="absolute top-[-100px] left-[-100px] w-[calc(100%+200px)] h-[calc(100%+200px)] pointer-events-none z-20 opacity-10 bg-[url('/img/mist.jpeg')] bg-no-repeat bg-center bg-[length:100%_100%]" 
-        style={{ animation: 'mist2 18s ease-in-out infinite alternate' }} 
+        className="absolute -top-[100px] -left-[100px] w-[calc(100%+200px)] h-[calc(100%+200px)] opacity-10 pointer-events-none z-20" 
+        style={{ 
+          backgroundImage: 'url(/img/mist.jpeg)', 
+          backgroundRepeat: 'no-repeat', 
+          backgroundPosition: 'center', 
+          backgroundSize: '100% 100%', 
+          animation: 'mist2 18s ease-in-out infinite alternate' 
+        }} 
       />
 
-      {/* Ambient Grading */}
-      <div className="absolute inset-0 pointer-events-none z-20 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(60,30,0,0.3)_100%)]" />
-
       {/* Entities Layer */}
-      <div className="absolute inset-0 z-30 pointer-events-none">
-        
+      <div className="absolute inset-0 pointer-events-none z-30">
         {/* Furniture */}
         {visibleFurniture?.map((f, i) => (
-          <img 
-            key={`furn-${i}`} 
-            src={`/img/mobili/${f.img}`} 
-            alt="Furniture"
-            className="absolute drop-shadow-md"
-            style={{ left: `${(f.x - 1) * 34}px`, top: `${(f.y - 1) * 34}px` }}
-          />
+          <img key={`furn-${i}`} src={`/img/mobili/${f.img}`} className="absolute drop-shadow-md" style={{ left: (f.x - 1) * 34, top: (f.y - 1) * 34 }} alt="Furniture" />
         ))}
 
         {/* Doors */}
         {visibleDoors?.map((d, i) => (
-          <img 
-            key={`door-${i}`} 
-            src={`/img/cell/${d.img}`} 
-            alt="Door"
-            className="absolute drop-shadow-md"
-            style={{ left: `${(d.x - 1) * 34}px`, top: `${(d.y - 1) * 34}px` }}
-          />
+          <img key={`door-${i}`} src={`/img/cell/${d.img}`} className="absolute drop-shadow-md" style={{ left: (d.x - 1) * 34, top: (d.y - 1) * 34 }} alt="Door" />
         ))}
 
         {/* Secret Passages */}
         {secretPassages?.map((sp, i) => (
-          <img 
-            key={`sp-${i}`} 
-            src={`/img/cell/${sp.img}`} 
-            alt="Secret Passage"
-            className="absolute drop-shadow-md"
-            style={{ left: `${(sp.x - 1) * 34}px`, top: `${(sp.y - 1) * 34}px` }}
-          />
+          <img key={`sp-${i}`} src={`/img/cell/${sp.img}`} className="absolute drop-shadow-md" style={{ left: (sp.x - 1) * 34, top: (sp.y - 1) * 34 }} alt="Secret Passage" />
         ))}
 
         {/* Treasures */}
         {treasures?.map((t, i) => (
-          <img 
-            key={`tr-${i}`} 
-            src={`/img/cell/${t.img}`} 
-            alt="Treasure"
-            className="absolute drop-shadow-md"
-            style={{ left: `${(t.x - 1) * 34}px`, top: `${(t.y - 1) * 34}px` }}
-          />
+          <img key={`trs-${i}`} src={`/img/cell/${t.img}`} className="absolute drop-shadow-md" style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }} alt="Treasure" />
         ))}
-
-        {/* Script Images */}
-        {gameSession?.scriptImages?.map((si, i) => {
-          const visCell = boardVisibilityMap?.data?.find(c => c.x === si.x && c.y === si.y);
-          if (visCell && !visCell.fog) {
-            return (
-              <img 
-                key={`si-${i}`} 
-                src={si.src} 
-                alt="Script Overlay"
-                className="absolute"
-                style={{ left: `${(si.x - 1) * 34}px`, top: `${(si.y - 1) * 34}px` }}
-              />
-            );
-          }
-          return null;
-        })}
 
         {/* Traps */}
         {triggeredTraps?.map((t, i) => {
-          let src = '';
-          if (t.tipo === 1) src = '/img/cell/caduta.png';
-          else if (t.tipo === 2) src = '/img/cell/lancia.jpg';
-          else if (t.tipo === 3) src = '/img/cell/rocciacad.jpg';
-          
+          let src = "";
+          if (t.tipo === 1) src = "/img/cell/caduta.png";
+          else if (t.tipo === 2) src = "/img/cell/lancia.png";
+          else if (t.tipo === 3) src = "/img/cell/rocciacad.png";
           if (!src) return null;
-          return (
-            <img 
-              key={`trap-${i}`} 
-              src={src} 
-              alt="Trap"
-              className="absolute drop-shadow-md"
-              style={{ left: `${(t.x - 1) * 34}px`, top: `${(t.y - 1) * 34}px` }}
-            />
-          );
+          return <img key={`trp-${i}`} src={src} className="absolute drop-shadow-md" style={{ left: (t.x - 1) * 34, top: (t.y - 1) * 34 }} alt="Trap" />;
         })}
 
+        {/* Script Images */}
+        {gameSession?.scriptImages?.map((si, i) => {
+          if (isFogged(si.x, si.y)) return null;
+          return <img key={`scr-${i}`} src={si.src} className="absolute drop-shadow-md" style={{ left: (si.x - 1) * 34, top: (si.y - 1) * 34 }} alt="Script Overlay" />;
+        })}
+      </div>
+
+      {/* Characters Layer */}
+      <div className="absolute inset-0 pointer-events-none z-40">
         {/* Monsters */}
-        {visibleMonsters?.map((m) => {
-          const isTargeted = targetingSpell && hoveredCell?.x === m.x - 1 && hoveredCell?.y === m.y - 1;
-          const hasLOS = activeHero && visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, m.x, m.y);
+        {visibleMonsters?.map(m => {
+          const isTargeted = targetingSpell && (targetingSpell.targetType === "Monster" || targetingSpell.effetto === "Genio");
+          const cursorClass = isTargeted ? 'cursor-crosshair' : (targetingSpell ? 'cursor-default' : 'cursor-pointer');
           
-          let statusClasses = '';
-          let statusOverlay = null;
-          if (m.activeStatus?.includes('Sleep')) {
-            statusClasses = 'ring-2 ring-blue-400 animate-pulse';
-            statusOverlay = <div className="absolute -top-2 -right-2 text-blue-300 text-xs font-bold drop-shadow-md">Zzz</div>;
-          } else if (m.activeStatus?.includes('Tempest')) {
-            statusClasses = 'ring-2 ring-gray-400 animate-pulse';
-          } else if (m.activeStatus?.includes('Entangled')) {
-            statusOverlay = <div className="absolute inset-0 bg-[url('/img/web.png')] bg-cover opacity-70" />;
+          let effectClass = "";
+          let effectOverlay = null;
+          if (m.activeStatus?.includes("Sleep")) {
+            effectClass = "ring-2 ring-blue-400 animate-pulse";
+            effectOverlay = <div className="absolute -top-2 -right-2 text-xs font-bold text-blue-300 drop-shadow-md">Zzz</div>;
+          } else if (m.activeStatus?.includes("Tempest")) {
+            effectClass = "ring-2 ring-gray-400 animate-pulse";
+          } else if (m.activeStatus?.includes("Entangled")) {
+            effectOverlay = <div className="absolute inset-0 bg-green-500/30 rounded-full" style={{ backgroundImage: 'radial-gradient(circle, transparent 20%, #22c55e 100%)' }} />;
           }
 
-          let targetHighlight = '';
-          if (isTargeted && targetingSpell?.targetType === 'Monster') {
-             targetHighlight = hasLOS ? 'ring-2 ring-blue-400 bg-blue-400/30' : 'ring-2 ring-red-500 bg-red-500/30';
-          }
+          const monsterName = m.monster?.nome || "Mostro";
+          const hpDisplay = `${m.currentBody}/${m.monster?.corpo || '?'}`;
+          const mindDisplay = `${m.currentMind}/${m.monster?.mente || '?'}`;
 
           return (
-            <div
-              key={`monster-${m.id}`}
-              className={`absolute w-[34px] h-[34px] pointer-events-auto flex items-center justify-center transition-all duration-300 ${getCursorClass(m.x, m.y, true)} ${statusClasses} ${targetHighlight}`}
-              style={{ left: `${(m.x - 1) * 34}px`, top: `${(m.y - 1) * 34}px` }}
-              onClick={() => onMonsterClick(m.id)}
-              onMouseEnter={() => {
-                handleMonsterHover(m);
-                if (targetingSpell?.targetType === 'Monster') handleCellHover(m.x - 1, m.y - 1);
-              }}
+            <div 
+              key={`mon-${m.id}`}
+              className={`absolute ${cursorClass} pointer-events-auto`}
+              style={{ left: (m.x - 1) * 34, top: (m.y - 1) * 34, width: 34, height: 34 }}
+              onClick={() => onMonsterClick?.(m.id)}
+              onMouseEnter={() => handleMonsterHover(m)}
+              title={`${monsterName} - HP: ${hpDisplay} - Mind: ${mindDisplay}`}
             >
-              <img src={`/img/mostri/${m.monster?.immagine}`} alt={m.monster?.nome} className="max-w-[34px] max-h-[34px] drop-shadow-md" />
-              {statusOverlay}
+              <img src={`/img/mostri/${m.monster?.immagine}`} className={`max-w-[34px] drop-shadow-md ${effectClass}`} alt={monsterName} />
+              {effectOverlay}
             </div>
           );
         })}
 
         {/* Heroes */}
-        {gameSession?.heroes?.map((h) => {
-          const isActiveTurn = h.turnOrder === gameSession.currentTurn;
-          
-          let statusClasses = '';
-          if (h.activeStatus?.includes('FoggyMist')) statusClasses = 'opacity-50 ring-2 ring-white animate-pulse';
-          else if (h.activeStatus?.includes('RockSkin')) statusClasses = 'ring-2 ring-stone-500 animate-pulse';
-          else if (h.activeStatus?.includes('Courage')) statusClasses = 'ring-2 ring-orange-500 animate-pulse';
-          else if (h.activeStatus?.includes('WallPass')) statusClasses = 'ring-2 ring-amber-600 animate-pulse';
-          else if (h.activeStatus?.includes('InvisiblePassage')) statusClasses = 'ring-2 ring-cyan-400 animate-pulse';
+        {gameSession?.heroes?.map(h => {
+          const isCurrentTurn = gameSession.currentTurn === h.turnOrder;
+          const isTargeted = targetingSpell && targetingSpell.targetType === "Hero";
+          const cursorClass = isTargeted ? 'cursor-crosshair' : 'cursor-default';
 
-          const isTargeted = targetingSpell?.targetType === 'Hero' && hoveredCell?.x === h.x - 1 && hoveredCell?.y === h.y - 1;
-          const targetHighlight = isTargeted ? 'ring-2 ring-blue-400 bg-blue-400/30' : '';
+          let effectClass = "";
+          if (h.activeStatus?.includes("FoggyMist")) effectClass += " opacity-50 ring-2 ring-white animate-pulse";
+          if (h.activeStatus?.includes("RockSkin")) effectClass += " ring-2 ring-stone-500 animate-pulse";
+          if (h.activeStatus?.includes("Courage")) effectClass += " ring-2 ring-orange-500 animate-pulse";
+          if (h.activeStatus?.includes("WallPass")) effectClass += " ring-2 ring-amber-600 animate-pulse";
+          if (h.activeStatus?.includes("InvisiblePassage")) effectClass += " ring-2 ring-cyan-400 animate-pulse";
 
           return (
-            <div
+            <div 
               key={`hero-${h.heroId}`}
-              className={`absolute w-[34px] h-[34px] pointer-events-auto flex items-center justify-center transition-all duration-300 ease-linear ${getCursorClass(h.x, h.y, false, true)} ${statusClasses} ${targetHighlight}`}
-              style={{ left: `${(h.x - 1) * 34}px`, top: `${(h.y - 1) * 34}px` }}
+              className={`absolute transition-all duration-300 ease-linear ${cursorClass} pointer-events-auto ${isCurrentTurn ? 'ring-2 ring-yellow-400 bg-yellow-400/20' : ''}`}
+              style={{ left: (h.x - 1) * 34, top: (h.y - 1) * 34, width: 34, height: 34 }}
               onMouseEnter={() => handleHeroTargetHover(h)}
-              onClick={(e) => handleHeroTargetClick(e, h)}
-              title={`HP: ${h.currentBody}/${h.hero?.corpo}`}
+              onClick={(e) => handleHeroTargetClick(h, e)}
+              title={`${h.hero?.classe || 'Eroe'} - HP: ${h.currentBody}/${h.hero?.corpo || '?'}`}
             >
-              {isActiveTurn && <div className="absolute inset-[-4px] border-2 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.6)] z-0" />}
-              <img src={`/img/eroi/${h.hero?.miniature}`} alt={h.hero?.classe} className="max-w-[34px] max-h-[34px] drop-shadow-lg relative z-10" />
-              <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1 rounded-full border border-black z-20 shadow-sm">
+              <img src={`/img/eroi/${h.hero?.miniature}`} className={`max-w-[34px] drop-shadow-md ${effectClass}`} alt="Hero" />
+              <div className="absolute -bottom-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1 rounded-full border border-white shadow-sm">
                 {h.currentBody}
               </div>
             </div>
           );
         })}
-
-        {/* Attack Feedback */}
-        {gameSession?.lastAttack && (
-          <>
-            {gameSession.lastAttack.hero && (
-              <div 
-                className="absolute w-[34px] h-[34px] rounded-full bg-orange-500/40 animate-ping pointer-events-none"
-                style={{ left: `${(gameSession.lastAttack.hero.x - 1) * 34}px`, top: `${(gameSession.lastAttack.hero.y - 1) * 34}px` }}
-              />
-            )}
-            {gameSession.lastAttack.monster && (
-              <div 
-                className="absolute w-[34px] h-[34px] flex items-center justify-center pointer-events-none"
-                style={{ left: `${(gameSession.lastAttack.monster.x - 1) * 34}px`, top: `${(gameSession.lastAttack.monster.y - 1) * 34}px` }}
-              >
-                <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-70" />
-                <div className="absolute -top-6 bg-black/80 text-white text-xs font-bold px-2 py-1 rounded border border-red-500 animate-bounce whitespace-nowrap">
-                  {gameSession.lastAttack.combatResult?.damage > 0 ? `-${gameSession.lastAttack.combatResult.damage} HP` : 'Parata'}
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
 
       {/* Targeting Tracer */}
       {targetingSpell && hoveredCell && activeHero && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-40">
-          <defs>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-50">
           {(() => {
             const startX = (activeHero.x - 1) * 34 + 17;
             const startY = (activeHero.y - 1) * 34 + 17;
             const endX = hoveredCell.x * 34 + 17;
             const endY = hoveredCell.y * 34 + 17;
-            
             const hasLOS = visibilityCalc?.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1);
-            const isGenio = targetingSpell.effetto === 'Genio';
-            const strokeColor = isGenio || hasLOS ? '#3b82f6' : '#ef4444'; // blue-500 or red-500
+            const isGenie = targetingSpell.effetto === "Genio";
+            const color = isGenie || hasLOS ? "#3b82f6" : "#ef4444";
 
             return (
               <>
-                <line 
-                  x1={startX} y1={startY} x2={endX} y2={endY} 
-                  stroke={strokeColor} strokeWidth="2" strokeDasharray="4 4"
-                  className="animate-pulse" filter="url(#glow)"
-                />
-                <circle cx={endX} cy={endY} r="10" fill="none" stroke={strokeColor} strokeWidth="2" className="animate-ping" />
-                <circle cx={endX} cy={endY} r="4" fill={strokeColor} />
+                <line x1={startX} y1={startY} x2={endX} y2={endY} stroke={color} strokeWidth="2" strokeDasharray="4 4" className="animate-pulse drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]" />
+                <circle cx={endX} cy={endY} r="10" stroke={color} strokeWidth="2" fill="none" className="animate-ping" />
+                <circle cx={endX} cy={endY} r="4" fill={color} />
               </>
             );
           })()}
         </svg>
       )}
 
+      {/* Immediate Attack Feedback */}
+      {gameSession?.lastAttack && (
+        <div className="absolute inset-0 pointer-events-none z-50">
+          {gameSession.lastAttack.hero && (
+            <div className="absolute w-[34px] h-[34px] rounded-full bg-orange-500/40 animate-ping" style={{ left: (gameSession.lastAttack.hero.x - 1) * 34, top: (gameSession.lastAttack.hero.y - 1) * 34 }} />
+          )}
+          {gameSession.lastAttack.monster && (
+            <div className="absolute w-[34px] h-[34px]" style={{ left: (gameSession.lastAttack.monster.x - 1) * 34, top: (gameSession.lastAttack.monster.y - 1) * 34 }}>
+              <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping" />
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg animate-bounce whitespace-nowrap">
+                {gameSession.lastAttack.combatResult?.damage > 0 ? `-${gameSession.lastAttack.combatResult.damage} HP` : 'Parata'}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

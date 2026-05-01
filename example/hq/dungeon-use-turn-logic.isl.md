@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-turn-logic
 
@@ -127,6 +127,7 @@
 - **Trigger**: User clicks "Roll Movement".
 - **Flow**:
   - Find `hero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - IF `hero` is null OR `hero.currentBody` <= 0 OR `hero.isEscaped` is true RETURN.
   - Let `stats` = `heroStatsLogic.calculateStats(hero)`.
   - Let `diceCount` = `stats.movimento`.
   - IF `diceCount` < 1, set `diceCount` to 1.
@@ -143,6 +144,10 @@
     - Set `hoveredPathVariant` to null.
     - RETURN.
   - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - IF current hero is null OR `currentHero.currentBody` <= 0 OR `currentHero.isEscaped` is true:
+    - Set `hoveredPath` to empty.
+    - Set `hoveredPathVariant` to null.
+    - RETURN.
   - Call `hooksPathfinding.calculatePath(hero.x, hero.y, x, y, movementPoints, hero.heroId)` and store result in `path`.
   - IF `path` is not empty:
     - Prepend `{x: hero.x, y: hero.y}` to `path` (to include start).
@@ -164,6 +169,7 @@
   - IF `isMoving` is true OR `movementPoints` <= 0 RETURN.
   - Set `isMovingStarted` to true.
   - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - IF `currentHero` is null OR `currentHero.currentBody` <= 0 OR `currentHero.isEscaped` is true RETURN.
   - Initialize `path` with `hoveredPath`.
   - Initialize `pathVariant` with `hoveredPathVariant`.
   - **Robustness Check**: IF `path` is empty OR last point of `path` is NOT (x, y):
@@ -202,6 +208,17 @@
     - IF `movementPoints` <= 0 No movement left, mark action as done:
       - Set `turnPhase.hasMoved` to true.
     - RETURN.
+  - ELSE (`activePath` length >= 2):
+    - Wait 300ms.
+    - Let `nextPos` = `activePath[1]` and `oldPos` = current hero coordinates.
+    - Decrement movement points and clear manual door state for this step.
+    - Resolve automatic door opening when crossing area boundaries (`valo`) and consume `WallPass` when required.
+    - Resolve trap checks for `nextPos`; if a trap interrupts movement, stop movement and mark turn activity coherently.
+    - Persist hero movement through `sessionManager.moveCurrentHeroTo(nextPos.x, nextPos.y, gameSession)`.
+    - Execute movement scripts (`eventType = 1`) and room-entry scripts (`eventType = 8`) when room changes.
+    - Apply script outcomes (`movementDelta`, `stopMovement`, `forceFinishTurn`) deterministically.
+    - Consume current path step only when movement was not interrupted.
+    - Refresh `canOpenDoor` from the final hero position.
 
 #### attemptExitFromCurrentCell
 
@@ -225,71 +242,6 @@
     - Trigger `onNotify(currentHero.hero.classe + " si ritira dalle scale.")`.
   - Trigger `endTurn(true)` so the turn advances immediately even if the exit is being resolved during movement cleanup and `isMoving` has not been committed to false yet.
   - RETURN true.
-  - Wait 300ms.
-  - Get next step `nextPos` = `activePath[1]`.
-  - // Store old position to check for Area ID (valo) transition
-  - Let `oldPos` = {x: currentHero.x, y: currentHero.y}.
-  - // Reset manual door interaction flag during each step of movement
-  - Set `canOpenDoor` to null.
-  - Decrement `movementPoints` by 1.
-  - **Automatic Door Opening**:
-    - Let `oldVis` = find cell in `visibilityMap.data` matching `oldPos.x` and `oldPos.y`.
-    - Let `newVis` = find cell in `visibilityMap.data` matching `nextPos.x` and `nextPos.y`.
-    - // Trigger opening only if hero crosses between different Area IDs (valo)
-    - IF `oldVis` is NOT null AND `newVis` is NOT null AND `oldVis.valo` != `newVis.valo`:
-      - // Use old position to determine destination correctly as 'the new area'
-      - // Rule 4.2: Provide the starting valo to correctly identify the new area to reveal
-      - Let `doorCheck` = `mapInteractionLogic.isFrontOfDoor(currentHero.x, currentHero.y, oldVis.valo)`.
-      - IF `doorCheck.found` is true AND `doorCheck.passageCell` is same as `nextPos`:
-        - Call `mapInteractionLogic.openPassage(doorCheck.passageCell.x, doorCheck.passageCell.y, doorCheck.destination.x, doorCheck.destination.y)`.
-        - Set `canOpenDoor` to null.
-      - ELSE IF `currentHero.activeStatus` contains "WallPass":
-        - Call `sessionManager.clearCurrentHeroStatus("WallPass")`.
-        - Trigger `onNotify("Passapareti si consuma dopo aver attraversato un muro.")`.
-
-  - **Trap Check**:
-    - Find `mapCell` at `nextPos` in grid.
-    - IF `mapCell.trpl` exists AND `trapsLogic.checkTrapActivation(mapCell.trpl, nextPos.x, nextPos.y)` is true:
-      - Initialize `jumpSuccess` to false.
-      - **Try Abyss Jump Check**:
-        - IF `mapCell.trpl.tipo` == 1 AND `trapsLogic.isTrapVisible(nextPos.x, nextPos.y)` is true:
-          - Trigger `onNotify("Tenti di saltare l'abisso...")`.
-          - Generate random number `roll` between 1 and 6.
-          - IF `roll` > 1:
-            - Set `jumpSuccess` to true.
-            - Trigger `onNotify("Salto riuscito! L'eroe supera l'abisso.")`.
-      - IF `jumpSuccess` is false:
-        - **Trigger Trap**:
-          - IF `currentHero.activeStatus` contains "RockSkin":
-            - Trigger `onNotify("La pelle di pietra si frantuma per l'impatto!")`.
-          - Register Trigger: `trapsLogic.registerTriggeredTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo)`.
-          - Call `sessionManager.resolveMovementTrap(nextPos.x, nextPos.y, mapCell.trpl.tipo, mapCell.trpl.rccadex, mapCell.trpl.rccadey)`.
-          - SWITCH `mapCell.trpl.tipo`:
-            - CASE 1: Trigger `onNotify("Cadi in un abisso! Subisci 1 danno e il tuo turno finisce.")`.
-            - CASE 2: Trigger `onNotify("Le lance scattano dal pavimento! Subisci 1 danno e il tuo turno finisce.")`.
-            - CASE 3: Trigger `onNotify("Una roccia cade dal soffitto! Subisci 1 danno e il tuo turno finisce.")`.
-            - DEFAULT: Trigger `onNotify("TRAPPOLA! Hai interrotto il movimento.")`.
-          - Set `isMoving` to false.
-          - **End Turn Activity**:
-            - Set `turnPhase.hasMoved` to true.
-            - Set `turnPhase.hasPerformedAction` to true.
-          - End Movement: Set `activePath` to empty list.
-          - RETURN.
-    - Build `movedSession` as a full-session snapshot where the active hero is already at `nextPos`.
-    - Persist the normal movement through `sessionManager.moveCurrentHeroTo(nextPos.x, nextPos.y, gameSession)`.
-    - Call `sessionManager.executeMissionScripts({ baseSession: movedSession, eventType: 1, context: { previousPosition: oldPos }, visibilityMap })`.
-    - IF the movement script runtime returns `movementDelta`, add it to the remaining movement points.
-    - IF the movement script runtime returns `forceFinishTurn`, call `forceTurnExhausted(finalHeroPosition)` and RETURN.
-    - IF the movement script runtime returns `stopMovement`, stop consuming the remaining `activePath` immediately.
-    - Compare the room id (`valo`) of `oldPos` and the final hero position after any movement-script side effect.
-    - IF the room id changed:
-      - Call `sessionManager.executeMissionScripts({ baseSession: sessionAfterMovementScripts, eventType: 8, context: { roomId: newRoomId }, visibilityMap })`.
-      - Apply `movementDelta`, `forceFinishTurn`, and `stopMovement` from that room-entry result exactly as for event 1.
-  - Set `activePath` to `activePath` starting from index 1 only if no script stopped the movement sequence.
-  - **Update Manual Door State**:
-    - // Rule 4.5: Always update interactive state during movement to enable UI
-    - Let `hero` = the final active hero position after any movement-script side effect.
-    - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(hero.x, hero.y, null)`.
 
 #### forceTurnExhausted
 
@@ -309,6 +261,7 @@
 - **Flow**:
   - Find monster in `@GameSession.monsters` by `monsterId`.
   - Find current hero in `@GameSession.heroes` where `turnOrder` == `@GameSession.currentTurn`.
+  - IF `hero.currentBody` <= 0 OR `hero.isEscaped` is true RETURN without attack resolution.
   - **Validate Target**:
     - Let `stats` = `heroStatsLogic.calculateStats(hero)`.
     - Let `dx` = absolute(`hero.x` - `monster.x`).
@@ -317,8 +270,10 @@
     - Initialize `isValidTarget` to false.
     - IF `dist` <= 1: Set `isValidTarget` to true.
     - ELSE IF `dx` == 1 AND `dy` == 1 AND `stats.canAttackDiagonal` is true:
+      - IF `visibilityCalc` is null: treat target as invalid and RETURN without attack resolution.
       - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `isValidTarget` to true.
     - ELSE IF `stats.canAttackRanged` is true:
+      - IF `visibilityCalc` is null: treat target as invalid and RETURN without attack resolution.
       - IF `visibilityCalc.hasLineOfSight(hero.x, hero.y, monster.x, monster.y)` is true: Set `isValidTarget` to true.
 
   - IF monster is found AND hero is found AND `isValidTarget` is true AND `isMoving` is false AND `turnPhase.hasPerformedAction` is false:
@@ -364,6 +319,7 @@
     - Build `afterAttackSession` from the same `attackBaseSession` plus the resolved combat result.
     - IF the target monster was killed:
       - Call `sessionManager.executeMissionScripts({ baseSession: afterAttackSession, eventType: 2, context: { monsterTypeId: monster.monster.id, onDeath: true }, visibilityMap })`.
+    - `onDeath` scripts MUST use `afterAttackSession` as `baseSession`, and MUST NOT use the pre-resolution `attackBaseSession`.
 
 #### handleOpenDoor
 
@@ -390,6 +346,8 @@
 - **Flow**:
   - IF `isMoving` is true RETURN.
   - Find current hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - IF `currentHero` is found AND `currentHero.activeStatus` contains "InvisiblePassage":
+    - Trigger `onNotify("L'effetto di Passaggio Invisibile svanisce.")`.
   - IF `currentHero` is found AND `currentHero.activeStatus` contains "FoggyMist":
     - Trigger `onNotify("L'effetto di Nebbia Caliginosa svanisce.")`.
 
@@ -402,6 +360,10 @@
   - // Note: If currentTurn > heroes.length, Dungeon component will trigger hooksMonsterAI.runMonsterTurn().
   - Reset all the prop in the object `turnPhase` (@TurnPhase) to false.
   - Reset `movementPoints` to null.
+  - Clear `activePath`.
+  - Clear `hoveredPath`.
+  - Set `hoveredPathVariant` to null.
+  - Set `isMoving` to false.
   - Set `isMovingStarted` to false.
   - Set `attacksPerformed` to 0.
   - Let `nextHero` = find hero in `gameSession.heroes` where `turnOrder` == `nextTurn`.
@@ -409,7 +371,71 @@
     - Set `canOpenDoor` to `mapInteractionLogic.isFrontOfDoor(nextHero.x, nextHero.y, null)`.
   - IF `currentHero` is found AND `currentHero.activeStatus` contains "FoggyMist":
     - Call `sessionManager.advanceTurn(nextTurn, "FoggyMist")`.
+    - IF `currentHero.activeStatus` contains "InvisiblePassage":
+      - Call `sessionManager.clearCurrentHeroStatus("InvisiblePassage")`.
+  - ELSE IF `currentHero` is found AND `currentHero.activeStatus` contains "InvisiblePassage":
+    - Call `sessionManager.advanceTurn(nextTurn, "InvisiblePassage")`.
   - ELSE:
     - Call `sessionManager.advanceTurn(nextTurn, null)`.
 
+#### syncTurnTransientStateOnTurnChange
+
+- **Contract**: Guarantees that transient UI turn state is reset whenever the active turn owner changes, even if turn advancement did not originate from `endTurn` (e.g., external/boundary updates, monster phase completion, forced transitions).
+- **Trigger**: When `gameSession.currentTurn` OR active hero identity changes.
+- **Flow**:
+  - Compute `activeTurnKey` from the current active hero identity (`heroId` or `turnOrder`) and `gameSession.currentTurn`.
+  - Compare against `previousActiveTurnKey`.
+  - IF `activeTurnKey` differs from `previousActiveTurnKey`:
+    - Reset `turnPhase` to all false (`HasMoved`, `HasPerformedAction`, `IsTurnFinished`).
+    - Reset `movementPoints` to `null`.
+    - Reset `attacksPerformed` to `0`.
+    - Reset `isMoving` to `false`.
+    - Reset `isMovingStarted` to `false`.
+    - Clear `activePath`.
+    - Clear `hoveredPath`.
+    - Set `hoveredPathVariant` to `null`.
+    - Recompute `canOpenDoor` from the new active hero position.
+    - Store `activeTurnKey` as `previousActiveTurnKey`.
+  - ELSE:
+    - Keep current transient state unchanged.
+
 - **Return**: `{ turnPhase, movementPoints, hoveredPath, hoveredPathVariant, isMoving, canOpenDoor, handleOpenDoor, rollMovement, handleBoardHover, handleBoardClick, handleMonsterClick, markActionDone, forceTurnExhausted, endTurn }`
+
+### 🚨 Constraints
+
+- Each capability MUST enforce its own transition/decision constraints explicitly.
+- Capability-level state changes MUST be bounded and deterministic for equivalent inputs/state.
+- Capabilities internalState, checkMissionObjective, updateCanAttack, rollMovement, handleBoardHover MUST avoid undefined side effects outside declared flow and side effects.
+- The "Roll Movement" availability MUST be tied to the active hero turn context; stale transient state from a previous turn MUST NOT disable movement for the next hero.
+- A hero with `currentBody` <= 0 MUST be treated as dead: cannot roll movement, cannot move, cannot attack, and cannot consume turn actions.
+- Dead or escaped heroes MUST be skipped by turn progression; `currentTurn` MUST advance to the next living, non-escaped hero.
+- `InvisiblePassage` MUST expire automatically at the end of the affected hero turn and MUST NOT persist across subsequent turns unless recast.
+
+### 🚨 Global Constraints
+
+- Component MUST keep orchestration semantics coherent across all capabilities and shared state references.
+- Cross-capability execution MUST preserve declared domain invariants and mutation boundaries.
+- Component MUST expose deterministic behavior at the system boundary for equivalent scenarios.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for declared orchestration methods.
+- [ ] Component-level global constraints hold across multi-capability execution paths.
+- [ ] State boundary and domain reference consistency are preserved end-to-end.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Deterministic Method Behavior**:
+   - Target: first declared capability
+   - Input: equivalent inputs/state across repeated runs
+   - Expected: same transition/output and bounded side effects
+
+2. **Capability Constraint - Boundary Handling**:
+   - Target: capability-level constraints
+   - Input: invalid or boundary conditions
+   - Expected: explicit handling without undefined mutations
+
+3. **Global Constraint - Cross-Capability Orchestration**:
+   - Target: component capability sequence
+   - Input: realistic multi-step flow
+   - Expected: coherent state progression respecting global boundaries

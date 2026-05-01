@@ -38,7 +38,7 @@
   - `sessionManager.collectTreasureAtCell(currentHero.heroId, 6, 6)` is called.
   - The emitted session increases `currentHero.gold` by 50.
   - The emitted session resets the `tes` payload for cell `(6, 6)`.
-  - The local marker `{ x: 6, y: 6, img: "tesoro.jpg" }` is added only after the boundary confirms successful persistence.
+  - The local marker `{ x: 6, y: 6, img: "tesoro.png" }` is added only after the boundary confirms successful persistence.
   - `onActionDone` is triggered.
 
 ## Scenario: Treasure Marker Must Not Desynchronize From Persistence
@@ -60,9 +60,19 @@
   - `onUpdateSession` is NOT called (no state change).
   - `onActionDone` is triggered.
 
+## Scenario: Empty Designated Treasure Square Skips Deck Draw
+
+- **Given**: `gameSession.monsters` is empty. A visible `MapCell` has `tes.ts` == 1 with `mon`, `ogg`, `arma`, and `trp` all less than or equal to 0 (no collectible loot). `gameSession.treasureDeck` contains at least one `TreasureCard`.
+- **When**: The active hero triggers `searchTreasure()`.
+- **Assert (Expected Outcomes)**:
+  - `onNotify` is triggered with `"Il tesoro è vuoto."`.
+  - `sessionManager.collectTreasureAtCell` is NOT called for that empty-pile branch.
+  - `sessionManager.drawTreasureCard()` is NOT called for that same action.
+  - `onActionDone` is triggered exactly once.
+
 ## Scenario: Deterministic Treasure Card Draw
 
-- **Given**: `gameSession.monsters` is empty. No `MapCell` in the visible area contains treasure. `gameSession.treasureDeck` contains at least one `TreasureCard`.
+- **Given**: `gameSession.monsters` is empty. No `MapCell` in the visible area has collectible map loot (`mon`/`ogg`/`arma`/`trp` > 0) and no visible cell is an empty designated treasure square (`tes.ts` == 1 with no loot). `gameSession.treasureDeck` contains at least one `TreasureCard`.
 - **When**: The active hero triggers `searchTreasure()`.
 - **Assert (Expected Outcomes)**:
   - `sessionManager.drawTreasureCard()` is called.

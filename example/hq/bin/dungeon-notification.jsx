@@ -6,87 +6,98 @@
  * Edit the ISL file instead.
  */
 
-import React, { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
+/**
+ * Derives the visual tone of the notification from the message text.
+ * @param {string} message - The notification message.
+ * @returns {Object} The derived tone properties (label, accentClass, icon).
+ */
 const deriveTone = (message) => {
-  if (!message) return null;
+  if (!message) {
+    return { label: 'Cronaca', accentClass: 'border-stone-500 text-stone-300', icon: '📜' };
+  }
+
   const lowerMsg = message.toLowerCase();
 
   if (/(spell|cast|magic|arcane|mana|incantesimo|magia|arcano)/.test(lowerMsg)) {
-    return {
-      label: 'Arcano',
-      borderClass: 'border-indigo-500',
-      bgClass: 'bg-indigo-950/90',
-      textClass: 'text-indigo-300',
-      icon: '🔮'
-    };
+    return { label: 'Arcano', accentClass: 'border-indigo-500 text-indigo-300', icon: '✨' };
   }
   
-  if (/(loot|find|treasure|gold|item|bottino|trovato|oro|ricevi|oggetto)/.test(lowerMsg)) {
-    return {
-      label: 'Bottino',
-      borderClass: 'border-amber-500',
-      bgClass: 'bg-amber-950/90',
-      textClass: 'text-amber-300',
-      icon: '💎'
-    };
+  if (/(loot|found|treasure|gold|item|trovato|bottino|oro|monete|equipaggiato)/.test(lowerMsg)) {
+    return { label: 'Bottino', accentClass: 'border-amber-500 text-amber-300', icon: '💎' };
   }
   
-  if (/(warning|cancel|invalid|target|cannot|avviso|invalido|bersaglio|non puoi|errore|fallito)/.test(lowerMsg)) {
-    return {
-      label: 'Avviso',
-      borderClass: 'border-rose-500',
-      bgClass: 'bg-rose-950/90',
-      textClass: 'text-rose-300',
-      icon: '⚠️'
-    };
+  if (/(invalid|cancel|warning|cannot|error|annullato|invalido|errore|attenzione|impossibile)/.test(lowerMsg)) {
+    return { label: 'Avviso', accentClass: 'border-rose-500 text-rose-300', icon: '⚠️' };
   }
-  
-  return {
-    label: 'Cronaca',
-    borderClass: 'border-stone-500',
-    bgClass: 'bg-stone-900/90',
-    textClass: 'text-stone-400',
-    icon: '📜'
-  };
+
+  return { label: 'Cronaca', accentClass: 'border-stone-500 text-stone-300', icon: '📜' };
 };
 
 export default function DungeonNotification({ message, duration = 3000, onClose }) {
+  const onCloseRef = useRef(onClose);
+
+  // Keep the ref updated to avoid re-triggering the timeout if onClose changes
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // autoClose capability
   useEffect(() => {
     if (!message) return;
-    
+
     const timer = setTimeout(() => {
-      if (typeof onClose === 'function') {
-        onClose();
+      if (onCloseRef.current) {
+        onCloseRef.current();
       }
     }, duration);
-    
+
     return () => clearTimeout(timer);
-  }, [message, duration, onClose]);
+  }, [message, duration]);
 
   if (!message) return null;
 
   const tone = deriveTone(message);
 
   return (
-    <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ease-out">
-      <div 
-        className={`flex items-center gap-4 p-4 rounded-lg border-2 shadow-2xl min-w-[320px] max-w-md w-full backdrop-blur-md ${tone.bgClass} ${tone.borderClass}`}
-        role="alert"
-      >
-        <div className="flex-shrink-0 text-2xl drop-shadow-md">
-          {tone.icon}
-        </div>
-        
-        <div className="flex flex-col justify-center">
-          <span className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 ${tone.textClass}`}>
-            {tone.label}
-          </span>
-          <span className="text-stone-100 font-semibold text-sm leading-snug drop-shadow-sm">
-            {message}
-          </span>
+    <>
+      <style>{`
+        @keyframes slideFadeIn {
+          from { opacity: 0; transform: translate(-50%, -20px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-slide-fade {
+          animation: slideFadeIn 0.3s ease-out forwards;
+        }
+      `}</style>
+      
+      <div className="fixed top-6 left-1/2 z-[100] animate-slide-fade pointer-events-none">
+        <div 
+          className={`relative flex items-center p-4 rounded-lg border-2 bg-stone-900/95 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.7)] min-w-[320px] max-w-lg ${tone.accentClass}`}
+        >
+          {/* Decorative Fantasy Corners */}
+          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-current opacity-60 rounded-tl-sm"></div>
+          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-current opacity-60 rounded-tr-sm"></div>
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-current opacity-60 rounded-bl-sm"></div>
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-current opacity-60 rounded-br-sm"></div>
+
+          {/* Leading Badge */}
+          <div className="flex-shrink-0 mr-4 text-3xl drop-shadow-md">
+            {tone.icon}
+          </div>
+
+          {/* Content */}
+          <div className="flex flex-col flex-grow">
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-0.5">
+              {tone.label}
+            </span>
+            <span className="text-stone-100 font-medium leading-snug drop-shadow-sm">
+              {message}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

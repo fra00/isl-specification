@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-spell-selection-modal
 
@@ -30,7 +30,7 @@
 - **Overlay**: Fixed full-screen backdrop (bg-black/90), z-index 70.
 - **Layout**: Centered spell-selection plaque on large screens; on short viewports the full-screen overlay MUST scroll vertically so the entire modal remains reachable.
 - **Grid**: Two columns on narrow layouts, four columns on wider layouts, with centered cards and reduced spacing on compact screens.
-- **Card Backs**: Large images of element backs (`/img/cinc/Fuoco00_Dorso.jpg`, etc.).
+- **Card Backs**: Large images of element backs (`/img/cinc/Fuoco00_Dorso.png`, etc.).
 - **Compact Responsiveness**: Spell cards and labels SHOULD scale down on smaller viewports so the player can still see and select the full set without clipping.
 
 ### 📦 Content
@@ -38,7 +38,7 @@
 - **Title**: "Selezione Incantesimi".
 - **Instruction**: Displays whose turn it is to pick (Wizard first, then Elf).
 - **Element Grid**:
-  - Shows the 4 element backs (Source: `/img/cinc/` + `[Element]00_Dorso.jpg`).
+  - Shows the 4 element backs (Source: `/img/cinc/` + `[Element]00_Dorso.png`).
   - Elements already picked are greyed out or hidden.
   - Each element card SHOULD remain fully clickable across the whole card area.
 
@@ -107,3 +107,38 @@
   - Preserve full-card click targets for every elemental choice.
 
 **💡 Implementation Hint**: The Wizard picks 3 elements, leaving exactly one for the Elf automatically.
+
+### 🚨 Constraints
+
+- Each capability MUST honor its declared trigger and contract without hidden side effects.
+- Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
+- Capabilities internalState, initialize, selectElement, maintainScrollableViewportLayout MUST remain deterministic for equivalent props/state and user actions.
+
+### 🚨 Global Constraints
+
+- MUST keep UI behavior consistent with declared capabilities and triggers.
+- MUST NOT embed business/domain decisions that belong to Backend or Business Logic components.
+- MUST preserve interaction determinism for equivalent user actions and state.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for all declared interaction handlers.
+- [ ] Component-level global constraints remain valid across capability sequences.
+- [ ] Presentation boundary is preserved (no business/domain mutation logic in UI handlers).
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Handler Determinism**:
+   - Target: internalState
+   - Input: repeated equivalent user actions with same props/state
+   - Expected: same observable UI outcome and side effects
+
+2. **Capability Constraint - Invalid Input Guard**:
+   - Target: declared interaction handlers
+   - Input: null/missing/invalid interaction context
+   - Expected: safe handling without runtime crash or undefined behavior
+
+3. **Global Constraint - Cross-Capability Coherence**:
+   - Target: component capability sequence
+   - Input: realistic interaction flow spanning multiple handlers
+   - Expected: consistent rendering semantics and preserved component boundary

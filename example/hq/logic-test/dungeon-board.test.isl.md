@@ -63,7 +63,7 @@
 - **When**: The `boardVisibilityMap` is updated such that the cell (5, 4) has `fog: false`.
 - **Assert (Expected Outcomes)**:
   - `visibleDoors` hook MUST return the door at (5, 5) because one of its boundary cells (5, 4) is revealed.
-  - The `DungeonBoard` MUST render the door image `portav.jpg` at (5, 5).
+  - The `DungeonBoard` MUST render the door image `portav.png` at (5, 5).
   - If the door is subsequently added to `gameSession.openedDoors`, the door MUST remain visible regardless of fog status.
 
 ## Scenario: Monster Status Effect Visualization
@@ -80,7 +80,7 @@
 - **Given**: `triggeredTraps` contains a trap at (6, 5) with `tipo: 2`.
 - **When**: The `DungeonBoard` renders activated or detected traps.
 - **Assert (Expected Outcomes)**:
-  - The board MUST render the image `/img/cell/lancia.jpg` at (6, 5).
+  - The board MUST render the image `/img/cell/lancia.png` at (6, 5).
   - The spear trap marker MUST remain visible after `searchTraps` reveals the trap.
   - Rendering the spear trap marker MUST NOT change the trap status or disarm it automatically.
 
@@ -89,7 +89,7 @@
 - **Given**: `triggeredTraps` contains a trap at (8, 7) with `tipo: 3`.
 - **When**: The `DungeonBoard` renders activated or detected traps.
 - **Assert (Expected Outcomes)**:
-  - The board MUST render the image `/img/cell/rocciacad.jpg` at (8, 7).
+  - The board MUST render the image `/img/cell/rocciacad.png` at (8, 7).
   - The falling rock trap marker MUST remain visible after `searchTraps` reveals the trap.
   - Rendering the falling rock trap marker MUST NOT change the trap status or disarm it automatically.
 
@@ -148,3 +148,13 @@
   - The hero token click MUST forward the selection through the board click flow using coordinates (4, 6).
   - Hero-target spells such as `Coraggio`, `Pelle di Pietra`, `Nebbia Caliginosa`, `Acqua Guaritrice`, `Passapareti`, and `Passaggio Invisibile` MUST remain directly selectable by clicking the hero miniature.
   - The hero token MUST NOT absorb the click without producing target selection.
+
+## Scenario: Monster Token Hover Shows Name Body And Mind
+
+- **Given**: A visible monster token for `@MonsterState` with `monster.nome = "Goblin"`, `currentBody = 3`, `monster.corpo = 4`, `currentMind = 1`, `monster.mente = 2`.
+- **When**: The pointer hovers the monster token.
+- **Assert (Expected Outcomes)**:
+  - Hover feedback MUST show the name `"Goblin"`.
+  - Hover feedback MUST show current and max body (e.g. 3/4 or equivalent readable form).
+  - Hover feedback MUST show current and max mind (e.g. 1/2 or equivalent readable form).
+  - If `monster.nome` is empty, the name fallback MUST be `"Mostro"` while body and mind values remain visible.

@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.2
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./dungeon-board
 
@@ -101,6 +101,13 @@
 - **Monsters**: Visual tokens for `@GameSession.monsters` (@MonsterState) at their x,y coordinates (start from 1).
   - **Data Source**: Derive `visibleMonsters` using `useDungeonVisibleMonsters(@GameSession, @VisibilityMap)`.
   - **Image**: `/img/mostri/` + `@MonsterState.monster.immagine` (max-width:34px).
+  - **Hover Label**:
+    - Hovering a visible monster token MUST show immediate UI feedback including current monster HP and current Mind points.
+    - The hover label MUST include `@MonsterState.currentBody` and SHOULD include max HP reference `@MonsterState.monster.corpo` when available.
+    - The hover label MUST include `@MonsterState.currentMind` and SHOULD include max Mind reference `@MonsterState.monster.mente` when available.
+    - Hovering a visible monster token MUST also show the monster name (`@MonsterState.monster.nome`).
+    - The label can be rendered through native tooltip/title or an equivalent lightweight hover tooltip, but it MUST be readable without opening other panels.
+    - If `monster.nome` is missing or empty, fallback label MUST be `"Mostro"`.
   - **Cursor**:
     - IF `targetingSpell` is NOT null AND (`targetingSpell.targetType` == "Monster" OR `targetingSpell.effetto` == "Genio") THEN `cursor-crosshair`.
     - ELSE IF `targetingSpell` is NOT null THEN `cursor-default`.
@@ -126,8 +133,8 @@
   - **Data Source**: `triggeredTraps` prop.
   - **Render**:
     - IF `tipo` == 1 (Abisso) THEN Image at x,y with Src: `/img/cell/caduta.png`, using intrinsic asset dimensions.
-    - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.jpg`, using intrinsic asset dimensions.
-    - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.jpg`, using intrinsic asset dimensions.
+    - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.png`, using intrinsic asset dimensions.
+    - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.png`, using intrinsic asset dimensions.
   - Triggered trap markers SHOULD cast a soft drop shadow so they remain legible over the board texture.
 - **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
@@ -229,9 +236,56 @@
 
 #### handleMonsterHover
 
-- **Contract**: Show monster details on hover (optional enhancement).
+- **Contract**: Show immediate monster hover feedback with name, HP, and Mind (current and optional maxima).
 - **Trigger**: When a monster token is hovered.
 - **Flow**:
-  - Display a tooltip or side panel with `@MonsterState.monster` details (e.g., name, currentBody, currentMind).
+  - Resolve hovered monster label from `@MonsterState.monster.nome`.
+  - Resolve hovered monster HP from `@MonsterState.currentBody` and optional max from `@MonsterState.monster.corpo`.
+  - Resolve hovered monster Mind from `@MonsterState.currentMind` and optional max from `@MonsterState.monster.mente`.
+  - Display a lightweight tooltip/title anchored to the token containing name + HP + Mind.
+  - IF resolved name label is null/empty, display fallback label `"Mostro"` while preserving HP and Mind display.
   - IF `targetingSpell` is NULL:
     - Show "Attackable" status and change cursor to indicate physical attack.
+
+### 🚨 Constraints
+
+- Each capability MUST honor its declared trigger and contract without hidden side effects.
+- Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
+- Capabilities internalState, initialize, onCellClick, onCellHover, onHeroTargetHover MUST remain deterministic for equivalent props/state and user actions.
+- Monster token hover MUST expose at least the monster name in UI feedback (tooltip/title or equivalent), without requiring clicks.
+- Monster token hover MUST preserve HP and Mind visibility (`currentBody` / `currentMind`, each with optional `/max` from `monster.corpo` / `monster.mente`) and MUST NOT regress to name-only feedback.
+
+### 🚨 Global Constraints
+
+- MUST keep UI behavior consistent with declared capabilities and triggers.
+- MUST NOT embed business/domain decisions that belong to Backend or Business Logic components.
+- MUST preserve interaction determinism for equivalent user actions and state.
+- The outer wrapper div containing hero and monster tokens MUST have `pointer-events: none` (CSS class `pointer-events-none`) so that mouse events pass through to the underlying grid cells. Individual hero and monster token elements MUST have `pointer-events: auto` (CSS class `pointer-events-auto`) to remain independently interactive. Failure to apply `pointer-events-none` on the wrapper causes grid cell `onMouseEnter`/`onClick` events to be silently swallowed for all empty cells, breaking movement path preview and board interaction entirely.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for all declared interaction handlers.
+- [ ] Component-level global constraints remain valid across capability sequences.
+- [ ] Presentation boundary is preserved (no business/domain mutation logic in UI handlers).
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Handler Determinism**:
+   - Target: internalState
+   - Input: repeated equivalent user actions with same props/state
+   - Expected: same observable UI outcome and side effects
+
+2. **Capability Constraint - Invalid Input Guard**:
+   - Target: declared interaction handlers
+   - Input: null/missing/invalid interaction context
+   - Expected: safe handling without runtime crash or undefined behavior
+
+3. **Global Constraint - Cross-Capability Coherence**:
+   - Target: component capability sequence
+   - Input: realistic interaction flow spanning multiple handlers
+   - Expected: consistent rendering semantics and preserved component boundary
+
+4. **Monster Hover Label Regression**:
+   - Target: Monsters rendering + `handleMonsterHover`
+   - Input: visible monster token with `monster.nome = "Orco"`, `currentBody = 4`, `monster.corpo = 8`, `currentMind = 2`, `monster.mente = 3`
+   - Expected: hover feedback shows `"Orco"`, HP (4/8 or equivalent), and Mind (2/3 or equivalent) immediately; if name is missing, fallback `"Mostro"` is shown while HP and Mind remain visible

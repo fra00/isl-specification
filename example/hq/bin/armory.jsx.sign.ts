@@ -1,5 +1,5 @@
 export default function Armory(props: {
-  gameSession: any;
-  onUpdateSession: (updater: any) => void;
-  onChangePageView: (page: string) => void;
+    gameSession: any;
+    onUpdateSession: (updater: (prevSession: any) => any) => void;
+    onChangePageView: (page: string) => void;
 }): React.ReactElement;

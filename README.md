@@ -63,7 +63,7 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 
 - **[VS Code Extension](./tools/vscode-isl)**: The complete IDE experience with validation, snippets, and compilation.
 - **[ISL Builder](./tools/vscode-isl/src/isl-builder.ts)**: Resolves dependencies, handles transclusion, and prepares build contexts.
-- **[ISL Compiler](./tools/vscode-isl/src/isl-generator.ts)**: Generates executable code (`bin/`) and signatures (`.sign.json`) using LLMs.
+- **[ISL Compiler](./tools/vscode-isl/src/isl-generator.ts)**: Generates executable code (`bin/`) and signatures (`.sign.ts`) using LLMs.
 - **ISL Test**: Generates unit tests automatically from ISL specs and implementations.
 - **ISL Create**: CLI tool to generate ISL drafts from natural language descriptions.
 

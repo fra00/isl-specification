@@ -2471,7 +2471,7 @@
       "y": 2,
       "arnt": {
         "antroc": 4,
-        "inv": "torturav.jpg"
+        "inv": "torturav.png"
       },
       "mobili": {
         "num": false,
@@ -5207,7 +5207,7 @@
       "y": 5,
       "arnt": {
         "antroc": 9,
-        "inv": "libreriav.jpg"
+        "inv": "libreriav.png"
       },
       "mobili": {
         "num": true,
@@ -5243,7 +5243,7 @@
       "y": 5,
       "arnt": {
         "antroc": 4,
-        "inv": "tavoloo.jpg"
+        "inv": "tavoloo.png"
       },
       "mobili": {
         "num": false,
@@ -9383,7 +9383,7 @@
       "y": 9,
       "arnt": {
         "antroc": 5,
-        "inv": "tavolov.jpg"
+        "inv": "tavolov.png"
       },
       "mobili": {
         "num": false,
@@ -10463,7 +10463,7 @@
       "y": 10,
       "arnt": {
         "antroc": 10,
-        "inv": "trono.jpg"
+        "inv": "trono.png"
       },
       "mobili": {
         "num": false,
@@ -11147,7 +11147,7 @@
       "y": 11,
       "arnt": {
         "antroc": 11,
-        "inv": "scala.jpg"
+        "inv": "scala.png"
       },
       "mobili": {
         "num": false,
@@ -11615,7 +11615,7 @@
       "y": 11,
       "arnt": {
         "antroc": 2,
-        "inv": "armadiov.jpg"
+        "inv": "armadiov.png"
       },
       "mobili": {
         "num": true,
@@ -12875,7 +12875,7 @@
       "y": 13,
       "arnt": {
         "antroc": 6,
-        "inv": "scrivaniao.jpg"
+        "inv": "scrivaniao.png"
       },
       "mobili": {
         "num": false,
@@ -14135,7 +14135,7 @@
       "y": 14,
       "arnt": {
         "antroc": 0,
-        "inv": "caminoo.jpg"
+        "inv": "caminoo.png"
       },
       "mobili": {
         "num": false,
@@ -15431,7 +15431,7 @@
       "y": 15,
       "arnt": {
         "antroc": 8,
-        "inv": "armeriav.jpg"
+        "inv": "armeriav.png"
       },
       "mobili": {
         "num": true,

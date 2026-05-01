@@ -8,28 +8,16 @@
 
 import { useCallback } from "react";
 
-export function useItemLogic({ staticItems = [], sessionManager }) {
-  const useItem = useCallback(
-    (heroId, itemId, gameSession, targetMonsterId = null) => {
-      if (!gameSession) {
-        return false;
-      }
-
-      if (!sessionManager?.useItem) {
-        return false;
-      }
-
-      return sessionManager.useItem(
-        heroId,
-        itemId,
-        staticItems,
-        targetMonsterId
-      );
-    },
-    [staticItems, sessionManager]
-  );
+export function useItemLogic({ staticItems, sessionManager }) {
+  const useItem = useCallback((heroId, itemId, gameSession, targetMonsterId = null) => {
+    if (gameSession == null) {
+      return false;
+    }
+    
+    return sessionManager.useItem(heroId, itemId, staticItems, targetMonsterId);
+  }, [sessionManager, staticItems]);
 
   return {
-    useItem,
+    useItem
   };
 }

@@ -6,253 +6,186 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { PageNavigationEnum } from "./domain-core";
-
-const MENU_ITEMS = {
-  [PageNavigationEnum.PLAY_GAME]: {
-    id: PageNavigationEnum.PLAY_GAME,
-    eyebrow: "Campagna",
-    label: "GIOCA",
-    teaser: "Inizia o continua la tua avventura nel regno",
-    hint: "Esplora i dungeon oscuri",
-    badge: "01",
-    theme: "warm",
-  },
-  [PageNavigationEnum.EDITOR_GAME]: {
-    id: PageNavigationEnum.EDITOR_GAME,
-    eyebrow: "Forgia",
-    label: "EDITOR",
-    teaser: "Plasma nuove sfide e costruisci mappe",
-    hint: "Strumenti di creazione",
-    badge: "02",
-    theme: "cold",
-  },
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { PageNavigationEnum } from './domain-core';
 
 export default function MainMenu({ onChangePageView = () => {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeItem, setActiveItem] = useState(PageNavigationEnum.PLAY_GAME);
-  const [viewportMode, setViewportMode] = useState("normal");
-
-  const compactViewportResolution = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const height = window.innerHeight;
-    if (height <= 460) {
-      setViewportMode("ultra-compact");
-    } else if (height <= 720) {
-      setViewportMode("compact");
-    } else {
-      setViewportMode("normal");
-    }
-  }, []);
-
-  useEffect(() => {
-    compactViewportResolution();
-    window.addEventListener("resize", compactViewportResolution);
-    return () => window.removeEventListener("resize", compactViewportResolution);
-  }, [compactViewportResolution]);
-
-  const clickMenuItems = useCallback(
-    (destination) => {
-      if (isProcessing) return;
-      
-      const isValidDestination = Object.values(PageNavigationEnum).includes(destination);
-      if (!isValidDestination) return;
-
-      setIsProcessing(true);
-      try {
-        onChangePageView(destination);
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [isProcessing, onChangePageView]
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 1080
   );
 
+  // Capability: compactViewportResolution
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isCompact = viewportHeight <= 720;
+  const isUltraCompact = viewportHeight <= 460;
+
+  // Capability: clickMenuItems
+  const clickMenuItems = useCallback((destination) => {
+    if (isProcessing) return;
+    
+    const validDestinations = Object.values(PageNavigationEnum);
+    if (!validDestinations.includes(destination)) return;
+
+    setIsProcessing(true);
+    onChangePageView(destination);
+  }, [isProcessing, onChangePageView]);
+
+  // Capability: mouseOverMenuItems
   const mouseOverMenuItems = useCallback((destination) => {
     setActiveItem(destination);
   }, []);
 
+  // Capability: clearPreviewState
   const clearPreviewState = useCallback(() => {
     setActiveItem(PageNavigationEnum.PLAY_GAME);
   }, []);
 
-  const isUltraCompact = viewportMode === "ultra-compact";
-  const isCompact = viewportMode === "compact";
-  const activeData = MENU_ITEMS[activeItem] || MENU_ITEMS[PageNavigationEnum.PLAY_GAME];
-  const isEditorActive = activeItem === PageNavigationEnum.EDITOR_GAME;
+  // Menu Configuration Data
+  const menuConfig = {
+    [PageNavigationEnum.PLAY_GAME]: {
+      id: PageNavigationEnum.PLAY_GAME,
+      eyebrow: 'Campagna',
+      title: 'GIOCA',
+      teaser: 'Inizia o continua la tua avventura nel dungeon.',
+      hint: 'Esplora le profondità',
+      backdropClass: 'from-orange-900/30 via-red-950/20 to-black',
+      activePill: 'Campagna',
+    },
+    [PageNavigationEnum.EDITOR_GAME]: {
+      id: PageNavigationEnum.EDITOR_GAME,
+      eyebrow: 'Forgia',
+      title: 'EDITOR',
+      teaser: 'Crea e modifica le tue mappe personalizzate.',
+      hint: 'Plasma il mondo',
+      backdropClass: 'from-slate-800/40 via-cyan-950/20 to-black',
+      activePill: 'Forgia',
+    }
+  };
+
+  const currentConfig = menuConfig[activeItem] || menuConfig[PageNavigationEnum.PLAY_GAME];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black text-slate-200 font-sans select-none">
-      {/* BackgroundLayer */}
+    <div className="relative w-full h-screen overflow-hidden bg-black text-white font-sans select-none flex flex-col">
+      
+      {/* BackgroundLayer: Base abstract black-stone */}
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black z-0"></div>
+      
+      {/* ActiveBackdropLayer: Crossfades based on active item */}
       <div 
-        className="absolute inset-0 bg-gradient-to-b from-neutral-900 to-black opacity-90 animate-pulse" 
-        style={{ animationDuration: "6s" }} 
-      />
+        className={`absolute inset-0 bg-gradient-to-br ${menuConfig[PageNavigationEnum.PLAY_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.PLAY_GAME ? 'opacity-100' : 'opacity-0'}`}
+      ></div>
+      <div 
+        className={`absolute inset-0 bg-gradient-to-br ${menuConfig[PageNavigationEnum.EDITOR_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.EDITOR_GAME ? 'opacity-100' : 'opacity-0'}`}
+      ></div>
 
-      {/* ActiveBackdropLayer */}
-      <div
-        className={`absolute inset-0 transition-colors duration-700 ease-in-out opacity-50 ${
-          isEditorActive
-            ? "bg-gradient-to-tr from-slate-900 via-slate-800 to-cyan-900/40"
-            : "bg-gradient-to-tr from-stone-900 via-stone-800 to-orange-900/40"
-        }`}
-      />
+      {/* AtmosphereLayer: Sparse ember particles (simulated with radial gradients and pulse) */}
+      <div className="absolute inset-0 z-0 opacity-30 animate-pulse pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.1) 0%, transparent 60%)' }}>
+      </div>
 
-      {/* AtmosphereLayer */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-500/5 via-transparent to-transparent opacity-40 mix-blend-screen pointer-events-none" />
-
-      {/* Content Container */}
-      <div className="relative z-10 flex flex-col h-full w-full max-w-7xl mx-auto px-6 py-4 md:py-8">
+      {/* Main Content Container */}
+      <div className="relative z-10 flex flex-col w-full h-full items-center">
         
         {/* HeaderPlaque */}
-        <header className={`flex-shrink-0 ${isUltraCompact ? "mb-3" : isCompact ? "mb-5" : "mb-10"}`}>
-          <div className="text-orange-500/80 text-xs md:text-sm font-bold tracking-[0.2em] uppercase mb-1">
+        <div className={`flex flex-col items-center text-center ${isUltraCompact ? 'mt-4 mb-2' : isCompact ? 'mt-8 mb-4' : 'mt-16 mb-8'}`}>
+          <span className={`text-amber-600 tracking-[0.3em] font-semibold uppercase ${isUltraCompact ? 'text-xs' : 'text-sm'}`}>
             Portale del Regno
-          </div>
-          <h1
-            className={`font-serif font-bold text-white tracking-wide ${
-              isUltraCompact ? "text-3xl" : isCompact ? "text-5xl" : "text-6xl md:text-8xl"
-            }`}
-          >
+          </span>
+          <h1 className={`font-serif font-bold tracking-wide text-gray-100 drop-shadow-lg ${isUltraCompact ? 'text-4xl' : isCompact ? 'text-6xl' : 'text-8xl'}`}>
             Dungeon
           </h1>
           {!isUltraCompact && (
-            <p className="text-slate-400 mt-2 text-sm md:text-base max-w-md">
-              Scegli il tuo percorso. Affronta le tenebre o plasma il destino del regno.
+            <p className={`text-gray-400 mt-3 ${isCompact ? 'text-sm' : 'text-base'}`}>
+              Scegli il tuo percorso, eroe.
             </p>
           )}
-        </header>
+        </div>
 
         {/* ActiveStatePill */}
-        <div
-          className={`flex-shrink-0 inline-flex items-center gap-3 bg-black/60 border border-white/10 rounded-full px-4 py-1.5 w-fit backdrop-blur-md transition-all duration-300 ${
-            isUltraCompact ? "mb-4 text-xs" : "mb-8 text-sm"
-          }`}
-        >
-          <span
-            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-              isEditorActive
-                ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"
-                : "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]"
-            }`}
-          />
-          <span className="font-semibold text-white tracking-wide">{activeData.eyebrow}</span>
-          <span className="text-slate-400 border-l border-white/20 pl-3">{activeData.hint}</span>
+        <div className={`flex justify-center transition-all duration-300 ${isUltraCompact ? 'mb-3' : 'mb-8'}`}>
+          <div className={`rounded-full bg-black/60 border border-gray-700/50 flex items-center backdrop-blur-sm ${isUltraCompact ? 'px-3 py-1 space-x-2' : 'px-5 py-2 space-x-3'}`}>
+            <span className={`text-amber-500 font-bold uppercase tracking-wider ${isUltraCompact ? 'text-[10px]' : 'text-xs'}`}>
+              {currentConfig.activePill}
+            </span>
+            <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+            <span className={`text-gray-300 ${isUltraCompact ? 'text-[10px]' : 'text-xs'}`}>
+              {currentConfig.hint}
+            </span>
+          </div>
         </div>
 
-        {/* Layout Area */}
-        <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
-          
-          {/* ActionArea */}
-          <div
-            className={`flex-1 flex ${
-              isUltraCompact ? "flex-row gap-3" : "flex-col md:flex-row gap-4 md:gap-6"
-            }`}
-          >
-            {Object.values(MENU_ITEMS).map((item) => {
-              const isActive = activeItem === item.id;
-              const isCold = item.theme === "cold";
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => clickMenuItems(item.id)}
-                  onMouseEnter={() => mouseOverMenuItems(item.id)}
-                  onFocus={() => mouseOverMenuItems(item.id)}
-                  onMouseLeave={clearPreviewState}
-                  onBlur={clearPreviewState}
-                  disabled={isProcessing}
-                  className={`
-                    group relative text-left overflow-hidden rounded-xl border transition-all duration-500 ease-out
-                    ${
-                      isActive
-                        ? "border-white/30 bg-white/10 scale-[1.02] shadow-2xl"
-                        : "border-white/5 bg-black/40 hover:bg-white/5"
-                    }
-                    ${isUltraCompact ? "flex-1 p-4" : isCompact ? "flex-1 p-6" : "flex-1 p-8 md:p-10"}
-                  `}
-                >
-                  {/* Plaque Hover Glow */}
-                  <div
-                    className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${
-                      isCold ? "from-cyan-500/10 to-transparent" : "from-orange-500/10 to-transparent"
-                    }`}
-                  />
-
-                  <div className="relative z-10 flex flex-col h-full justify-between">
-                    <div>
-                      <div className="flex justify-between items-start mb-3">
-                        <span
-                          className={`text-[10px] md:text-xs font-bold tracking-widest uppercase ${
-                            isCold ? "text-cyan-400" : "text-orange-400"
-                          }`}
-                        >
-                          {item.eyebrow}
-                        </span>
-                        <span
-                          className={`font-mono font-bold transition-colors duration-300 ${
-                            isUltraCompact ? "text-xs" : "text-sm md:text-lg"
-                          } ${isActive ? "text-white/40" : "text-white/10"}`}
-                        >
-                          {item.badge}
-                        </span>
-                      </div>
-                      <h2
-                        className={`font-serif font-bold text-white tracking-wide ${
-                          isUltraCompact ? "text-2xl" : isCompact ? "text-3xl" : "text-4xl md:text-5xl"
-                        } mb-2`}
-                      >
-                        {item.label}
-                      </h2>
-                      <p
-                        className={`text-slate-300 leading-relaxed ${
-                          isUltraCompact ? "text-xs line-clamp-2" : "text-sm md:text-base"
-                        }`}
-                      >
-                        {item.teaser}
-                      </p>
-                    </div>
-
-                    {!isUltraCompact && (
-                      <div className="mt-8 flex items-center justify-between">
-                        <span className="text-slate-500 text-xs md:text-sm font-medium">
-                          {item.hint}
-                        </span>
-                        <span
-                          className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border transition-colors duration-300 ${
-                            isCold
-                              ? isActive
-                                ? "border-cyan-400 text-cyan-200 bg-cyan-500/20"
-                                : "border-cyan-500/30 text-cyan-400/70 bg-cyan-500/5"
-                              : isActive
-                              ? "border-orange-400 text-orange-200 bg-orange-500/20"
-                              : "border-orange-500/30 text-orange-400/70 bg-orange-500/5"
-                          }`}
-                        >
-                          Entra
-                        </span>
-                      </div>
-                    )}
+        {/* ActionArea */}
+        <div className={`flex w-full max-w-5xl mx-auto gap-4 ${isUltraCompact ? 'flex-row px-4' : 'flex-col md:flex-row px-6 md:px-12'}`}>
+          {Object.values(menuConfig).map((config) => (
+            <button
+              key={config.id}
+              onClick={() => clickMenuItems(config.id)}
+              onMouseEnter={() => mouseOverMenuItems(config.id)}
+              onMouseLeave={clearPreviewState}
+              onFocus={() => mouseOverMenuItems(config.id)}
+              onBlur={clearPreviewState}
+              disabled={isProcessing}
+              className={`
+                group relative flex flex-col text-left border border-gray-800 bg-black/40 backdrop-blur-md
+                hover:bg-gray-900/80 hover:border-gray-600 transition-all duration-300 overflow-hidden
+                focus:outline-none focus:ring-2 focus:ring-amber-700/50
+                ${isUltraCompact ? 'flex-1 p-4 rounded-lg' : 'w-full md:w-1/2 p-8 rounded-2xl'}
+                ${activeItem === config.id ? 'border-gray-600 bg-gray-900/60 shadow-[0_0_30px_rgba(0,0,0,0.5)]' : ''}
+                ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
+            >
+              {/* Hover Glow Effect */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${config.backdropClass} opacity-0 group-hover:opacity-20 transition-opacity duration-500`}></div>
+              
+              <div className="relative z-10 flex flex-col h-full justify-center">
+                <span className={`text-amber-600 font-bold tracking-widest uppercase ${isUltraCompact ? 'text-[10px] mb-1' : 'text-xs mb-2'}`}>
+                  {config.eyebrow}
+                </span>
+                <span className={`font-serif font-bold text-gray-100 ${isUltraCompact ? 'text-2xl' : isCompact ? 'text-4xl' : 'text-5xl'}`}>
+                  {config.title}
+                </span>
+                
+                {!isUltraCompact && (
+                  <span className={`text-gray-400 mt-3 ${isCompact ? 'text-sm' : 'text-base'}`}>
+                    {config.teaser}
+                  </span>
+                )}
+                
+                {!isUltraCompact && (
+                  <div className={`mt-6 flex items-center text-amber-500 font-bold text-sm transition-all duration-300 ${activeItem === config.id ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`}>
+                    Entra <span className="ml-2 text-lg leading-none">→</span>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* StatusPlaque (Desktop only) */}
-          <div className="hidden lg:flex w-72 flex-col bg-black/60 border border-white/10 rounded-xl p-6 backdrop-blur-md h-fit shadow-xl">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 border-b border-white/10 pb-3">
-              Scena Attiva
-            </h3>
-            <div className="flex flex-col gap-1">
-              <span className="text-white font-serif text-2xl tracking-wide">{activeData.label}</span>
-              <span className="text-slate-400 text-sm leading-relaxed mt-1">{activeData.hint}</span>
-            </div>
-          </div>
-
+                )}
+              </div>
+            </button>
+          ))}
         </div>
+
+        {/* StatusPlaque (Desktop only) */}
+        <div className="hidden lg:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col w-64 p-6 bg-black/50 border border-gray-800/80 rounded-xl backdrop-blur-md transition-all duration-500">
+          <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+            Scena attiva
+          </span>
+          <span className="text-gray-100 font-serif font-bold text-xl mb-1">
+            {currentConfig.title}
+          </span>
+          <span className="text-gray-400 text-sm">
+            {currentConfig.hint}
+          </span>
+        </div>
+
       </div>
     </div>
   );

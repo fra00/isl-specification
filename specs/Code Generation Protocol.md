@@ -50,9 +50,9 @@ The Compiler executes the generation pipeline using the artifacts prepared by th
 For each component, the Compiler assembles the context:
 
 - **Reference Context (`.ref`)**: Loaded from the `.build.md`, providing Contracts, Constraints, and Usage Guides for dependencies.
-- **Implementation Signatures**: The Compiler checks for existing `.sign.json` files for all dependencies. If present, these signatures are injected into the prompt.
+- **Implementation Signatures**: The Compiler checks for existing `.sign.ts` files for all dependencies. If present, these signatures are injected into the prompt.
 
-**Result**: The component is compiled with **Intent** (ISL Source), **Dependency Contracts** (from `.ref`), and **Dependency Realities** (from `.sign.json`). This ensures the component is autonomous but fully aware of its dependencies' interfaces, minimizing context noise.
+**Result**: The component is compiled with **Intent** (ISL Source), **Dependency Contracts** (from `.ref`), and **Dependency Realities** (from `.sign.ts`). This ensures the component is autonomous but fully aware of its dependencies' interfaces, minimizing context noise.
 
 ### 3. Generation & Output
 
@@ -64,12 +64,12 @@ For each component, the Compiler assembles the context:
   (The implementation code)
   #[CODE-END]
   #[SIGNATURE]
-  (The JSON signature)
+  (The TypeScript declaration signature)
   #[SIGNATURE-END]
   ```
 - **Artifact Writing**:
   - **Code File**: Written to `bin/` with the "DO NOT EDIT" header.
-  - **Signature File**: Written as `*.sign.json` alongside the code. This file becomes the source of truth for subsequent compilations.
+  - **Signature File**: Written as `*.sign.ts` alongside the code. This file becomes the source of truth for subsequent compilations.
 
 ## 4. Artifact Categorization Standards (Convention)
 
@@ -111,7 +111,7 @@ To enable deterministic tooling and maintain a readable project structure, ISL A
 To support the "ISL as Source" paradigm:
 
 1.  **Read-Only Artifacts**: Generated files in `bin/` are disposable.
-2.  **Signatures**: For every generated component, a corresponding `.sign.json` MUST be generated. This file contains the public interface (exports) of the component to enable Dynamic Linking in dependent components.
+2.  **Signatures**: For every generated component, a corresponding `.sign.ts` MUST be generated. This file contains the public interface (exports) of the component to enable Dynamic Linking in dependent components.
 3.  **Gen-Lock (Incremental Integrity)**: A `gen-lock.json` tracks the hash of the **Resolved Build Context** (Source + Dependencies).
     - **Purpose**: It enables smart incremental builds. If a dependency changes (modifying the included `.ref.md`), the context hash changes, forcing a recompilation of the dependent component even if its source ISL was not touched.
 
@@ -145,8 +145,8 @@ The Generator operates within the strict boundary of the single file being compi
 1.  Reads `build-manifest.json`.
 2.  Checks `gen-lock.json` for changes.
 3.  For each changed component:
-    - Injects Dependency Interfaces (from `.sign.json` of dependencies).
+    - Injects Dependency Interfaces (from `.sign.ts` of dependencies).
     - Generates code.
     - Writes to `bin/path/to/file`.
-    - Writes `bin/path/to/file.sign.json`.
+    - Writes `bin/path/to/file.sign.ts`.
     - Updates `gen-lock.json`.

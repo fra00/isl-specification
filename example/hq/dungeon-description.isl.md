@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./dungeon-description
 
@@ -47,7 +47,7 @@
 
 ### 📦 Content
 
-- **Description Text**: Displays the `description`.
+- **Description Text**: Displays `gameSession.currentMap.header.descrizione`.
 - **Briefing Header**: Shows a mission title/briefing heading.
 - **Buttons**:
   - Enter Button.
@@ -71,3 +71,26 @@
 - The main component container must not scroll vertically.
 - If the mission description is too long, only the briefing text area must scroll vertically within the panel.
 - The visual treatment must remain coherent with the dark bronze Dungeon navigation flow.
+
+### 🚨 Global Constraints
+
+- MUST keep component-wide navigation/rendering behavior coherent across all capabilities.
+- MUST enforce UI-level consistency, accessibility intent, and deterministic interaction outcomes.
+- MUST delegate business/domain decisions to referenced Business Logic or Backend components.
+
+### ✅ Acceptance Criteria
+
+- [ ] Specification is internally consistent (roles, contracts, and constraints do not conflict).
+- [ ] Declared capabilities are represented with deterministic behavior.
+- [ ] Document is aligned to ISL v1.6.2 conventions.
+
+### 🧪 Test Scenarios
+
+1. **Contract Conformance**:
+   - Input: representative valid domain/state inputs
+   - Expected: outputs and side effects satisfy declared contracts
+
+2. **Constraint Enforcement**:
+   - Input: boundary and invalid inputs
+   - Expected: constraints are enforced and violations are handled explicitly
+

@@ -6,499 +6,414 @@
  * Edit the ISL file instead.
  */
 
-const toBool = (val) => val === true || val === 'true' || val === 1 || val === '1';
-const toNum = (val) => Number(val) || 0;
+import { ScriptImage } from "./domain-session";
+import { MapDoor } from "./domain-map";
 
 const KNOWN_KEYWORDS = new Set([
-  'serand', 'sestanza', 'seogg', 'searma', 'end',
-  'pospsg', 'possta', 'msg', 'posroc', 'img', 'posrocinv',
-  'posmostro', 'posps', 'posporta', 'aggogg', 'aggarma',
-  'aggoroid', 'rimogg', 'rrndogg', 'fineturno', 'aggoro',
-  'agghppsg', 'agghp', 'att', 'noatt', 'noattarma'
+  "serand", "sestanza", "seogg", "searma", "pospsg", "possta", "msg",
+  "posroc", "img", "posrocinv", "posmostro", "posps", "posporta",
+  "aggogg", "aggarma", "aggoroid", "rimogg", "rrndogg", "fineturno",
+  "aggoro", "agghppsg", "agghp", "att", "noatt", "noattarma", "end"
 ]);
 
-const parseScript = (text) => {
-  const statements = [];
-  let current = 0;
-  
-  text = text.replace(/\r\n/g, '\n');
-  
-  while (current < text.length) {
-    while (current < text.length && /[ \t\n]/.test(text[current])) {
-      current++;
-    }
-    if (current >= text.length) break;
-    
-    let keywordEnd = current;
-    while (keywordEnd < text.length && !/[ \t\n;]/.test(text[keywordEnd])) {
-      keywordEnd++;
-    }
-    
-    let keyword = text.slice(current, keywordEnd).toLowerCase();
-    
-    if (!KNOWN_KEYWORDS.has(keyword)) {
-      keyword = 'msg';
-      // Do not advance current, so argsStart includes the unknown word
-    } else {
-      current = keywordEnd;
-    }
-    
-    while (current < text.length && /[ \t]/.test(text[current])) {
-      current++;
-    }
-    
-    let argsStart = current;
-    let argsEnd = current;
-    let foundEnd = false;
-    
-    while (current < text.length) {
-      if (text[current] === ';') {
-        argsEnd = current;
-        current++; // skip ;
-        foundEnd = true;
-        break;
-      }
-      if (text[current] === '\n') {
-        let nextStart = current + 1;
-        while (nextStart < text.length && /[ \t]/.test(text[nextStart])) {
-          nextStart++;
-        }
-        let nextWordEnd = nextStart;
-        while (nextWordEnd < text.length && !/[ \t\n;]/.test(text[nextWordEnd])) {
-          nextWordEnd++;
-        }
-        const nextWord = text.slice(nextStart, nextWordEnd).toLowerCase();
-        if (KNOWN_KEYWORDS.has(nextWord)) {
-          argsEnd = current;
-          current++; // skip newline
-          foundEnd = true;
-          break;
-        }
-      }
-      current++;
-    }
-    
-    if (!foundEnd) {
-      argsEnd = current;
-    }
-    
-    let argsStr = text.slice(argsStart, argsEnd).trim();
-    
-    statements.push({ keyword, argsStr });
-  }
-  
-  const root = [];
-  const stack = [root];
-  
-  for (const stmt of statements) {
-    if (['serand', 'sestanza', 'seogg', 'searma'].includes(stmt.keyword)) {
-      const node = { type: 'condition', keyword: stmt.keyword, argsStr: stmt.argsStr, body: [] };
-      stack[stack.length - 1].push(node);
-      stack.push(node.body);
-    } else if (stmt.keyword === 'end') {
-      if (stack.length > 1) {
-        stack.pop();
-      }
-    } else {
-      stack[stack.length - 1].push({ type: 'command', keyword: stmt.keyword, argsStr: stmt.argsStr });
-    }
-  }
-  
-  return root;
-};
-
-const executeAst = (nodes, session, activeHero, effects, notifications, revealPoints, randomMemo, random, context, visibilityMap) => {
-  for (const node of nodes) {
-    if (node.type === 'condition') {
-      let conditionMet = false;
-      const args = node.argsStr.split(',').map(s => s.trim());
-      
-      if (node.keyword === 'serand') {
-        const a = args[0];
-        const b = Number(args[1]);
-        const c = Number(args[2]);
-        if (randomMemo[a] === undefined) {
-          randomMemo[a] = Math.floor((b + 1) * random());
-        }
-        if (randomMemo[a] === c) {
-          conditionMet = true;
-        }
-      } else if (node.keyword === 'sestanza') {
-        const expectedRoomId = args[0];
-        let actualRoomId = context.roomId;
-        if (actualRoomId === undefined && activeHero) {
-          actualRoomId = getRoomIdFromVisibilityMap(visibilityMap, activeHero.x, activeHero.y);
-        }
-        if (String(actualRoomId) === String(expectedRoomId)) {
-          conditionMet = true;
-        }
-      } else if (node.keyword === 'seogg') {
-        const itemId = Number(args[0]);
-        if (activeHero && activeHero.inventory.includes(itemId)) {
-          conditionMet = true;
-        }
-      } else if (node.keyword === 'searma') {
-        const equipmentId = Number(args[0]);
-        if (activeHero && (activeHero.equipment.includes(equipmentId) || activeHero.equipped.includes(equipmentId))) {
-          conditionMet = true;
-        }
-      }
-      
-      if (conditionMet) {
-        executeAst(node.body, session, activeHero, effects, notifications, revealPoints, randomMemo, random, context, visibilityMap);
-      }
-    } else if (node.type === 'command') {
-      const args = node.argsStr.split(',').map(s => s.trim());
-      
-      switch (node.keyword) {
-        case 'pospsg': {
-          const x = Number(args[0]);
-          const y = Number(args[1]);
-          const allowOverlap = args[2] === '1' || args[2] === 'true';
-          
-          if (activeHero) {
-            const occupant = session.heroes.find(h => h.x === x && h.y === y && h.turnOrder !== activeHero.turnOrder);
-            if (occupant) {
-              if (!allowOverlap) {
-                notifications.push("Casella occupata spostamento impossibile");
-              } else {
-                occupant.currentBody -= 1;
-                activeHero.x = x;
-                activeHero.y = y;
-                effects.stopMovement = true;
-                effects.movementDelta -= 1;
-                effects.activeHeroPosition = { x, y };
-              }
-            } else {
-              activeHero.x = x;
-              activeHero.y = y;
-              effects.stopMovement = true;
-              effects.movementDelta -= 1;
-              effects.activeHeroPosition = { x, y };
-            }
-          }
-          break;
-        }
-        case 'possta': {
-          const x = Number(args[0]);
-          const y = Number(args[1]);
-          if (!revealPoints.some(p => p.x === x && p.y === y)) {
-            revealPoints.push({ x, y });
-          }
-          break;
-        }
-        case 'msg': {
-          if (node.argsStr) {
-            notifications.push(node.argsStr);
-          }
-          break;
-        }
-        case 'posroc': {
-          const x = Number(args[0]);
-          const y = Number(args[1]);
-          const cell = session.currentMap.grid.find(c => c.x === x && c.y === y);
-          if (cell) {
-            if (!cell.arnt) cell.arnt = { antroc: false, inv: false };
-            cell.arnt.antroc = true;
-          }
-          break;
-        }
-        case 'img': {
-          let src = args[0];
-          const x = Number(args[1]);
-          const y = Number(args[2]);
-          if (src) {
-            src = src.replace(/\\/g, '/');
-            if (!src.startsWith('/')) src = '/' + src;
-            
-            const existingIdx = session.scriptImages.findIndex(img => img.x === x && img.y === y && img.src === src);
-            if (existingIdx === -1) {
-              session.scriptImages.push({ x, y, src });
-            }
-          }
-          break;
-        }
-        case 'posrocinv': {
-          const x = Number(args[0]);
-          const y = Number(args[1]);
-          const cell = session.currentMap.grid.find(c => c.x === x && c.y === y);
-          if (cell) {
-            if (!cell.arnt) cell.arnt = { antroc: false, inv: false };
-            cell.arnt.inv = true;
-          }
-          break;
-        }
-        case 'posmostro': {
-          const monsterId = Number(args[0]);
-          const x = Number(args[1]);
-          const y = Number(args[2]);
-          const cell = session.currentMap.grid.find(c => c.x === x && c.y === y);
-          if (cell) {
-            if (!cell.mostab) cell.mostab = { mosid: 0, mos: false, corpo: 0 };
-            cell.mostab.mosid = monsterId;
-            cell.mostab.mos = true;
-          }
-          session.scriptImages = session.scriptImages.filter(img => !(img.x === x && img.y === y));
-          break;
-        }
-        case 'posps': {
-          const oriz = args[0] === '1' || args[0] === 'true';
-          const x = Number(args[1]);
-          const y = Number(args[2]);
-          const cell = session.currentMap.grid.find(c => c.x === x && c.y === y);
-          if (cell) {
-            if (!cell.psgg) cell.psgg = { ps: null, oriz: false };
-            cell.psgg.ps = 1;
-            cell.psgg.oriz = oriz;
-          }
-          break;
-        }
-        case 'posporta': {
-          const oriz = args[0] === '1' || args[0] === 'true';
-          const x = Number(args[1]);
-          const y = Number(args[2]);
-          if (!session.currentMap.porte) session.currentMap.porte = [];
-          const existing = session.currentMap.porte.find(p => p.x === x && p.y === y && p.oriz === oriz);
-          if (!existing) {
-            session.currentMap.porte.push({ x, y, oriz });
-          }
-          break;
-        }
-        case 'aggogg': {
-          const itemId = Number(args[0]);
-          if (activeHero) {
-            activeHero.inventory.push(itemId);
-          }
-          break;
-        }
-        case 'aggarma': {
-          const equipmentId = Number(args[0]);
-          if (activeHero) {
-            activeHero.equipment.push(equipmentId);
-          }
-          break;
-        }
-        case 'aggoroid': {
-          const heroIndex = Number(args[0]);
-          const goldDelta = Number(args[1]);
-          if (session.heroes[heroIndex]) {
-            session.heroes[heroIndex].gold += goldDelta;
-          }
-          break;
-        }
-        case 'rimogg': {
-          const itemId = Number(args[0]);
-          if (activeHero) {
-            const idx = activeHero.inventory.indexOf(itemId);
-            if (idx !== -1) {
-              activeHero.inventory.splice(idx, 1);
-            }
-          }
-          break;
-        }
-        case 'rrndogg': {
-          if (activeHero && activeHero.inventory.length > 0) {
-            const idx = Math.floor(random() * activeHero.inventory.length);
-            activeHero.inventory.splice(idx, 1);
-          }
-          break;
-        }
-        case 'fineturno': {
-          effects.stopMovement = true;
-          effects.forceFinishTurn = true;
-          break;
-        }
-        case 'aggoro': {
-          const goldDelta = Number(args[0]);
-          if (activeHero) {
-            activeHero.gold += goldDelta;
-          }
-          break;
-        }
-        case 'agghppsg': {
-          const heroIndex = Number(args[0]);
-          const healthDelta = Number(args[1]);
-          if (session.heroes[heroIndex] && session.heroes[heroIndex].currentBody > 0) {
-            session.heroes[heroIndex].currentBody += healthDelta;
-          }
-          break;
-        }
-        case 'agghp': {
-          const healthDelta = Number(args[0]);
-          if (activeHero && activeHero.currentBody > 0) {
-            activeHero.currentBody += healthDelta;
-          }
-          break;
-        }
-        case 'att': {
-          effects.attackBlocked = false;
-          break;
-        }
-        case 'noatt': {
-          effects.attackBlocked = true;
-          break;
-        }
-        case 'noattarma': {
-          const weaponId = Number(args[0]);
-          if (activeHero && !activeHero.equipped.includes(weaponId)) {
-            effects.attackBlocked = true;
-          }
-          break;
-        }
-      }
-    }
-  }
-};
-
 export const buildScriptKey = (script, index) => {
-  return `${index}_${toNum(script.evento)}_${toNum(script.x)}_${toNum(script.y)}_${toNum(script.idmosc)}_${toBool(script.morto)}_${toBool(script.unavolta)}_${String(script.text || '').trim()}`;
+  const evento = Number(script?.evento || 0);
+  const x = Number(script?.x || 0);
+  const y = Number(script?.y || 0);
+  const idmosc = Number(script?.idmosc || 0);
+  const morto = Boolean(script?.morto);
+  const unavolta = Boolean(script?.unavolta);
+  const text = String(script?.text || "").trim();
+  return `${index}_${evento}_${x}_${y}_${idmosc}_${morto}_${unavolta}_${text}`;
 };
 
 export const getRoomIdFromVisibilityMap = (visibilityMap, x, y) => {
-  if (!visibilityMap || !visibilityMap.data) return null;
-  const cell = visibilityMap.data.find(c => c.x === x && c.y === y);
+  if (!visibilityMap || !Array.isArray(visibilityMap.data)) return null;
+  const cell = visibilityMap.data.find((c) => c.x === x && c.y === y);
   if (!cell || cell.valo == null) return null;
   return String(cell.valo);
 };
 
 export const moveCurrentHeroInSession = (session, nextX, nextY) => {
-  const cloned = structuredClone(session);
-  const activeHero = cloned.heroes.find(h => h.turnOrder === cloned.currentTurn);
-  if (!activeHero) return cloned;
+  if (!session) return session;
+  const clonedSession = JSON.parse(JSON.stringify(session));
+  const activeHero = clonedSession.heroes?.find((h) => h.turnOrder === clonedSession.currentTurn);
+  
+  if (!activeHero) return clonedSession;
+
   activeHero.x = nextX;
   activeHero.y = nextY;
-  return cloned;
+  return clonedSession;
 };
 
 export const resolveHeroAttackInSession = (session, { monsterId, combatResult, statusesToRemove = [], consumedWeaponId = null }) => {
-  const cloned = structuredClone(session);
-  const activeHero = cloned.heroes.find(h => h.turnOrder === cloned.currentTurn);
-  const monsterIndex = cloned.monsters.findIndex(m => m.id === monsterId);
-  
-  if (!activeHero || monsterIndex === -1) return cloned;
-  
-  const monster = cloned.monsters[monsterIndex];
-  
+  if (!session) return session;
+  const clonedSession = JSON.parse(JSON.stringify(session));
+  const activeHero = clonedSession.heroes?.find((h) => h.turnOrder === clonedSession.currentTurn);
+  const monsterIndex = clonedSession.monsters?.findIndex((m) => m.id === monsterId);
+
+  if (!activeHero || monsterIndex == null || monsterIndex === -1) return clonedSession;
+
+  const targetMonster = clonedSession.monsters[monsterIndex];
+
   if (consumedWeaponId != null) {
-    activeHero.equipped = activeHero.equipped.filter(id => id !== consumedWeaponId);
-    activeHero.equipment = activeHero.equipment.filter(id => id !== consumedWeaponId);
+    activeHero.equipped = activeHero.equipped?.filter((id) => id !== consumedWeaponId) || [];
+    activeHero.equipment = activeHero.equipment?.filter((id) => id !== consumedWeaponId) || [];
   }
-  
-  monster.currentBody -= combatResult.damageDealt;
-  
-  if (statusesToRemove && statusesToRemove.length > 0) {
-    monster.activeStatus = monster.activeStatus.filter(s => !statusesToRemove.includes(s));
+
+  const damage = combatResult?.damageDealt || 0;
+  targetMonster.currentBody -= damage;
+
+  if (Array.isArray(statusesToRemove) && statusesToRemove.length > 0) {
+    targetMonster.activeStatus = targetMonster.activeStatus?.filter((s) => !statusesToRemove.includes(s)) || [];
   }
-  
-  if (monster.currentBody <= 0) {
-    cloned.monsters.splice(monsterIndex, 1);
+
+  if (targetMonster.currentBody <= 0) {
+    clonedSession.monsters.splice(monsterIndex, 1);
   }
-  
-  cloned.lastAttack = {
+
+  clonedSession.lastAttack = {
     hero: activeHero,
-    monster: cloned.monsters[monsterIndex] || monster,
-    combatResult
+    monster: targetMonster,
+    combatResult: combatResult
   };
-  
-  return cloned;
+
+  return clonedSession;
+};
+
+const parseScript = (text) => {
+  const normalized = text.replace(/\r\n/g, '\n');
+  const statements = [];
+  let currentStmt = "";
+  let i = 0;
+
+  while (i < normalized.length) {
+    if (normalized[i] === ';') {
+      if (currentStmt.trim()) statements.push(currentStmt.trim());
+      currentStmt = "";
+      i++;
+      continue;
+    }
+    if (normalized[i] === '\n') {
+      const nextText = normalized.slice(i + 1);
+      const nextWordMatch = nextText.match(/^\s*([a-zA-Z]+)/);
+      if (nextWordMatch && KNOWN_KEYWORDS.has(nextWordMatch[1].toLowerCase())) {
+        if (currentStmt.trim()) statements.push(currentStmt.trim());
+        currentStmt = "";
+        i++;
+        continue;
+      }
+    }
+    currentStmt += normalized[i];
+    i++;
+  }
+  if (currentStmt.trim()) statements.push(currentStmt.trim());
+
+  const root = { type: 'root', children: [] };
+  const stack = [root];
+
+  for (const stmt of statements) {
+    const match = stmt.match(/^(\S+)(?:\s+(.*))?$/);
+    if (!match) continue;
+    let cmd = match[1].toLowerCase();
+    let args = match[2] ? match[2].trim() : "";
+
+    if (!KNOWN_KEYWORDS.has(cmd)) {
+      cmd = "msg";
+      args = stmt;
+    }
+
+    const node = { cmd, args, children: [] };
+
+    if (["serand", "sestanza", "seogg", "searma"].includes(cmd)) {
+      stack[stack.length - 1].children.push(node);
+      stack.push(node);
+    } else if (cmd === "end") {
+      if (stack.length > 1) stack.pop();
+    } else {
+      stack[stack.length - 1].children.push(node);
+    }
+  }
+  return root.children;
+};
+
+const checkEventMatchingRules = (script, eventType, context, visibilityMap, activeHero, grid) => {
+  const ev = Number(eventType);
+  if (ev === 1) {
+    return script.x === context?.previousPosition?.x && script.y === context?.previousPosition?.y;
+  }
+  if (ev === 2) {
+    return script.idmosc === context?.monsterTypeId && Boolean(script.morto) === Boolean(context?.onDeath);
+  }
+  if (ev === 3 || ev === 4 || ev === 5) {
+    if (!activeHero) return false;
+    const scriptRoomId = getRoomIdFromVisibilityMap(visibilityMap, script.x, script.y);
+    const heroRoomId = getRoomIdFromVisibilityMap(visibilityMap, activeHero.x, activeHero.y);
+    if (scriptRoomId !== heroRoomId) return false;
+
+    if (String(scriptRoomId) === "1") {
+      if (script.x !== activeHero.x && script.y !== activeHero.y) return false; 
+      if (!Array.isArray(grid)) return false;
+
+      if (script.x === activeHero.x) {
+        const minY = Math.min(script.y, activeHero.y);
+        const maxY = Math.max(script.y, activeHero.y);
+        for (let y = minY; y <= maxY; y++) {
+          const cell = grid.find(c => c.x === script.x && c.y === y);
+          if (cell?.arnt?.antroc) return false;
+        }
+      } else {
+        const minX = Math.min(script.x, activeHero.x);
+        const maxX = Math.max(script.x, activeHero.x);
+        for (let x = minX; x <= maxX; x++) {
+          const cell = grid.find(c => c.x === x && c.y === script.y);
+          if (cell?.arnt?.antroc) return false;
+        }
+      }
+    }
+    return true;
+  }
+  if (ev === 6 || ev === 7 || ev === 8) {
+    return true;
+  }
+  return false;
+};
+
+const executeCommand = (node, session, effects, notifications, revealPoints, activeHero, random) => {
+  const cmd = node.cmd;
+  const rawArgs = node.args;
+  const args = rawArgs.split(',').map(s => s.trim());
+
+  if (cmd === "pospsg") {
+    const x = parseInt(args[0], 10);
+    const y = parseInt(args[1], 10);
+    const allowOverlap = args[2] === '1' || args[2] === 'true';
+
+    const occupiedBy = session.heroes?.find(h => h.x === x && h.y === y && h.currentBody > 0);
+    if (occupiedBy && occupiedBy.turnOrder !== activeHero?.turnOrder) {
+      if (!allowOverlap) {
+        notifications.push("Casella occupata spostamento impossibile");
+        return;
+      } else {
+        occupiedBy.currentBody -= 1;
+      }
+    }
+    if (activeHero) {
+      activeHero.x = x;
+      activeHero.y = y;
+      effects.stopMovement = true;
+      effects.movementDelta -= 1;
+      effects.activeHeroPosition = { x, y };
+    }
+  } else if (cmd === "possta") {
+    const x = parseInt(args[0], 10);
+    const y = parseInt(args[1], 10);
+    if (!revealPoints.some(p => p.x === x && p.y === y)) {
+      revealPoints.push({ x, y });
+    }
+  } else if (cmd === "msg") {
+    if (rawArgs) notifications.push(rawArgs);
+  } else if (cmd === "posroc") {
+    const x = parseInt(args[0], 10);
+    const y = parseInt(args[1], 10);
+    const cell = session.currentMap?.grid?.find(c => c.x === x && c.y === y);
+    if (cell) {
+      if (!cell.arnt) cell.arnt = { antroc: false, inv: false };
+      cell.arnt.antroc = true;
+    }
+  } else if (cmd === "img") {
+    let src = (args[0] || "").replace(/\\/g, '/');
+    if (!src.startsWith('/')) src = '/' + src;
+    const x = parseInt(args[1], 10);
+    const y = parseInt(args[2], 10);
+    session.scriptImages.push(ScriptImage({ x, y, src }));
+  } else if (cmd === "posrocinv") {
+    const x = parseInt(args[0], 10);
+    const y = parseInt(args[1], 10);
+    const cell = session.currentMap?.grid?.find(c => c.x === x && c.y === y);
+    if (cell) {
+      if (!cell.arnt) cell.arnt = { antroc: false, inv: false };
+      cell.arnt.inv = true;
+    }
+  } else if (cmd === "posmostro") {
+    const monsterId = parseInt(args[0], 10);
+    const x = parseInt(args[1], 10);
+    const y = parseInt(args[2], 10);
+    const cell = session.currentMap?.grid?.find(c => c.x === x && c.y === y);
+    if (cell) {
+      if (!cell.mostab) cell.mostab = { mosid: 0, mos: false, corpo: 0 };
+      cell.mostab.mosid = monsterId;
+      cell.mostab.mos = true;
+    }
+    session.scriptImages = session.scriptImages.filter(img => img.x !== x || img.y !== y);
+  } else if (cmd === "posps") {
+    const oriz = args[0] === '1' || args[0] === 'true';
+    const x = parseInt(args[1], 10);
+    const y = parseInt(args[2], 10);
+    const cell = session.currentMap?.grid?.find(c => c.x === x && c.y === y);
+    if (cell) {
+      if (!cell.psgg) cell.psgg = { ps: null, oriz: false };
+      cell.psgg.ps = 1;
+      cell.psgg.oriz = oriz;
+    }
+  } else if (cmd === "posporta") {
+    const oriz = args[0] === '1' || args[0] === 'true';
+    const x = parseInt(args[1], 10);
+    const y = parseInt(args[2], 10);
+    if (!session.currentMap.porte) session.currentMap.porte = [];
+    session.currentMap.porte.push(MapDoor({ x, y, oriz }));
+  } else if (cmd === "aggogg") {
+    if (activeHero) {
+      if (!activeHero.inventory) activeHero.inventory = [];
+      activeHero.inventory.push(parseInt(args[0], 10));
+    }
+  } else if (cmd === "aggarma") {
+    if (activeHero) {
+      if (!activeHero.equipment) activeHero.equipment = [];
+      activeHero.equipment.push(parseInt(args[0], 10));
+    }
+  } else if (cmd === "aggoroid") {
+    const heroIndex = parseInt(args[0], 10);
+    const goldDelta = parseInt(args[1], 10);
+    const targetHero = session.heroes?.[heroIndex];
+    if (targetHero) {
+      targetHero.gold = (targetHero.gold || 0) + goldDelta;
+    }
+  } else if (cmd === "rimogg") {
+    if (activeHero && activeHero.inventory) {
+      const itemId = parseInt(args[0], 10);
+      const idx = activeHero.inventory.indexOf(itemId);
+      if (idx > -1) activeHero.inventory.splice(idx, 1);
+    }
+  } else if (cmd === "rrndogg") {
+    if (activeHero && activeHero.inventory && activeHero.inventory.length > 0) {
+      const rIdx = Math.floor(random() * activeHero.inventory.length);
+      activeHero.inventory.splice(rIdx, 1);
+    }
+  } else if (cmd === "fineturno") {
+    effects.stopMovement = true;
+    effects.forceFinishTurn = true;
+  } else if (cmd === "aggoro") {
+    if (activeHero) {
+      activeHero.gold = (activeHero.gold || 0) + parseInt(args[0] || "0", 10);
+    }
+  } else if (cmd === "agghppsg") {
+    const heroIndex = parseInt(args[0], 10);
+    const healthDelta = parseInt(args[1], 10);
+    const targetHero = session.heroes?.[heroIndex];
+    if (targetHero && targetHero.currentBody > 0) {
+      targetHero.currentBody += healthDelta;
+    }
+  } else if (cmd === "agghp") {
+    if (activeHero && activeHero.currentBody > 0) {
+      activeHero.currentBody += parseInt(args[0] || "0", 10);
+    }
+  } else if (cmd === "att") {
+    effects.attackBlocked = false;
+  } else if (cmd === "noatt") {
+    effects.attackBlocked = true;
+  } else if (cmd === "noattarma") {
+    const weaponId = parseInt(args[0], 10);
+    if (!activeHero?.equipped?.includes(weaponId)) {
+      effects.attackBlocked = true;
+    }
+  }
+};
+
+const executeAST = (ast, session, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random) => {
+  for (const node of ast) {
+    const cmd = node.cmd;
+    const args = node.args.split(',').map(s => s.trim());
+
+    if (cmd === "serand") {
+      const a = args[0];
+      const b = parseInt(args[1] || "0", 10);
+      const c = parseInt(args[2] || "0", 10);
+      if (memoizedRandoms[a] === undefined) {
+        memoizedRandoms[a] = Math.floor((b + 1) * random());
+      }
+      if (memoizedRandoms[a] === c) {
+        executeAST(node.children, session, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random);
+      }
+    } else if (cmd === "sestanza") {
+      const expectedRoomId = args[0];
+      let actualRoomId = context?.roomId;
+      if (actualRoomId === undefined && activeHero) {
+        actualRoomId = getRoomIdFromVisibilityMap(visibilityMap, activeHero.x, activeHero.y);
+      }
+      if (String(actualRoomId) === String(expectedRoomId)) {
+        executeAST(node.children, session, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random);
+      }
+    } else if (cmd === "seogg") {
+      const itemId = parseInt(args[0], 10);
+      if (activeHero?.inventory?.includes(itemId)) {
+        executeAST(node.children, session, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random);
+      }
+    } else if (cmd === "searma") {
+      const equipId = parseInt(args[0], 10);
+      if (activeHero?.equipment?.includes(equipId) || activeHero?.equipped?.includes(equipId)) {
+        executeAST(node.children, session, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random);
+      }
+    } else {
+      executeCommand(node, session, effects, notifications, revealPoints, activeHero, random);
+    }
+  }
 };
 
 export const executeDungeonScripts = ({ session, eventType, context = {}, visibilityMap = null, random = Math.random }) => {
-  const cloned = structuredClone(session);
-  if (!cloned.triggeredScripts) cloned.triggeredScripts = [];
-  if (!cloned.scriptImages) cloned.scriptImages = [];
-  
+  if (!session) return { session, handled: false, notifications: [], revealPoints: [], effects: {} };
+
+  const clonedSession = JSON.parse(JSON.stringify(session));
+  if (!Array.isArray(clonedSession.triggeredScripts)) clonedSession.triggeredScripts = [];
+  if (!Array.isArray(clonedSession.scriptImages)) clonedSession.scriptImages = [];
+
+  const activeHero = clonedSession.heroes?.find((h) => h.turnOrder === clonedSession.currentTurn);
+
   const effects = {
     attackBlocked: false,
     forceFinishTurn: false,
     movementDelta: 0,
     stopMovement: false,
-    activeHeroPosition: null
+    activeHeroPosition: activeHero ? { x: activeHero.x, y: activeHero.y } : null
   };
-  
-  const activeHero = cloned.heroes.find(h => h.turnOrder === cloned.currentTurn);
-  if (activeHero) {
-    effects.activeHeroPosition = { x: activeHero.x, y: activeHero.y };
-  }
-  
+
   let handled = false;
   const notifications = [];
   const revealPoints = [];
-  const randomMemo = {};
-  
-  if (!cloned.currentMap || !cloned.currentMap.scripts) {
-    return { session: cloned, handled, notifications, revealPoints, effects };
-  }
-  
-  for (let i = 0; i < cloned.currentMap.scripts.length; i++) {
-    const script = cloned.currentMap.scripts[i];
-    
-    if (toNum(script.evento) !== eventType) continue;
-    if (!script.text || String(script.text).trim() === "") continue;
-    
+  const memoizedRandoms = {};
+
+  const scripts = clonedSession.currentMap?.scripts || [];
+
+  for (let i = 0; i < scripts.length; i++) {
+    const script = scripts[i];
+    if (Number(script.evento) !== Number(eventType)) continue;
+    if (!script.text || script.text.trim() === "") continue;
+
     const scriptKey = buildScriptKey(script, i);
-    if (toBool(script.unavolta) && cloned.triggeredScripts.includes(scriptKey)) continue;
-    
-    let matched = false;
-    if (eventType === 1) {
-      if (context.previousPosition && toNum(script.x) === context.previousPosition.x && toNum(script.y) === context.previousPosition.y) {
-        matched = true;
-      }
-    } else if (eventType === 2) {
-      if (toNum(script.idmosc) === context.monsterTypeId && toBool(script.morto) === toBool(context.onDeath)) {
-        matched = true;
-      }
-    } else if (eventType === 3 || eventType === 4 || eventType === 5) {
-      if (activeHero) {
-        const heroRoom = getRoomIdFromVisibilityMap(visibilityMap, activeHero.x, activeHero.y);
-        const scriptRoom = getRoomIdFromVisibilityMap(visibilityMap, toNum(script.x), toNum(script.y));
-        if (heroRoom != null && heroRoom === scriptRoom) {
-          if (heroRoom === "1") {
-            let blocked = false;
-            const sx = toNum(script.x);
-            const sy = toNum(script.y);
-            if (activeHero.x === sx) {
-              const minY = Math.min(activeHero.y, sy);
-              const maxY = Math.max(activeHero.y, sy);
-              for (let y = minY; y <= maxY; y++) {
-                const cell = cloned.currentMap.grid.find(c => c.x === activeHero.x && c.y === y);
-                if (cell && cell.arnt && cell.arnt.antroc) blocked = true;
-              }
-            } else if (activeHero.y === sy) {
-              const minX = Math.min(activeHero.x, sx);
-              const maxX = Math.max(activeHero.x, sx);
-              for (let x = minX; x <= maxX; x++) {
-                const cell = cloned.currentMap.grid.find(c => c.x === x && c.y === activeHero.y);
-                if (cell && cell.arnt && cell.arnt.antroc) blocked = true;
-              }
-            } else {
-              blocked = true;
-            }
-            if (!blocked) matched = true;
-          } else {
-            matched = true;
-          }
-        }
-      }
-    } else if (eventType === 6 || eventType === 7 || eventType === 8) {
-      matched = true;
+    if (script.unavolta && clonedSession.triggeredScripts.includes(scriptKey)) continue;
+
+    if (!checkEventMatchingRules(script, eventType, context, visibilityMap, activeHero, clonedSession.currentMap?.grid)) {
+      continue;
     }
-    
-    if (!matched) continue;
-    
+
     handled = true;
-    
-    const ast = parseScript(String(script.text));
-    executeAst(ast, cloned, activeHero, effects, notifications, revealPoints, randomMemo, random, context, visibilityMap);
-    
-    if (toBool(script.unavolta) && !cloned.triggeredScripts.includes(scriptKey)) {
-      cloned.triggeredScripts.push(scriptKey);
+    const ast = parseScript(script.text);
+    executeAST(ast, clonedSession, context, effects, notifications, revealPoints, memoizedRandoms, activeHero, visibilityMap, random);
+
+    if (script.unavolta && !clonedSession.triggeredScripts.includes(scriptKey)) {
+      clonedSession.triggeredScripts.push(scriptKey);
     }
   }
-  
+
   if (activeHero) {
     effects.activeHeroPosition = { x: activeHero.x, y: activeHero.y };
   }
-  
-  return { session: cloned, handled, notifications, revealPoints, effects };
+
+  return {
+    session: clonedSession,
+    handled,
+    notifications,
+    revealPoints,
+    effects
+  };
 };

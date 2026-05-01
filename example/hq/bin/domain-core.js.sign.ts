@@ -1,12 +1,12 @@
 export const PageNavigationEnum: {
-  readonly MAIN_MENU: string;
-  readonly PLAY_GAME: string;
-  readonly EDITOR_GAME: string;
-  readonly SHOP: string;
-  readonly DUNGEON: string;
-  readonly DUNGEON_DESCRIPTION: string;
+  readonly MAIN_MENU: "MAIN_MENU";
+  readonly PLAY_GAME: "PLAY_GAME";
+  readonly EDITOR_GAME: "EDITOR_GAME";
+  readonly SHOP: "SHOP";
+  readonly DUNGEON: "DUNGEON";
+  readonly DUNGEON_DESCRIPTION: "DUNGEON_DESCRIPTION";
 };
 
-export const NavigationStatus: (data?: { currentPageView?: string }) => { 
-  currentPageView: string 
+export const NavigationStatus: (data?: { currentPageView?: string }) => {
+  currentPageView: string;
 };

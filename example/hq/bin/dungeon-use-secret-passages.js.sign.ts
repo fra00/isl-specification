@@ -7,12 +7,5 @@ export declare function useSecretPassages(config: {
   sessionManager: any;
 }): {
   searchPassages: () => void;
-  getFoundPassages: () => {
-    visiblePassages: Array<{
-      x: number;
-      y: number;
-      img: string;
-      oriz?: boolean;
-    }>;
-  };
+  getFoundPassages: () => { visiblePassages: { x: number; y: number; img: string }[] };
 };

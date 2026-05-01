@@ -8,7 +8,7 @@
     "mente": 2,
     "corpo": 8,
     "miniature": "barbaro.png",
-    "miniatureDeath": "barbaromor.jpg",
+    "miniatureDeath": "barbaromor.png",
     "portrait": "barbaroimg.png"
   },
   {
@@ -20,7 +20,7 @@
     "mente": 4,
     "corpo": 6,
     "miniature": "nano.png",
-    "miniatureDeath": "nanomor.jpg",
+    "miniatureDeath": "nanomor.png",
     "portrait": "nanoimg.png"
   },
   {
@@ -32,7 +32,7 @@
     "mente": 6,
     "corpo": 4,
     "miniature": "mago.png",
-    "miniatureDeath": "magomor.jpg",
+    "miniatureDeath": "magomor.png",
     "portrait": "magoimg.png"
   },
   {
@@ -44,7 +44,7 @@
     "mente": 3,
     "corpo": 7,
     "miniature": "elfo.png",
-    "miniatureDeath": "elfomor.jpg",
+    "miniatureDeath": "elfomor.png",
     "portrait": "elfoimg.png"
   }
 ]

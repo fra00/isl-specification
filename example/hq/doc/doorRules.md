@@ -67,7 +67,7 @@ I passaggi segreti sono inizialmente invisibili e agiscono come muri invalicabil
     - se in un corridoio (`valo` == "1") utilizza la Logica Ray Tracing
   - Un passaggio segreto viene scoperto se il passaggio è nell'area di ricerca (vedi **Logica di Rilevamento**) o se la destinazione del passaggio lo è (useMapInteraction.isFrontOfDoor return true) fa parte dell'area rivelata (non coperta da nebbia).
 - **Consumo**: Questa operazione **consuma l'azione** del turno (`HasPerformedAction: true`).
-- **Stato**: Una volta scoperto, il passaggio viene aggiunto alla lista `foundPassages` e viene renderizzato sul tabellone (`pso.jpg` o `psv.jpg`).
+- **Stato**: Una volta scoperto, il passaggio viene aggiunto alla lista `foundPassages` e viene renderizzato sul tabellone (`pso.png` o `psv.png`).
 
 ### B. Interazione Post-Scoperta
 

@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-04-12
 **Implementation**: ./dungeon-script-runtime
 
@@ -209,10 +209,37 @@
   - `noatt`: Set `effects.attackBlocked = true` for the current attack resolution.
   - `noattarma weaponId`: Set `effects.attackBlocked = true` unless the active hero currently has `weaponId` equipped.
 
+### 🚨 Constraints
+
+- Each capability MUST enforce its own transition/decision constraints explicitly.
+- Capability-level state changes MUST be bounded and deterministic for equivalent inputs/state.
+- Capabilities `MissionScriptEvent`, `ScriptConditionKeyword`, `ScriptCommandKeyword`, `DungeonScriptEffects`, `DungeonScriptResult` MUST avoid undefined side effects outside declared flow and side effects.
+
 ### 🚨 Global Constraints
 
-- The runtime must stay pure from the caller perspective: it may mutate only the cloned snapshot it creates internally.
-- Script evaluation order must remain the original map order.
-- One-time script persistence must be based on `buildScriptKey(...)`, not on raw coordinates alone.
-- `notifications`, `revealPoints`, `triggeredScripts`, `scriptImages`, and `currentMap.porte` must avoid duplicate append operations where the runtime already enforces uniqueness.
-- Parser compatibility with repaired original HQ maps is mandatory: implicit free-text messages and newline-separated commands without `;` are supported behavior, not tolerated accidents.
+- Component MUST keep orchestration semantics coherent across all capabilities and shared state references.
+- Cross-capability execution MUST preserve declared domain invariants and mutation boundaries.
+- Component MUST expose deterministic behavior at the system boundary for equivalent scenarios.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for declared orchestration methods.
+- [ ] Component-level global constraints hold across multi-capability execution paths.
+- [ ] State boundary and domain reference consistency are preserved end-to-end.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Deterministic Method Behavior**:
+   - Target: first declared capability
+   - Input: equivalent inputs/state across repeated runs
+   - Expected: same transition/output and bounded side effects
+
+2. **Capability Constraint - Boundary Handling**:
+   - Target: capability-level constraints
+   - Input: invalid or boundary conditions
+   - Expected: explicit handling without undefined mutations
+
+3. **Global Constraint - Cross-Capability Orchestration**:
+   - Target: component capability sequence
+   - Input: realistic multi-step flow
+   - Expected: coherent state progression respecting global boundaries

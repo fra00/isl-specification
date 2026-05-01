@@ -72,9 +72,15 @@
         - ELSE IF there are available adjacent cells:
           - Select `navigationTarget` as the unoccupied adjacent cell with the shortest valid path from `monster`.
         - ELSE:
-          - Set `navigationTarget` to `hero` position (fallback to approach as close as possible).
+          - Set `navigationTarget` to null (no valid melee approach cell available this turn).
+      - **Critical Targeting Rule**:
+        - Pathfinding for monster movement MUST target only unoccupied cells adjacent to the hero.
+        - The hero-occupied cell MUST NOT be used as a movement/pathfinding destination candidate.
+        - Topological adjacency checks for attack MUST be evaluated independently from pathfinding-to-hero-cell success.
     - **Movement**:
-      - IF `navigationTarget` is NOT current position:
+      - IF `navigationTarget` is null:
+        - Skip movement for this monster.
+      - ELSE IF `navigationTarget` is NOT current position:
         - Calculate `path` to `navigationTarget` using `pathfinding.calculatePath` (maxDepth: 100, ignoreEntities: false).
       - ELSE: Let `path` be an empty list.
       - IF path length > 0:
@@ -148,6 +154,7 @@
 - Monsters MUST NOT move through walls or furniture.
 - Monsters MUST NOT end their movement on a cell occupied by another entity (hero or monster).
 - Monsters MUST NOT move into cells covered by fog (unrevealed areas).
+- Monsters MUST NOT target the hero-occupied cell as a pathfinding destination; only free adjacent melee cells are valid approach destinations.
 - `runMonsterTurn()` MUST increment `currentTurn` when complete so hero round begins next.
 - Monsters MUST skip their turn if affected by "Sleep" or "Tempest" status.
 
@@ -170,6 +177,7 @@
 
 - `findNearestHero()` filters by `fog == false`; invisible heroes are never targeted.
 - Topological adjacency requires: orthogonal neighbor + no wall between cells + both in same or connected `valo`.
+- Attack adjacency checks MUST NOT depend on whether pathfinding can reach the hero-occupied cell.
 - Attack is triggered ONLY if topologically adjacent after movement.
 
 #### Combat Resolution
@@ -185,6 +193,12 @@
 - **Targeting Priority**: (1) Visible + topologically adjacent = attack now, (2) Visible + reachable = pursue, (3) Visible + no path = move toward last known position, (4) Not visible = patrol or wait.
 - **Navigation Strategy**: Prefer shortest valid path to an unoccupied cell adjacent to hero (melee position) over moving directly to hero.
 - **Occupancy Resolution**: Iterate reachable path from end to start; choose first unoccupied cell as final position.
+
+### 🚨 Global Constraints
+
+- MUST preserve component-level determinism across all state transitions and orchestration flows.
+- MUST ensure all capability-level mutations respect declared shared state boundaries.
+- MUST keep cross-capability outcomes consistent with declared domain references and invariants.
 
 ### ✅ Acceptance Criteria
 
@@ -218,6 +232,12 @@
 - Monsters MUST NOT open closed doors.
 - The master phase should provide enough delay between actions so the player can see what is happening.
 
+#### Adjacent Hero Must Be Attackable Without Targeting Hero Cell
+
+- Given: Monster at (5, 5), hero at (5, 6), and no wall/door block between the two cells.
+- When: Monster turn executes.
+- Then: Monster MUST resolve combat against the adjacent hero even though the hero cell itself is an occupied destination and not a valid pathfinding target.
+
 ### ✅ Acceptance Criteria
 
 - When the last hero ends their turn, the "Master Phase" begins automatically.
@@ -225,3 +245,4 @@
 - Monsters attack if they are adjacent to a hero.
 - Heroes defend using their total defense (base + equipment) and roll for white shields.
 - Turn returns to Hero 1 after all monsters have acted.
+

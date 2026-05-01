@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-combat-result-modal
 
@@ -72,15 +72,15 @@
     - **Attacker Dice Row**:
       - Label: "Attaccante".
       - Content: List of dice images based on `combatResult.attackerDice`.
-        - IF `SKULL`: `/img/altro/teschio.jpg`.
-        - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
+        - IF `SKULL`: `/img/altro/teschio.png`.
+        - IF `WHITE_SHIELD` : `/img/altro/scudo.png`.
         - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Left** towards the center with a staggered delay (e.g., 0.1s per die).
     - **Defender Dice Row**:
       - Label: "Difensore".
       - Content: List of dice images based on `combatResult.defenderDice`.
-        - IF `SKULL`: `/img/altro/teschio.jpg`.
-        - IF `WHITE_SHIELD` : `/img/altro/scudo.jpg`.
+        - IF `SKULL`: `/img/altro/teschio.png`.
+        - IF `WHITE_SHIELD` : `/img/altro/scudo.png`.
         - IF `BLACK_SHIELD`: `/img/altro/scudo-nero.png`.
       - **Animation**: Each die slides in from the **Right** towards the center with a staggered delay (e.g., 0.1s per die).
   - **Result Text**:
@@ -113,3 +113,38 @@
     - Set `animationActive` to true.
   - ELSE:
     - Set `animationActive` to false.
+
+### 🚨 Constraints
+
+- Each capability MUST honor its declared trigger and contract without hidden side effects.
+- Capability-level interactions MUST be null-safe and reject invalid UI/input states explicitly.
+- Capabilities internalState, useEffect MUST remain deterministic for equivalent props/state and user actions.
+
+### 🚨 Global Constraints
+
+- MUST keep UI behavior consistent with declared capabilities and triggers.
+- MUST NOT embed business/domain decisions that belong to Backend or Business Logic components.
+- MUST preserve interaction determinism for equivalent user actions and state.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level constraints are satisfied for all declared interaction handlers.
+- [ ] Component-level global constraints remain valid across capability sequences.
+- [ ] Presentation boundary is preserved (no business/domain mutation logic in UI handlers).
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Handler Determinism**:
+   - Target: internalState
+   - Input: repeated equivalent user actions with same props/state
+   - Expected: same observable UI outcome and side effects
+
+2. **Capability Constraint - Invalid Input Guard**:
+   - Target: declared interaction handlers
+   - Input: null/missing/invalid interaction context
+   - Expected: safe handling without runtime crash or undefined behavior
+
+3. **Global Constraint - Cross-Capability Coherence**:
+   - Target: component capability sequence
+   - Input: realistic interaction flow spanning multiple handlers
+   - Expected: consistent rendering semantics and preserved component boundary

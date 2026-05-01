@@ -8,151 +8,168 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-export default function DungeonTurnControls({
-  currentHero = null,
-  currentHeroStats = null,
-  movementPoints = null,
-  turnPhase = null,
-  canOpenDoor = null,
-  isTargeting = false,
-  isMoving = false,
-  onRollMovement = () => {},
-  onEndTurn = () => {},
-  onSearchPassages = () => {},
-  onSearchTreasure = () => {},
-  onSearchTraps = () => {},
-  canDisarmTrap = false,
-  onDisarmTrap = () => {},
-  onOpenMagic = () => {},
-  onOpenInventory = () => {},
-  onCancelTargeting = () => {},
-  onOpenDoor = () => {}
-}) {
-  const panelRef = useRef(null);
-  const dragInfo = useRef({ offsetX: 0, offsetY: 0 });
-  const [isDragging, setIsDragging] = useState(false);
+export default function DungeonTurnControls(props) {
+  const {
+    currentHero,
+    currentHeroStats,
+    movementPoints,
+    turnPhase = {},
+    canOpenDoor,
+    isTargeting = false,
+    isMoving = false,
+    onRollMovement,
+    onEndTurn,
+    onSearchPassages,
+    onSearchTreasure,
+    onSearchTraps,
+    canDisarmTrap = false,
+    onDisarmTrap,
+    onOpenMagic,
+    onOpenInventory,
+    onCancelTargeting,
+    onOpenDoor
+  } = props;
 
-  // Lazy initialization of position from LocalStorage
-  const [position, setPosition] = useState(() => {
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const posRef = useRef({ x: 20, y: 20 });
+  const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+  const dialogRef = useRef(null);
+
+  // Initialize position from LocalStorage and handle window resize
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('dungeonTurnControlsPosition');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const stored = localStorage.getItem('dungeonTurnControlsPosition');
+      if (stored) {
+        const parsed = JSON.parse(stored);
         if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          return { x: parsed.x, y: parsed.y };
+          // Initial rough clamp assuming a default width/height
+          const initX = Math.max(0, Math.min(parsed.x, window.innerWidth - 250));
+          const initY = Math.max(0, Math.min(parsed.y, window.innerHeight - 400));
+          setPosition({ x: initX, y: initY });
+          posRef.current = { x: initX, y: initY };
         }
       }
     } catch (e) {
-      // Fallback to default on error
+      // Fallback to default if parsing fails
+      console.warn('Failed to parse dungeonTurnControlsPosition', e);
     }
-    return { x: 20, y: 20 };
-  });
 
-  const positionRef = useRef(position);
-  useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
-
-  // Clamps the panel position to ensure it stays within the viewport
-  const clampPosition = useCallback((x, y) => {
-    if (!panelRef.current) return { x, y };
-    const rect = panelRef.current.getBoundingClientRect();
-    const maxX = Math.max(0, window.innerWidth - rect.width);
-    const maxY = Math.max(0, window.innerHeight - rect.height);
-    return {
-      x: Math.max(0, Math.min(x, maxX)),
-      y: Math.max(0, Math.min(y, maxY))
-    };
-  }, []);
-
-  // Initial clamp on mount to ensure restored position is valid in current viewport
-  useEffect(() => {
-    setPosition((prev) => clampPosition(prev.x, prev.y));
-  }, [clampPosition]);
-
-  // Handle window resize
-  useEffect(() => {
     const handleResize = () => {
-      setPosition((prev) => clampPosition(prev.x, prev.y));
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [clampPosition]);
+      if (!dialogRef.current) return;
+      const rect = dialogRef.current.getBoundingClientRect();
+      const maxX = Math.max(0, window.innerWidth - rect.width);
+      const maxY = Math.max(0, window.innerHeight - rect.height);
 
-  // Drag interaction lifecycle
-  const handleMouseDown = useCallback((e) => {
-    if (!panelRef.current) return;
-    const rect = panelRef.current.getBoundingClientRect();
-    dragInfo.current = {
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top
+      setPosition((prev) => {
+        const newX = Math.max(0, Math.min(prev.x, maxX));
+        const newY = Math.max(0, Math.min(prev.y, maxY));
+        posRef.current = { x: newX, y: newY };
+        return { x: newX, y: newY };
+      });
     };
-    setIsDragging(true);
+
+    window.addEventListener('resize', handleResize);
+    // Trigger once to ensure it's clamped on mount if dialog size is known
+    setTimeout(handleResize, 100); 
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    if (!isDragging) {
-      // Save to local storage when dragging stops
-      localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(positionRef.current));
-      return;
-    }
+  // Drag Interaction Handlers
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0 || !dialogRef.current) return; // Only left click
 
-    const handleMouseMove = (e) => {
-      const newX = e.clientX - dragInfo.current.offsetX;
-      const newY = e.clientY - dragInfo.current.offsetY;
-      setPosition(clampPosition(newX, newY));
+    dragRef.current.isDragging = true;
+    dragRef.current.offsetX = e.clientX - posRef.current.x;
+    dragRef.current.offsetY = e.clientY - posRef.current.y;
+
+    const handleMouseMove = (moveEvent) => {
+      if (!dragRef.current.isDragging || !dialogRef.current) return;
+      
+      let newX = moveEvent.clientX - dragRef.current.offsetX;
+      let newY = moveEvent.clientY - dragRef.current.offsetY;
+
+      const rect = dialogRef.current.getBoundingClientRect();
+      const maxX = Math.max(0, window.innerWidth - rect.width);
+      const maxY = Math.max(0, window.innerHeight - rect.height);
+
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      posRef.current = { x: newX, y: newY };
+      setPosition({ x: newX, y: newY });
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      dragRef.current.isDragging = false;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      
+      try {
+        localStorage.setItem('dungeonTurnControlsPosition', JSON.stringify(posRef.current));
+      } catch (err) {
+        console.warn('Failed to save position', err);
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+  }, []);
 
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, clampPosition]);
-
-  // Derived visibility and state flags
+  // Derived state for visibility and disabled conditions
   const heroClass = currentHero?.hero?.classe?.toLowerCase() || '';
-  const showMagic = heroClass === 'mago' || heroClass === 'elfo';
-  const showOpenDoor = canOpenDoor && (canOpenDoor === true || canOpenDoor.found === true);
+  const canUseMagic = ['mago', 'elfo'].includes(heroClass);
+  const isDoorOpenable = canOpenDoor === true || canOpenDoor?.found === true;
+  
+  const hasMoved = turnPhase?.HasMoved === true;
+  const hasPerformedAction = turnPhase?.HasPerformedAction === true;
+  const isMovementDisabled = hasMoved || movementPoints != null;
+  const isActionDisabled = hasPerformedAction || isMoving || isTargeting;
 
   return (
     <div
-      ref={panelRef}
+      ref={dialogRef}
       style={{ left: `${position.x}px`, top: `${position.y}px` }}
-      className="fixed z-50 w-[240px] bg-stone-900/95 border-2 border-amber-700/50 rounded-sm shadow-2xl shadow-black/80 text-stone-200 font-serif select-none flex flex-col"
+      className="fixed z-50 w-[240px] bg-stone-900/95 border-2 border-amber-700/60 rounded-md shadow-2xl text-stone-200 font-serif flex flex-col overflow-hidden backdrop-blur-md ring-1 ring-black/50"
     >
-      {/* Ornamental Corners */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-amber-500/70 pointer-events-none"></div>
-      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-amber-500/70 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-amber-500/70 pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-amber-500/70 pointer-events-none"></div>
-
       {/* Header / Drag Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className={`bg-stone-800/80 border-b border-amber-700/50 p-2 flex flex-col items-center justify-center ${
-          isDragging ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+        className="bg-stone-800 border-b border-amber-700/50 p-2 cursor-grab active:cursor-grabbing select-none flex flex-col items-center justify-center relative"
       >
-        <span className="text-amber-500 font-bold tracking-wider text-sm uppercase">Controlli Turno</span>
-        <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-600/50 to-transparent mt-1"></div>
+        {/* Ornamental corners */}
+        <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-amber-600/50"></div>
+        <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-amber-600/50"></div>
+        
+        <span className="text-amber-500 font-bold tracking-wider text-sm uppercase drop-shadow-md">
+          Controlli Turno
+        </span>
+        <div className="w-3/4 h-px bg-gradient-to-r from-transparent via-amber-700/50 to-transparent my-1"></div>
       </div>
 
-      <div className="p-3 flex flex-col gap-4">
+      <div className="p-3 flex flex-col gap-3 overflow-y-auto max-h-[70vh] custom-scrollbar">
+        
+        {/* Inventory Section */}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-stone-400 uppercase tracking-widest text-center">Equipaggiamento</span>
+          <button
+            onClick={onOpenInventory}
+            className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-stone-800 hover:bg-stone-700 border-stone-600 text-stone-300 active:scale-95"
+          >
+            Inventario
+          </button>
+        </div>
+
+        <div className="w-full h-px bg-stone-700/50"></div>
+
         {/* Actions Section */}
         <div className="flex flex-col gap-2">
-          <div className="text-[10px] text-stone-400 uppercase tracking-widest text-center mb-1">Azioni</div>
-
-          {/* End Turn - MUST BE FIRST */}
+          <span className="text-[10px] text-stone-400 uppercase tracking-widest text-center">Azioni</span>
+          
+          {/* End Turn - Always First & Anchored */}
           <button
             onClick={onEndTurn}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-red-900/80 border-red-700 text-red-100 hover:bg-red-800 shadow-inner shadow-red-500/20"
+            className="w-full py-2 px-3 rounded text-sm font-bold uppercase tracking-wide transition-all border shadow-inner bg-red-900/90 hover:bg-red-800 border-red-700 text-red-100 active:scale-95"
           >
             Fine Turno
           </button>
@@ -160,91 +177,75 @@ export default function DungeonTurnControls({
           {/* Roll Movement */}
           <button
             onClick={onRollMovement}
-            disabled={turnPhase?.HasMoved || movementPoints != null}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-amber-900/80 border-amber-700 text-amber-100 hover:bg-amber-800 shadow-inner shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+            disabled={isMovementDisabled}
+            className="w-full py-2 px-3 rounded text-sm font-bold uppercase tracking-wide transition-all border shadow-inner bg-amber-800/90 hover:bg-amber-700 border-amber-600 text-amber-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amber-800/90 active:scale-95"
           >
-            Tira Movimento
+            Muovi
           </button>
 
-          {/* Search Passages */}
+          {/* Search Actions */}
           <button
             onClick={onSearchPassages}
-            disabled={turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+            disabled={hasPerformedAction}
+            className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-yellow-900/70 hover:bg-yellow-800 border-yellow-700/60 text-yellow-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
           >
             Cerca Passaggi
           </button>
 
-          {/* Search Treasure */}
           <button
             onClick={onSearchTreasure}
-            disabled={turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+            disabled={hasPerformedAction}
+            className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-yellow-900/70 hover:bg-yellow-800 border-yellow-700/60 text-yellow-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
           >
-            Cerca Tesoro
+            Cerca Tesori
           </button>
 
-          {/* Search Trap */}
           <button
             onClick={onSearchTraps}
-            disabled={turnPhase?.HasPerformedAction}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-yellow-900/60 border-yellow-700/80 text-yellow-100 hover:bg-yellow-800/80 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+            disabled={hasPerformedAction}
+            className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-yellow-900/70 hover:bg-yellow-800 border-yellow-700/60 text-yellow-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
           >
             Cerca Trappole
           </button>
 
-          {/* Disarm Trap */}
+          {/* Conditional Actions */}
           {canDisarmTrap && (
             <button
               onClick={onDisarmTrap}
-              disabled={turnPhase?.HasPerformedAction || isMoving || isTargeting}
-              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-orange-900/70 border-orange-700 text-orange-100 hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+              disabled={isActionDisabled}
+              className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-orange-800/90 hover:bg-orange-700 border-orange-600 text-orange-100 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             >
               Disinnesca Trappola
             </button>
           )}
 
-          {/* Magic */}
-          {showMagic && (
+          {canUseMagic && (
             <button
               onClick={onOpenMagic}
-              disabled={turnPhase?.HasPerformedAction || isMoving || isTargeting}
-              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-indigo-900/80 border-indigo-700 text-indigo-100 hover:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+              disabled={isActionDisabled}
+              className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-indigo-900/90 hover:bg-indigo-800 border-indigo-700 text-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             >
               Magia
             </button>
           )}
 
-          {/* Cancel Targeting */}
           {isTargeting && (
             <button
               onClick={onCancelTargeting}
-              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-stone-700 border-stone-500 text-stone-200 hover:bg-stone-600"
+              className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-stone-700/90 hover:bg-stone-600 border-stone-500 text-stone-200 active:scale-95"
             >
               Annulla Bersaglio
             </button>
           )}
 
-          {/* Open Door */}
-          {showOpenDoor && (
+          {isDoorOpenable && (
             <button
               onClick={onOpenDoor}
-              className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-emerald-900/80 border-emerald-700 text-emerald-100 hover:bg-emerald-800"
+              className="w-full py-2 px-3 rounded text-sm font-bold uppercase tracking-wide transition-all border shadow-inner bg-green-900/90 hover:bg-green-800 border-green-700 text-green-100 active:scale-95 mt-2"
             >
               Apri Porta
             </button>
           )}
-        </div>
-
-        {/* Inventory Section */}
-        <div className="flex flex-col gap-2 pt-2 border-t border-amber-900/50">
-          <div className="text-[10px] text-stone-400 uppercase tracking-widest text-center mb-1">Equipaggiamento</div>
-          <button
-            onClick={onOpenInventory}
-            className="w-full py-2 px-3 text-sm font-bold rounded-sm border transition-all duration-200 bg-stone-800 border-stone-600 text-stone-200 hover:bg-stone-700 shadow-inner shadow-stone-500/10"
-          >
-            Inventario
-          </button>
         </div>
       </div>
     </div>

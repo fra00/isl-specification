@@ -6,15 +6,19 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useCallback, useEffect } from "react";
-import { PageNavigationEnum } from "./domain-core";
-import PlayGame from "./play-game";
-import EditorGame from "./editor-game";
-import MainMenu from "./main-menu";
-import Armory from "./armory";
-import Dungeon from "./dungeon";
-import DungeonDescription from "./dungeon-description";
+import React, { useState, useCallback } from 'react';
+import { PageNavigationEnum, NavigationStatus } from './domain-core';
+import PlayGame from './play-game';
+import EditorGame from './editor-game';
+import MainMenu from './main-menu';
+import Armory from './armory';
+import Dungeon from './dungeon';
+import DungeonDescription from './dungeon-description';
 
+/**
+ * PageContent Component
+ * Main container for the application, managing navigation and global game session state.
+ */
 export default function PageContent({
   monsters = [],
   heroes = [],
@@ -24,32 +28,54 @@ export default function PageContent({
   spells = [],
   treasureDeck = [],
   campaign = null
-} = {}) {
-  const [currentPageView, setCurrentPageView] = useState(() => PageNavigationEnum.MAIN_MENU);
+}) {
+  // Initialize current page view using NavigationStatus domain entity for default value
+  const [currentPageView, setCurrentPageView] = useState(() => {
+    const status = NavigationStatus({ currentPageView: PageNavigationEnum.MAIN_MENU });
+    return status.currentPageView;
+  });
+
+  // Global game session state
   const [gameSession, setGameSession] = useState(null);
 
-  useEffect(() => {
-    if (!currentPageView) {
-      setCurrentPageView(PageNavigationEnum.MAIN_MENU);
-    }
-  }, [currentPageView]);
-
+  /**
+   * Changes the current page view.
+   */
   const changePageView = useCallback((nextPageView) => {
-    setCurrentPageView(nextPageView);
+    if (nextPageView != null) {
+      setCurrentPageView(nextPageView);
+    }
   }, []);
 
-  const updateSession = useCallback((session) => {
-    setGameSession(session);
+  /**
+   * Updates the global game session state.
+   * Accepts either a complete session snapshot or a functional updater.
+   */
+  const updateSession = useCallback((sessionOrUpdater) => {
+    setGameSession((prevSession) => {
+      if (typeof sessionOrUpdater === 'function') {
+        return sessionOrUpdater(prevSession);
+      }
+      return sessionOrUpdater;
+    });
   }, []);
 
+  /**
+   * Handles the start of a mission.
+   */
   const startMission = useCallback((missionIndex) => {
-    console.log(`Starting mission: ${missionIndex}`);
+    console.log(`Starting mission index: ${missionIndex}`);
+    // Additional mission start logic can be handled here if needed
   }, []);
 
+  /**
+   * Renders the appropriate page view based on the current state.
+   */
   const renderPageView = () => {
     switch (currentPageView) {
       case PageNavigationEnum.MAIN_MENU:
         return <MainMenu onChangePageView={changePageView} />;
+        
       case PageNavigationEnum.PLAY_GAME:
         return (
           <PlayGame
@@ -61,8 +87,10 @@ export default function PageContent({
             staticEquipment={equipment}
           />
         );
+        
       case PageNavigationEnum.EDITOR_GAME:
         return <EditorGame />;
+        
       case PageNavigationEnum.SHOP:
         return (
           <Armory
@@ -71,6 +99,7 @@ export default function PageContent({
             onUpdateSession={updateSession}
           />
         );
+        
       case PageNavigationEnum.DUNGEON:
         return (
           <Dungeon
@@ -85,6 +114,7 @@ export default function PageContent({
             treasureDeck={treasureDeck}
           />
         );
+        
       case PageNavigationEnum.DUNGEON_DESCRIPTION:
         return (
           <DungeonDescription
@@ -93,14 +123,15 @@ export default function PageContent({
             onUpdateSession={updateSession}
           />
         );
+        
       default:
         return <MainMenu onChangePageView={changePageView} />;
     }
   };
 
   return (
-    <div className="w-full h-screen overflow-hidden bg-black">
-      <div className="w-full lg:w-2/3 h-full mx-auto">
+    <div className="w-full h-screen overflow-hidden bg-black flex justify-center">
+      <div className="w-full lg:w-2/3 h-full relative">
         {renderPageView()}
       </div>
     </div>

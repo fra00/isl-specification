@@ -8,107 +8,104 @@
 
 import { useCallback } from 'react';
 
-export function useDungeonMovementRules({ mapQuery, foundPassages = [] } = {}) {
-  
-  const isValidDestination = useCallback((x, y, excludeEntityId) => {
-    if (!mapQuery) return false;
-    
-    if (mapQuery.getMapCell(x, y) == null) {
-      return false;
-    }
-    if (mapQuery.isBlockedByFurniture(x, y)) {
-      return false;
-    }
-    if (mapQuery.isBlockedByMonster(x, y, excludeEntityId)) {
-      return false;
-    }
-    if (mapQuery.isOccupiedByHero(x, y, excludeEntityId)) {
-      return false;
-    }
-    if (mapQuery.isBlockedByRock(x, y)) {
-      return false;
-    }
-    
-    return true;
-  }, [mapQuery]);
-
-  const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId, localFoundPassages) => {
-    if (!mapQuery) return false;
-
-    const dimensions = mapQuery.getMapDimensions();
-    if (targetX < 1 || targetX > dimensions.width || targetY < 1 || targetY > dimensions.height) {
-      return false;
-    }
-
-    if (mapQuery.isBlockedByFurniture(targetX, targetY)) {
-      return false;
-    }
-
-    const heroes = mapQuery.exposedContext?.gameSession?.heroes || [];
-    const movingHero = heroes.find(h => h.heroId === excludeEntityId);
-    const isHeroMovement = movingHero != null;
-
-    const activeStatus = movingHero?.activeStatus || [];
-    const canIgnoreOccupants = activeStatus.includes("InvisiblePassage");
-
-    if (mapQuery.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
-      if (!canIgnoreOccupants) {
-        return false;
-      }
-    }
-
-    if (mapQuery.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
-      if (!isHeroMovement && !canIgnoreOccupants) {
-        return false;
-      } else if (isHeroMovement && !canIgnoreOccupants) {
-        // Hero movement may pass through allied heroes, but `isValidDestination` still forbids ending on an occupied hero cell.
-      } else if (canIgnoreOccupants) {
-        return false;
-      }
-    }
-
-    if (mapQuery.isBlockedByRock(targetX, targetY)) {
-      return false;
-    }
-
-    const sourceCell = mapQuery.getVisibilityCell(sourceX, sourceY);
-    const targetCell = mapQuery.getVisibilityCell(targetX, targetY);
-    const sourceValo = sourceCell?.valo;
-    const targetValo = targetCell?.valo;
-
-    if (sourceValo == null || targetValo == null) {
-      return true;
-    }
-
-    if (sourceValo !== targetValo) {
-      if (mapQuery.isDoor(sourceX, sourceY) || mapQuery.isDoor(targetX, targetY)) {
+export function useDungeonMovementRules({ mapQuery, foundPassages = [] }) {
+    const isValidDestination = useCallback((x, y, excludeEntityId) => {
+        if (!mapQuery?.getMapCell(x, y)) {
+            return false;
+        }
+        if (mapQuery?.isBlockedByFurniture(x, y)) {
+            return false;
+        }
+        if (mapQuery?.isBlockedByMonster(x, y, excludeEntityId)) {
+            return false;
+        }
+        if (mapQuery?.isOccupiedByHero(x, y, excludeEntityId)) {
+            return false;
+        }
+        if (mapQuery?.isBlockedByRock(x, y)) {
+            return false;
+        }
+        
         return true;
-      }
+    }, [mapQuery]);
 
-      const passages = localFoundPassages || foundPassages;
+    const isWalkable = useCallback((sourceX, sourceY, targetX, targetY, excludeEntityId, foundPassagesParam) => {
+        const dims = mapQuery?.getMapDimensions();
+        if (dims && (targetX < 1 || targetX > dims.width || targetY < 1 || targetY > dims.height)) {
+            return false;
+        }
 
-      const isSourcePassageFound = passages.some(p => p.x === sourceX && p.y === sourceY);
-      if (mapQuery.isSecretPassage(sourceX, sourceY) && isSourcePassageFound) {
+        if (mapQuery?.isBlockedByFurniture(targetX, targetY)) {
+            return false;
+        }
+
+        const session = mapQuery?.exposedContext?.gameSession || mapQuery?.gameSession;
+        const heroes = session?.heroes || [];
+        const movingHero = heroes.find(h => h.heroId === excludeEntityId);
+        
+        const isHeroMovement = !!movingHero;
+        const canIgnoreOccupants = movingHero?.activeStatus?.includes("InvisiblePassage") || false;
+
+        if (mapQuery?.isBlockedByMonster(targetX, targetY, excludeEntityId)) {
+            if (!canIgnoreOccupants) {
+                return false;
+            }
+        }
+
+        if (mapQuery?.isOccupiedByHero(targetX, targetY, excludeEntityId)) {
+            if (!isHeroMovement && !canIgnoreOccupants) {
+                return false;
+            } else if (isHeroMovement && !canIgnoreOccupants) {
+                // Hero movement may pass through allied heroes, allowed to continue
+            } else if (canIgnoreOccupants) {
+                return false;
+            }
+        }
+
+        if (mapQuery?.isBlockedByRock(targetX, targetY)) {
+            return false;
+        }
+
+        const sourceVis = mapQuery?.getVisibilityCell(sourceX, sourceY);
+        const targetVis = mapQuery?.getVisibilityCell(targetX, targetY);
+        const sourceValo = sourceVis?.valo;
+        const targetValo = targetVis?.valo;
+
+        if (sourceValo == null || targetValo == null) {
+            return true;
+        }
+
+        if (sourceValo !== targetValo) {
+            if (mapQuery?.isDoor(sourceX, sourceY) || mapQuery?.isDoor(targetX, targetY)) {
+                return true;
+            }
+
+            const passagesToUse = foundPassagesParam || foundPassages || [];
+            
+            const isSourcePassage = mapQuery?.isSecretPassage(sourceX, sourceY);
+            const isSourceDiscovered = passagesToUse.some(p => p.x === sourceX && p.y === sourceY);
+            if (isSourcePassage && isSourceDiscovered) {
+                return true;
+            }
+
+            const isTargetPassage = mapQuery?.isSecretPassage(targetX, targetY);
+            const isTargetDiscovered = passagesToUse.some(p => p.x === targetX && p.y === targetY);
+            if (isTargetPassage && isTargetDiscovered) {
+                return true;
+            }
+
+            if (movingHero && (movingHero.activeStatus?.includes("WallPass") || movingHero.activeStatus?.includes("InvisiblePassage"))) {
+                return true;
+            }
+
+            return false;
+        }
+
         return true;
-      }
+    }, [mapQuery, foundPassages]);
 
-      const isTargetPassageFound = passages.some(p => p.x === targetX && p.y === targetY);
-      if (mapQuery.isSecretPassage(targetX, targetY) && isTargetPassageFound) {
-        return true;
-      }
-
-      if (movingHero != null && (activeStatus.includes("WallPass") || activeStatus.includes("InvisiblePassage"))) {
-        return true;
-      }
-
-      return false;
-    }
-
-    return true;
-  }, [mapQuery, foundPassages]);
-
-  return {
-    isValidDestination,
-    isWalkable
-  };
+    return {
+        isValidDestination,
+        isWalkable
+    };
 }

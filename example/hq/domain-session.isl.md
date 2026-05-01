@@ -1,7 +1,7 @@
 # Project: Dungeon React
 
 **Version**: 1.0.0
-**ISL Version**: 1.6.1
+**ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./domain-session
 
@@ -26,7 +26,7 @@ Represents the dynamic state of a hero (@Hero) during a campaign (persistence).
 - `turnOrder`: Turn number (Integer).
 - `currentBody`: Current Body Points (Integer).
 - `currentMind`: Current Mind Points (Integer).
-- `gold`: Accumulated gold (Integer) default: 500.
+- `gold`: Accumulated gold (Integer) default: 0.
 - `inventory`: List of IDs of possessed items (@Item) (List of Integer).
 - `equipment`: List of IDs of owned equipment (@Equipment) (List of Integer).
 - `equipped`: List of IDs of currently equipped equipment (@Equipment) (List of Integer).
@@ -82,3 +82,38 @@ Object representing the possible activity of a hero's turn.
 - `HasMoved`: Turn started, waiting for movement roll or action.
 - `HasPerformedAction`: The hero have searched for secret passage, trap , treasure or have attacked.
 - `IsTurnFinished`: The hero have ended the turn, waiting for next hero turn or monster turn in future.
+
+### 🚨 Constraints
+
+- Each declared domain construct MUST preserve its own identity/property invariants.
+- Domain-level definitions MUST reject contradictory or ambiguous semantics at the capability scope.
+- Domain capabilities `HeroState`, `MonsterState`, `ScriptImage`, `GameSession`, `TurnPhase` MUST remain deterministic for equivalent domain inputs.
+
+### 🚨 Global Constraints
+
+- The component MUST provide one coherent domain vocabulary across all declared entities and structures.
+- Cross-entity relationships and invariants MUST remain globally consistent within the component.
+- The domain component MUST remain implementation-agnostic and free from UI orchestration concerns.
+
+### ✅ Acceptance Criteria
+
+- [ ] Capability-level domain constraints are explicit and non-contradictory.
+- [ ] Component-level domain invariants remain consistent across all declared structures.
+- [ ] Domain scope remains independent from UI/infra implementation choices.
+
+### 🧪 Test Scenarios
+
+1. **Capability Constraint - Domain Invariant**:
+   - Target: first declared domain capability
+   - Input: representative domain values including edge/boundary cases
+   - Expected: invariant-preserving deterministic outcome
+
+2. **Capability Constraint - Ambiguity Rejection**:
+   - Target: domain capability-level semantics
+   - Input: conflicting or incomplete domain definition case
+   - Expected: explicit rejection or normalized deterministic interpretation
+
+3. **Global Constraint - Vocabulary Coherence**:
+   - Target: full domain component
+   - Input: cross-reference usage across all entities
+   - Expected: globally coherent identities, relationships, and terminology

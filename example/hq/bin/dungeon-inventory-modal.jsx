@@ -8,119 +8,139 @@
 
 import React, { useCallback } from 'react';
 
-export default function DungeonInventoryModal({ isOpen = false, hero = null, onClose }) {
+export default function DungeonInventoryModal({
+  isOpen = false,
+  hero = null,
+  allItems = [],
+  allEquipment = [],
+  onClose = () => {}
+}) {
   const handleClose = useCallback((e) => {
     if (e) {
       e.stopPropagation();
     }
-    if (onClose) {
+    if (isOpen) {
       onClose();
     }
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !hero) {
     return null;
   }
 
-  const heroData = hero.hero || {};
-  // Fallback to portrait or miniature if the exact property is missing
-  const heroImage = heroData.portrait || heroData.miniature || '';
-  const heroName = heroData.classe || 'Eroe Sconosciuto';
-  const heroClass = heroData.classe || 'Classe Sconosciuta';
+  const heroDef = hero.hero;
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onClick={handleClose}
+      aria-modal="true"
+      role="dialog"
     >
       <div 
-        className="bg-gray-900 text-white rounded-xl shadow-2xl w-full max-w-[500px] flex flex-col max-h-[90vh]"
+        className="flex w-full max-w-[500px] flex-col overflow-hidden rounded-xl bg-gray-900 text-white shadow-2xl max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between border-b border-gray-700 p-4">
           <h2 className="text-xl font-bold">Inventario</h2>
           <button 
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white focus:outline-none transition-colors"
             aria-label="Chiudi"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          
           {/* Hero Identity */}
-          <div className="flex items-center gap-4 mb-6 bg-gray-800 p-4 rounded-lg">
-            {heroImage ? (
-              <img 
-                src={`/img/personaggi/${heroImage}`} 
-                alt={heroName} 
-                className="w-16 h-16 object-cover rounded-full border-2 border-gray-600"
-              />
-            ) : (
-              <div className="w-16 h-16 bg-gray-700 rounded-full border-2 border-gray-600 flex items-center justify-center">
-                <span className="text-xs text-gray-400">No Img</span>
+          {heroDef && (
+            <div className="flex items-center space-x-4 rounded-lg bg-gray-800 p-4 border border-gray-700">
+              {heroDef.portrait && (
+                <img 
+                  src={`/img/personaggi/${heroDef.portrait}`} 
+                  alt={heroDef.classe || 'Eroe'} 
+                  className="h-16 w-16 rounded-full border-2 border-gray-600 object-cover bg-gray-700"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-bold text-white">{heroDef.classe || 'Eroe'}</h3>
+                <span className="text-sm text-gray-400">{heroDef.classe || 'Classe Sconosciuta'}</span>
               </div>
-            )}
-            <div>
-              <h3 className="text-lg font-bold">{heroName}</h3>
-              <p className="text-sm text-gray-400">{heroClass}</p>
             </div>
-          </div>
+          )}
 
           {/* Gold Balance */}
-          <div className="mb-6 bg-yellow-900/20 border border-yellow-700/30 p-3 rounded-lg">
-            <p className="text-yellow-400 font-semibold flex items-center gap-2">
-              <span className="text-xl">🪙</span>
-              Monete d'Oro: {hero.gold ?? 0}
+          <div className="rounded-lg border border-yellow-700/50 bg-yellow-900/30 p-4 text-center shadow-inner">
+            <p className="text-lg font-bold text-yellow-400">
+              Monete d'Oro: {hero.gold != null ? hero.gold : 0}
             </p>
           </div>
 
-          {/* Items Grid */}
-          <div className="mb-6">
-            <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Oggetti</h4>
-            {hero.inventory && hero.inventory.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {hero.inventory.map((itemId, idx) => (
-                  <div key={`item-${itemId}-${idx}`} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center text-center border border-gray-700">
-                    <div className="w-10 h-10 bg-gray-700 rounded mb-2 flex items-center justify-center text-xs text-gray-500">
-                      ?
-                    </div>
-                    <span className="text-xs text-gray-300">Unknown Item</span>
-                    <span className="text-[10px] text-gray-500">ID: {itemId}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Items Grid (Oggetti) */}
+          <div>
+            <h4 className="mb-3 border-b border-gray-700 pb-2 text-lg font-semibold text-gray-200">
+              Oggetti
+            </h4>
+            {(!hero.inventory || hero.inventory.length === 0) ? (
+              <p className="text-sm text-gray-500 italic">Nessun oggetto presente.</p>
             ) : (
-              <p className="text-sm text-gray-500 italic">Nessun oggetto nell'inventario.</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {hero.inventory.map((itemId, index) => {
+                  const item = allItems?.find(i => i.id === itemId);
+                  return (
+                    <div key={`item-${itemId}-${index}`} className="flex items-center space-x-3 rounded-lg border border-gray-700 bg-gray-800 p-3 shadow-sm">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">
+                          {item ? (item.nome || item.descrizione || `Oggetto ID ${itemId}`) : `Oggetto ID ${itemId}`}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Equipment List */}
+          {/* Equipment List (Equipaggiamento) */}
           <div>
-            <h4 className="text-md font-semibold mb-3 border-b border-gray-700 pb-1">Equipaggiamento</h4>
-            {hero.equipment && hero.equipment.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {hero.equipment.map((equipId, idx) => (
-                  <div key={`equip-${equipId}-${idx}`} className="bg-gray-800 p-3 rounded-lg flex items-center gap-3 border border-gray-700">
-                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500 shrink-0">
-                      ?
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-300">Unknown Equipment</span>
-                      <span className="text-[10px] text-gray-500">ID: {equipId}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <h4 className="mb-3 border-b border-gray-700 pb-2 text-lg font-semibold text-gray-200">
+              Equipaggiamento
+            </h4>
+            {(!hero.equipment || hero.equipment.length === 0) ? (
+              <p className="text-sm text-gray-500 italic">Nessun equipaggiamento presente.</p>
             ) : (
-              <p className="text-sm text-gray-500 italic">Nessun equipaggiamento.</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {hero.equipment.map((eqId, index) => {
+                  const eq = allEquipment?.find(e => e.id === eqId);
+                  return (
+                    <div key={`eq-${eqId}-${index}`} className="flex items-center space-x-3 rounded-lg border border-gray-700 bg-gray-800 p-3 shadow-sm">
+                      {eq?.immagine && (
+                        <img 
+                          src={eq.immagine} 
+                          alt={eq.nome || `Equipaggiamento ID ${eqId}`}
+                          className="h-10 w-10 rounded bg-gray-700 object-cover border border-gray-600"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">
+                          {eq ? (eq.nome || eq.descrizione || `Equipaggiamento ID ${eqId}`) : `Equipaggiamento ID ${eqId}`}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
+
         </div>
       </div>
     </div>

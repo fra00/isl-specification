@@ -59,8 +59,8 @@
       - IF `{x: px-1, y: py}` OR `{x: px+1, y: py}` is in `visibleCells`: Set `isDiscoverable` to true.
     - IF `isDiscoverable` is true AND `{x: px, y: py}` NOT in `foundPassages`:
       - Determine Image:
-        - IF `potentialPassage.psgg.oriz` is true THEN `img` = "pso.jpg".
-        - ELSE `img` = "psv.jpg".
+        - IF `potentialPassage.psgg.oriz` is true THEN `img` = "pso.png".
+        - ELSE `img` = "psv.png".
       - Add {x: px, y: py, img: img} to `foundPassages`.
       - Set `foundInThisSearch` to true.
   - IF the mission script result is `handled` true:
@@ -118,6 +118,12 @@
 
 - `foundPassages` in memory MUST match what is displayed on the board via `getFoundPassages()`.
 - If a passage cell becomes fogged again (dynamic fog changes), the passage remains in `foundPassages` but is not rendered.
+
+### 🚨 Global Constraints
+
+- MUST preserve component-level determinism across all state transitions and orchestration flows.
+- MUST ensure all capability-level mutations respect declared shared state boundaries.
+- MUST keep cross-capability outcomes consistent with declared domain references and invariants.
 
 ### ✅ Acceptance Criteria
 

@@ -39,7 +39,9 @@ export default function DungeonBoard({
   }, [boardVisibilityMap]);
 
   const activeHero = useMemo(() => {
-    return gameSession?.heroes?.find(h => h.turnOrder === gameSession?.currentTurn);
+    return gameSession?.heroes?.find(
+      h => h.turnOrder === gameSession?.currentTurn && (h.currentBody || 0) > 0
+    );
   }, [gameSession?.heroes, gameSession?.currentTurn]);
 
   const visibilityLookup = useMemo(() => {
@@ -281,7 +283,7 @@ export default function DungeonBoard({
         })}
 
         {/* Heroes */}
-        {gameSession?.heroes?.map(h => {
+        {gameSession?.heroes?.filter(h => (h.currentBody || 0) > 0).map(h => {
           const isCurrentTurn = gameSession.currentTurn === h.turnOrder;
           const isTargeted = targetingSpell && targetingSpell.targetType === "Hero";
           const cursorClass = isTargeted ? 'cursor-crosshair' : 'cursor-default';

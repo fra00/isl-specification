@@ -1,6 +1,6 @@
 # Project: Dungeon React
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 **ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./page-presentation
@@ -43,7 +43,7 @@ Contenitore delle pagine, al suo interno vengono visualizzate le varie `PageView
 
 ### 🔍 Appearance
 
-- Outer shell: full width, black background.
+- Outer shell: full width, **transparent** background (the global `MainContent` backdrop image shows through).
 - Height: fixed viewport shell (`100vh`).
 - Overflow: hidden, because the runtime keeps every page inside the fullscreen stage.
 - Content width: full width, constrained to `2/3` on large layouts.

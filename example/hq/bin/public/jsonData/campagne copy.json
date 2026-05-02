@@ -1,0 +1,46 @@
+{
+  "nome_campagna": "Set Base Dungeon",
+  "missioni": [
+    { "ordine": 1, "file": "HQBase01.json", "titolo": "L'Attrazione del Caos" },
+    {
+      "ordine": 2,
+      "file": "HQBase02.json",
+      "titolo": "La Liberazione di Sir Manfred"
+    },
+    {
+      "ordine": 3,
+      "file": "HQBase03.json",
+      "titolo": "La Tana del Signore degli Orchi"
+    },
+    {
+      "ordine": 4,
+      "file": "HQBase04.json",
+      "titolo": "Il Principe delle Mummie"
+    },
+    { "ordine": 5, "file": "HQBase05.json", "titolo": "I Labirinti di Melar" },
+    {
+      "ordine": 6,
+      "file": "HQBase06.json",
+      "titolo": "L'Eredità dello Stregone"
+    },
+    { "ordine": 7, "file": "HQBase07.json", "titolo": "La Pietra di Fuoco" },
+    {
+      "ordine": 8,
+      "file": "HQBase09.json",
+      "titolo": "Il Castello del Mistero"
+    },
+    { "ordine": 9, "file": "HQBase10.json", "titolo": "Bastione del Caos" },
+    {
+      "ordine": 10,
+      "file": "HQBase11.json",
+      "titolo": "Barak Tor: La Casa del Signore degli Stregoni"
+    },
+    { "ordine": 11, "file": "HQBase12.json", "titolo": "Le Isole del Sangue" },
+    { "ordine": 12, "file": "HQBase13.json", "titolo": "Sotto il Torrione" },
+    {
+      "ordine": 13,
+      "file": "HQBase14.json",
+      "titolo": "Il Ritorno del Signore degli Stregoni"
+    }
+  ]
+}

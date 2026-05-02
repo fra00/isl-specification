@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PageContent from './page-presentation';
+import { GameBackgroundLayer } from './game-theme';
 import { getAllSpells } from './domain-spells-data';
 import { VisibilityMap } from './domain-map';
 
@@ -105,9 +106,12 @@ export default function MainContent() {
 
   if (error != null) {
     return (
-      <div className="w-full h-[100vh] bg-black overflow-hidden flex items-center justify-center">
-        <div className="text-red-500 text-center p-4">
-          <p>{error}</p>
+      <div className="relative min-h-[100vh] w-full overflow-hidden">
+        <GameBackgroundLayer />
+        <div className="relative z-10 flex min-h-[100vh] w-full items-center justify-center">
+          <div className="text-red-500 text-center p-4">
+            <p>{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -115,26 +119,32 @@ export default function MainContent() {
 
   if (!isAppReady) {
     return (
-      <div className="w-full h-[100vh] bg-black overflow-hidden flex items-center justify-center">
-        <div className="text-white text-center p-4">
-          <p>Inizializzazione Sistema...</p>
+      <div className="relative min-h-[100vh] w-full overflow-hidden">
+        <GameBackgroundLayer />
+        <div className="relative z-10 flex min-h-[100vh] w-full items-center justify-center">
+          <div className="text-white text-center p-4">
+            <p>Inizializzazione Sistema...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[100vh] bg-black overflow-hidden">
-      <PageContent 
-        monsters={globalMonsters}
-        heroes={globalHeroes}
-        boardData={globalBoardData}
-        equipment={globalEquipment}
-        items={globalItems}
-        spells={globalSpells}
-        treasureDeck={globalTreasureDeck}
-        campaign={globalCampaign}
-      />
+    <div className="relative min-h-[100vh] w-full overflow-hidden">
+      <GameBackgroundLayer />
+      <div className="relative z-10 min-h-[100vh] w-full">
+        <PageContent 
+          monsters={globalMonsters}
+          heroes={globalHeroes}
+          boardData={globalBoardData}
+          equipment={globalEquipment}
+          items={globalItems}
+          spells={globalSpells}
+          treasureDeck={globalTreasureDeck}
+          campaign={globalCampaign}
+        />
+      </div>
     </div>
   );
 }

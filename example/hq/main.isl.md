@@ -1,6 +1,6 @@
 # Project: Dungeon React
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 **ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./main-content
@@ -16,6 +16,7 @@
 ## Domain Concepts
 
 - `globalBoardData`: Application-wide visibility map normalized before gameplay starts so fog-of-war logic can rely on explicit boolean `fog` values.
+- `full-game backdrop`: A fixed full-viewport background image layer (`/img/background.png`) implemented in `game-theme.jsx` as `GameBackgroundLayer`, rendered as the first child of every `MainContent` branch (loading, error, ready) so it sits behind all pages. Child screens use transparent root backgrounds so this layer remains visible.
 
 ## Component: MainContent
 
@@ -40,8 +41,8 @@ Componente fullscreen sarà l'entry point e il contenitore principale dell'appli
 
 width: full width
 
-- height: `100vh`
-- fullscreen black shell with hidden overflow
+- height: `100vh` (minimum)
+- fullscreen shell with hidden overflow: a **full-game backdrop** image behind content; outer wrapper is not opaque black
 - loading and fatal-error screens stay centered in the viewport
 - ready-state content is hosted inside the fixed runtime stage
 

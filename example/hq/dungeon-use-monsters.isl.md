@@ -1,6 +1,6 @@
 # Project: Dungeon React
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 **ISL Version**: 1.6.2
 **Created**: 2026-02-14
 **Implementation**: ./dungeon-use-monsters
@@ -62,6 +62,7 @@
 
 - **Contract**: Spawns a wandering monster in the hero's visible area first: adjacent in the same `valo` when possible, otherwise in the first free visible cell of the same `valo`, and only then in the first other free visible cell.
 - **Signature**: `(heroX: Integer, heroY: Integer) -> @MonsterState | null`
+- **Constraint**: Internal walkability/occupancy checks treat a cell as **occupied by a hero** only if a hero at those coordinates has `currentBody` greater than 0. Defeated heroes (0 or negative body) MUST NOT block spawn selection.
 - **Flow**:
   - Read `wanderingMonsterId` from `gameSession.currentMap.header.merr`.
   - IF `wanderingMonsterId` is missing or invalid:

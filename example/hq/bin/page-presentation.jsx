@@ -130,7 +130,7 @@ export default function PageContent({
   };
 
   return (
-    <div className="w-full h-screen overflow-hidden bg-black flex justify-center">
+    <div className="w-full h-screen overflow-hidden bg-transparent flex justify-center">
       <div className="w-full lg:w-2/3 h-full relative">
         {renderPageView()}
       </div>

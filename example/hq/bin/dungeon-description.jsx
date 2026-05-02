@@ -31,7 +31,7 @@ export default function DungeonDescription({ gameSession, onChangePageView, onUp
   const description = gameSession?.currentMap?.header?.descrizione || "Nessuna descrizione disponibile per questa missione.";
 
   return (
-    <div className="h-full w-full flex flex-col bg-gradient-to-b from-gray-900 via-stone-900 to-black text-stone-300 overflow-hidden overflow-x-hidden relative font-sans">
+    <div className="h-full w-full flex flex-col bg-transparent text-stone-300 overflow-hidden overflow-x-hidden relative font-sans">
       {/* Background effects: Mist and Rune Haze */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800/20 via-transparent to-transparent pointer-events-none"></div>
       <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] pointer-events-none"></div>

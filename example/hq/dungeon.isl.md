@@ -1,6 +1,6 @@
 # Project: Dungeon React
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 **ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./dungeon
@@ -95,9 +95,9 @@
   - `visibilityCalc` MUST be the live `hooksVisibilityCalc` instance and MUST NOT be `null` while the board supports line-of-sight highlights, targeting previews, or tracer rendering.
   - `hoveredPath` MUST be passed together with `hoveredPathVariant`; passing only the variant is invalid because the board highlight is driven by the actual path coordinates.
 - **Turn Controls**:
-  - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0 AND `currentHero.isEscaped` is false.
+  - Displays `@DungeonTurnControls` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0 AND `currentHero.isEscaped` is false (equivalently: `currentHero` is non-null as defined in **internal state**, then `isEscaped` is false).
   - **Props**:
-    - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
+    - `currentHero`: the derived **active** hero (`turnOrder` == `currentTurn` and `currentBody` > 0), NOT a raw lookup by turn only.
     - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
     - `movementPoints`: `hooksTurnLogic.movementPoints`.
     - `turnPhase`: `hooksTurnLogic.turnPhase`.
@@ -121,7 +121,7 @@
 - **Hero Info Panel**:
   - Displays `@DungeonHeroInfoPanel` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0.
   - **Props**:
-    - `currentHero`: derived from `gameSession.heroes` and `gameSession.currentTurn`.
+    - `currentHero`: the derived **active** hero (same rule as **internal state** `currentHero`).
     - `currentHeroStats`: `hooksHeroStats.calculateStats(currentHero)`.
     - `movementPoints`: `hooksTurnLogic.movementPoints`.
 - **Combat Result**: Displays `CombatResultModal` if `gameSession.lastAttack` is not null.
@@ -187,6 +187,9 @@
 - `boardVisibilityMap`: current visibility map derived from `hooksFogOfWar`.
 - `drawnTreasureCard`: @TreasureCard (The currently displayed treasure card, null if none).
 - `notificationMessage`: String (Current message to display to the user, null if none).
+- `turnLogicActionsRef`: Mutable ref object holding the latest `hooksTurnLogic.markActionDone` and `hooksTurnLogic.forceTurnExhausted` so hooks instantiated **before** `useTurnLogic` (`hooksTraps`, `hooksSecretPassages`, etc.) can forward actions without stale closures. Initialized with no-op functions; synchronized from `hooksTurnLogic` in an effect after that hook is created.
+- `monsterAIRef`: Mutable ref (initially null) holding the latest `hooksMonsterAI` instance. Required because `useTreasureSearch` is wired **before** `useMonsterAI` in the component body; `handleWanderingMonster` MUST invoke `performInstantAttack` only via `monsterAIRef.current` (see **hookRefBridges**).
+- `currentHero`: Derived `@HeroState | null` — the single hero in `gameSession.heroes` where `turnOrder` equals `gameSession.currentTurn` **and** `currentBody` is greater than 0. If no hero matches (defeated turn holder, etc.), `currentHero` is null. Used for turn controls, hero info panel, inventory spell modal hero prop, and any UI that must not treat a defeated hero as active.
 - `hooksFogOfWar`: @useFogOfWar logic for calculating visibility based on hero positions and map data.
 - `hooksSessionManager`: @useDungeonSessionManager passing `gameSession`, `onUpdateSession`, `setNotificationMessage`, `hooksFogOfWar`, `staticEquipment`, and `staticItems`.
 - `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment` and `hooksSessionManager`.
@@ -208,6 +211,14 @@
 - `hooksSecretPassages`: @useSecretPassages passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, and `hooksSessionManager`.
 - `hooksTreasure`: @useTreasureSearch passing `gameSession`, `boardVisibilityMap`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, `hooksSessionManager`, `handleTreasureCardDrawn`, and `handleWanderingMonster`. It exposes `applyTreasureEffect`.
 - `areMonstersVisible`: Boolean (Derived: True if any monster in `gameSession.monsters` is on a cell where `boardVisibilityMap.fog` is false).
+
+#### hookRefBridges
+
+- **Contract**: Keeps late-bound hook APIs reachable from earlier declarations without violating React hook ordering rules.
+- **Constraint**: `useMonsterAI` MUST be declared **after** `useTreasureSearch` in the component body; therefore `handleWanderingMonster` MUST NOT reference `hooksMonsterAI` as a direct lexical binding from above `useMonsterAI`. Use `monsterAIRef` only.
+- **Flow**:
+  1. **Turn logic forwarders**: Declare `turnLogicActionsRef` with placeholder `markActionDone` and `forceTurnExhausted` before `hooksTurnLogic`. Pass `() => turnLogicActionsRef.current.markActionDone()` and `() => turnLogicActionsRef.current.forceTurnExhausted()` into `hooksTraps`, `hooksSecretPassages`, and any other hook that needs turn-phase updates before `hooksTurnLogic` exists. After `hooksTurnLogic` is assigned, run a `useEffect` that sets `turnLogicActionsRef.current.markActionDone` and `turnLogicActionsRef.current.forceTurnExhausted` from `hooksTurnLogic`.
+  2. **Monster AI for wandering treasure**: Declare `monsterAIRef` (useRef, initial null) **before** `useTreasureSearch`. After `hooksMonsterAI` is assigned, run a `useEffect` that sets `monsterAIRef.current = hooksMonsterAI` whenever `hooksMonsterAI` changes.
 
 #### combatSound
 
@@ -379,13 +390,16 @@
 
 #### handleWanderingMonster
 
-- **Contract**: Orchestrates the wandering monster appearance and immediate attack.
+- **Contract**: Orchestrates the wandering monster appearance and immediate attack on the drawing hero.
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
   - Let `newMonster` = `hooksMonsters.spawnWanderingMonster(x, y)`.
-  - IF `newMonster` is NOT null:
-    - Find `hero` in `gameSession.heroes` at `x, y`.
-    - Call `hooksMonsterAI.performInstantAttack(newMonster, hero)`.
+  - IF `newMonster` is null RETURN.
+  - Find `hero` in `gameSession.heroes` whose coordinates match `(x, y)`.
+  - IF `hero` is null RETURN.
+  - Let `ai` = `monsterAIRef.current`.
+  - IF `ai` is not null AND `ai.performInstantAttack` exists: invoke `performInstantAttack(newMonster, hero)` (fire-and-forget async is acceptable).
+  - MUST NOT call `hooksMonsterAI` directly from this handler’s closure (hook order); MUST use `monsterAIRef` per **hookRefBridges**.
 
 #### openMagicModal
 
@@ -420,7 +434,7 @@
 - **Flow**:
   - Find `spell` in `staticSpells` matching `spellId`.
   - IF `spell.targetType` EQUALS "Self":
-    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - Find `currentHero` using the same rule as **internal state** `currentHero` (`turnOrder` == `currentTurn` AND `currentBody` > 0).
     - IF `currentHero` is null:
       - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
       - RETURN.
@@ -440,7 +454,7 @@
 - **Signature**: `(x: Integer, y: Integer)`
 - **Flow**:
   - IF `targetingSpell` is NOT null:
-    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - Find `currentHero` using the same rule as **internal state** `currentHero` (`turnOrder` == `currentTurn` AND `currentBody` > 0).
     - IF `currentHero` is null:
       - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
       - RETURN.
@@ -467,7 +481,7 @@
 - **Signature**: `(monsterId: Integer)`
 - **Flow**:
   - IF `targetingItem` is NOT null:
-    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - Find `currentHero` using the same rule as **internal state** `currentHero` (`turnOrder` == `currentTurn` AND `currentBody` > 0).
     - IF `currentHero` is null:
       - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
       - RETURN.
@@ -476,7 +490,7 @@
     - Set `notificationMessage` to `null`.
     - RETURN.
   - IF `targetingSpell` is NOT null:
-    - Find `currentHero` in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+    - Find `currentHero` using the same rule as **internal state** `currentHero` (`turnOrder` == `currentTurn` AND `currentBody` > 0).
     - IF `currentHero` is null:
       - Set `notificationMessage` to "Nessun eroe attivo disponibile.".
       - RETURN.

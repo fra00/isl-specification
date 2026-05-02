@@ -147,7 +147,7 @@ export default function PlayGame({
 
   if (isInitializing || !campaign || !staticHeroes?.length) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-stone-950 text-amber-600 font-serif">
+      <div className="flex h-full w-full items-center justify-center bg-transparent text-amber-600 font-serif">
         <p className="text-2xl animate-pulse">Attendi, caricamento archivi...</p>
       </div>
     );
@@ -157,7 +157,7 @@ export default function PlayGame({
   const focusedStatus = getMissionStatus(focusedMissionIndex);
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 text-stone-300 font-serif selection:bg-amber-900/50">
+    <div className="flex h-full w-full overflow-hidden bg-transparent text-stone-300 font-serif selection:bg-amber-900/50">
       
       {/* Left Panel: Mission List */}
       <div className="w-1/3 h-full overflow-y-auto overflow-x-hidden border-r border-amber-900/30 p-6 space-y-4 custom-scrollbar">

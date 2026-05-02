@@ -2,7 +2,7 @@
 
 Short description
 
-**Version**: 1.0.0
+**Version**: 1.0.2
 **ISL Version**: 1.6.2
 **Created**: 2026-02-09
 **Implementation**: ./main-menu
@@ -16,7 +16,8 @@ Short description
 - `menu action plaque`: primary clickable card for one destination of the home screen.
 - `active backdrop`: full-screen atmospheric backdrop treatment that changes with the selected action and defaults to the `GIOCA` entry.
 - `compact viewport mode`: low-height home variant for heights up to about `720px`; it reduces spacing and card height so title and both main actions remain inside the fixed runtime stage.
-- `ultra-compact viewport mode`: very-low-height branch for heights up to about `460px`; it removes non-essential copy, shrinks badges, and forces the two main plaques into one two-column action row.
+- `ultra-compact viewport mode`: very-low-height branch for heights up to about `460px`; it removes non-essential copy, shrinks badges, and forces the main action plaque(s) into a compact action row.
+- `editor menu visibility`: product flag (implementation: `SHOW_EDITOR_MENU`). When `false`, the `EDITOR` / `PageNavigationEnum.EDITOR_GAME` plaque and its dedicated active backdrop layer MUST NOT be rendered; only `GIOCA` remains until the flag is set to `true`.
 
 ## Component: MainMenu
 
@@ -33,19 +34,18 @@ Main Menu Screen
 - Full width landing screen with dark fantasy styling.
 - Height: exactly the viewport height.
 - Overflow: hidden. The home screen MUST stay inside the fixed runtime stage and MUST NOT require page scrollbars.
-- `BackgroundLayer`: abstract black-stone and ember gradient field, always visible, with slow breathing motion and no figurative artwork.
-- `ActiveBackdropLayer`: hovered action backdrop treatment crossfades above the base background.
-  - Default state uses the `GIOCA` warm ember/campaign palette.
-  - Hover/focus on `EDITOR` switches the active backdrop to a colder forge/steel palette.
+- `ActiveBackdropLayer` (only): light atmospheric gradients crossfading over the **global** full-game background image. MUST NOT use a full-screen opaque or black-to-bottom base layer; gradient stops MUST fade toward **transparent** so `img/background.png` (from `MainContent`) remains visible.
+  - Default state uses the `GIOCA` warm ember/campaign tint.
+  - When `editor menu visibility` is enabled: hover/focus on `EDITOR` switches the active backdrop to a colder forge/steel tint; when disabled, only the `GIOCA` backdrop layer is present.
 - `AtmosphereLayer`: sparse ember particles and warm glow accents. Decorative only; they must not make the screen visually noisy.
 - `HeaderPlaque`: compact top block with:
   - eyebrow text `Portale del Regno`
   - main title `Dungeon`
   - one short instruction line
 - `ActiveStatePill`: small capsule that shows the currently active area label and short hint.
-- `ActionArea`: only two large menu plaques, no secondary long-form text column.
-  - `GIOCA` plaque
-  - `EDITOR` plaque
+- `ActionArea`: one or two large menu plaques (see `editor menu visibility`), no secondary long-form text column.
+  - `GIOCA` plaque (always)
+  - `EDITOR` plaque (only when `editor menu visibility` is enabled)
   - Each plaque shows only: eyebrow, main label, short teaser, short hint, ordinal badge.
   - Long descriptive paragraphs and oversized preview cards MUST NOT be used here.
 - Tall viewport layout:
@@ -54,12 +54,12 @@ Main Menu Screen
 - Compact viewport layout:
   - active when the viewport height falls to about `720px` or below
   - padding, title size, and plaque height compress aggressively
-  - `GIOCA` and `EDITOR` remain visible in the first frame together with the title block
+  - `GIOCA` (and `EDITOR` when enabled) remain visible in the first frame together with the title block
 - Ultra-compact viewport layout:
   - active when the viewport height falls to about `460px` or below
   - the short instructional line under the title is removed
   - each plaque hides non-essential secondary hint copy and the `Entra` chip
-  - the two menu plaques MUST switch to a two-column action row to reduce total height
+  - the visible menu plaques MUST switch to a compact multi-column action row when more than one plaque exists to reduce total height
   - the active-state pill remains visible, but its spacing and typography compress further
 
 ### 📦 Content
@@ -69,13 +69,13 @@ Main Menu Screen
   - title: `Dungeon`
   - short line inviting the user to choose a path, omitted in ultra-compact mode
 - `ActiveStatePill`
-  - shows `Campagna` or `Forgia`
+  - shows `Campagna` or `Forgia` (when editor plaque exists)
   - shows a short active hint
 - `ActionArea`
   - `GIOCA` `destination` => PageNavigationEnum.PLAY_GAME
     - eyebrow => `Campagna`
     - teaser => compact campaign/dungeon hint
-  - `EDITOR` `destination` => PageNavigationEnum.EDITOR_GAME
+  - `EDITOR` `destination` => PageNavigationEnum.EDITOR_GAME (only when `editor menu visibility` is enabled)
     - eyebrow => `Forgia`
     - teaser => compact tooling hint
 - `StatusPlaque` (desktop-only optional)

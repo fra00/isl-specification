@@ -6,8 +6,11 @@
  * Edit the ISL file instead.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageNavigationEnum } from './domain-core';
+
+/** Set true when the map editor flow is ready for players. */
+const SHOW_EDITOR_MENU = false;
 
 export default function MainMenu({ onChangePageView = () => {} }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,14 +56,14 @@ export default function MainMenu({ onChangePageView = () => {} }) {
   }, []);
 
   // Menu Configuration Data
-  const menuConfig = {
+  const menuConfigFull = {
     [PageNavigationEnum.PLAY_GAME]: {
       id: PageNavigationEnum.PLAY_GAME,
       eyebrow: 'Campagna',
       title: 'GIOCA',
       teaser: 'Inizia o continua la tua avventura nel dungeon.',
       hint: 'Esplora le profondità',
-      backdropClass: 'from-orange-900/30 via-red-950/20 to-black',
+      backdropClass: 'from-orange-900/25 via-red-950/15 to-transparent',
       activePill: 'Campagna',
     },
     [PageNavigationEnum.EDITOR_GAME]: {
@@ -69,26 +72,34 @@ export default function MainMenu({ onChangePageView = () => {} }) {
       title: 'EDITOR',
       teaser: 'Crea e modifica le tue mappe personalizzate.',
       hint: 'Plasma il mondo',
-      backdropClass: 'from-slate-800/40 via-cyan-950/20 to-black',
+      backdropClass: 'from-slate-800/35 via-cyan-950/15 to-transparent',
       activePill: 'Forgia',
     }
   };
 
-  const currentConfig = menuConfig[activeItem] || menuConfig[PageNavigationEnum.PLAY_GAME];
+  const menuConfig = useMemo(() => {
+    if (SHOW_EDITOR_MENU) return menuConfigFull;
+    const { [PageNavigationEnum.EDITOR_GAME]: _, ...rest } = menuConfigFull;
+    return rest;
+  }, []);
+
+  const visibleMenuItems = useMemo(() => Object.values(menuConfig), [menuConfig]);
+
+  const currentConfig =
+    menuConfig[activeItem] || menuConfig[PageNavigationEnum.PLAY_GAME];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black text-white font-sans select-none flex flex-col">
+    <div className="relative w-full h-screen overflow-hidden bg-transparent text-white font-sans select-none flex flex-col">
       
-      {/* BackgroundLayer: Base abstract black-stone */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black z-0"></div>
-      
-      {/* ActiveBackdropLayer: Crossfades based on active item */}
+      {/* ActiveBackdropLayer: subtle tints; does not paint opaque black (global bg image stays visible) */}
       <div 
-        className={`absolute inset-0 bg-gradient-to-br ${menuConfig[PageNavigationEnum.PLAY_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.PLAY_GAME ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-gradient-to-br ${menuConfigFull[PageNavigationEnum.PLAY_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.PLAY_GAME ? 'opacity-100' : 'opacity-0'}`}
       ></div>
+      {SHOW_EDITOR_MENU && (
       <div 
-        className={`absolute inset-0 bg-gradient-to-br ${menuConfig[PageNavigationEnum.EDITOR_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.EDITOR_GAME ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-gradient-to-br ${menuConfigFull[PageNavigationEnum.EDITOR_GAME].backdropClass} transition-opacity duration-1000 z-0 ${activeItem === PageNavigationEnum.EDITOR_GAME ? 'opacity-100' : 'opacity-0'}`}
       ></div>
+      )}
 
       {/* AtmosphereLayer: Sparse ember particles (simulated with radial gradients and pulse) */}
       <div className="absolute inset-0 z-0 opacity-30 animate-pulse pointer-events-none" 
@@ -128,7 +139,7 @@ export default function MainMenu({ onChangePageView = () => {} }) {
 
         {/* ActionArea */}
         <div className={`flex w-full max-w-5xl mx-auto gap-4 ${isUltraCompact ? 'flex-row px-4' : 'flex-col md:flex-row px-6 md:px-12'}`}>
-          {Object.values(menuConfig).map((config) => (
+          {visibleMenuItems.map((config) => (
             <button
               key={config.id}
               onClick={() => clickMenuItems(config.id)}

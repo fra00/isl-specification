@@ -77,8 +77,11 @@
 
 #### isOccupiedByHero
 
-- **Contract**: Checks if the cell is occupied by a hero.
+- **Contract**: Checks if the cell is occupied by a **living** hero (defeated heroes with `currentBody` at or below zero do not block the cell).
 - **Signature**: `(x: Integer, y: Integer, excludeEntityId: Integer) -> Boolean`
+- **Flow**:
+  1. IF `gameSession.heroes` is null RETURN false.
+  2. RETURN true iff some hero has `x`, `y` matching, `heroId` different from `excludeEntityId`, and `currentBody` greater than 0.
 
 #### isBlockedByRock
 

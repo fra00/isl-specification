@@ -97,7 +97,7 @@ export function useDungeonMonsters({
     if (!cell) return false;
     if (cell.arnt?.antroc || cell.arnt?.inv || cell.mobili?.num != null) return false;
 
-    const hasHero = session.heroes?.some(h => h.x === x && h.y === y);
+    const hasHero = session.heroes?.some(h => h.x === x && h.y === y && (h.currentBody || 0) > 0);
     const hasMonster = session.monsters?.some(m => m.x === x && m.y === y);
     if (hasHero || hasMonster) return false;
 

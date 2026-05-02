@@ -166,6 +166,8 @@ export default function Dungeon({
         forceTurnExhausted: () => {}
     });
 
+    const monsterAIRef = useRef(null);
+
     const hooksTraps = useTraps({
         gameSession,
         visibilityMap: boardVisibilityMap,
@@ -223,11 +225,12 @@ export default function Dungeon({
 
     const handleWanderingMonster = useCallback((x, y) => {
         const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
-        if (newMonster) {
-            const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
-            if (hero) {
-                // hooksMonsterAI is not defined yet, we will use a ref to access it
-            }
+        if (!newMonster) return;
+        const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
+        if (!hero) return;
+        const ai = monsterAIRef.current;
+        if (ai?.performInstantAttack) {
+            void ai.performInstantAttack(newMonster, hero);
         }
     }, [hooksMonsters, gameSession]);
 
@@ -264,30 +267,14 @@ export default function Dungeon({
         sessionManager: hooksSessionManager
     });
 
-    const monsterAIRef = useRef(hooksMonsterAI);
     useEffect(() => {
         monsterAIRef.current = hooksMonsterAI;
     }, [hooksMonsterAI]);
 
-    // Fix handleWanderingMonster to use the ref
-    const handleWanderingMonsterSafe = useCallback((x, y) => {
-        const newMonster = hooksMonsters.spawnWanderingMonster(x, y);
-        if (newMonster) {
-            const hero = gameSession?.heroes?.find(h => h.x === x && h.y === y);
-            if (hero) {
-                monsterAIRef.current.performInstantAttack(newMonster, hero);
-            }
-        }
-    }, [hooksMonsters, gameSession]);
-
-    // Re-bind the safe version to hooksTreasure (this is a slight deviation but necessary for circular deps)
-    useEffect(() => {
-        // In a real scenario, we'd pass handleWanderingMonsterSafe directly to useTreasureSearch
-        // Since we already passed handleWanderingMonster, we just ensure the logic is sound.
-    }, [handleWanderingMonsterSafe]);
-
     const currentHero = useMemo(() => {
-        return gameSession?.heroes?.find(h => h.turnOrder === gameSession.currentTurn);
+        return gameSession?.heroes?.find(
+            h => h.turnOrder === gameSession.currentTurn && (h.currentBody || 0) > 0
+        );
     }, [gameSession?.heroes, gameSession?.currentTurn]);
 
     const currentHeroStats = useMemo(() => {
@@ -541,7 +528,7 @@ export default function Dungeon({
     }, [hooksTraps]);
 
     return (
-        <div className="w-full h-screen bg-stone-950 flex items-center justify-center relative overflow-hidden">
+        <div className="w-full h-screen bg-transparent flex items-center justify-center relative overflow-hidden">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-32 h-64 bg-orange-600/10 blur-3xl rounded-full pointer-events-none" />
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-64 bg-orange-600/10 blur-3xl rounded-full pointer-events-none" />
 

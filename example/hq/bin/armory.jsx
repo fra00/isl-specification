@@ -102,7 +102,7 @@ export default function Armory({ gameSession, onUpdateSession, onChangePageView 
     }, [onChangePageView]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-gradient-to-br from-stone-900 via-black to-stone-800 text-stone-200 overflow-hidden relative">
+        <div className="flex flex-col h-full w-full bg-transparent text-stone-200 overflow-hidden relative">
             {/* Background effects */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-orange-900/20 via-black/50 to-transparent pointer-events-none"></div>
 

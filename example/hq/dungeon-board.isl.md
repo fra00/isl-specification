@@ -86,7 +86,7 @@
       - This preview MUST remain visible even when the destination cell is fogged, provided the path itself is being previewed by movement logic.
     - **Targeting Highlight**:
       - IF `targetingSpell` is NOT null:
-        - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+        - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn` AND `currentBody` > 0.
         - Let `hasLOS` = `visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, x + 1, y + 1)`.
         - IF `targetingSpell.effetto` == "Genio" AND cell contains a Monster or a closed Door: add a pulsing blue/purple border or overlay (bg-blue-500/30 animate-pulse).
         - ELSE IF mouse is over a valid target for the current `targetingSpell.targetType`:
@@ -136,7 +136,7 @@
     - IF `tipo` == 2 (Lancia) THEN Image at x,y with Src: `/img/cell/lancia.png`, using intrinsic asset dimensions.
     - IF `tipo` == 3 (Masso cadente) THEN Image at x,y with Src: `/img/cell/rocciacad.png`, using intrinsic asset dimensions.
   - Triggered trap markers SHOULD cast a soft drop shadow so they remain legible over the board texture.
-- **Heroes**: Visual tokens for `@GameSession.heroes` (@HeroState) at their x,y coordinates (start from 1).
+- **Heroes**: Visual tokens for **living** `@GameSession.heroes` (`currentBody` greater than 0) at their x,y coordinates (start from 1). Defeated heroes MUST NOT render a board token.
   - **Image**: `/img/eroi/` + `@Hero.miniature` (max-width:34px).
   - **Depth**: Hero tokens SHOULD use a soft shadow to separate them from the board artwork.
   - **Body Points Indicator**:
@@ -166,7 +166,7 @@
   - **Style**: Apply CSS transition `top 0.3s linear, left 0.3s linear` to the container for smooth movement.
 - **Targeting Tracer**:
   - Visible ONLY IF `targetingSpell` is NOT null AND `hoveredCell` is NOT null.
-  - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn`.
+  - Let `activeHero` = Hero in `gameSession.heroes` where `turnOrder` == `gameSession.currentTurn` AND `currentBody` > 0.
   - **Color**:
     - IF `targetingSpell.effetto` == "Genio" THEN magic-blue (Genie ignores Line of Sight).
     - ELSE IF `visibilityCalc.hasLineOfSight(activeHero.x, activeHero.y, hoveredCell.x + 1, hoveredCell.y + 1)` is false THEN red.

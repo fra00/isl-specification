@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { useDungeonMapQuery } from '../bin/dungeon-map-query';
 
 const gameSession = {
-  heroes: [{ heroId: 1, x: 3, y: 3 }],
+  heroes: [{ heroId: 1, x: 3, y: 3, currentBody: 5 }],
   monsters: [{ id: 7, x: 4, y: 4, currentBody: 2 }, { id: 8, x: 5, y: 5, currentBody: 0 }],
   currentMap: {
     grid: [
@@ -35,5 +35,14 @@ describe('useDungeonMapQuery', () => {
     expect(result.current.isOccupiedByHero(3, 3, 1)).toBe(false);
     expect(result.current.isBlockedByRock(3, 3)).toBe(true);
     expect(result.current.getMapDimensions()).toEqual({ width: 26, height: 19 });
+  });
+
+  it('treats defeated heroes as not occupying their cell', () => {
+    const sessionDeadHero = {
+      ...gameSession,
+      heroes: [{ heroId: 1, x: 3, y: 3, currentBody: 0 }],
+    };
+    const { result } = renderHook(() => useDungeonMapQuery({ gameSession: sessionDeadHero, visibilityMap: null }));
+    expect(result.current.isOccupiedByHero(3, 3, null)).toBe(false);
   });
 });

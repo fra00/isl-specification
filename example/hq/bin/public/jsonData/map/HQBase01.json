@@ -1,7 +1,7 @@
 {
   "header": {
     "matrsf": "default.tbl",
-    "descrizione": "Bene miei prodi, � venuto per voi il momento di cimentarvi nella prova.Dovete viaggiare verso est ed entrare nelle catacombe di Verag,un gargoyle pazzo.Le catacombe custodiscono la tomba di Fellmarg.La prova � ardua ed alcuni di voi potrebbero perire, ma cercate di sopravvivere il pi� a lungo il possibile per allenarvi a combattere nei sotterranei,perch� le imprese che seguiranno saranno ben pi� pericolose! Questo � solo il primo passo per diventare campione del regno...state attenti e in bocca al lupo miei prodi.",
+    "descrizione": "Benvenuti nel vostro primo dungeon.Assieme alla tomba di un grande un grande re del Passato queste catacombe nascondono un gargoyle pazzo.Il vostro battesimo del fuoco sarà difficile ed alcuni di voi potrebbero perire, ma cercate di sopravvivere,perchè le imprese che seguiranno saranno più pericolose! Questo è il vostro primo passo nei dungeon...state attenti.    ",
     "check5": 0,
     "mostro_uscita": 7,
     "tesoro_finale": {

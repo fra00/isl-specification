@@ -47,7 +47,11 @@ export function useDungeonMapQuery({ gameSession, visibilityMap }) {
 
     const isOccupiedByHero = useCallback((x, y, excludeEntityId) => {
         if (gameSession?.heroes == null) return false;
-        return gameSession.heroes.some(h => h.x === x && h.y === y && h.heroId !== excludeEntityId);
+        return gameSession.heroes.some(h =>
+            h.heroId !== excludeEntityId &&
+            h.x === x &&
+            h.y === y &&
+            (h.currentBody || 0) > 0);
     }, [gameSession]);
 
     const isBlockedByRock = useCallback((x, y) => {

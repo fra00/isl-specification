@@ -19,7 +19,7 @@ Guides for getting started, tooling, compilation workflow, examples, and tutoria
 |-----|-------------|
 | [Getting Started](./docs/getting-started.md) | Prerequisites, VS Code extension, first file, lint |
 | [Tools overview](./docs/tools-overview.md) | Every tool at a glance |
-| [Compilation and codegen](./docs/compilation-workflow.md) | Builder → codegen → lock |
+| [Compilation and codegen](./docs/compilation-workflow.md) | Builder → codegen workflow |
 | [Examples catalog](./docs/examples-catalog.md) | How to navigate `example/` |
 | [Tutorial: first component](./docs/tutorial-first-component.md) | 15-min hands-on exercise |
 
@@ -196,8 +196,6 @@ Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md
 | **ISL Builder** | `npx ts-node tools/vscode-isl/src/isl-builder.ts <stack-dir>` | Build graph, manifest, `.build.md` contexts |
 | **ISL Generator** | `npx ts-node tools/vscode-isl/src/isl-generator.ts <manifest> [outdir]` | LLM code generation toward `bin/` |
 | **ISL Create** | `npx ts-node tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` | ISL draft from natural language |
-| **Compile queue** | `node llm-tools/run-compile-queue.cjs --root <stack>` | List stale units vs lock |
-| **Update gen-lock** | `node llm-tools/run-update-gen-lock.cjs --root <stack> --build-file <abs>` | Record a verified compile |
 | **Python resolver** | `python tools/isl_compiler.py <file.isl.md>` | Inline-expand `Reference` links to stdout |
 
 ---
@@ -224,14 +222,13 @@ ISL works with:
 
 ```text
 ISL (repository)
-├── README.md         ← This file
-├── docs/             ← Operational guides (getting started, tools, compilation, tutorials)
-├── specs/            ← Official ISL language specification (normative)
-├── example/          ← Sample projects: hq, architect-*, design-*, userDefine-*, …
-├── tools/
-│   ├── vscode-isl/   ← VS Code extension, ISL Builder, Generator, Create, Lint
-│   └── isl-lint-shell/ ← Standalone CLI linter
-└── llm-tools/        ← Agent compile queue / gen-lock wrappers
+├── README.md           ← This file
+├── docs/               ← Operational guides (getting started, tools, compilation, tutorials)
+├── specs/              ← Official ISL language specification (normative)
+├── example/            ← Sample projects: hq, architect-*, design-*, userDefine-*, …
+└── tools/
+    ├── vscode-isl/     ← VS Code extension, ISL Builder, Generator, Create
+    └── isl-lint-shell/ ← Standalone CLI linter
 ```
 
 ---

@@ -53,7 +53,7 @@ npm run lint -- path/to/file.isl.md
 If your project has a **stack** with `build-manifest`, `.build.md` files, and a `bin/` folder:
 
 - Read [Compilation and codegen](./compilation-workflow.md).
-- Do not confuse **updating `gen-lock.json`** with a real compile unless code in `bin/` actually reflects the ISL.
+- Read [Compilation and codegen](./compilation-workflow.md) to understand the Builder → Generator flow.
 
 ---
 

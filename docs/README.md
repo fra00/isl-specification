@@ -10,7 +10,7 @@ This is the index for **operational** documentation: orientation, tooling, and c
 |----------|-------------|
 | [Getting Started](./getting-started.md) | Prerequisites, official spec, VS Code extension, first `.isl.md` file. |
 | [Tools overview](./tools-overview.md) | What each tool does, where it lives, when to use it. |
-| [Compilation and codegen](./compilation-workflow.md) | Builder vs LLM generator, `bin/`, `gen-lock.json`, agent scripts, and cautions. |
+| [Compilation and codegen](./compilation-workflow.md) | Builder → codegen workflow, `bin/` artifacts. |
 | [Examples catalog](./examples-catalog.md) | How to read the `example/` folder and what to expect from each project type. |
 | [Tutorial: first component](./tutorial-first-component.md) | Short exercise: one end-to-end validatable `.isl.md` file. |
 
@@ -28,9 +28,7 @@ This is the index for **operational** documentation: orientation, tooling, and c
 | Path | Notes |
 |------|--------|
 | [`tools/vscode-isl/README.md`](../tools/vscode-isl/README.md) | VS Code extension: snippets, commands, `.vsix` install. |
-| [`tools/README.md`](../tools/README.md) | ISL Lint (CLI) and legacy references. |
-| [`llm-tools/README.md`](../llm-tools/README.md) | Agent compile queue, `gen-lock`, Node wrappers. |
-| [`.cursor/skills/isl-code-generation/SKILL.md`](../.cursor/skills/isl-code-generation/SKILL.md) | Agent rules (align ISL ↔ `bin/` before updating the lock). |
+| [`tools/README.md`](../tools/README.md) | ISL Lint (CLI) and tool references. |
 
 ---
 

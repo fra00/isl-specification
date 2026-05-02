@@ -14,9 +14,6 @@ Map of official or supporting tools in the repository. Paths are relative to the
 | **ISL Generator** | Code / signature generation toward `bin/` (LLM pipeline) | [`tools/vscode-isl/src/isl-generator.ts`](../tools/vscode-isl/src/isl-generator.ts) |
 | **ISL Create** | ISL drafts from natural language | [`tools/vscode-isl/src/isl-create.ts`](../tools/vscode-isl/src/isl-create.ts) |
 | **ISL Lint** | Structural validation from CLI | [`tools/isl-lint-shell/`](../tools/isl-lint-shell/) |
-| **Agent compile queue** | Incremental queue aligned with `StandardRunner` | [`tools/vscode-isl/src/cli/agent-compile-queue.ts`](../tools/vscode-isl/src/cli/agent-compile-queue.ts) |
-| **Agent update gen-lock** | Update `gen-lock.json` after a verified compile | [`tools/vscode-isl/src/cli/agent-update-gen-lock.ts`](../tools/vscode-isl/src/cli/agent-update-gen-lock.ts) |
-| **`llm-tools/` wrappers** | Convenient invocation from repo root | [`llm-tools/`](../llm-tools/) |
 | **Python resolver** | Inline-expand `Reference` links to stdout | [`tools/isl_compiler.py`](../tools/isl_compiler.py) |
 
 ---
@@ -131,8 +128,9 @@ npm run lint -- <file> --json --strict
 ## ISL Builder
 
 Resolves ISL references, computes the dependency graph, and writes:
+
 - `build/build-manifest.json` — ordered compile units
-- `*.build.md` — full context for each component (ready for an LLM)
+- `*.build.md` — full context for each component (ready for an LLM or for manual review)
 
 ### Usage
 
@@ -144,16 +142,13 @@ npx ts-node tools/vscode-isl/src/isl-builder.ts <stack-directory>
 npx ts-node tools/vscode-isl/src/isl-builder.ts example/hq
 ```
 
-The stack directory must contain a `build-manifest.json` (or the builder creates one from discovered `.isl.md` files).
+The stack directory must contain a `build-manifest.json`, or the builder creates one from discovered `.isl.md` files.
 
 ---
 
 ## ISL Generator (LLM compiler)
 
 Reads `build-manifest.json` and generates implementation code in `bin/` by sending each `.build.md` context to an LLM.
-
-> **This tool is NOT used by in-session Cursor agents.**  
-> Agents use `isl-builder` + manual edits + `agent-compile-queue` / `agent-update-gen-lock` instead.
 
 ### Usage
 
@@ -224,92 +219,11 @@ npx ts-node tools/vscode-isl/src/isl-create.ts ./specs "A complete e-commerce sy
 
 ---
 
-## Agent compile queue (`llm-tools`)
-
-Lists ISL units whose `bin/` artifact is stale (hash mismatch vs `gen-lock.json`). Used by Cursor agents to identify what needs re-compilation **before** changing any code.
-
-### Usage
-
-```bash
-# From repo root — quick shortcut wrapper
-node llm-tools/run-compile-queue.cjs --root example/hq
-
-# JSON output for scripting
-node llm-tools/run-compile-queue.cjs --root example/hq --json
-
-# Direct (no wrapper)
-npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --root example/hq
-```
-
-### Flags
-
-| Flag | Description |
-|------|-------------|
-| `--root <dir>` | Stack directory (auto-resolves manifest, bin, lock paths) |
-| `--manifest <path>` | Explicit path to `build-manifest.json` |
-| `--bin <path>` | Explicit path to `bin/` directory |
-| `--lock <path>` | Explicit path to `gen-lock.json` |
-| `--stack <id>` | Stack override (default: `react-js`) |
-| `--force` | Mark all units as stale regardless of hash |
-| `--all --json` | Output the full manifest including up-to-date units |
-
----
-
-## Agent update gen-lock (`llm-tools`)
-
-Records that one or more compile units have been verified — updates `gen-lock.json` to reflect the current artifact hash.
-
-> **Only use this after the `bin/` code has been aligned to the ISL spec.**  
-> Updating the lock without alignment is a false claim of compliance.
-
-### Usage
-
-```bash
-# From repo root — wrapper
-node llm-tools/run-update-gen-lock.cjs --root example/hq --build-file "C:\path\to\dungeon.build.md"
-
-# Multiple units in one call
-node llm-tools/run-update-gen-lock.cjs --root example/hq \
-  --build-file "C:\path\to\dungeon.build.md" \
-  --build-file "C:\path\to\dungeon-board.build.md"
-
-# Direct (no wrapper)
-npx ts-node tools/vscode-isl/src/cli/agent-update-gen-lock.ts \
-  --root example/hq --build-file "<abs-path>"
-```
-
-### Flags
-
-| Flag | Description |
-|------|-------------|
-| `--root <dir>` | Stack directory (auto-resolves manifest and lock) |
-| `--manifest <path>` | Explicit manifest path |
-| `--lock <path>` | Explicit lock path |
-| `--build-file <abs>` | Absolute path to a `.build.md` file (repeatable) |
-
----
-
-## Agent sync-lock-manifest
-
-Marks **all** manifest entries as up-to-date in `gen-lock.json` at once.
-
-> ⚠️ **Use with caution.** Only run this if you are certain **every** artifact in `bin/` already reflects the current ISL — not as a shortcut.
-
-```bash
-# Wrapper
-node llm-tools/run-sync-lock-manifest.cjs --root example/hq
-
-# Direct
-npx ts-node tools/vscode-isl/src/cli/agent-sync-lock-manifest.ts --root example/hq
-```
-
----
-
 ## Python reference resolver (`isl_compiler.py`)
 
-Standalone Python script — no dependencies beyond stdlib. Reads an `.isl.md` file, resolves all `> **Reference**: ... in [file](file)` links recursively, and writes the merged result to stdout.
+Standalone Python script — no dependencies beyond stdlib. Reads an `.isl.md` file, resolves all `> **Reference**: … in [file](file)` links recursively, and writes the merged result to stdout.
 
-Useful for pasting into an LLM chat directly.
+Useful for pasting into an LLM chat manually.
 
 ```bash
 python tools/isl_compiler.py <file.isl.md>
@@ -324,7 +238,7 @@ python tools/isl_compiler.py specs/my-spec.isl.md > merged-prompt.md
 
 | | **Builder** | **Generator (LLM)** |
 |---|-------------|---------------------|
-| **Typical output** | `build-manifest.json`, `*.build.md` | Files under `bin/`, optional `*.sign.ts` |
+| **Typical output** | `build-manifest.json`, `*.build.md` | Files under `bin/` |
 | **Requires LLM** | No | Yes |
 | **When to use** | Resolve dependencies and prepare context | Produce or refresh implementation from context |
 

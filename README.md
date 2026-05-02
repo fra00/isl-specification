@@ -9,6 +9,22 @@ ISL enables humans and Large Language Models (LLMs) to reason deterministically 
 
 ---
 
+## 📚 Documentation
+
+Guides for getting started, tooling, compilation workflow, examples, and tutorials:
+
+👉 **[`docs/`](./docs/README.md)**
+
+| Doc | Description |
+|-----|-------------|
+| [Getting Started](./docs/getting-started.md) | Prerequisites, VS Code extension, first file, lint |
+| [Tools overview](./docs/tools-overview.md) | Every tool at a glance |
+| [Compilation and codegen](./docs/compilation-workflow.md) | Builder → codegen → lock |
+| [Examples catalog](./docs/examples-catalog.md) | How to navigate `example/` |
+| [Tutorial: first component](./docs/tutorial-first-component.md) | 15-min hands-on exercise |
+
+---
+
 ## Why ISL Exists
 
 Modern software specifications often suffer from one or more of these problems:
@@ -31,41 +47,20 @@ ISL is **language-agnostic**, **framework-agnostic**, and **LLM-friendly by desi
 
 ---
 
-## ⚠️ Read the Specification (Important)
+## ⚠️ Read the Specification
 
 This repository contains **the official ISL language specification**.
 
-The README provides:
+👉 **Full Specification**: [`specs/Intent Specification Language (ISL) .md`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)
 
-- an overview
-- a minimal quick start
-- a reference example
-
-👉 **It does NOT replace the full specification.**
-
-To write **ISL-compliant** documents, you **must read the complete specification**, including:
+To write ISL-compliant documents, read the complete specification, including:
 
 - Canonical Rules
 - Grammar and semantics
 - Section precedence
 - Best practices and pitfalls
 
-📘 **Full Specification**:
-👉 [`Intent Specification Language (ISL)`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)
-
----
-
-# ISL Tools
-
-This directory contains the official tooling ecosystem for **Intent Specification Language (ISL)**.
-
-## 🛠️ Available Tools
-
-- **[VS Code Extension](./tools/vscode-isl)**: The complete IDE experience with validation, snippets, and compilation.
-- **[ISL Builder](./tools/vscode-isl/src/isl-builder.ts)**: Resolves dependencies, handles transclusion, and prepares build contexts.
-- **[ISL Compiler](./tools/vscode-isl/src/isl-generator.ts)**: Generates executable code (`bin/`) and signatures (`.sign.ts`) using LLMs.
-- **ISL Test**: Generates unit tests automatically from ISL specs and implementations.
-- **ISL Create**: CLI tool to generate ISL drafts from natural language descriptions.
+The README provides an overview and a quick reference. It **does not** replace the full specification.
 
 ---
 
@@ -96,22 +91,15 @@ This directory contains the official tooling ecosystem for **Intent Specificatio
 
 ---
 
-## Quick Start (Minimal, ISL-Compliant)
+## Quick Start
 
-This section allows you to **start writing ISL immediately**, using the **base model**.
-
-> This is a minimal entry point.
-> It assumes you will read the full specification.
-
----
-
-### Minimal ISL Structure
+### Minimal ISL structure
 
 ```markdown
 # Project: ExampleProject
 
-**Version**: 1.0.0  
-**ISL Version**: 1.6
+**Version**: 1.0.0
+**ISL Version**: 1.6.2
 
 ---
 
@@ -119,7 +107,7 @@ This section allows you to **start writing ISL immediately**, using the **base m
 
 ### User
 
-**Identity**: UUID  
+**Identity**: UUID
 **Properties**:
 
 - email: unique authentication identifier
@@ -135,136 +123,82 @@ This section allows you to **start writing ISL immediately**, using the **base m
 
 #### authenticateUser
 
-**Contract**: Authenticate **User** credentials and return an access token
+**Contract**: Authenticate **User** credentials and return an access token.
 
 🚨 **Constraints**:
 
-- Passwords MUST NOT be stored or compared in plaintext
-- Tokens MUST expire after 24 hours
+- Passwords MUST NOT be stored or compared in plaintext.
+- Tokens MUST expire after 24 hours.
 
 ✅ **Acceptance Criteria**:
 
-- Valid credentials return a token
-- Invalid credentials return an authentication error
+- Valid credentials return a token.
+- Invalid credentials return an authentication error.
 ```
 
-This is already **valid ISL**.
+This is already **valid ISL**. Run the linter to confirm:
+
+```bash
+cd tools/isl-lint-shell && npm install
+npm run lint -- ../../your-file.isl.md
+```
 
 ---
 
-## ISL Grammar & Writing Rules (Essential)
-
-ISL uses **structured Markdown with semantic conventions**.
-These rules improve clarity, scanability, and deterministic interpretation.
+## ISL Grammar Essentials
 
 ### Semantic Formatting
 
-- **Bold (`**term**`)**
-  Indicates a **semantic anchor**:
-  - Domain Concepts
-  - Component names
-  - Capabilities
-  - Defined entities
-    **Must NOT** be used for generic emphasis.
-
-- ***Bold + Italic (`***important***`)***
-  Indicates **critical emphasis** for clarifications or edge cases.
-  **Must NOT** replace normative sections (🚨 Constraints, ✅ Acceptance).
-
-- UPPERCASE
-  Used **only temporarily** during review or discussion.
-  **Must NOT** appear in finalized ISL documents.
-
----
+| Format | Meaning | When to use |
+|--------|---------|-------------|
+| `**bold**` | Semantic anchor | Domain concepts, component names, capability names, defined entities. **Never** generic emphasis. |
+| `***bold-italic***` | Critical emphasis | Edge-case clarifications only. MUST NOT replace normative sections. |
+| `UPPERCASE` | Temporary marker | Review only. MUST NOT appear in finalized documents. |
 
 ### Section Emojis (Visual Anchors)
 
-ISL uses emojis as **visual anchors** to reduce cognitive load and improve navigation.
+| Emoji | Meaning |
+|-------|---------|
+| ⚡ | Capabilities / behavior |
+| 🚨 | Constraints (normative) |
+| ✅ | Acceptance Criteria |
+| 🧪 | Test Scenarios |
 
-| Emoji | Meaning                 |
-| ----- | ----------------------- |
-| ⚡    | Capabilities / behavior |
-| 🚨    | Constraints (normative) |
-| ✅    | Acceptance Criteria     |
-| 🧪    | Test                    |
+### Canonical Rules (Essential Summary)
 
----
+- Sections marked ⚡ 🚨 ✅ 🧪 are **NORMATIVE**.
+- Constraints override Implementation Hints.
+- Capability Constraints override Global Constraints.
+- OPTIONAL means _may be omitted_, not _ignored if present_.
+- Presentation components MUST NOT implement business logic.
+- Backend components MUST NOT define visual properties.
 
-## Canonical Rules (Essential Summary)
+> These rules are always in scope for ISL interpreters (humans or LLMs), even when not repeated in every document.
 
-ISL is governed by **Canonical Rules** that define how specifications are interpreted.
+### Modular Specifications (v1.6.2)
 
-### Key Principles
-
-- Sections marked ⚡ 🚨 ✅ 🧪 are **NORMATIVE**
-- Constraints override Implementation Hints
-- Capability Constraints override Global Constraints
-- OPTIONAL means _may be omitted_, not _ignored if present_
-- Presentation components MUST NOT implement business logic
-- Backend components MUST NOT define visual properties
-
-> These rules are always **in scope** for ISL interpreters (humans or LLMs),
-> even when not repeated in every document.
-
-📘 See the full specification for the complete and authoritative rule set.
-
----
-
-## Example: Complete ISL Component
+Split large specs across files:
 
 ```markdown
-## Component: UserProfileCard
-
-### Role: Presentation
-
-### ⚡ displayProfile
-
-**Contract**: Display user profile information
-
-**Input**:
-
-- user: User
-
-**Flow**:
-
-1. Render user's display name
-2. Render email address
-3. Show status badge based on accountStatus
-
-🚨 **Constraints**:
-
-- MUST NOT fetch data directly
-- MUST receive all data via input
-
-✅ **Acceptance Criteria**:
-
-- Displays name and email correctly
-- Shows correct status badge
-- Renders within 200ms
-
-🧪 **Test Scenarios**:
-
-1. **Active User**:
-   - Input: accountStatus = active
-   - Expected: green status badge
-```
-
----
-
-## Modular Specifications (New in v1.6.2)
-
-ISL supports splitting specifications across multiple files to promote reuse (e.g., shared domain models).
-
-**Syntax:**
-`> **Reference**: [Description] in [Link]`
-
-**Example:**
-
-```markdown
-## Domain Concepts
-
 > **Reference**: Core entities are defined in [`./shared-domain.isl.md`](./shared-domain.isl.md).
 ```
+
+---
+
+## 🛠️ Tooling Quick Reference
+
+Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md).
+
+| Tool | Command / Location | Purpose |
+|------|-------------------|---------|
+| **VS Code extension** | `tools/vscode-isl/` | Syntax highlighting, snippets, real-time lint, wizards |
+| **ISL Lint** | `cd tools/isl-lint-shell && npm run lint -- <file>` | Structural and normative validation |
+| **ISL Builder** | `npx ts-node tools/vscode-isl/src/isl-builder.ts <stack-dir>` | Build graph, manifest, `.build.md` contexts |
+| **ISL Generator** | `npx ts-node tools/vscode-isl/src/isl-generator.ts <manifest> [outdir]` | LLM code generation toward `bin/` |
+| **ISL Create** | `npx ts-node tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` | ISL draft from natural language |
+| **Compile queue** | `node llm-tools/run-compile-queue.cjs --root <stack>` | List stale units vs lock |
+| **Update gen-lock** | `node llm-tools/run-update-gen-lock.cjs --root <stack> --build-file <abs>` | Record a verified compile |
+| **Python resolver** | `python tools/isl_compiler.py <file.isl.md>` | Inline-expand `Reference` links to stdout |
 
 ---
 
@@ -272,11 +206,11 @@ ISL supports splitting specifications across multiple files to promote reuse (e.
 
 Common usage patterns:
 
-- **Spec-first development**
-- **LLM-assisted code generation**
-- **Test generation from Acceptance Criteria**
-- **Documentation for complex systems**
-- **Reverse-engineering legacy systems**
+- **Spec-first development** — write ISL, generate code, iterate on the spec
+- **LLM-assisted code generation** — feed `.build.md` context to any LLM
+- **Test generation** from Acceptance Criteria
+- **Documentation** for complex systems
+- **Reverse-engineering** legacy systems into ISL specs
 
 ISL works with:
 
@@ -289,10 +223,15 @@ ISL works with:
 ## Repository Contents
 
 ```text
-isl-specification
-├── README.md               ← This file
-├── specs/                  ← (optional) markdown versions
-└── examples/               ← (optional) reference ISL documents
+ISL (repository)
+├── README.md         ← This file
+├── docs/             ← Operational guides (getting started, tools, compilation, tutorials)
+├── specs/            ← Official ISL language specification (normative)
+├── example/          ← Sample projects: hq, architect-*, design-*, userDefine-*, …
+├── tools/
+│   ├── vscode-isl/   ← VS Code extension, ISL Builder, Generator, Create, Lint
+│   └── isl-lint-shell/ ← Standalone CLI linter
+└── llm-tools/        ← Agent compile queue / gen-lock wrappers
 ```
 
 ---
@@ -320,4 +259,5 @@ If you are using ISL with LLMs, remember:
 
 ---
 
-📘 **Read the full specification** to write ISL correctly.
+📘 **Read the full specification** — [`specs/`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)  
+📂 **Operational docs** — [`docs/`](./docs/README.md)

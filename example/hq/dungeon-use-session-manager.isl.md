@@ -404,11 +404,12 @@
 - **Contract**: Persists the active hero position update against the latest available session snapshot without mutating unrelated session branches.
 - **Signature**: `(nextX: Integer, nextY: Integer, baseSession?: @GameSession) -> Boolean`
 - **Flow**:
-  - Let `sourceSession` = `baseSession` when provided, otherwise `gameSession`.
-  - IF `sourceSession` is null RETURN false.
-  - Build a full-session snapshot where only the active hero coordinates become `nextX`, `nextY`.
-  - Persist that snapshot through `commitSessionUpdate`.
-  - RETURN true.
+  - Call `commitSessionUpdate` with an updater that receives `providedSession` (latest snapshot from the commit pipeline).
+  - Let `sourceSession` = `providedSession` when not null, otherwise `baseSession` when provided, otherwise `gameSession`.
+  - IF `sourceSession` is null RETURN `providedSession` unchanged (and the outer call yields false when no updater applied).
+  - Build a full-session snapshot where only the active hero coordinates become `nextX`, `nextY` (via `moveCurrentHeroInSession` / equivalent).
+  - RETURN that snapshot from the updater so sequential commits in the same tick (for example `clearCurrentHeroStatus` followed by this move) cannot restore stale hero fields such as `activeStatus`.
+  - RETURN the Boolean from `commitSessionUpdate`.
 
 #### clearCurrentHeroStatus
 

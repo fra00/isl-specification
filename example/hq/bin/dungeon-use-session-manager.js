@@ -598,12 +598,12 @@ export function useDungeonSessionManager({
   }, [gameSession, commitSessionUpdate, onNotify, fogOfWarLogic]);
 
   const moveCurrentHeroTo = useCallback((nextX, nextY, baseSession) => {
-    const sourceSession = baseSession != null ? baseSession : gameSession;
-    if (sourceSession == null) return false;
-
-    const newSession = moveCurrentHeroInSession(sourceSession, nextX, nextY);
-    commitSessionUpdate(() => newSession);
-    return true;
+    return commitSessionUpdate((providedSession) => {
+      const sourceSession =
+        providedSession != null ? providedSession : baseSession != null ? baseSession : gameSession;
+      if (sourceSession == null) return providedSession;
+      return moveCurrentHeroInSession(sourceSession, nextX, nextY);
+    });
   }, [gameSession, commitSessionUpdate]);
 
   const clearCurrentHeroStatus = useCallback((statusName) => {

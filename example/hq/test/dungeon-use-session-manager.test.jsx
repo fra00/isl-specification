@@ -176,6 +176,21 @@ function setupDeferred(configOverrides = {}) {
 }
 
 describe("useDungeonSessionManager", () => {
+  it("moveCurrentHeroTo after clearCurrentHeroStatus in the same tick does not restore WallPass", () => {
+    const api = setup();
+    act(() => {
+      const s = api.getSession();
+      s.heroes[0].activeStatus = ["WallPass"];
+    });
+    api.rerender();
+    act(() => {
+      api.result.current.clearCurrentHeroStatus("WallPass");
+      api.result.current.moveCurrentHeroTo(2, 2);
+    });
+    expect(api.getSession().heroes[0].activeStatus).not.toContain("WallPass");
+    expect(api.getSession().heroes[0]).toMatchObject({ x: 2, y: 2 });
+  });
+
   it("initializes missions and confirms hero order", () => {
     const api = setup();
 

@@ -32,7 +32,7 @@ Prerequisites: **Node.js** (v18+) and **npm**.
 1. Navigate to the tool directory:
 
    ```bash
-   cd tools/isl-lint
+   cd tools/isl-lint-shell
    ```
 
 2. Install dependencies:

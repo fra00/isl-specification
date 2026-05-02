@@ -22,7 +22,24 @@ Map of official or supporting tools in the repository. Paths are relative to the
 
 Full documentation: [`tools/vscode-isl/README.md`](../tools/vscode-isl/README.md)
 
-### Snippets
+> **The snippets, commands, and validation below are only available after building and installing the extension. Follow the steps in this order.**
+
+### 1. Build & install
+
+```bash
+# 1. Install the packaging tool (once)
+npm install -g @vscode/vsce
+
+# 2. Build
+cd tools/vscode-isl
+npm install
+npx vsce package        # produces isl-support-x.x.x.vsix
+
+# 3. Install in VS Code
+#    Extensions panel → ⋯ → Install from VSIX… → select the .vsix file
+```
+
+### 2. Snippets
 
 Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 
@@ -31,7 +48,7 @@ Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 | `isl-base` | Full ISL file template (v1.6.2) |
 | `isl-project` | Project header with versioning |
 | `isl-component` | Component block with Role |
-| `isl-cap` | Capability with Contract and Flow |
+| `isl-cap` | Capability block with Contract |
 | `isl-constraint` | Normative 🚨 Constraints block |
 | `isl-test` | 🧪 Test Scenarios block |
 | `isl-ref` | Reference transclusion syntax |
@@ -40,7 +57,7 @@ Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 | `isl-interface` | API / Interface section |
 | `isl-security` | Security considerations section |
 
-### Command palette (`Ctrl+Shift+P`)
+### 3. Command palette (`Ctrl+Shift+P`)
 
 | Command | Description |
 |---------|-------------|
@@ -48,28 +65,13 @@ Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 | **ISL: Create New Component** | Wizard — prompts for name and role |
 | **ISL: Create New Capability** | Wizard — prompts for capability name |
 
-### Settings
+### 4. Settings
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `isl.validation.enabled` | boolean | `true` | Enable / disable real-time lint |
 | `isl.validation.onSave` | boolean | `true` | Validate on file save |
 | `isl.validation.strictMode` | boolean | `false` | Treat warnings as errors |
-
-### Build & install
-
-```bash
-# Install packaging tool once
-npm install -g @vscode/vsce
-
-# Package
-cd tools/vscode-isl
-npm install
-npx vsce package        # → isl-x.x.x.vsix
-
-# Install in VS Code
-# Extensions → ⋯ → Install from VSIX… → select the .vsix
-```
 
 ---
 

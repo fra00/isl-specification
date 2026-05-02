@@ -2,24 +2,24 @@
 
 **Intent Specification Language (ISL)** is a structured, intent-first specification language designed to describe **what software should do**, not **how it should be implemented**.
 
-ISL enables humans and Large Language Models (LLMs) to reason deterministically about software behavior, contracts, constraints, and acceptance criteria â€” across frontend, backend, and system boundaries.
+ISL enables humans and Large Language Models (LLMs) to reason deterministically about software behavior, contracts, constraints, and acceptance criteria â?? across frontend, backend, and system boundaries.
 
 > **ISL is a language, not a template.**
 > Writing ISL-compliant documents requires understanding its canonical rules and grammar.
 
 ---
 
-## ğŸ“š Documentation
+## ğ??? Documentation
 
 Guides for getting started, tooling, compilation workflow, examples, and tutorials:
 
-ğŸ‘‰ **[`docs/`](./docs/README.md)**
+ğ??? **[`docs/`](./docs/README.md)**
 
 | Doc | Description |
 |-----|-------------|
 | [Getting Started](./docs/getting-started.md) | Prerequisites, VS Code extension, first file, lint |
 | [Tools overview](./docs/tools-overview.md) | Every tool at a glance |
-| [Compilation and codegen](./docs/compilation-workflow.md) | Builder â†’ codegen workflow |
+| [Compilation and codegen](./docs/compilation-workflow.md) | Builder â?? codegen workflow |
 | [Examples catalog](./docs/examples-catalog.md) | How to navigate `example/` |
 | [Tutorial: first component](./docs/tutorial-first-component.md) | 15-min hands-on exercise |
 
@@ -47,11 +47,11 @@ ISL is **language-agnostic**, **framework-agnostic**, and **LLM-friendly by desi
 
 ---
 
-## âš ï¸ Read the Specification
+## â? ï¸ Read the Specification
 
 This repository contains **the official ISL language specification**.
 
-ğŸ‘‰ **Full Specification**: [`specs/Intent Specification Language (ISL) .md`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)
+ğ??? **Full Specification**: [`specs/Intent Specification Language (ISL) .md`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)
 
 To write ISL-compliant documents, read the complete specification, including:
 
@@ -119,18 +119,18 @@ The README provides an overview and a quick reference. It **does not** replace t
 
 ### Role: Backend
 
-### âš¡ Capabilities
+### â?¡ Capabilities
 
 #### authenticateUser
 
 **Contract**: Authenticate **User** credentials and return an access token.
 
-ğŸš¨ **Constraints**:
+ğ??¨ **Constraints**:
 
 - Passwords MUST NOT be stored or compared in plaintext.
 - Tokens MUST expire after 24 hours.
 
-âœ… **Acceptance Criteria**:
+â?? **Acceptance Criteria**:
 
 - Valid credentials return a token.
 - Invalid credentials return an authentication error.
@@ -159,14 +159,14 @@ npm run lint -- ../../your-file.isl.md
 
 | Emoji | Meaning |
 |-------|---------|
-| âš¡ | Capabilities / behavior |
-| ğŸš¨ | Constraints (normative) |
-| âœ… | Acceptance Criteria |
-| ğŸ§ª | Test Scenarios |
+| â?¡ | Capabilities / behavior |
+| ğ??¨ | Constraints (normative) |
+| â?? | Acceptance Criteria |
+| ğ?§ª | Test Scenarios |
 
 ### Canonical Rules (Essential Summary)
 
-- Sections marked âš¡ ğŸš¨ âœ… ğŸ§ª are **NORMATIVE**.
+- Sections marked â?¡ ğ??¨ â?? ğ?§ª are **NORMATIVE**.
 - Constraints override Implementation Hints.
 - Capability Constraints override Global Constraints.
 - OPTIONAL means _may be omitted_, not _ignored if present_.
@@ -185,7 +185,7 @@ Split large specs across files:
 
 ---
 
-## ğŸ› ï¸ Tooling Quick Reference
+## ğ?? ï¸ Tooling Quick Reference
 
 Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md).
 
@@ -193,9 +193,9 @@ Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md
 |------|-------------------|---------|
 | **VS Code extension** | `tools/vscode-isl/` | Syntax highlighting, snippets, real-time lint, wizards |
 | **ISL Lint** | `cd tools/isl-lint-shell && npm run lint -- <file>` | Structural and normative validation |
-| **ISL Builder** | `npx tsx tools/vscode-isl/src/isl-builder.ts <stack-dir>` or `npx ts-node …` | Build graph, manifest, `.build.md` contexts |
-| **ISL Generator** | `npx tsx tools/vscode-isl/src/isl-generator.ts <stack-dir>` or `npx ts-node …` | LLM code generation toward `bin/` |
-| **ISL Create** | `npx tsx tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` or `npx ts-node …` | ISL draft from natural language |
+| **ISL Builder** | `npx tsx tools/vscode-isl/src/isl-builder.ts <stack-dir>` or `npx ts-node ...` | Build graph, manifest, `.build.md` contexts |
+| **ISL Generator** | `npx tsx tools/vscode-isl/src/isl-generator.ts <stack-dir>` or `npx ts-node ...` | LLM code generation toward `bin/` |
+| **ISL Create** | `npx tsx tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` or `npx ts-node ...` | ISL draft from natural language |
 | **Python resolver** | `python tools/isl_compiler.py <file.isl.md>` | Inline-expand `Reference` links to stdout |
 
 ---
@@ -204,8 +204,8 @@ Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md
 
 Common usage patterns:
 
-- **Spec-first development** â€” write ISL, generate code, iterate on the spec
-- **LLM-assisted code generation** â€” feed `.build.md` context to any LLM
+- **Spec-first development** â?? write ISL, generate code, iterate on the spec
+- **LLM-assisted code generation** â?? feed `.build.md` context to any LLM
 - **Test generation** from Acceptance Criteria
 - **Documentation** for complex systems
 - **Reverse-engineering** legacy systems into ISL specs
@@ -222,13 +222,13 @@ ISL works with:
 
 ```text
 ISL (repository)
-â”œâ”€â”€ README.md           â† This file
-â”œâ”€â”€ docs/               â† Operational guides (getting started, tools, compilation, tutorials)
-â”œâ”€â”€ specs/              â† Official ISL language specification (normative)
-â”œâ”€â”€ example/            â† Sample projects: hq, architect-*, design-*, userDefine-*, â€¦
-â””â”€â”€ tools/
-    â”œâ”€â”€ vscode-isl/     â† VS Code extension, ISL Builder, Generator, Create
-    â””â”€â”€ isl-lint-shell/ â† Standalone CLI linter
+â??â??â?? README.md           â? This file
+â??â??â?? docs/               â? Operational guides (getting started, tools, compilation, tutorials)
+â??â??â?? specs/              â? Official ISL language specification (normative)
+â??â??â?? example/            â? Sample projects: hq, architect-*, design-*, userDefine-*, â?¦
+â??â??â?? tools/
+    â??â??â?? vscode-isl/     â? VS Code extension, ISL Builder, Generator, Create
+    â??â??â?? isl-lint-shell/ â? Standalone CLI linter
 ```
 
 ---
@@ -256,6 +256,5 @@ If you are using ISL with LLMs, remember:
 
 ---
 
-ğŸ“˜ **Read the full specification** â€” [`specs/`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)  
-ğŸ“‚ **Operational docs** â€” [`docs/`](./docs/README.md)
-
+ğ??? **Read the full specification** â?? [`specs/`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)  
+ğ??? **Operational docs** â?? [`docs/`](./docs/README.md)

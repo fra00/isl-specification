@@ -1,47 +1,110 @@
 # Tools overview
 
-Map of official or supporting tools in the repository. Paths are relative to the **repository root**.
+---
+
+## Complete workflow
+
+From a blank project to generated code.
+
+> **One-time setup** — run from the repository root:
+> ```bash
+> npm install
+> ```
+> This installs `tsx` (the TypeScript runner used by all CLI tools below).
 
 ---
 
-## Summary
+### Step 1 — Write `.isl.md` specs
 
-| Tool | Primary purpose | Location |
-|------|-----------------|----------|
-| **ISL specification** | Normative language definition | [`specs/`](../specs/) |
-| **VS Code extension** | Editing, snippets, diagnostics for `.isl.md` | [`tools/vscode-isl/`](../tools/vscode-isl/) |
-| **ISL Builder** | Build graph, manifest, `.build.md` contexts | [`tools/vscode-isl/src/isl-builder.ts`](../tools/vscode-isl/src/isl-builder.ts) |
-| **ISL Generator** | Code / signature generation toward `bin/` (LLM pipeline) | [`tools/vscode-isl/src/isl-generator.ts`](../tools/vscode-isl/src/isl-generator.ts) |
-| **ISL Create** | ISL drafts from natural language | [`tools/vscode-isl/src/isl-create.ts`](../tools/vscode-isl/src/isl-create.ts) |
-| **ISL Lint** | Structural validation from CLI | [`tools/isl-lint-shell/`](../tools/isl-lint-shell/) |
-| **Python resolver** | Inline-expand `Reference` links to stdout | [`tools/isl_compiler.py`](../tools/isl_compiler.py) |
+Create one or more `.isl.md` files describing your project (components, capabilities, constraints).  
+Use the [ISL specification](../specs/Intent%20Specification%20Language%20(ISL).md) as your reference.
+
+**Helpers (all optional):**
+
+| Helper | When to use | How |
+|--------|------------|-----|
+| **VS Code extension** | Editing, snippets, real-time validation | Build and install first — see [VS Code extension](#vs-code-extension-vscode-isl) below |
+| **ISL Create** | Generate a first draft from a natural-language description | `npx tsx tools/vscode-isl/src/isl-create.ts ./specs "Description"` |
+| **Python resolver** | Merge references into a single file for manual LLM paste | `python tools/isl_compiler.py path/to/file.isl.md > merged.md` |
 
 ---
 
-## VS Code extension (`vscode-isl`)
+### Step 2 — Build context (ISL Builder)
+
+Resolves references, computes the dependency graph, and prepares one context file per component.
+
+```bash
+# From repository root
+npx tsx tools/vscode-isl/src/isl-builder.ts <project-dir>
+
+# Example
+npx tsx tools/vscode-isl/src/isl-builder.ts example/hq
+```
+
+**Output** (written to `<project-dir>/build/`):
+
+| File | Contents |
+|------|----------|
+| `build-manifest.json` | Ordered list of components to compile |
+| `<component>.build.md` | Merged context for each component (spec + existing source) |
+
+---
+
+### Step 3 — Generate code (ISL Generator)
+
+Reads the manifest produced in step 2, sends each `.build.md` to an LLM, and writes the result to `bin/`.
+
+> Requires an LLM API key. Default: OpenAI (`OPENAI_API_KEY` env var).
+
+```bash
+# From repository root
+npx tsx tools/vscode-isl/src/isl-generator.ts <project-dir>
+
+# Example
+npx tsx tools/vscode-isl/src/isl-generator.ts example/hq
+```
+
+**Output**: implementation files under `<project-dir>/bin/`.
+
+---
+
+### Iterating after spec changes
+
+When `.isl.md` files change, re-run steps 2 and 3.  
+The generator only regenerates components whose spec has changed (skip `--force` unless you want to regenerate everything).
+
+```
+ISL spec changes → Builder → Generator → bin/
+```
+
+---
+
+## Tool reference
+
+### VS Code extension (`vscode-isl`)
 
 Full documentation: [`tools/vscode-isl/README.md`](../tools/vscode-isl/README.md)
 
-> **The snippets, commands, and validation below are only available after building and installing the extension. Follow the steps in this order.**
+> **All features below require the extension to be built and installed. Follow steps 1–3 in order.**
 
-### 1. Build & install
+#### 1. Build & install
 
 ```bash
-# 1. Install the packaging tool (once)
+# Install the packaging tool (once, globally)
 npm install -g @vscode/vsce
 
-# 2. Build
+# Build
 cd tools/vscode-isl
 npm install
 npx vsce package        # produces isl-support-x.x.x.vsix
 
-# 3. Install in VS Code
-#    Extensions panel → ⋯ → Install from VSIX… → select the .vsix file
+# Install in VS Code
+# Extensions panel → ⋯ → Install from VSIX… → select the .vsix file
 ```
 
-### 2. Snippets
+#### 2. Snippets
 
-Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
+Type the prefix in any `.isl.md` file and press `Tab` to expand.
 
 | Prefix | Inserted block |
 |--------|---------------|
@@ -57,15 +120,15 @@ Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 | `isl-interface` | API / Interface section |
 | `isl-security` | Security considerations section |
 
-### 3. Command palette (`Ctrl+Shift+P`)
+#### 3. Command palette (`Ctrl+Shift+P`)
 
 | Command | Description |
 |---------|-------------|
-| **ISL: Compile to Prompt** | Resolves `Reference` links and creates a merged prompt file |
+| **ISL: Compile to Prompt** | Resolves `Reference` links and opens a merged prompt document |
 | **ISL: Create New Component** | Wizard — prompts for name and role |
 | **ISL: Create New Capability** | Wizard — prompts for capability name |
 
-### 4. Settings
+#### 4. Settings
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -75,18 +138,9 @@ Type the prefix in any `.isl.md` file and press `Tab` or `Enter` to expand.
 
 ---
 
-## ISL Lint (CLI)
+### ISL Lint (CLI)
 
-Full documentation: [`tools/README.md`](../tools/README.md)
-
-### Installation
-
-```bash
-cd tools/isl-lint-shell
-npm install
-```
-
-### Commands
+Standalone CLI validator. Run from `tools/isl-lint-shell/` after `npm install`.
 
 ```bash
 # Validate a file
@@ -95,22 +149,15 @@ npm run lint -- <path/to/file.isl.md>
 # Structured JSON output (useful for CI)
 npm run lint -- <file> --json
 
-# Strict mode – warnings become errors (exit code 1)
+# Strict mode — warnings become errors (exit code 1)
 npm run lint -- <file> --strict
-
-# Combined
-npm run lint -- <file> --json --strict
 ```
-
-### Output levels
 
 | Symbol | Level | Meaning |
 |--------|-------|---------|
 | ❌ | Error | Normative rule violated — ISL is invalid |
 | ⚠️ | Warning | Best-practice issue — ISL is valid but suboptimal |
 | ℹ️ | Info | Statistics about the file |
-
-### Validation rule codes
 
 | Code | Level | Description |
 |------|-------|-------------|
@@ -127,42 +174,19 @@ npm run lint -- <file> --json --strict
 
 ---
 
-## ISL Builder
-
-Resolves ISL references, computes the dependency graph, and writes:
-
-- `build/build-manifest.json` — ordered compile units
-- `*.build.md` — full context for each component (ready for an LLM or for manual review)
-
-### Usage
-
-```bash
-# From repo root
-npx ts-node tools/vscode-isl/src/isl-builder.ts <stack-directory>
-
-# Example
-npx ts-node tools/vscode-isl/src/isl-builder.ts example/hq
-```
-
-The stack directory must contain a `build-manifest.json`, or the builder creates one from discovered `.isl.md` files.
-
----
-
-## ISL Generator (LLM compiler)
-
-Reads `build-manifest.json` and generates implementation code in `bin/` by sending each `.build.md` context to an LLM.
-
-### Usage
-
-```bash
-npx ts-node tools/vscode-isl/src/isl-generator.ts <manifest-or-dir> [output-dir] [flags]
-```
-
-### Flags
+### ISL Builder — flags
 
 | Flag | Description |
 |------|-------------|
-| `--force` | Regenerate even unchanged units |
+| *(no flags)* | Build all components in the project directory |
+
+---
+
+### ISL Generator — flags
+
+| Flag | Description |
+|------|-------------|
+| `--force` | Regenerate even unchanged components |
 | `--debug` | Verbose LLM I/O logging |
 | `--gemini` | Use Google Gemini instead of OpenAI |
 | `--lmstudio` | Use a local LM Studio endpoint |
@@ -170,81 +194,32 @@ npx ts-node tools/vscode-isl/src/isl-generator.ts <manifest-or-dir> [output-dir]
 | `--model=<name>` | Override LLM model name |
 | `--url=<endpoint>` | Override LLM base URL |
 
-### Examples
-
-```bash
-# Default stack, OpenAI
-npx ts-node tools/vscode-isl/src/isl-generator.ts example/hq
-
-# Force-regenerate everything with Gemini
-npx ts-node tools/vscode-isl/src/isl-generator.ts example/hq --force --gemini
-
-# Custom output directory
-npx ts-node tools/vscode-isl/src/isl-generator.ts example/hq/build/build-manifest.json ./out
-```
-
 ---
 
-## ISL Create
-
-Generates an ISL draft from a natural-language description, a source file (reverse-engineering), or a requirements statement (architect mode).
-
-### Usage
-
-```bash
-npx ts-node tools/vscode-isl/src/isl-create.ts <output-dir> "<description>" [flags]
-```
-
-### Flags
+### ISL Create — flags
 
 | Flag | Description |
 |------|-------------|
-| `--reverse` | Reverse-engineer: `<description>` is a source file path |
+| `--reverse` | Reverse-engineer an existing source file into ISL |
 | `--architect` | Architect mode: generate full system from requirements |
 | `--gemini` | Use Google Gemini |
 | `--lmstudio` | Use a local LM Studio endpoint |
 | `--model=<name>` | Override LLM model |
 | `--url=<endpoint>` | Override LLM base URL |
 
-### Examples
-
-```bash
-# Generate ISL from a description
-npx ts-node tools/vscode-isl/src/isl-create.ts ./specs "A login form with email and password"
-
-# Reverse-engineer an existing component
-npx ts-node tools/vscode-isl/src/isl-create.ts ./specs ./bin/connection.jsx --reverse
-
-# Architect mode: generate full system from requirements
-npx ts-node tools/vscode-isl/src/isl-create.ts ./specs "A complete e-commerce system" --architect
-```
-
 ---
 
-## Python reference resolver (`isl_compiler.py`)
+### Python reference resolver (`isl_compiler.py`)
 
-Standalone Python script — no dependencies beyond stdlib. Reads an `.isl.md` file, resolves all `> **Reference**: … in [file](file)` links recursively, and writes the merged result to stdout.
-
-Useful for pasting into an LLM chat manually.
+Standalone Python script — no dependencies beyond stdlib.  
+Reads an `.isl.md` file, resolves all `Reference` links recursively, and writes merged output to stdout.
 
 ```bash
-python tools/isl_compiler.py <file.isl.md>
+python tools/isl_compiler.py path/to/file.isl.md
 
-# Redirect to a file
-python tools/isl_compiler.py specs/my-spec.isl.md > merged-prompt.md
+# Save to a file
+python tools/isl_compiler.py path/to/file.isl.md > merged-prompt.md
 ```
-
----
-
-## Builder vs Generator
-
-| | **Builder** | **Generator (LLM)** |
-|---|-------------|---------------------|
-| **Typical output** | `build-manifest.json`, `*.build.md` | Files under `bin/` |
-| **Requires LLM** | No | Yes |
-| **When to use** | Resolve dependencies and prepare context | Produce or refresh implementation from context |
-
-More detail: [Compilation and codegen](./compilation-workflow.md).
 
 ---
 

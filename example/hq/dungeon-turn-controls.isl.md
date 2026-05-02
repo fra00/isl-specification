@@ -36,6 +36,10 @@
 - `onOpenMagic`: () -> void (Callback to open magic selection).
 - `onOpenInventory`: () -> void (Callback to open inventory modal).
 - `onCancelTargeting`: () -> void (Callback to cancel spell targeting).
+- `onOpenDoor`: () -> void (Callback to open an adjacent door).
+- `audioMuted`: Boolean (Whether dungeon audio is muted; persisted by parent).
+- `onToggleAudioMuted`: () -> void (Callback to toggle mute and persist preference).
+- `onExitMap`: () -> void (Callback to leave the dungeon / mission from the options menu).
 
 ### 🔍 Appearance
 
@@ -57,6 +61,12 @@
   - **Inventory button**
     - Style: Neutral stone utility plaque with bevel and subtle inset highlight.
     - OnClick: Trigger `onOpenInventory`.
+- **Options Section** (between Inventory and Actions):
+  - Section label: "Opzioni".
+  - **Menu opzioni** button toggles visibility of an inner panel.
+  - When expanded, the panel contains:
+    - **Audio** toggle: shows "Audio: Attivo" or "Audio: Spento" according to `audioMuted`; OnClick triggers `onToggleAudioMuted`.
+    - **Esci dalla mappa**: OnClick closes the options panel then triggers `onExitMap` (confirm/retreat logic is owned by parent).
 - **Action Buttons**:
   - The actions block SHOULD begin with a small decorative section label.
   - **End Turn**:
@@ -106,6 +116,7 @@
 
 - **Contract**: Stores the floating panel position used by the drag interaction lifecycle.
 - `position`: {x: Integer, y: Integer} (Tracks the top-left coordinates of the dialog).
+- `optionsOpen`: Boolean (Whether the options submenu is expanded).
 
 #### initialize
 

@@ -27,10 +27,14 @@ export default function DungeonTurnControls(props) {
     onOpenMagic,
     onOpenInventory,
     onCancelTargeting,
-    onOpenDoor
+    onOpenDoor,
+    audioMuted = false,
+    onToggleAudioMuted,
+    onExitMap
   } = props;
 
   const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const posRef = useRef({ x: 20, y: 20 });
   const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
   const dialogRef = useRef(null);
@@ -158,6 +162,41 @@ export default function DungeonTurnControls(props) {
           >
             Inventario
           </button>
+        </div>
+
+        <div className="w-full h-px bg-stone-700/50"></div>
+
+        {/* Options */}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-stone-400 uppercase tracking-widest text-center">Opzioni</span>
+          <button
+            type="button"
+            onClick={() => setOptionsOpen((o) => !o)}
+            className="w-full py-1.5 px-3 rounded text-xs font-bold uppercase tracking-wide transition-all border shadow-inner bg-stone-800 hover:bg-stone-700 border-stone-600 text-stone-300 active:scale-95"
+          >
+            {optionsOpen ? 'Chiudi menu' : 'Menu opzioni'}
+          </button>
+          {optionsOpen && (
+            <div className="flex flex-col gap-2 mt-1 p-2 rounded border border-amber-700/30 bg-stone-950/80">
+              <button
+                type="button"
+                onClick={() => onToggleAudioMuted?.()}
+                className="w-full py-1.5 px-2 rounded text-xs font-semibold border border-stone-600 bg-stone-800/90 hover:bg-stone-700 text-stone-200"
+              >
+                Audio: {audioMuted ? 'Spento' : 'Attivo'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOptionsOpen(false);
+                  onExitMap?.();
+                }}
+                className="w-full py-2 px-2 rounded text-xs font-bold uppercase tracking-wide border border-amber-800/70 bg-amber-950/60 hover:bg-amber-900/50 text-amber-100"
+              >
+                Esci dalla mappa
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="w-full h-px bg-stone-700/50"></div>

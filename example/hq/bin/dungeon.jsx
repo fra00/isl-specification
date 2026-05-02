@@ -15,6 +15,7 @@ import { usePathfinding } from './dungeon-use-pathfinding';
 import { useCombatLogic } from './dungeon-use-combat';
 import { useHeroStats } from './dungeon-use-hero-stats';
 import { useFogOfWar } from './dungeon-use-fog-of-war';
+import { useVisibilityCalc } from './dungeon-use-visibility-calc';
 import { useDungeonMonsters } from './dungeon-use-monsters';
 import CombatResultModal from './dungeon-combat-result-modal';
 import DungeonTurnControls from './dungeon-turn-controls';
@@ -38,6 +39,15 @@ import { useMonsterAI } from './dungeon-use-monster-ai';
 import { useDungeonSessionManager } from './dungeon-use-session-manager';
 
 const BACKGROUND_MUSIC_VOLUME = 0.25;
+const AUDIO_MUTED_STORAGE_KEY = 'dungeonAudioMuted';
+
+function readAudioMutedFromStorage() {
+    try {
+        return localStorage.getItem(AUDIO_MUTED_STORAGE_KEY) === 'true';
+    } catch {
+        return false;
+    }
+}
 
 export default function Dungeon({
     gameSession,
@@ -52,19 +62,7 @@ export default function Dungeon({
 }) {
     const [isMissionInitialized, setIsMissionInitialized] = useState(false);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-
-    const bgMusicRef = useRef(null);
-    useEffect(() => {
-        const audio = new Audio('/audio/gioco.mp3');
-        audio.loop = true;
-        audio.volume = BACKGROUND_MUSIC_VOLUME;
-        bgMusicRef.current = audio;
-        audio.play().catch(() => {});
-        return () => {
-            audio.pause();
-            audio.src = '';
-        };
-    }, []);
+    const [audioMuted, setAudioMuted] = useState(readAudioMutedFromStorage);
     const [isSpellSelectionRequired, setIsSpellSelectionRequired] = useState(false);
     const [isSpellCastModalOpen, setIsSpellCastModalOpen] = useState(false);
     const [isMissionSummaryOpen, setIsMissionSummaryOpen] = useState(false);
@@ -74,8 +72,45 @@ export default function Dungeon({
     const [drawnTreasureCard, setDrawnTreasureCard] = useState(null);
     const [notificationMessage, setNotificationMessage] = useState(null);
 
+    const bgMusicRef = useRef(null);
+    useEffect(() => {
+        const audio = new Audio('/audio/gioco.mp3');
+        audio.loop = true;
+        audio.volume = audioMuted ? 0 : BACKGROUND_MUSIC_VOLUME;
+        bgMusicRef.current = audio;
+        audio.play().catch(() => {});
+        return () => {
+            audio.pause();
+            audio.src = '';
+        };
+    }, []);
+
+    useEffect(() => {
+        if (bgMusicRef.current) {
+            bgMusicRef.current.volume = audioMuted ? 0 : BACKGROUND_MUSIC_VOLUME;
+        }
+    }, [audioMuted]);
+
+    const toggleAudioMuted = useCallback(() => {
+        setAudioMuted((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, next ? 'true' : 'false');
+            } catch {
+                /* ignore */
+            }
+            return next;
+        });
+    }, []);
+
+    const playDungeonSfx = useCallback((src) => {
+        if (audioMuted) return;
+        new Audio(src).play().catch(() => {});
+    }, [audioMuted]);
+
     const hooksFogOfWar = useFogOfWar({ gameSession, staticVisibilityMap });
     const boardVisibilityMap = hooksFogOfWar.fogVisibilityMap;
+    const hooksVisibilityCalc = useVisibilityCalc({ gameSession, visibilityMap: boardVisibilityMap });
 
     const hooksSessionManager = useDungeonSessionManager({
         gameSession,
@@ -103,10 +138,10 @@ export default function Dungeon({
     const prevMonstersVisibleRef = useRef(false);
     useEffect(() => {
         if (areMonstersVisible && !prevMonstersVisibleRef.current) {
-            new Audio('/audio/mostri.mp3').play().catch(() => {});
+            playDungeonSfx('/audio/mostri.mp3');
         }
         prevMonstersVisibleRef.current = areMonstersVisible;
-    }, [areMonstersVisible]);
+    }, [areMonstersVisible, playDungeonSfx]);
 
     useEffect(() => {
         if (!gameSession?.lastAttack?.combatResult) return;
@@ -115,8 +150,8 @@ export default function Dungeon({
         const src = damageDealt > 0
             ? (isRanged ? '/audio/tiro.mp3' : '/audio/danno.mp3')
             : (isRanged ? '/audio/tirom.mp3' : '/audio/parata.mp3');
-        new Audio(src).play().catch(() => {});
-    }, [gameSession?.lastAttack]);
+        playDungeonSfx(src);
+    }, [gameSession?.lastAttack, playDungeonSfx]);
 
     const hooksMonsters = useDungeonMonsters({
         gameSession,
@@ -173,7 +208,7 @@ export default function Dungeon({
         hooksPathfinding,
         combatLogic: hooksCombatLogic,
         mapInteractionLogic: hooksMapInteraction,
-        visibilityCalc: null,
+        visibilityCalc: hooksVisibilityCalc,
         sessionManager: hooksSessionManager
     });
 
@@ -341,6 +376,13 @@ export default function Dungeon({
     const leaveDungeonAfterRetreat = useCallback(() => {
         processMissionEnd(false);
     }, [processMissionEnd]);
+
+    const handleExitMapFromOptions = useCallback(() => {
+        if (!window.confirm('Uscire dalla missione? Verrà registrata una ritirata (missione non completata).')) {
+            return;
+        }
+        leaveDungeonAfterRetreat();
+    }, [leaveDungeonAfterRetreat]);
 
     const completeMission = useCallback(() => {
         setIsMissionSummaryOpen(false);
@@ -525,7 +567,7 @@ export default function Dungeon({
                     treasures={hooksTreasure.getFoundTreasures()}
                     triggeredTraps={triggeredTraps}
                     targetingSpell={targetingSpell}
-                    visibilityCalc={null}
+                    visibilityCalc={hooksVisibilityCalc}
                 />
 
                 {gameSession?.isHeroOrderConfirmed && (
@@ -570,6 +612,9 @@ export default function Dungeon({
                     onOpenInventory={() => setIsInventoryOpen(true)}
                     onCancelTargeting={cancelTargeting}
                     onOpenDoor={hooksTurnLogic.handleOpenDoor}
+                    audioMuted={audioMuted}
+                    onToggleAudioMuted={toggleAudioMuted}
+                    onExitMap={handleExitMapFromOptions}
                 />
             )}
 

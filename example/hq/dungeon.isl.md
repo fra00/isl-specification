@@ -115,6 +115,9 @@
     - `canOpenDoor`: `hooksTurnLogic.canOpenDoor` is NOT null.
     - `onOpenDoor`: `hooksTurnLogic.handleOpenDoor`.
     - `onOpenInventory`: Trigger `openInventory`.
+    - `audioMuted`: dungeon audio mute flag read from LocalStorage key `dungeonAudioMuted` (`true` when muted).
+    - `onToggleAudioMuted`: toggles mute and persists to LocalStorage.
+    - `onExitMap`: after user confirmation in parent, applies retreat-style mission end (`leaveDungeonAfterRetreat`) and navigates to `PLAY_GAME`.
 - **Hero Info Panel**:
   - Displays `@DungeonHeroInfoPanel` IF `gameSession.isHeroOrderConfirmed` is true AND `currentHero` is NOT null AND `currentHero.currentBody` > 0.
   - **Props**:
@@ -189,7 +192,7 @@
 - `hooksInventoryLogic`: @useInventoryLogic passing `staticEquipment` and `hooksSessionManager`.
 - `hooksItemLogic`: @useItemLogic passing `staticItems` and `hooksSessionManager`.
 - `hooksCampaignManager`: @useCampaignManager.
-- `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `staticVisibilityMap`.
+- `hooksVisibilityCalc`: @useVisibilityCalc passing `gameSession` and `boardVisibilityMap` (the live fog-adjusted @VisibilityMap from `hooksFogOfWar`, not only `staticVisibilityMap`).
   - MUST be instantiated through `@useVisibilityCalc` and MUST NOT be hardcoded to `null`.
   - MUST be propagated as-is to both `hooksTurnLogic` and `DungeonBoard` as `visibilityCalc`.
 - `hooksTraps`: @useTraps passing `gameSession`, `boardVisibilityMap`, `areMonstersVisible`, `setNotificationMessage`, `hooksTurnLogic.markActionDone`, `hooksTurnLogic.forceTurnExhausted`, and `hooksSessionManager`. The board-facing trap markers MUST be read through `getTriggeredTraps()`.
@@ -217,6 +220,7 @@
   - IF `ranged` AND NOT `hit`: play `/audio/tirom.mp3`.
   - IF NOT `ranged` AND `hit`: play `/audio/danno.mp3`.
   - IF NOT `ranged` AND NOT `hit`: play `/audio/parata.mp3`.
+  - IF `audioMuted` is true: skip playback (user preference persisted in LocalStorage key `dungeonAudioMuted`).
   - Errors MUST be silently caught (browser autoplay policy).
 - **Constraint**: The sound MUST fire exactly once per new `lastAttack` result. It MUST NOT replay when the modal is closed or when unrelated state changes.
 - **Constraint**: `isRanged` is set by `resolveHeroAttack` when the attacker's distance is > 1 (ranged weapon used). Monster attacks always have `isRanged = false`.
@@ -227,19 +231,29 @@
 - **Trigger**: When `areMonstersVisible` transitions from `false` to `true`.
 - **Flow**:
   - Track the previous value of `areMonstersVisible` using a ref.
-  - IF `areMonstersVisible` is `true` AND previous value was `false`: create a new `Audio` instance for `/audio/mostri.mp3` and call `play()`. Errors MUST be silently caught.
+  - IF `areMonstersVisible` is `true` AND previous value was `false`: IF NOT `audioMuted`, create a new `Audio` instance for `/audio/mostri.mp3` and call `play()`. Errors MUST be silently caught.
   - Update the ref to the current value of `areMonstersVisible`.
 - **Constraint**: The sound MUST fire at most once per false→true transition. It MUST NOT play again for each additional monster that becomes visible in the same or subsequent reveals until `areMonstersVisible` resets to `false` first.
 
 #### backgroundMusic
 
-- **Contract**: Plays `/audio/gioco.mp3` in a continuous loop for the entire dungeon session.
-- **Trigger**: On Mount.
+- **Contract**: Plays `/audio/gioco.mp3` in a continuous loop for the entire dungeon session, honoring user mute preference.
+- **Trigger**: On Mount; volume updates when `audioMuted` changes.
 - **Flow**:
+  - Initialize `audioMuted` from LocalStorage key `dungeonAudioMuted` (`'true'` means muted).
   - Create an `Audio` instance pointing to `/audio/gioco.mp3`.
-  - Set `loop` to true and `volume` to `BACKGROUND_MUSIC_VOLUME` (default 0.25).
+  - Set `loop` to true and `volume` to 0 if `audioMuted`, otherwise `BACKGROUND_MUSIC_VOLUME` (default 0.25).
   - Call `play()`. Errors MUST be silently caught (browser autoplay policy).
+  - When `audioMuted` toggles via turn controls, update `volume` accordingly without restarting the track.
 - **Cleanup**: On Unmount, pause the audio and clear its `src` to release the resource.
+
+#### exitMapFromOptions
+
+- **Contract**: Allows voluntary retreat from the dungeon via turn-control options, matching retreat mission end.
+- **Trigger**: User confirms in `handleExitMapFromOptions` after choosing "Esci dalla mappa".
+- **Flow**:
+  - Show browser confirm; IF user cancels, RETURN.
+  - ELSE call `leaveDungeonAfterRetreat` (same as all heroes escaped without objective).
 
 #### initializeMission
 

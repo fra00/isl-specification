@@ -15,71 +15,66 @@ Create `hello-feature.isl.md` (any name, extension `.isl.md`).
 ```markdown
 # Project: HelloFeature
 
-**Version**: 1.0.0  
-**ISL Version**: 1.6.2  
-**Created**: 2026-01-01  
+**Version**: 1.0.0
+**ISL Version**: 1.6.2
+**Created**: 2026-01-01
 
 ---
 
 ## Domain Concepts
 
-### Message
-
-**Identity**: string  
-**Properties**:
-
-- text: content shown to the user
+- `message`: text string displayed to the user.
 
 ---
 
 ## Component: GreetingPanel
 
+A panel that displays a welcome message.
+
 ### Role: Presentation
 
-### ⚡ displayMessage
+### 🔍 Appearance
 
-**Contract**: Display a welcome message received as input.
+- Renders the message text prominently in the center of the panel.
 
-**Input**:
+### ⚡ Capabilities
 
-- message: Message
+#### displayMessage
 
-**Flow**:
+**Contract**: Displays the welcome message received as input.
 
-1. Render the message text prominently.
+**Trigger**: Component mount or message prop change.
 
-🚨 **Constraints**:
+**Side Effects**:
+
+- Renders `message` as visible text in the UI.
+
+### 🚨 Constraints
 
 - MUST NOT fetch data from APIs or databases.
 
-✅ **Acceptance Criteria**:
+### ✅ Acceptance Criteria
 
-- Displayed text matches `message.text`.
+- [ ] Displayed text matches the `message` input.
 
-🧪 **Test Scenarios**:
+### 🧪 Test Scenarios
 
-1. **Non-empty message**  
-   - Input: text = `"Hello"`  
+1. **Non-empty message**:
+   - Input: `message = "Hello"`
    - Expected: UI shows `"Hello"`.
 ```
 
 ---
 
-## Step 3 — Run the linter
+## Step 3 — Next: build and generate
 
-Save the file wherever you prefer (e.g. repo root or under `example/`). From `tools/isl-lint-shell/` (after `npm install`):
-
-```bash
-npm run lint -- ../../path/to/your/hello-feature.isl.md
-```
-
-Fix errors and warnings until the run is clean (or acceptable without `--strict`).
+Once the file is written, follow [Getting Started](./getting-started.md) steps 2–3 to run the Builder and Generator.
 
 ---
 
 ## Step 4 — VS Code extension (optional)
 
-Open the file in VS Code with the ISL extension installed: highlighting and diagnostics should align with the linter.
+Open the file in VS Code with the ISL extension installed: syntax highlighting and real-time validation are active on `.isl.md` files.
 
 ---
 

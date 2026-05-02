@@ -34,8 +34,9 @@ Use the [ISL specification](../specs/Intent%20Specification%20Language%20(ISL).m
 Resolves references, computes the dependency graph, and prepares one context file per component.
 
 ```bash
-# From repository root
-npx tsx tools/vscode-isl/src/isl-builder.ts <project-dir>
+# From repository root — use either runner:
+npx tsx     tools/vscode-isl/src/isl-builder.ts <project-dir>   # tsx (local)
+npx ts-node tools/vscode-isl/src/isl-builder.ts <project-dir>   # ts-node (global)
 
 # Example
 npx tsx tools/vscode-isl/src/isl-builder.ts example/hq
@@ -57,8 +58,9 @@ Reads the manifest produced in step 2, sends each `.build.md` to an LLM, and wri
 > Requires an LLM API key. Default: OpenAI (`OPENAI_API_KEY` env var).
 
 ```bash
-# From repository root
-npx tsx tools/vscode-isl/src/isl-generator.ts <project-dir>
+# From repository root — use either runner:
+npx tsx     tools/vscode-isl/src/isl-generator.ts <project-dir>  # tsx (local)
+npx ts-node tools/vscode-isl/src/isl-generator.ts <project-dir>  # ts-node (global)
 
 # Example
 npx tsx tools/vscode-isl/src/isl-generator.ts example/hq

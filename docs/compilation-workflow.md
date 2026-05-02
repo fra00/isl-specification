@@ -23,7 +23,8 @@ How to go from `.isl.md` specifications to artifacts in `bin/`.
 - **Example** (from repo root):
 
 ```bash
-npx ts-node tools/vscode-isl/src/isl-builder.ts example/hq
+npx tsx     tools/vscode-isl/src/isl-builder.ts example/hq   # tsx (local)
+npx ts-node tools/vscode-isl/src/isl-builder.ts example/hq   # ts-node (global)
 ```
 
 - **What it does**: resolves references, produces/updates the manifest and `.build.md` files under `<stack>/build/`.

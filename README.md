@@ -193,9 +193,9 @@ Full details and CLI syntax: [`docs/tools-overview.md`](./docs/tools-overview.md
 |------|-------------------|---------|
 | **VS Code extension** | `tools/vscode-isl/` | Syntax highlighting, snippets, real-time lint, wizards |
 | **ISL Lint** | `cd tools/isl-lint-shell && npm run lint -- <file>` | Structural and normative validation |
-| **ISL Builder** | `npx ts-node tools/vscode-isl/src/isl-builder.ts <stack-dir>` | Build graph, manifest, `.build.md` contexts |
-| **ISL Generator** | `npx ts-node tools/vscode-isl/src/isl-generator.ts <manifest> [outdir]` | LLM code generation toward `bin/` |
-| **ISL Create** | `npx ts-node tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` | ISL draft from natural language |
+| **ISL Builder** | `npx tsx tools/vscode-isl/src/isl-builder.ts <stack-dir>` or `npx ts-node …` | Build graph, manifest, `.build.md` contexts |
+| **ISL Generator** | `npx tsx tools/vscode-isl/src/isl-generator.ts <stack-dir>` or `npx ts-node …` | LLM code generation toward `bin/` |
+| **ISL Create** | `npx tsx tools/vscode-isl/src/isl-create.ts <outdir> "<description>"` or `npx ts-node …` | ISL draft from natural language |
 | **Python resolver** | `python tools/isl_compiler.py <file.isl.md>` | Inline-expand `Reference` links to stdout |
 
 ---
@@ -258,3 +258,4 @@ If you are using ISL with LLMs, remember:
 
 ðŸ“˜ **Read the full specification** â€” [`specs/`](<./specs/Intent%20Specification%20Language%20(ISL)%20.md>)  
 ðŸ“‚ **Operational docs** â€” [`docs/`](./docs/README.md)
+

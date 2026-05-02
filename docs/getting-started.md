@@ -65,7 +65,11 @@ Full ISL syntax: [`specs/Intent Specification Language (ISL).md`](../specs/Inten
 ## 3. Run the Builder
 
 ```bash
+# with tsx (local, installed by npm install at repo root)
 npx tsx tools/vscode-isl/src/isl-builder.ts my-project
+
+# with ts-node (if installed globally: npm install -g ts-node)
+npx ts-node tools/vscode-isl/src/isl-builder.ts my-project
 ```
 
 The Builder resolves references between ISL files, computes the dependency order, and writes to `my-project/build/`:
@@ -80,7 +84,11 @@ The Builder resolves references between ISL files, computes the dependency order
 ## 4. Run the Generator
 
 ```bash
+# with tsx (local)
 npx tsx tools/vscode-isl/src/isl-generator.ts my-project
+
+# with ts-node (global)
+npx ts-node tools/vscode-isl/src/isl-generator.ts my-project
 ```
 
 The Generator reads `build-manifest.json`, sends each `.build.md` to an LLM, and writes the result to `my-project/bin/`.
@@ -100,8 +108,8 @@ Useful flags:
 When you change a `.isl.md` file, re-run Builder then Generator:
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-builder.ts my-project
-npx tsx tools/vscode-isl/src/isl-generator.ts my-project
+npx tsx tools/vscode-isl/src/isl-builder.ts my-project    # or: npx ts-node ...
+npx tsx tools/vscode-isl/src/isl-generator.ts my-project  # or: npx ts-node ...
 ```
 
 The Generator only regenerates components whose spec has changed.

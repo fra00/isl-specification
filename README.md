@@ -4,6 +4,14 @@
 
 ISL enables humans and Large Language Models (LLMs) to reason deterministically about software behavior, contracts, constraints, and acceptance criteria across frontend, backend, and system boundaries.
 
+**ISL is a specification-to-code workflow.** You write structured .isl.md files that describe what each component must do (contracts, constraints, capabilities). A two-step pipeline then turns those specs into real implementation files:
+
+```
+.isl.md specs  →  Builder  →  .build.md contexts  →  Generator (LLM)  →  bin/ (your code)
+```
+
+The generated code targets the language and framework you choose (React, Python, FastAPI, …). When the spec changes, re-run the pipeline and only the affected components are regenerated.
+
 > **ISL is a language, not a template.**
 > Writing ISL-compliant documents requires understanding its canonical rules and grammar.
 

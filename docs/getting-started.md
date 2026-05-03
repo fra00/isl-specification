@@ -55,7 +55,7 @@ Brief description.
 
 ### Role: Backend
 
-### Capabilities
+### ⚡ Capabilities
 
 #### doSomething
 
@@ -66,7 +66,7 @@ Brief description.
 - **output**: { message: string }
 ```
 
-In real documents, use the normative emoji prefixes from the spec for **Capabilities**, **Constraints**, **Acceptance Criteria**, and **Test Scenarios** where required.
+The examples above use the normative emoji section prefixes as they appear in real documents.
 
 ### Presentation-oriented (richer)
 
@@ -93,11 +93,11 @@ A panel that displays a welcome message.
 
 ### Role: Presentation
 
-### Appearance
+### 🔍 Appearance
 
 - Renders the message text prominently in the center of the panel.
 
-### Capabilities
+### ⚡ Capabilities
 
 #### displayMessage
 
@@ -109,15 +109,15 @@ A panel that displays a welcome message.
 
 - Renders `message` as visible text in the UI.
 
-### Constraints
+### 🚨 Constraints
 
 - MUST NOT fetch data from APIs or databases.
 
-### Acceptance Criteria
+### ✅ Acceptance Criteria
 
 - [ ] Displayed text matches the `message` input.
 
-### Test Scenarios
+### 🧪 Test Scenarios
 
 1. **Non-empty message**:
    - Input: `message = "Hello"`
@@ -153,10 +153,34 @@ npx tsx tools/vscode-isl/src/isl-generator.ts my-project
 npx ts-node tools/vscode-isl/src/isl-generator.ts my-project
 ```
 
-Reads the manifest, sends each `.build.md` to the configured LLM, writes artifacts under **`my-project/bin/`**.
+Reads the manifest, sends each `.build.md` to the configured LLM, and writes the generated files under **`my-project/bin/`**. After this step you will find one implementation file per component in that folder (e.g. `bin/my-component.jsx` for a React stack).
+
+#### Stack — choosing the target language
+
+The **`--stack`** flag tells the Generator which language and framework to target. It controls the LLM persona, file extensions, naming conventions, and generation rules.
+
+| Stack id | Language / Framework |
+|----------|----------------------|
+| `react-js` *(default)* | React 18 + JavaScript ES6+ + TailwindCSS |
+| `python-fastapi` | Python 3.10 + FastAPI + Pydantic |
+| `python` | Python 3.10 (generic) |
+
+```bash
+# Generate React JSX (default — no flag needed)
+npx tsx tools/vscode-isl/src/isl-generator.ts my-project
+
+# Generate Python (FastAPI)
+npx tsx tools/vscode-isl/src/isl-generator.ts my-project --stack=python-fastapi
+
+# Generate generic Python
+npx tsx tools/vscode-isl/src/isl-generator.ts my-project --stack=python
+```
+
+To add support for another language (Go, Java, Node.js, …) add a new entry in `tools/vscode-isl/src/isl-generator/stacks.config.ts`. See [Tools overview — Stacks](./tools-overview.md#stacks--what-they-are-and-how-to-extend-them) for instructions.
 
 | Flag | Effect |
 |------|--------|
+| `--stack=<id>` | Target language / framework (default: `react-js`) |
 | `--force` | Regenerate everything, even unchanged units |
 | `--gemini` | Use Google Gemini |
 | `--lmstudio` | Use LM Studio locally |

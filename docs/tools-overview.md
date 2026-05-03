@@ -261,6 +261,61 @@ npm run lint -- <file> --strict
 | `--model=<name>` | Override LLM model name |
 | `--url=<endpoint>` | Override LLM base URL |
 
+### Stacks — what they are and how to extend them
+
+The **stack** tells the Generator how to produce code for a specific language and framework. It carries:
+
+- the **tech stack** description fed to the LLM prompt (e.g. "React 18, TailwindCSS, JavaScript ES6+")
+- the **prompt persona** (e.g. "Senior React Developer — Functional Components & Hooks")
+- **file extensions** per Role (e.g. `Presentation → .jsx`, `Business Logic → .js`)
+- **generation constraints** that the LLM must follow (naming conventions, import rules, hook rules, etc.)
+- **safety guardrails** (null safety, async state handling, default initialization)
+- the expected **signature format** written to `gen-lock.json`
+
+The stack is selected with `--stack=<id>` (default: `react-js`) and configured in:
+
+```
+tools/vscode-isl/src/isl-generator/stacks.config.ts
+```
+
+#### Built-in stacks
+
+| Stack id | Language / Framework | Default extension |
+|----------|----------------------|-------------------|
+| `react-js` | React 18 + TailwindCSS + JavaScript ES6+ + Fetch API | `.jsx` |
+| `python-fastapi` | Python 3.10 + FastAPI + Pydantic | `.py` |
+| `python` | Python 3.10 (generic) | `.py` |
+
+#### Adding a new stack
+
+Open `tools/vscode-isl/src/isl-generator/stacks.config.ts` and add a new entry to the `STACKS` object following the `StackConfig` interface:
+
+```typescript
+"my-stack": {
+  id: "my-stack",
+  techStack: ["Go 1.22", "net/http"],
+  extensions: {
+    default: ".go",
+    Backend: ".go",
+    Domain: ".go",
+  },
+  promptPersona: "Senior Go Developer",
+  constraints: [
+    "Use standard library where possible",
+    "Structs and interfaces instead of classes",
+    // add language-specific rules here
+  ],
+  safetyConstraints: [
+    ...UNIVERSAL_SAFETY_CONSTRAINTS,
+    // add language-specific safety rules here
+  ],
+  signatureFormat: `Output signatures as Go function stubs.
+Example: \`func Calculate(a int) int\``,
+},
+```
+
+Then pass `--stack=my-stack` to the Generator. The LLM will receive the persona, constraints, and signature rules specific to your language.
+
 ---
 
 ### ISL Create — flags

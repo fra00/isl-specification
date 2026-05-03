@@ -68,6 +68,8 @@
       - Add 1 to `stats.difesa`.
     - IF `heroState.activeStatus` contains "Courage":
       - Add 2 to `stats.attacco`.
+    - IF `heroState.bonusDefenseDiceNextCombat` is greater than 0:
+      - Add `heroState.bonusDefenseDiceNextCombat` to `stats.difesa` (consumable prep; cleared when the monster next resolves an attack against this hero).
   - RETURN `stats`.
 
 #### calculateAttackDice
@@ -87,6 +89,8 @@
         - IF `monster.id` (as string) is in `targets`: Set `isTarget` to true.
       - IF `isTarget` is true:
         - Set `dice` to `item.numdadicontr`.
+  - IF `heroState.bonusAttackDiceNextHeroAttack` is greater than 0:
+    - Add it to `dice` (consumable attack bonus; cleared when the hero attack resolves in session).
   - RETURN `dice`.
 
 #### canAttackTwice

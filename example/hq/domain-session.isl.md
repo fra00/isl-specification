@@ -35,6 +35,10 @@ Represents the dynamic state of a hero (@Hero) during a campaign (persistence).
 - `isEscaped`: Boolean indicating if the hero has left the map through an exit (Default: false).
 - `x`: Current X position on the map grid (Integer).
 - `y`: Current Y position on the map grid (Integer).
+- `bonusDefenseDiceNextCombat`: Extra defense dice granted by consumables (e.g. `Item.difesa`); applied on the next monster attack against this hero, then cleared (Integer, default 0).
+- `bonusAttackDiceNextHeroAttack`: Extra attack dice granted by consumables (`Item.attacco`); applied on the hero's next melee/ranged attack roll, then cleared (Integer, default 0).
+- `bonusMovementDiceNextRoll`: Extra movement dice granted by consumables (`Item.movimento`); applied on the hero's next movement roll only, then cleared (Integer, default 0).
+- `bonusMeleeAttackQuota`: Minimum number of attack actions allowed in the next hero attack phase from consumables (`Item.natt`); cleared when that phase ends or the quota is exhausted (Integer, default 0).
 - `hero`: Instance of hero definition (@Hero)
 
 #### `MonsterState`

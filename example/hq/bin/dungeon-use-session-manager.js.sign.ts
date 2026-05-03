@@ -27,4 +27,6 @@ export declare function useDungeonSessionManager(config: {
   markCurrentHeroEscaped: () => boolean;
   resolveHeroAttack: (monsterId: number, combatResult: any, statusesToRemove: string[], consumedWeaponId: number | null, baseSession?: any) => boolean;
   advanceTurn: (nextTurn: number, clearStatusName: string | null) => boolean;
+  clearBonusMovementDiceForHero: (heroId: number) => void;
+  clearBonusMeleeAttackQuotaForHero: (heroId: number) => void;
 };

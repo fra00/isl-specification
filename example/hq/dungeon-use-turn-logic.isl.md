@@ -131,8 +131,11 @@
   - Let `stats` = `heroStatsLogic.calculateStats(hero)`.
   - Let `diceCount` = `stats.movimento`.
   - IF `diceCount` < 1, set `diceCount` to 1.
-  - Roll `diceCount` d6 (e.g., if 2, generate random number 2-12).
+  - Add `hero.bonusMovementDiceNextRoll` to `diceCount` when that pending bonus is greater than zero (consumable movement dice).
+  - Roll `diceCount` d6.
   - Set `movementPoints` to the result of the roll.
+  - IF a movement bonus was consumed:
+    - Call `sessionManager.clearBonusMovementDiceForHero(hero.heroId)` and optionally notify the player.
 
 #### handleBoardHover
 
@@ -303,11 +306,14 @@
       - Add "Tempest" to `statusesToRemove`.
     - Increment `attacksPerformed`.
     - Let `canDouble` = `heroStatsLogic.canAttackTwice(hero, monster.monster)`.
-    - IF `canDouble` is true AND `attacksPerformed` < 2:
-      - Trigger `onNotify("Doppio attacco! Puoi attaccare ancora.")`.
-      - // Do not set hasPerformedAction yet, allowing another click.
+    - Let `quota` = `hero.bonusMeleeAttackQuota` (consumable extra attacks).
+    - Let `attackCap` = the greater of `(canDouble ? 2 : 1)` and `quota` when `quota` > 0, otherwise `(canDouble ? 2 : 1)`.
+    - IF `attacksPerformed` < `attackCap`:
+      - Notify for consumable extra attacks or double-attack equipment as appropriate; do not set `hasPerformedAction` yet.
     - ELSE:
       - Set `turnPhase.hasPerformedAction` to true.
+      - IF `quota` > 0:
+        - Call `sessionManager.clearBonusMeleeAttackQuotaForHero(hero.heroId)`.
     - IF the Hero has started to move before attack set `turnPhase.hasMoved` as true.
     - Set `lastAttack` on session to {hero:@HeroState,monster:@MonsterState,combatResult: @CombatResult} for potential UI display.
     - // Re-calculate door interaction (Attack doesn't prevent opening doors)
@@ -353,6 +359,8 @@
     - Trigger `onNotify("L'effetto di Passaggio Invisibile svanisce.")`.
   - IF `currentHero` is found AND `currentHero.activeStatus` contains "FoggyMist":
     - Trigger `onNotify("L'effetto di Nebbia Caliginosa svanisce.")`.
+  - IF `currentHero` is found AND `currentHero.bonusMeleeAttackQuota` > 0:
+    - Call `sessionManager.clearBonusMeleeAttackQuotaForHero(currentHero.heroId)` to expire unused consumable attack quota when the hero ends the turn without using all bonus attacks.
 
   - **Next Hero Selection**:
     - Let `nextTurn` = `gameSession.currentTurn`.

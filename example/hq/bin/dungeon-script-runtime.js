@@ -61,6 +61,10 @@ export const resolveHeroAttackInSession = (session, { monsterId, combatResult, s
     activeHero.equipment = activeHero.equipment?.filter((id) => id !== consumedWeaponId) || [];
   }
 
+  if ((activeHero.bonusAttackDiceNextHeroAttack || 0) > 0) {
+    activeHero.bonusAttackDiceNextHeroAttack = 0;
+  }
+
   const damage = combatResult?.damageDealt || 0;
   targetMonster.currentBody -= damage;
 

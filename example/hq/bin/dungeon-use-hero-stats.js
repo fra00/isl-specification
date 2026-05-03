@@ -88,6 +88,11 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
       stats.attacco += 2;
     }
 
+    const bonusDef = heroState.bonusDefenseDiceNextCombat || 0;
+    if (bonusDef > 0) {
+      stats.difesa += bonusDef;
+    }
+
     return stats;
   }, [staticEquipment]);
 
@@ -118,6 +123,11 @@ export function useHeroStats({ staticEquipment = [] } = {}) {
           dice = item.numdadicontr;
         }
       }
+    }
+
+    const bonusAtk = heroState.bonusAttackDiceNextHeroAttack || 0;
+    if (bonusAtk > 0) {
+      dice += bonusAtk;
     }
 
     return dice;

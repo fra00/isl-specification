@@ -181,6 +181,9 @@
   - IF `hero` is null OR `itemDef` is null RETURN false.
   - Find the first index of `itemId` in `hero.inventory`.
   - IF item index is less than 0 RETURN false.
+  - IF the item has no usable numeric flags (`hp`, `mp`, `difesa`, `attacco`, `movimento`, `natt` all zero) AND `acqua` is false:
+    - Trigger `onNotify` explaining the item has no usable in-mission effect.
+    - RETURN false without consuming inventory.
   - Call `commitSessionUpdate` with an updater.
   - Inside the updater, use the provided latest session snapshot.
   - Find `currentHero` in the provided session `heroes` matching `heroId`.
@@ -196,13 +199,22 @@
   - IF `itemDef.mp` is NOT 0:
     - Add `itemDef.mp` to `updatedHero.currentMind`.
     - Clamp `updatedHero.currentMind` to max `updatedHero.hero.mente`.
+  - IF `itemDef.difesa` is NOT 0:
+    - Add `itemDef.difesa` to `updatedHero.bonusDefenseDiceNextCombat` (stacking with any prior pending bonus).
+  - IF `itemDef.attacco` is NOT 0:
+    - Add `itemDef.attacco` to `updatedHero.bonusAttackDiceNextHeroAttack`.
+  - IF `itemDef.movimento` is NOT 0:
+    - Add `itemDef.movimento` to `updatedHero.bonusMovementDiceNextRoll`.
+  - IF `itemDef.natt` is NOT 0:
+    - Add `itemDef.natt` to `updatedHero.bonusMeleeAttackQuota`.
   - IF `itemDef.acqua` is true:
     - IF `targetMonsterId` is NOT null:
       - Find `targetMonster` in `updatedMonsters` matching `targetMonsterId`.
       - IF `targetMonster` is found:
         - IF `targetMonster.monster.nonmorto` is true:
-          - Subtract `itemDef.danni` from `targetMonster.currentBody`.
-          - Trigger `onNotify("L'Acqua Santa purifica il non-morto infliggendo " + itemDef.danni + " danni!")`.
+          - Let `holyDamage` = the greater of `itemDef.danni` and `targetMonster.currentBody` (lethal to undead even when `danni` is 0 in data).
+          - Subtract `holyDamage` from `targetMonster.currentBody`.
+          - Trigger `onNotify` that the holy water strikes the undead with lethal force.
           - IF `targetMonster.currentBody` <= 0:
             - Remove `targetMonster` from `updatedMonsters`.
           - ELSE:
@@ -214,7 +226,7 @@
     - ELSE:
       - Trigger `onNotify("Hai usato l'Acqua Santa, ma non hai colpito nulla!")`.
   - Remove the first matching `itemId` from `currentInventory` and assign the resulting inventory to `updatedHero.inventory`.
-  - Trigger `onNotify("Hai usato " + itemDef.nome + "!")`.
+  - Trigger `onNotify` with "Hai usato " + itemDef.nome + "!" and append brief hints for any pending bonuses (`difesa`, `attacco`, `movimento`, `natt`, body/mind heals).
   - Create `updatedHeroes` as a copy of the provided session `heroes`.
   - Replace the matching hero with `updatedHero`.
   - RETURN a new @GameSession preserving all unrelated properties, setting `heroes` to `updatedHeroes`, and setting `monsters` to `updatedMonsters`.
@@ -346,6 +358,8 @@
   - IF `monster` is null OR `hero` is null RETURN the current session unchanged.
   - Create `updatedHero` as a copy of `hero`.
   - Subtract `combatResult.damageDealt` from `updatedHero.currentBody`.
+  - IF `hero.bonusDefenseDiceNextCombat` is greater than 0:
+    - Set `updatedHero.bonusDefenseDiceNextCombat` to 0 (consumable defense prep is spent on this attack resolution, even if damage is 0).
   - IF `combatResult.damageDealt` > 0 AND `updatedHero.activeStatus` contains "RockSkin":
     - Remove "RockSkin" from `updatedHero.activeStatus`.
   - Create `updatedHeroes` as a copy of the current session `heroes`.

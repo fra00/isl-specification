@@ -9,6 +9,22 @@
 import { useCallback } from 'react';
 import { executeDungeonScripts, moveCurrentHeroInSession, resolveHeroAttackInSession } from './dungeon-script-runtime';
 
+/** True when using the item should apply at least one in-game rule (not flavor-only). */
+function itemDefHasUsableEffect(itemDef) {
+  if (!itemDef) return false;
+  if (itemDef.hp !== 0 || itemDef.mp !== 0) return true;
+  if (
+    itemDef.difesa !== 0 ||
+    itemDef.attacco !== 0 ||
+    itemDef.movimento !== 0 ||
+    itemDef.natt !== 0
+  ) {
+    return true;
+  }
+  if (itemDef.acqua === true) return true;
+  return false;
+}
+
 export function useDungeonSessionManager({
   gameSession,
   onUpdateSession,
@@ -231,6 +247,17 @@ export function useDungeonSessionManager({
     const itemIndex = hero.inventory.indexOf(itemId);
     if (itemIndex < 0) return false;
 
+    if (!itemDefHasUsableEffect(itemDef)) {
+      if (onNotify) {
+        onNotify(
+          itemDef.nome
+            ? `"${itemDef.nome}" non ha effetti utilizzabili in missione.`
+            : "Questo oggetto non ha effetti utilizzabili in missione."
+        );
+      }
+      return false;
+    }
+
     commitSessionUpdate((providedSession) => {
       const currentHero = providedSession.heroes.find(h => h.heroId === heroId);
       if (currentHero == null) return providedSession;
@@ -256,13 +283,40 @@ export function useDungeonSessionManager({
         }
       }
 
+      if (itemDef.difesa !== 0) {
+        updatedHero.bonusDefenseDiceNextCombat =
+          (updatedHero.bonusDefenseDiceNextCombat || 0) + itemDef.difesa;
+      }
+
+      if (itemDef.attacco !== 0) {
+        updatedHero.bonusAttackDiceNextHeroAttack =
+          (updatedHero.bonusAttackDiceNextHeroAttack || 0) + itemDef.attacco;
+      }
+
+      if (itemDef.movimento !== 0) {
+        updatedHero.bonusMovementDiceNextRoll =
+          (updatedHero.bonusMovementDiceNextRoll || 0) + itemDef.movimento;
+      }
+
+      if (itemDef.natt !== 0) {
+        updatedHero.bonusMeleeAttackQuota =
+          (updatedHero.bonusMeleeAttackQuota || 0) + itemDef.natt;
+      }
+
       if (itemDef.acqua === true) {
         if (targetMonsterId != null) {
           const targetMonster = updatedMonsters.find(m => m.id === targetMonsterId);
           if (targetMonster) {
             if (targetMonster.monster?.nonmorto === true) {
-              const damagedMonster = { ...targetMonster, currentBody: targetMonster.currentBody - itemDef.danni };
-              if (onNotify) onNotify(`L'Acqua Santa purifica il non-morto infliggendo ${itemDef.danni} danni!`);
+              const holyDamage = Math.max(
+                itemDef.danni || 0,
+                targetMonster.currentBody
+              );
+              const damagedMonster = {
+                ...targetMonster,
+                currentBody: targetMonster.currentBody - holyDamage
+              };
+              if (onNotify) onNotify(`L'Acqua Santa colpisce il non-morto con forza letale!`);
               
               if (damagedMonster.currentBody <= 0) {
                 updatedMonsters = updatedMonsters.filter(m => m.id !== targetMonsterId);
@@ -283,7 +337,28 @@ export function useDungeonSessionManager({
       currentInventory.splice(currentItemIndex, 1);
       updatedHero.inventory = currentInventory;
 
-      if (onNotify) onNotify(`Hai usato ${itemDef.nome}!`);
+      if (onNotify) {
+        let useMsg = `Hai usato ${itemDef.nome}!`;
+        const hints = [];
+        if (itemDef.hp !== 0) hints.push(`${itemDef.hp > 0 ? "+" : ""}${itemDef.hp} Corpo`);
+        if (itemDef.mp !== 0) hints.push(`${itemDef.mp > 0 ? "+" : ""}${itemDef.mp} Mente`);
+        if (itemDef.difesa !== 0) {
+          hints.push(`+${itemDef.difesa} dadi difesa al prossimo attacco subito dal mostro`);
+        }
+        if (itemDef.attacco !== 0) {
+          hints.push(`+${itemDef.attacco} dadi attacco al tuo prossimo attacco`);
+        }
+        if (itemDef.movimento !== 0) {
+          hints.push(`+${itemDef.movimento} dadi movimento al prossimo tiro movimento`);
+        }
+        if (itemDef.natt !== 0) {
+          hints.push(`fino a ${itemDef.natt} attacchi nella prossima fase attacco`);
+        }
+        if (hints.length > 0) {
+          useMsg += ` (${hints.join("; ")})`;
+        }
+        onNotify(useMsg);
+      }
 
       const updatedHeroes = providedSession.heroes.map(h => h.heroId === heroId ? updatedHero : h);
 
@@ -498,6 +573,10 @@ export function useDungeonSessionManager({
 
       const updatedHero = { ...hero };
       updatedHero.currentBody -= combatResult.damageDealt;
+
+      if ((hero.bonusDefenseDiceNextCombat || 0) > 0) {
+        updatedHero.bonusDefenseDiceNextCombat = 0;
+      }
 
       if (combatResult.damageDealt > 0 && updatedHero.activeStatus?.includes("RockSkin")) {
         updatedHero.activeStatus = updatedHero.activeStatus.filter(s => s !== "RockSkin");
@@ -731,6 +810,30 @@ export function useDungeonSessionManager({
     return true;
   }, [commitSessionUpdate]);
 
+  const clearBonusMovementDiceForHero = useCallback(
+    (heroId) => {
+      commitSessionUpdate((providedSession) => {
+        const heroes = providedSession.heroes.map((h) =>
+          h.heroId === heroId ? { ...h, bonusMovementDiceNextRoll: 0 } : h
+        );
+        return { ...providedSession, heroes };
+      });
+    },
+    [commitSessionUpdate]
+  );
+
+  const clearBonusMeleeAttackQuotaForHero = useCallback(
+    (heroId) => {
+      commitSessionUpdate((providedSession) => {
+        const heroes = providedSession.heroes.map((h) =>
+          h.heroId === heroId ? { ...h, bonusMeleeAttackQuota: 0 } : h
+        );
+        return { ...providedSession, heroes };
+      });
+    },
+    [commitSessionUpdate]
+  );
+
   return {
     commitSessionUpdate,
     initializeMission,
@@ -752,6 +855,8 @@ export function useDungeonSessionManager({
     resolveMovementTrap,
     markCurrentHeroEscaped,
     resolveHeroAttack,
-    advanceTurn
+    advanceTurn,
+    clearBonusMovementDiceForHero,
+    clearBonusMeleeAttackQuotaForHero
   };
 }

@@ -23,6 +23,10 @@ export const HeroState = (data = {}) => ({
   isEscaped: data?.isEscaped ?? false,
   x: data?.x ?? 0,
   y: data?.y ?? 0,
+  bonusDefenseDiceNextCombat: data?.bonusDefenseDiceNextCombat ?? 0,
+  bonusAttackDiceNextHeroAttack: data?.bonusAttackDiceNextHeroAttack ?? 0,
+  bonusMovementDiceNextRoll: data?.bonusMovementDiceNextRoll ?? 0,
+  bonusMeleeAttackQuota: data?.bonusMeleeAttackQuota ?? 0,
   hero: Hero(data?.hero)
 });
 

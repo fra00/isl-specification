@@ -125,6 +125,9 @@ export function useTurnLogic({
     }
 
     if (currentHero) {
+      if ((currentHero.bonusMeleeAttackQuota || 0) > 0) {
+        sessionManager.clearBonusMeleeAttackQuotaForHero(currentHero.heroId);
+      }
       if (currentHero.activeStatus?.includes("FoggyMist")) {
         sessionManager.advanceTurn(nextTurn, "FoggyMist");
         if (currentHero.activeStatus?.includes("InvisiblePassage")) {
@@ -189,15 +192,21 @@ export function useTurnLogic({
     if (!hero || hero.currentBody <= 0 || hero.isEscaped) return;
 
     const stats = heroStatsLogic.calculateStats(hero);
-    const diceCount = Math.max(1, stats.movimento || 2);
-    
+    const bonusMoveDice = hero.bonusMovementDiceNextRoll || 0;
+    const diceCount = Math.max(1, stats.movimento || 2) + bonusMoveDice;
+
     let roll = 0;
     for (let i = 0; i < diceCount; i++) {
       roll += Math.floor(Math.random() * 6) + 1;
     }
-    
+
     setMovementPoints(roll);
-  }, [gameSession, heroStatsLogic]);
+
+    if (bonusMoveDice > 0) {
+      sessionManager.clearBonusMovementDiceForHero(hero.heroId);
+      onNotify(`Movimento: ${diceCount} dadi (include +${bonusMoveDice} dalla pozione).`);
+    }
+  }, [gameSession, heroStatsLogic, sessionManager, onNotify]);
 
   const handleBoardHover = useCallback((x, y) => {
     if (movementPoints == null || movementPoints <= 0 || isMoving) {
@@ -330,10 +339,21 @@ export function useTurnLogic({
       setAttacksPerformed(prev => {
         const newCount = prev + 1;
         const canDouble = heroStatsLogic.canAttackTwice(hero, monster.monster);
-        if (canDouble && newCount < 2) {
-          onNotify("Doppio attacco! Puoi attaccare ancora.");
+        const quota = hero.bonusMeleeAttackQuota || 0;
+        const baseCap = canDouble ? 2 : 1;
+        const attackCap = quota > 0 ? Math.max(baseCap, quota) : baseCap;
+
+        if (newCount < attackCap) {
+          if (quota > 0 && newCount < quota) {
+            onNotify("Puoi attaccare ancora (effetto della pozione).");
+          } else if (canDouble && newCount < 2) {
+            onNotify("Doppio attacco! Puoi attaccare ancora.");
+          }
         } else {
           setTurnPhase(tp => ({ ...tp, HasPerformedAction: true }));
+          if (quota > 0) {
+            sessionManager.clearBonusMeleeAttackQuotaForHero(hero.heroId);
+          }
         }
         return newCount;
       });
@@ -368,7 +388,20 @@ export function useTurnLogic({
         });
       }
     }
-  }, [gameSession, isMoving, turnPhase.HasPerformedAction, heroStatsLogic, visibilityCalc, sessionManager, visibilityMap, combatLogic, onNotify, isMovingStarted, mapInteractionLogic, canMeleeAcrossCells]);
+  }, [
+    gameSession,
+    isMoving,
+    turnPhase.HasPerformedAction,
+    heroStatsLogic,
+    visibilityCalc,
+    sessionManager,
+    visibilityMap,
+    combatLogic,
+    onNotify,
+    isMovingStarted,
+    mapInteractionLogic,
+    canMeleeAcrossCells
+  ]);
 
   const handleOpenDoor = useCallback(() => {
     if (canOpenDoor) {

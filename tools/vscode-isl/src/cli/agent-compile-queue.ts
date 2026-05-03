@@ -2,7 +2,7 @@
  * CLI for Cursor agent / skill: lists compile queue using isl-generator compile-plan (no LLM).
  *
  * Usage:
- *   npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --root example/hq
+ *   npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --root example/dungeon
  *   npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --manifest path --bin path --lock path --stack react-js
  */
 

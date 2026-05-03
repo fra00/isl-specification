@@ -2,7 +2,7 @@
  * CLI for agent: merge manifest hashes into gen-lock (same semantics as StandardRunner publish).
  *
  * Usage:
- *   npx ts-node tools/vscode-isl/src/cli/agent-update-gen-lock.ts --root example/hq --build-file "<abs-path>"
+ *   npx ts-node tools/vscode-isl/src/cli/agent-update-gen-lock.ts --root example/dungeon --build-file "<abs-path>"
  */
 
 import * as fs from "fs";

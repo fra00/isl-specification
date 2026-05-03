@@ -6,7 +6,7 @@
  * Syncing the lock without updating implementation source code is not compilation.
  *
  * Usage:
- *   npx ts-node tools/vscode-isl/src/cli/agent-sync-lock-manifest.ts --root example/hq
+ *   npx ts-node tools/vscode-isl/src/cli/agent-sync-lock-manifest.ts --root example/dungeon
  */
 
 import * as fs from "fs";

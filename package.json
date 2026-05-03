@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "test": "npm --prefix example/hq/bin run test -- --run",
-    "test:watch": "npm --prefix example/hq/bin run test",
-    "test:coverage": "npm --prefix example/hq/bin run test:coverage",
-    "test:hq": "npm --prefix example/hq/bin run test -- --run"
+    "test": "npm --prefix example/dungeon/bin run test -- --run",
+    "test:watch": "npm --prefix example/dungeon/bin run test",
+    "test:coverage": "npm --prefix example/dungeon/bin run test:coverage",
+    "test:dungeon": "npm --prefix example/dungeon/bin run test -- --run",
+    "test:hq": "npm run test:dungeon"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",

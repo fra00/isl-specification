@@ -195,7 +195,7 @@ ISL (repository)
 +- README.md           (this file)
 +- docs/               (operational guides)
 +- specs/              (normative ISL specification)
-+- example/            (sample stacks: hq, architect-*, design-*, userDefine-*, ...)
++- example/            (sample stacks: dungeon, architect-*, design-*, userDefine-*, ...)
 +- tools/
    +- vscode-isl/       (extension, Builder, Generator, logic-test, doc, ...)
    +- isl-lint-shell/   (CLI linter)

@@ -39,7 +39,7 @@ npx tsx     tools/vscode-isl/src/isl-builder.ts <project-dir>   # tsx (local)
 npx ts-node tools/vscode-isl/src/isl-builder.ts <project-dir>   # ts-node (global)
 
 # Example
-npx tsx tools/vscode-isl/src/isl-builder.ts example/hq
+npx tsx tools/vscode-isl/src/isl-builder.ts example/dungeon
 ```
 
 **Output** (written to `<project-dir>/build/`):
@@ -63,7 +63,7 @@ npx tsx     tools/vscode-isl/src/isl-generator.ts <project-dir>  # tsx (local)
 npx ts-node tools/vscode-isl/src/isl-generator.ts <project-dir>  # ts-node (global)
 
 # Example
-npx tsx tools/vscode-isl/src/isl-generator.ts example/hq
+npx tsx tools/vscode-isl/src/isl-generator.ts example/dungeon
 ```
 
 **Output**: implementation files under `<project-dir>/bin/`.
@@ -111,7 +111,7 @@ Flags: `--gemini`, `--lmstudio`, `--stack=<id>`, `--model=<name>` or `--v=<name>
 Uses **`build/build-manifest.json`**. Default project root is `.` if omitted.
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-doc.ts example/hq
+npx tsx tools/vscode-isl/src/isl-doc.ts example/dungeon
 ```
 
 Output: **`doc/`** under the project (User Guide + Technical Reference). Flag: `--gemini`.
@@ -121,7 +121,7 @@ Output: **`doc/`** under the project (User Guide + Technical Reference). Flag: `
 Scans only **`*.isl.md` files in the given directory** (not subfolders). Writes **`graph/isl-dependencies.md`** there.
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-graph.ts example/hq
+npx tsx tools/vscode-isl/src/isl-graph.ts example/dungeon
 ```
 
 ### `isl-logic-test.ts`
@@ -129,7 +129,7 @@ npx tsx tools/vscode-isl/src/isl-graph.ts example/hq
 Processes one file or walks a tree (skips `build/`, `bin/`, `logic-test/`, `node_modules`).
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-logic-test.ts example/hq
+npx tsx tools/vscode-isl/src/isl-logic-test.ts example/dungeon
 ```
 
 Flag: `--gemini`.
@@ -139,7 +139,7 @@ Flag: `--gemini`.
 Audits each `.isl.md`; aggregates report at **`logic-test/report/audit-summary.report.md`**.
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-logic-test-run.ts example/hq
+npx tsx tools/vscode-isl/src/isl-logic-test-run.ts example/dungeon
 ```
 
 Flags: `--gemini`, **`--critical`** (re-audit only files that had `[CRITICAL]` in the previous summary).

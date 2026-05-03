@@ -13,7 +13,7 @@ const cli = path.join(
 
 const result = spawnSync(
   "npx",
-  ["ts-node", cli, "--root", "example/hq", ...process.argv.slice(2)],
+  ["ts-node", cli, "--root", "example/dungeon", ...process.argv.slice(2)],
   { cwd: repoRoot, stdio: "inherit", shell: true },
 );
 process.exit(result.status === null ? 1 : result.status);

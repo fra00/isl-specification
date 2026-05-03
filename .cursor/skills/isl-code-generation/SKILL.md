@@ -3,7 +3,7 @@ name: isl-code-generation
 description: >-
   ISL workflow: isl-builder allowed; compile-queue lists stale units—align bin
   source to ISL before updating gen-lock; must not run isl-generator. Lock-only
-  updates without code reconciliation are invalid. For ISL, example/hq.
+  updates without code reconciliation are invalid. For ISL, example/dungeon.
 ---
 
 # ISL code generation (in-agent compiler)
@@ -25,8 +25,8 @@ description: >-
 ## What “same as isl-generator” means (mirror `StandardRunner`)
 
 1. **Resolve target path**
-   - From the ISL frontmatter / `**Implementation**` header, compute the output path under `example/hq/bin/` (or the stack’s `bin` root).
-   - Match file extension to **Role** and project conventions (e.g. Presentation → `.jsx` for the HQ React stack), consistent with existing siblings.
+   - From the ISL frontmatter / `**Implementation**` header, compute the output path under `example/dungeon/bin/` (or the stack’s `bin` root).
+   - Match file extension to **Role** and project conventions (e.g. Presentation → `.jsx` for the dungeon React stack), consistent with existing siblings.
 
 2. **Load compile context** (prefer richest available)
    - Prefer **`isl-builder`** first when contexts are missing or stale (see below): it writes `build/build-manifest.json`, per-file `.build.md`, and `.ref.md` under the stack’s `build/` folder.
@@ -66,7 +66,7 @@ description: >-
 - From repository root, typical invocation:
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-builder.ts example/hq
+npx tsx tools/vscode-isl/src/isl-builder.ts example/dungeon
 ```
 
   Adjust the last argument to the stack directory that contains the `.isl.md` sources (see `README.md` / examples for other stacks).
@@ -77,11 +77,11 @@ npx tsx tools/vscode-isl/src/isl-builder.ts example/hq
 
 Same skip logic as `StandardRunner`: manifest order; skip when `lock[buildFile] === hash` and target file exists in `bin/` (unless `--force`).
 
-1. **Discover work**: `node llm-tools/run-compile-queue.cjs --root example/hq`  
+1. **Discover work**: `node llm-tools/run-compile-queue.cjs --root example/dungeon`  
    Wraps `tools/vscode-isl/src/cli/agent-compile-queue.ts` (`compile-plan.ts`). Optional: `--json`; `--all --json` for every manifest row.
 
 2. **For each queued item**: read ISL + context and **update code** under `bin/` until it reflects required contracts and behavior—not only the header.
 
-3. **Record success** (only after step 2): `node llm-tools/run-update-gen-lock.cjs --root example/hq --build-file "<absolute-path-to-.build.md>"` for that unit.
+3. **Record success** (only after step 2): `node llm-tools/run-update-gen-lock.cjs --root example/dungeon --build-file "<absolute-path-to-.build.md>"` for that unit.
 
 See `llm-tools/README.md`. Implementation lives under `tools/vscode-isl/` — **no duplicated hash/path logic** in `llm-tools/`.

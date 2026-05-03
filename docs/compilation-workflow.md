@@ -41,8 +41,8 @@ If you change only wording inside an existing capability, re-run **Builder** the
 - **Script**: [`tools/vscode-isl/src/isl-builder.ts`](../tools/vscode-isl/src/isl-builder.ts)
 
 ```bash
-npx tsx     tools/vscode-isl/src/isl-builder.ts example/hq
-npx ts-node tools/vscode-isl/src/isl-builder.ts example/hq
+npx tsx     tools/vscode-isl/src/isl-builder.ts example/dungeon
+npx ts-node tools/vscode-isl/src/isl-builder.ts example/dungeon
 ```
 
 **Does**
@@ -65,8 +65,8 @@ Run the Builder whenever ISL files or cross-file references change, **before** r
 - **Script**: [`tools/vscode-isl/src/isl-generator.ts`](../tools/vscode-isl/src/isl-generator.ts)
 
 ```bash
-npx tsx     tools/vscode-isl/src/isl-generator.ts example/hq
-npx ts-node tools/vscode-isl/src/isl-generator.ts example/hq
+npx tsx     tools/vscode-isl/src/isl-generator.ts example/dungeon
+npx ts-node tools/vscode-isl/src/isl-generator.ts example/dungeon
 ```
 
 **Does**

@@ -13,19 +13,19 @@ Shared implementation:
 ## Usage (from repository root)
 
 ```bash
-node llm-tools/run-compile-queue.cjs --root example/hq
+node llm-tools/run-compile-queue.cjs --root example/dungeon
 
-node llm-tools/run-compile-queue.cjs --root example/hq --json
+node llm-tools/run-compile-queue.cjs --root example/dungeon --json
 
-node llm-tools/run-update-gen-lock.cjs --root example/hq --build-file "C:\...\dungeon.build.md"
+node llm-tools/run-update-gen-lock.cjs --root example/dungeon --build-file "C:\...\dungeon.build.md"
 ```
 
 Direct equivalent (no wrapper):
 
 ```bash
-npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --root example/hq
+npx ts-node tools/vscode-isl/src/cli/agent-compile-queue.ts --root example/dungeon
 
-npx ts-node tools/vscode-isl/src/cli/agent-update-gen-lock.ts --root example/hq --build-file "<abs>"
+npx ts-node tools/vscode-isl/src/cli/agent-update-gen-lock.ts --root example/dungeon --build-file "<abs>"
 ```
 
 Main queue options: `--manifest`, `--bin`, `--lock`, `--stack react-js`, `--force`, `--all --json`.

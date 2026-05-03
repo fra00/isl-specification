@@ -17,7 +17,7 @@ const jq = spawnSync(
   [
     path.join(repoRoot, "llm-tools", "run-compile-queue.cjs"),
     "--root",
-    "example/hq",
+    "example/dungeon",
     "--json",
   ],
   { cwd: repoRoot, encoding: "utf8", shell: true },

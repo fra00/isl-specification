@@ -279,7 +279,7 @@ describe("dungeon-script-runtime", () => {
             {
               x: 1,
               y: 1,
-              text: "serand 1,6,5;\nmsg colpito;\nagghp -1;\nend;\nserand 1,6,1;\naggoro 10;\nend;\nimg \\img\\mostri\\gargoyle.gif,5,12;",
+              text: "serand 1,6,5;\nmsg colpito;\nagghp -1;\nend;\nserand 1,6,1;\naggoro 10;\nend;\nimg \\img\\mostri\\gargoyle.png,5,12;",
               evento: 1,
               unavolta: false,
               morto: false,
@@ -298,7 +298,7 @@ describe("dungeon-script-runtime", () => {
     expect(result.session.heroes[0].gold).toBe(0);
     expect(result.notifications).toEqual(["colpito"]);
     expect(result.session.scriptImages).toEqual([
-      { x: 5, y: 12, src: "/img/mostri/gargoyle.gif" },
+      { x: 5, y: 12, src: "/img/mostri/gargoyle.png" },
     ]);
   });
 

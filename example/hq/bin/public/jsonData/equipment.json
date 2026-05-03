@@ -45,7 +45,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 0,
-    "immagine": "Armaturacorazzata.gif"
+    "immagine": "Armaturacorazzata.png"
   },
   {
     "id": 2,
@@ -69,7 +69,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 150,
-    "immagine": "Ascia.gif"
+    "immagine": "Ascia.png"
   },
   {
     "id": 3,
@@ -93,7 +93,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 350,
-    "immagine": "Balestra.gif"
+    "immagine": "Balestra.png"
   },
   {
     "id": 4,
@@ -117,7 +117,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 100,
-    "immagine": "Bastone.gif"
+    "immagine": "Bastone.png"
   },
   {
     "id": 5,
@@ -141,7 +141,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 250,
-    "immagine": "BorsaDegliAttrezzi.gif"
+    "immagine": "BorsaDegliAttrezzi.png"
   },
   {
     "id": 6,
@@ -165,7 +165,7 @@
     "solopsg": true,
     "solopsgid": 2,
     "prezzo": 200,
-    "immagine": "Bracciali.gif"
+    "immagine": "Bracciali.png"
   },
   {
     "id": 7,
@@ -189,7 +189,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 120,
-    "immagine": "Elmo.gif"
+    "immagine": "Elmo.png"
   },
   {
     "id": 8,
@@ -213,7 +213,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 150,
-    "immagine": "Lancia.gif"
+    "immagine": "Lancia.png"
   },
   {
     "id": 9,
@@ -237,7 +237,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 450,
-    "immagine": "MagliaDiFerro.gif"
+    "immagine": "MagliaDiFerro.png"
   },
   {
     "id": 10,
@@ -261,7 +261,7 @@
     "solopsg": true,
     "solopsgid": 2,
     "prezzo": 350,
-    "immagine": "MantelloProtettivo.gif"
+    "immagine": "MantelloProtettivo.png"
   },
   {
     "id": 11,
@@ -285,7 +285,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 100,
-    "immagine": "Scudo.gif"
+    "immagine": "Scudo.png"
   },
   {
     "id": 12,
@@ -309,7 +309,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 150,
-    "immagine": "Spadino.gif"
+    "immagine": "Spadino.png"
   },
   {
     "id": 13,
@@ -333,7 +333,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 250,
-    "immagine": "Spadone.gif"
+    "immagine": "Spadone.png"
   },
   {
     "id": 14,
@@ -357,7 +357,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 400,
-    "immagine": "AsciaDaBattaglia.gif"
+    "immagine": "AsciaDaBattaglia.png"
   },
   {
     "id": 15,
@@ -381,7 +381,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "BacchettaDelRichiamo.gif"
+    "immagine": "BacchettaDelRichiamo.png"
   },
   {
     "id": 16,
@@ -405,7 +405,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "CorazzaDiBorin.gif"
+    "immagine": "CorazzaDiBorin.png"
   },
   {
     "id": 17,
@@ -430,7 +430,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "LamaDegliSpiriti.gif"
+    "immagine": "LamaDegliSpiriti.png"
   },
   {
     "id": 18,
@@ -454,7 +454,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "MorteAgliOrchi.gif"
+    "immagine": "MorteAgliOrchi.png"
   },
   {
     "id": 19,
@@ -478,6 +478,6 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "TalismanoDiLore.gif"
+    "immagine": "TalismanoDiLore.png"
   }
 ]

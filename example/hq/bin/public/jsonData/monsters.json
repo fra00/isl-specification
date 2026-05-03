@@ -163,8 +163,8 @@
     "difesa": 6,
     "corpo": 1,
     "mente": 4,
-    "immagine": "warlock.gif",
-    "immalarge": "warlock.gif",
+    "immagine": "warlock.png",
+    "immalarge": "warlock.png",
     "nonmorto": false
   },
   {
@@ -175,8 +175,8 @@
     "difesa": 6,
     "corpo": 1,
     "mente": 4,
-    "immagine": "warlock.gif",
-    "immalarge": "warlock.gif",
+    "immagine": "warlock.png",
+    "immalarge": "warlock.png",
     "nonmorto": false
   },
   {

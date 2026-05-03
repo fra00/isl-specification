@@ -58,8 +58,8 @@ describe("domain-session", () => {
 
   it("creates script image defaults", () => {
     expect(
-      ScriptImage({ x: 5, y: 6, src: "/img/mostri/gargoyle.gif" }),
-    ).toEqual({ x: 5, y: 6, src: "/img/mostri/gargoyle.gif" });
+      ScriptImage({ x: 5, y: 6, src: "/img/mostri/gargoyle.png" }),
+    ).toEqual({ x: 5, y: 6, src: "/img/mostri/gargoyle.png" });
     expect(ScriptImage()).toEqual({ x: 0, y: 0, src: "" });
   });
 
@@ -73,7 +73,7 @@ describe("domain-session", () => {
       spawnedLocations: ["1,1"],
       treasureDeck: [{ id: 7, azione: "aggiungi_oro", valore: 25 }],
       triggeredScripts: ["1:1:1"],
-      scriptImages: [{ x: 5, y: 12, src: "/img/mostri/gargoyle.gif" }],
+      scriptImages: [{ x: 5, y: 12, src: "/img/mostri/gargoyle.png" }],
       currentMap: { header: { descrizione: "desc" }, grid: [] },
       lastAttack: { test: true },
     });
@@ -89,7 +89,7 @@ describe("domain-session", () => {
       isHeroOrderConfirmed: false,
       treasureDeck: [{ id: 7, azione: "aggiungi_oro", valore: 25 }],
       triggeredScripts: ["1:1:1"],
-      scriptImages: [{ x: 5, y: 12, src: "/img/mostri/gargoyle.gif" }],
+      scriptImages: [{ x: 5, y: 12, src: "/img/mostri/gargoyle.png" }],
       currentMap: { header: { descrizione: "desc" } },
       lastAttack: { test: true },
     });

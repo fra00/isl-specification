@@ -19576,7 +19576,7 @@
     {
       "x": 3,
       "y": 11,
-      "text": "img \\img\\mostri\\gargoyle.gif,5,12;\nmsg Due occhi nell'oscurit� ti fissano , la Gargola rimane li immobile, � pietrificata;\n",
+      "text": "img \\img\\mostri\\gargoyle.png,5,12;\nmsg Due occhi nell'oscurit� ti fissano , la Gargola rimane li immobile, � pietrificata;\n",
       "evento": 1,
       "unavolta": true,
       "morto": false,

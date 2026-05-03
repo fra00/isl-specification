@@ -8,7 +8,7 @@ The [`example/`](../example/) folder holds **sample ISL projects**, from micro-d
 
 | Area / prefix | Description |
 |---------------|-------------|
-| **`example/dungeon/`** | HeroQuest-style stack: many ISL modules, `logic-test/`, React `bin/`, JSON data—advanced **reference POC**. |
+| **`example/dungeon/`** | Boardgame-style stack: many ISL modules, `logic-test/`, React `bin/`, JSON data—advanced **reference POC**. **Live:** [dungeon-demo-isl.netlify.app](https://dungeon-demo-isl.netlify.app/). |
 | **`architect-*`** | Product-shaped samples (dashboard, roadmap, space invaders): modularity and Presentation / Logic roles. |
 | **`design-*`** | Smaller UI domains (calculator, kanban, expense tracker, …). |
 | **`userDefine-*`** | Forms, flowcharts, user-defined orchestrations—good medium-sized starting points. |

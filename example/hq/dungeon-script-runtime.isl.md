@@ -125,6 +125,8 @@
   - Resolve the active hero and targeted monster instance by `monsterId`.
   - IF either lookup fails RETURN the cloned session unchanged.
   - Remove `consumedWeaponId` from the active hero `equipped` and `equipment` lists when provided.
+  - IF `activeHero.bonusAttackDiceNextHeroAttack` is greater than 0:
+    - Set `activeHero.bonusAttackDiceNextHeroAttack` to 0 (consumable attack-dice buff spent on this attack).
   - Subtract `combatResult.damageDealt` from the targeted monster body points.
   - Remove every status in `statusesToRemove` from the targeted monster.
   - IF the monster reaches 0 or fewer body points remove that monster instance entirely.

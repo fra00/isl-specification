@@ -8,11 +8,10 @@ This is the index for **operational** documentation: orientation, tooling, and c
 
 | Document | Description |
 |----------|-------------|
-| [Getting Started](./getting-started.md) | Prerequisites, official spec, VS Code extension, first `.isl.md` file. |
-| [Tools overview](./tools-overview.md) | What each tool does, where it lives, when to use it. |
-| [Compilation and codegen](./compilation-workflow.md) | Builder → codegen workflow, `bin/` artifacts. |
+| [Getting Started](./getting-started.md) | Setup, minimal and richer `.isl.md` examples, Builder, Generator. |
+| [Tools overview](./tools-overview.md) | Every CLI and VS Code feature (Builder, Generator, Graph, logic-test, doc, code review, …). |
+| [Compilation and codegen](./compilation-workflow.md) | Builder and Generator in depth, artifacts, locks, related tools. |
 | [Examples catalog](./examples-catalog.md) | How to read the `example/` folder and what to expect from each project type. |
-| [Tutorial: first component](./tutorial-first-component.md) | Short exercise: one end-to-end validatable `.isl.md` file. |
 
 ---
 

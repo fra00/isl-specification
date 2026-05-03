@@ -1,13 +1,13 @@
 # Getting Started
 
-The base flow is: write ISL specs → run the Builder → run the Generator → get code in `bin/`.
+The base flow is: write ISL specs, run the **Builder**, run the **Generator**, get code under `bin/`.
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 18+ installed
-- An LLM API key for the Generator step (default: OpenAI — set `OPENAI_API_KEY` in your environment)
+- **Node.js** 18+
+- For **Generator** (and other LLM tools): an API key as required by the tool (default for Generator: `OPENAI_API_KEY`)
 
 ---
 
@@ -19,21 +19,29 @@ From the repository root:
 npm install
 ```
 
-This installs `tsx`, the TypeScript runner used by the Builder and Generator.
+This installs `tsx`, used by the examples below. You can use **`npx tsx`** (local) or **`npx ts-node`** (global install: `npm install -g ts-node`) interchangeably.
 
 ---
 
 ## 2. Create a project folder
 
-```
+Example layout:
+
+```text
 my-project/
-└── specs/
-    └── my-component.isl.md
++-- specs/
+    +-- my-component.isl.md
 ```
 
-Every `.isl.md` file needs at minimum a project header, a component with a Role, and at least one capability with a Contract.
+Every `.isl.md` file needs at minimum a project header, a component with a **Role**, and at least one capability with a **Contract**. Canonical section prefixes (emoji anchors) are defined in [`specs/Intent Specification Language (ISL).md`](../specs/Intent%20Specification%20Language%20(ISL).md).
 
-Minimal example (`my-component.isl.md`):
+---
+
+## 3. Minimal examples
+
+### Backend-oriented (compact)
+
+File `specs/my-component.isl.md`:
 
 ```markdown
 # Project: MyProject
@@ -47,7 +55,7 @@ Brief description.
 
 ### Role: Backend
 
-### ⚡ Capabilities
+### Capabilities
 
 #### doSomething
 
@@ -58,76 +66,129 @@ Brief description.
 - **output**: { message: string }
 ```
 
-Full ISL syntax: [`specs/Intent Specification Language (ISL).md`](../specs/Intent%20Specification%20Language%20(ISL).md).
+In real documents, use the normative emoji prefixes from the spec for **Capabilities**, **Constraints**, **Acceptance Criteria**, and **Test Scenarios** where required.
+
+### Presentation-oriented (richer)
+
+File `specs/greeting-panel.isl.md`:
+
+```markdown
+# Project: HelloFeature
+
+**Version**: 1.0.0
+**ISL Version**: 1.6.2
+**Created**: 2026-01-01
 
 ---
 
-## 3. Run the Builder
+## Domain Concepts
+
+- `message`: text string displayed to the user.
+
+---
+
+## Component: GreetingPanel
+
+A panel that displays a welcome message.
+
+### Role: Presentation
+
+### Appearance
+
+- Renders the message text prominently in the center of the panel.
+
+### Capabilities
+
+#### displayMessage
+
+**Contract**: Displays the welcome message received as input.
+
+**Trigger**: Component mount or message prop change.
+
+**Side Effects**:
+
+- Renders `message` as visible text in the UI.
+
+### Constraints
+
+- MUST NOT fetch data from APIs or databases.
+
+### Acceptance Criteria
+
+- [ ] Displayed text matches the `message` input.
+
+### Test Scenarios
+
+1. **Non-empty message**:
+   - Input: `message = "Hello"`
+   - Expected: UI shows `"Hello"`.
+```
+
+Replace plain headings (`### Capabilities`) with the spec’s emoji-prefixed headings in production specs.
+
+---
+
+## 4. Run the Builder
 
 ```bash
-# with tsx (local, installed by npm install at repo root)
 npx tsx tools/vscode-isl/src/isl-builder.ts my-project
-
-# with ts-node (if installed globally: npm install -g ts-node)
+# or:
 npx ts-node tools/vscode-isl/src/isl-builder.ts my-project
 ```
 
-The Builder resolves references between ISL files, computes the dependency order, and writes to `my-project/build/`:
+The Builder resolves **Reference** links, orders components, and writes **`my-project/build/`**:
 
-| Output file | Contents |
-|-------------|----------|
-| `build-manifest.json` | Ordered list of components to compile |
-| `<component>.build.md` | Full context for that component (ready for the Generator) |
+| Output | Contents |
+|--------|----------|
+| `build-manifest.json` | Ordered compile units |
+| `<component>.build.md` | Merged context per component (input to the Generator or to a manual LLM) |
 
 ---
 
-## 4. Run the Generator
+## 5. Run the Generator
 
 ```bash
-# with tsx (local)
 npx tsx tools/vscode-isl/src/isl-generator.ts my-project
-
-# with ts-node (global)
+# or:
 npx ts-node tools/vscode-isl/src/isl-generator.ts my-project
 ```
 
-The Generator reads `build-manifest.json`, sends each `.build.md` to an LLM, and writes the result to `my-project/bin/`.
-
-Useful flags:
+Reads the manifest, sends each `.build.md` to the configured LLM, writes artifacts under **`my-project/bin/`**.
 
 | Flag | Effect |
 |------|--------|
-| `--force` | Regenerate all components, even unchanged ones |
-| `--gemini` | Use Google Gemini instead of OpenAI |
-| `--lmstudio` | Use a local LM Studio endpoint |
+| `--force` | Regenerate everything, even unchanged units |
+| `--gemini` | Use Google Gemini |
+| `--lmstudio` | Use LM Studio locally |
 
 ---
 
-## 5. Iterate
+## 6. Iterate
 
-When you change a `.isl.md` file, re-run Builder then Generator:
+After editing `.isl.md` files:
 
 ```bash
-npx tsx tools/vscode-isl/src/isl-builder.ts my-project    # or: npx ts-node ...
-npx tsx tools/vscode-isl/src/isl-generator.ts my-project  # or: npx ts-node ...
+npx tsx tools/vscode-isl/src/isl-builder.ts my-project
+npx tsx tools/vscode-isl/src/isl-generator.ts my-project
 ```
 
-The Generator only regenerates components whose spec has changed.
+The Generator skips unchanged units unless you pass **`--force`**.
 
 ---
 
-## Optional tools
+## Optional helpers
 
-| Tool | What it adds | Where |
-|------|-------------|-------|
-| **VS Code extension** | Syntax highlighting, snippets, real-time validation | Build and install — see [Tools overview](./tools-overview.md#vs-code-extension-vscode-isl) |
-| **ISL Create** | Generate an ISL draft from a natural-language description | `npx tsx tools/vscode-isl/src/isl-create.ts ./specs "description"` |
-| **Python resolver** | Merge all references into one file for manual LLM paste | `python tools/isl_compiler.py path/to/file.isl.md > merged.md` |
+| Helper | Use |
+|--------|-----|
+| **VS Code extension** | Highlighting, snippets, diagnostics — build `.vsix` from `tools/vscode-isl/` ([Tools overview](./tools-overview.md#vs-code-extension-vscode-isl)) |
+| **ISL Create** | Draft specs from natural language: `npx tsx tools/vscode-isl/src/isl-create.ts ./specs "description"` |
+| **Python resolver** | Merge references to stdout: `python tools/isl_compiler.py path/to/file.isl.md` |
+| **Other CLI tools** | Graph, logic-test, documentation export, code review — see [Tools overview](./tools-overview.md) |
 
 ---
 
 ## See also
 
-- [Tools overview](./tools-overview.md) — complete CLI reference
-- [Compilation and codegen](./compilation-workflow.md) — deeper explanation of Builder and Generator
+- [Tools overview](./tools-overview.md)
+- [Compilation and codegen](./compilation-workflow.md)
 - [Documentation index](./README.md)

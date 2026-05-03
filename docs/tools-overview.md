@@ -81,6 +81,71 @@ ISL spec changes → Builder → Generator → bin/
 
 ---
 
+## All TypeScript CLIs (`tools/vscode-isl/src/`)
+
+Run from the **repository root** after `npm install`. Use **`npx tsx …`** (local) or **`npx ts-node …`** (global `ts-node`) as you prefer.
+
+| Entry point | Role | LLM |
+|-------------|------|-----|
+| [`isl-builder.ts`](../tools/vscode-isl/src/isl-builder.ts) | Resolves references; writes `build-manifest.json` and `*.build.md` under `<project>/build/` | No |
+| [`isl-generator.ts`](../tools/vscode-isl/src/isl-generator.ts) | Reads manifest; generates or updates files under `<project>/bin/` | Yes |
+| [`isl-create.ts`](../tools/vscode-isl/src/isl-create.ts) | Creates draft `.isl.md` from a description (optional `--reverse`, `--architect`) | Yes |
+| [`isl-codeReview.ts`](../tools/vscode-isl/src/isl-codeReview.ts) | Compares implementation in `bin/` to spec + signatures for one component ISL file | Yes |
+| [`isl-doc.ts`](../tools/vscode-isl/src/isl-doc.ts) | Builds user-facing and technical docs under `<project>/doc/` from `build/build-manifest.json` | Yes |
+| [`isl-graph.ts`](../tools/vscode-isl/src/isl-graph.ts) | Writes a Mermaid dependency graph from **non-recursive** `*.isl.md` in a single folder | No |
+| [`isl-logic-test.ts`](../tools/vscode-isl/src/isl-logic-test.ts) | Generates logic-test artifacts from `.isl.md` (directory or single file) | Yes |
+| [`isl-logic-test-run.ts`](../tools/vscode-isl/src/isl-logic-test-run.ts) | Runs LLM audit over specs; writes reports under `<project>/logic-test/report/` | Yes |
+
+### `isl-codeReview.ts`
+
+Requires a **`build-manifest.json`** (under the project root or `build/`), an entry for the chosen `.isl.md`, and the generated file under `bin/`.
+
+```bash
+npx tsx tools/vscode-isl/src/isl-codeReview.ts path/to/component.isl.md
+```
+
+Flags: `--gemini`, `--lmstudio`, `--stack=<id>`, `--model=<name>` or `--v=<name>`, `--url=<endpoint>`.
+
+### `isl-doc.ts`
+
+Uses **`build/build-manifest.json`**. Default project root is `.` if omitted.
+
+```bash
+npx tsx tools/vscode-isl/src/isl-doc.ts example/hq
+```
+
+Output: **`doc/`** under the project (User Guide + Technical Reference). Flag: `--gemini`.
+
+### `isl-graph.ts`
+
+Scans only **`*.isl.md` files in the given directory** (not subfolders). Writes **`graph/isl-dependencies.md`** there.
+
+```bash
+npx tsx tools/vscode-isl/src/isl-graph.ts example/hq
+```
+
+### `isl-logic-test.ts`
+
+Processes one file or walks a tree (skips `build/`, `bin/`, `logic-test/`, `node_modules`).
+
+```bash
+npx tsx tools/vscode-isl/src/isl-logic-test.ts example/hq
+```
+
+Flag: `--gemini`.
+
+### `isl-logic-test-run.ts`
+
+Audits each `.isl.md`; aggregates report at **`logic-test/report/audit-summary.report.md`**.
+
+```bash
+npx tsx tools/vscode-isl/src/isl-logic-test-run.ts example/hq
+```
+
+Flags: `--gemini`, **`--critical`** (re-audit only files that had `[CRITICAL]` in the previous summary).
+
+---
+
 ## Tool reference
 
 ### VS Code extension (`vscode-isl`)

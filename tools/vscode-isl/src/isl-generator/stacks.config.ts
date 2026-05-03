@@ -37,6 +37,7 @@ export const STACKS: Record<string, StackConfig> = {
       "Business Logic": ".js",
       Domain: ".js",
       Model: ".js",
+      Test: ".jsx",
     },
     promptPersona: "Senior React Developer - Functional Components & Hooks",
     constraints: [

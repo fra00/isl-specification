@@ -5,6 +5,10 @@ import { ManifestEntry, GenLock } from "../types";
 import { buildStandardGeneratorPrompt } from "../prompts";
 import { StackConfig } from "../stacks.config";
 import { collectSignatures } from "../utils/signature-utils";
+import {
+  getTargetPathForEntry,
+  shouldSkipGeneration,
+} from "../compile-plan";
 
 type PendingWrite = {
   targetPath: string;
@@ -70,48 +74,28 @@ export class StandardRunner {
         continue;
       }
 
-      // 3. Leggi il contesto di build (Anticipato per estrarre il ruolo)
       const buildContext = fs.readFileSync(entry.buildFile, "utf-8");
-
-      // Extract Role from build context
-      // FIX: Only look in the source file part to avoid matching roles from dependencies (which appear first in build context)
-      const sourceContent =
-        buildContext.split("<!-- SOURCE FILE TO IMPLEMENT -->")[1] ||
-        buildContext;
-
-      const roleMatch = sourceContent.match(
-        /(?:###|\*\*)\s*Role(?:\*\*)?\s*:\s*(.+)/i,
+      const pathInfo = getTargetPathForEntry(
+        entry,
+        buildContext,
+        this.outputBaseDir,
+        this.stackConfig,
       );
-      const role = roleMatch ? roleMatch[1].trim() : "default";
-      // console.log(`   🔍 Detected Role for ${path.basename(entry.sourceFile)}: "${role}"`);
-
-      // Calculate Target Path with dynamic extension based on Stack Config
-      let relativeImplPath = entry.implementationPath;
-      const extMap = this.stackConfig.extensions;
-      const desiredExt = extMap[role] || extMap.default || ".js";
-
-      const currentExt = path.extname(relativeImplPath);
-      if (currentExt) {
-        relativeImplPath =
-          relativeImplPath.slice(0, -currentExt.length) + desiredExt;
-      } else {
-        relativeImplPath = relativeImplPath + desiredExt;
+      if (!pathInfo) {
+        skippedCount++;
+        continue;
       }
+      const { targetPath, relativeImplPath } = pathInfo;
 
-      const targetPath = path.join(this.outputBaseDir, relativeImplPath);
-
-      // 2. Hash Check: Se l'hash non è cambiato E il file esiste, salta
-      const lastHash = lock[entry.buildFile];
-      const targetExists = fs.existsSync(targetPath);
-      const hashMatch = lastHash === entry.hash;
-
-      if (!force && hashMatch && targetExists) {
+      if (shouldSkipGeneration(entry, lock, targetPath, force)) {
         console.log(
           `${progressInfo} ⏭️  Skipping ${path.basename(entry.sourceFile)} (Unchanged)`,
         );
         skippedCount++;
         continue;
       }
+
+      const targetExists = fs.existsSync(targetPath);
 
       if (force) {
         console.log(

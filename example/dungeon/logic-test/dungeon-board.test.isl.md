@@ -1,4 +1,4 @@
-# Project: Heroquest React Logic Tests
+# Project: Dungeon React Logic Tests
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1
@@ -11,7 +11,7 @@
 
 ## Domain Concepts
 
-- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced HeroQuest component behavior.
+- `logic test scenarios`: Deterministic acceptance scenarios used to verify the referenced Dungeon component behavior.
 
 ## Component: DungeonBoardLogicTests
 

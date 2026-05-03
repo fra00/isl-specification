@@ -3,16 +3,16 @@
 This document outlines the logical test scenarios for the `PlayGame` component and its associated `useCampaignManager` logic, focusing on state transitions, data integrity, and flow continuity.
 
 ## Scenario: Initialization of New Campaign
-- **Given**: No existing `"hq_campaign_data"` in LocalStorage.
+- **Given**: No existing `"dg_campaign_data"` in LocalStorage.
 - **When**: `PlayGame` component mounts and `initSession` is triggered.
 - **Assert (Expected Outcomes)**:
     - `maxUnlockedMissionIndex` is set to 0.
     - `campaignManager.saveCampaign` is called with default hero states.
-    - Default equipment (Spadone, Ascia, Spadino, or Bastone) is correctly assigned to heroes based on class.
+    - Default equipment (Spada lunga, Ascia, Daga, or Bastone magico) is correctly assigned to heroes based on class.
     - `statsHeroes` is populated from `/jsonData/heroes.json`.
 
 ## Scenario: Loading Existing Campaign
-- **Given**: `"hq_campaign_data"` exists in LocalStorage with `nextMissionIndex` = 2.
+- **Given**: `"dg_campaign_data"` exists in LocalStorage with `nextMissionIndex` = 2.
 - **When**: `PlayGame` component mounts and `initSession` is triggered.
 - **Assert (Expected Outcomes)**:
     - `maxUnlockedMissionIndex` is set to 2.

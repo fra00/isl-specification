@@ -6,11 +6,11 @@
  * Edit the ISL file instead.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback } from "react";
 
 export default function DungeonGameOver({ isOpen = false, onExit }) {
   const handleExit = useCallback(() => {
-    if (isOpen && typeof onExit === 'function') {
+    if (isOpen && typeof onExit === "function") {
       onExit();
     }
   }, [isOpen, onExit]);
@@ -32,23 +32,26 @@ export default function DungeonGameOver({ isOpen = false, onExit }) {
           }
         `}
       </style>
-      
+
       <div className="flex flex-col items-center justify-center text-center p-6 animate-dramatic-reveal">
-        <h1 
+        <h1
           className="text-6xl md:text-8xl lg:text-9xl font-serif text-red-700 tracking-widest mb-8 uppercase"
-          style={{ textShadow: '0 0 20px rgba(185, 28, 28, 0.8), 0 0 40px rgba(153, 27, 27, 0.6)' }}
+          style={{
+            textShadow:
+              "0 0 20px rgba(185, 28, 28, 0.8), 0 0 40px rgba(153, 27, 27, 0.6)",
+          }}
         >
           Game Over
         </h1>
-        
+
         <h2 className="text-2xl md:text-3xl lg:text-4xl text-gray-300 mb-4 font-serif tracking-wide">
           Tutti gli eroi sono caduti...
         </h2>
-        
+
         <p className="text-lg md:text-xl text-gray-500 mb-12 max-w-2xl italic">
-          "Zargon ha trionfato. Il mondo precipita nell'oscurità."
+          "L'Oscurità ha trionfato. Il mondo precipita nell'oscurità."
         </p>
-        
+
         <button
           onClick={handleExit}
           className="px-8 py-4 bg-red-950 hover:bg-red-800 text-red-100 font-bold rounded border border-red-900 transition-all duration-300 uppercase tracking-widest shadow-[0_0_15px_rgba(153,27,27,0.4)] hover:shadow-[0_0_25px_rgba(185,28,28,0.7)] hover:scale-105"

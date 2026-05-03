@@ -43,8 +43,8 @@
     "difesa": 3,
     "corpo": 1,
     "mente": 3,
-    "immagine": "fimir.png",
-    "immalarge": "fimirimg.png",
+    "immagine": "uomoLucertola.png",
+    "immalarge": "uomoLucertolaimg.png",
     "nonmorto": false
   },
   {
@@ -145,7 +145,7 @@
   },
   {
     "id": 12,
-    "nome": "Zombie Barak Tor",
+    "nome": "Zombie Leader",
     "movimento": 4,
     "attacco": 2,
     "difesa": 3,
@@ -187,8 +187,8 @@
     "difesa": 7,
     "corpo": 5,
     "mente": 0,
-    "immagine": "fimir.png",
-    "immalarge": "fimirimg.png",
+    "immagine": "uomoLucertola.png",
+    "immalarge": "uomoLucertolaimg.png",
     "nonmorto": false
   },
   {
@@ -211,7 +211,7 @@
     "difesa": 1,
     "corpo": 1,
     "mente": 1,
-    "immagine": "fimirimg.png",
+    "immagine": "uomoLucertolaimg.png",
     "immalarge": "gargolaimg.png",
     "nonmorto": false
   }

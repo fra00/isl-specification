@@ -25,7 +25,7 @@
   },
   {
     "id": 1,
-    "nome": "Armatura Corazzata",
+    "nome": "Armatura completa",
     "dadatt": 0,
     "daddif": 4,
     "daddifex": 0,
@@ -45,7 +45,7 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 0,
-    "immagine": "Armaturacorazzata.png"
+    "immagine": "ArmaturaCompleta.png"
   },
   {
     "id": 2,
@@ -97,7 +97,7 @@
   },
   {
     "id": 4,
-    "nome": "Bastone",
+    "nome": "Bastone magico",
     "dadatt": 2,
     "daddif": 0,
     "daddifex": 0,
@@ -117,11 +117,11 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 100,
-    "immagine": "Bastone.png"
+    "immagine": "BastoneMagico.png"
   },
   {
     "id": 5,
-    "nome": "Borsa degli attrezzi",
+    "nome": "Borsa del ladro",
     "dadatt": 0,
     "daddif": 0,
     "daddifex": 0,
@@ -141,7 +141,7 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 250,
-    "immagine": "BorsaDegliAttrezzi.png"
+    "immagine": "BorsaDelLadro.png"
   },
   {
     "id": 6,
@@ -217,7 +217,7 @@
   },
   {
     "id": 9,
-    "nome": "Maglia di ferro",
+    "nome": "Cotta di maglia",
     "dadatt": 0,
     "daddif": 3,
     "daddifex": 0,
@@ -237,11 +237,11 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 450,
-    "immagine": "MagliaDiFerro.png"
+    "immagine": "CottaDiMaglia.png"
   },
   {
     "id": 10,
-    "nome": "Mantello Protettivo",
+    "nome": "Mantello magico",
     "dadatt": 0,
     "daddif": 0,
     "daddifex": 1,
@@ -261,7 +261,7 @@
     "solopsg": true,
     "solopsgid": 2,
     "prezzo": 350,
-    "immagine": "MantelloProtettivo.png"
+    "immagine": "MantelloMagico.png"
   },
   {
     "id": 11,
@@ -289,7 +289,7 @@
   },
   {
     "id": 12,
-    "nome": "Spadino",
+    "nome": "Daga",
     "dadatt": 2,
     "daddif": 0,
     "daddifex": 0,
@@ -309,11 +309,11 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 150,
-    "immagine": "Spadino.png"
+    "immagine": "Daga.png"
   },
   {
     "id": 13,
-    "nome": "Spadone",
+    "nome": "Spada lunga",
     "dadatt": 3,
     "daddif": 0,
     "daddifex": 0,
@@ -333,11 +333,11 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 250,
-    "immagine": "Spadone.png"
+    "immagine": "SpadaLunga.png"
   },
   {
     "id": 14,
-    "nome": "Ascia da battaglia",
+    "nome": "Ascia bipenne",
     "dadatt": 4,
     "daddif": 0,
     "daddifex": 0,
@@ -357,11 +357,11 @@
     "solopsg": false,
     "solopsgid": 2,
     "prezzo": 400,
-    "immagine": "AsciaDaBattaglia.png"
+    "immagine": "AsciaBipenne.png"
   },
   {
     "id": 15,
-    "nome": "Bacchetta del Richiamo",
+    "nome": "Bacchetta degli incantesimi",
     "dadatt": 0,
     "daddif": 0,
     "daddifex": 0,
@@ -381,11 +381,11 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "BacchettaDelRichiamo.png"
+    "immagine": "BacchettaDegliIncantesimi.png"
   },
   {
     "id": 16,
-    "nome": "Corazza di borin",
+    "nome": "Corazza del Re",
     "dadatt": 0,
     "daddif": 4,
     "daddifex": 0,
@@ -405,11 +405,11 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "CorazzaDiBorin.png"
+    "immagine": "CorazzaDelRe.png"
   },
   {
     "id": 17,
-    "nome": "Lama degli spiriti",
+    "nome": "Spada dei non morti",
     "dadatt": 3,
     "daddif": 0,
     "daddifex": 0,
@@ -430,11 +430,11 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "LamaDegliSpiriti.png"
+    "immagine": "SpadaDeiNonMorti.png"
   },
   {
     "id": 18,
-    "nome": "Morte agli orchi",
+    "nome": "Flagello degli orchi",
     "dadatt": 2,
     "daddif": 0,
     "daddifex": 0,
@@ -454,11 +454,11 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "MorteAgliOrchi.png"
+    "immagine": "FlagelloDegliOrchi.png"
   },
   {
     "id": 19,
-    "nome": "Talismano di lore",
+    "nome": "Talismano del mana",
     "dadatt": 0,
     "daddif": 0,
     "daddifex": 0,
@@ -478,6 +478,6 @@
     "solopsg": false,
     "solopsgid": -1,
     "prezzo": 0,
-    "immagine": "TalismanoDiLore.png"
+    "immagine": "TalismanoDelMana.png"
   }
 ]

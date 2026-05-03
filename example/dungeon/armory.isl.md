@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.2
@@ -110,7 +110,7 @@
 - The component must adapt to 100% of the available container height.
 - The main armory container must not scroll vertically.
 - When vertical space is insufficient, only the internal panels and lists may scroll vertically.
-- The visual direction must remain coherent with the dark bronze HeroQuest navigation flow.
+- The visual direction must remain coherent with the dark bronze Dungeon navigation flow.
 
 ### 🚨 Global Constraints
 
@@ -133,4 +133,3 @@
 2. **Constraint Enforcement**:
    - Input: boundary and invalid inputs
    - Expected: constraints are enforced and violations are handled explicitly
-

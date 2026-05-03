@@ -1,4 +1,4 @@
-# Project: Heroquest React
+# Project: Dungeon React
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.2

@@ -156,13 +156,13 @@
 
 #### parserSemantics
 
-- **Contract**: Preserves the quirks of recovered original HQ script text instead of imposing a stricter modern syntax.
+- **Contract**: Preserves the quirks of recovered original DG script text instead of imposing a stricter modern syntax.
 - **Flow**:
   - Tokenize a statement name by reading until whitespace or `;`.
   - Treat `end` as the closing marker for the current nested condition block.
   - Treat `serand`, `sestanza`, `seogg`, and `searma` as block-opening conditions whose body extends until the matching `end`.
   - Read command arguments until `;`.
-  - Also stop the current statement on newline when the following line begins with any known script keyword; this preserves repaired HQ data that omitted a `;` before the next command.
+  - Also stop the current statement on newline when the following line begins with any known script keyword; this preserves repaired DG data that omitted a `;` before the next command.
   - IF a statement starts with an unknown keyword, coerce the whole statement into an implicit `msg` command so free-text original scripts remain executable.
 
 #### eventMatchingRules

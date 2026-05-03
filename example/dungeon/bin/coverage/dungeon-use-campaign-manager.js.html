@@ -254,7 +254,7 @@ export const useCampaignManager = (config = {}) =&gt; {
 &nbsp;
     try {
       const jsonString = JSON.stringify(campaignData);
-      localStorage.setItem("hq_campaign_data", jsonString);
+      localStorage.setItem("dg_campaign_data", jsonString);
     } catch (error) {
       console.error("Error saving campaign:", error);
       notifySaveError("Could not save progress");
@@ -262,7 +262,7 @@ export const useCampaignManager = (config = {}) =&gt; {
   }, [notifySaveError]);
 &nbsp;
   const loadCampaign = useCallback(() =&gt; {
-    const item = localStorage.getItem("hq_campaign_data");
+    const item = localStorage.getItem("dg_campaign_data");
     
     if (!item || item.trim() === "") {
       return null;
@@ -283,12 +283,12 @@ export const useCampaignManager = (config = {}) =&gt; {
   }, []);
 &nbsp;
   const hasSavedCampaign = useCallback(() =&gt; {
-    const item = localStorage.getItem("hq_campaign_data");
+    const item = localStorage.getItem("dg_campaign_data");
     return item != null &amp;&amp; item.trim() !== "";
   }, []);
 &nbsp;
   const resetCampaign = useCallback(() =&gt; {
-    localStorage.removeItem("hq_campaign_data");
+    localStorage.removeItem("dg_campaign_data");
   }, []);
 &nbsp;
   return {

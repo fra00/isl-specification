@@ -23,7 +23,7 @@
   - Create `campaignData` object: `{ heroes: heroes, nextMissionIndex: nextMissionIndex, timestamp: Date.now() }`.
   - Serialize `campaignData` to JSON string.
   - TRY:
-    - Save string to LocalStorage with key `"hq_campaign_data"`.
+    - Save string to LocalStorage with key `"dg_campaign_data"`.
   - CATCH:
     - Log error to console.
     - Trigger UI notification "Could not save progress".
@@ -33,7 +33,7 @@
 - **Contract**: Retrieves the saved campaign data.
 - **Signature**: `() -> { heroes: List<@HeroState>, nextMissionIndex: Integer } | null`
 - **Flow**:
-  - Get item `"hq_campaign_data"` from LocalStorage.
+  - Get item `"dg_campaign_data"` from LocalStorage.
   - IF item is null OR empty: RETURN null.
   - TRY:
     - Parse JSON string to `campaignData`.
@@ -45,7 +45,7 @@
 - **Contract**: Checks if a saved campaign exists.
 - **Signature**: `() -> Boolean`
 - **Flow**:
-  - Get item `"hq_campaign_data"` from LocalStorage.
+  - Get item `"dg_campaign_data"` from LocalStorage.
   - RETURN true if item exists, false otherwise.
 
 #### resetCampaign
@@ -53,7 +53,7 @@
 - **Contract**: Deletes the saved campaign data.
 - **Signature**: `()`
 - **Flow**:
-  - Remove item `"hq_campaign_data"` from LocalStorage.
+  - Remove item `"dg_campaign_data"` from LocalStorage.
 
 ### 🚨 Constraints
 

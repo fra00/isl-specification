@@ -1,4 +1,4 @@
-# Project: Heroquest React Logic Tests
+# Project: Dungeon React Logic Tests
 
 **Version**: 1.0.0
 **ISL Version**: 1.6.1

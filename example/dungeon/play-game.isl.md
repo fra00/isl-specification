@@ -105,10 +105,10 @@ Represents the visual progression state of a mission in the selection screen.
         - `availableSpells`: [].
         - `activeStatus`: [].
         - Let `initialEquipment` = List of IDs found in `staticEquipment` matching:
-          - IF `Hero.classe` == "Barbaro": ID = 13 for "Spadone".
+          - IF `Hero.classe` == "Barbaro": ID = 13 for "Spada lunga".
           - IF `Hero.classe` == "Nano": ID = 2 for "Ascia".
-          - IF `Hero.classe` == "Elfo": ID = 12 for "Spadino".
-          - IF `Hero.classe` == "Mago": ID = 4 for "Bastone".
+          - IF `Hero.classe` == "Elfo": ID = 12 for "Daga".
+          - IF `Hero.classe` == "Mago": ID = 4 for "Bastone magico".
         - `equipment`: `initialEquipment`.
         - `equipped`: `initialEquipment`.
       - Call `campaignManager.saveCampaign(defaultHeroes, 0)`.

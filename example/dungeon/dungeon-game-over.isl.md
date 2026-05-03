@@ -27,7 +27,7 @@
 ### 📦 Content
 
 - **Title**: "Tutti gli eroi sono caduti..."
-- **Message**: "Zargon ha trionfato. Il mondo precipita nell'oscurità."
+- **Message**: "L'Oscurità ha trionfato. Il mondo precipita nell'oscurità."
 - **Actions**:
   - Button "Torna al Menu": Triggers `onExit`.
 

@@ -8,7 +8,7 @@
 
 import { useCallback } from 'react';
 
-const STORAGE_KEY = "hq_campaign_data";
+const STORAGE_KEY = "dg_campaign_data";
 
 export const useCampaignManager = (config = {}) => {
     const { onNotify } = config;

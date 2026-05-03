@@ -36,7 +36,7 @@ describe("useCampaignManager", () => {
     expect(alertSpy).toHaveBeenCalledWith("Could not save progress");
 
     stringifySpy.mockRestore();
-    localStorage.setItem("hq_campaign_data", "{bad json");
+    localStorage.setItem("dg_campaign_data", "{bad json");
     const hook = renderHook(() => useCampaignManager());
     expect(hook.result.current.loadCampaign()).toBeNull();
   });

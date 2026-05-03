@@ -143,7 +143,7 @@ describe("dungeon-script-runtime exhaustive coverage", () => {
     ]);
   });
 
-  it("covers support-only commands not currently used by HQBase maps", () => {
+  it("covers support-only commands not currently used by DGBase maps", () => {
     const result = executeDungeonScripts({
       session: createSession({
         currentMap: {
